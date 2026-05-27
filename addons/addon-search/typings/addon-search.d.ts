@@ -17,7 +17,8 @@ declare module '@xterm/addon-search' {
 
     /**
      * Whether to search for a whole word, the result is only valid if it's
-     * surrounded in "non-word" characters such as `_`, `(`, `)` or space.
+     * surrounded by start/end of line or non-word separators such as whitespace
+     * and punctuation (for example `(`, `)`, or space).
      */
     wholeWord?: boolean;
 
@@ -28,8 +29,7 @@ declare module '@xterm/addon-search' {
 
     /**
      * Whether to do an incremental search, this will expand the selection if it
-     * still matches the term the user typed. Note that this only affects
-     * `findNext`, not `findPrevious`.
+     * still matches the term the user typed.
      */
     incremental?: boolean;
 
@@ -43,7 +43,7 @@ declare module '@xterm/addon-search' {
   /**
    * Options for showing decorations when searching.
    */
-  interface ISearchDecorationOptions {
+  export interface ISearchDecorationOptions {
     /**
      * The background color of a match, this must use #RRGGBB format.
      */
@@ -57,7 +57,7 @@ declare module '@xterm/addon-search' {
     /**
      * The overview ruler color of a match.
      */
-    matchOverviewRuler: string;
+    matchOverviewRuler?: string;
 
     /**
      * The background color for the currently active match, this must use #RRGGBB format.
@@ -72,7 +72,7 @@ declare module '@xterm/addon-search' {
     /**
      * The overview ruler color of the currently active match.
      */
-    activeMatchColorOverviewRuler: string;
+    activeMatchColorOverviewRuler?: string;
   }
 
   /**
@@ -80,12 +80,13 @@ declare module '@xterm/addon-search' {
    */
   export interface ISearchResultChangeEvent {
     /**
-     * The index of the currently active result, -1 when the threshold of matches is exceeded.
+     * The index of the currently active result within tracked highlights, or -1 when
+     * the active match is not in the tracked result set.
      */
     resultIndex: number;
 
     /**
-     * The total number of search results found.
+     * The number of tracked search results (capped by `highlightLimit` when decorations are enabled).
      */
     resultCount: number;
   }
@@ -96,9 +97,9 @@ declare module '@xterm/addon-search' {
   export interface ISearchAddonOptions {
     /**
      * Max number of matches highlighted when decorations are enabled.
-     * Defaults to 1000 highlighted matches
+     * Defaults to 1000. Invalid values fall back to the default.
      */
-    highlightLimit: number
+    highlightLimit?: number;
   }
 
   /**
@@ -140,7 +141,7 @@ declare module '@xterm/addon-search' {
     public findPrevious(term: string, searchOptions?: ISearchOptions): boolean;
 
     /**
-     * Clears the decorations and selection
+     * Clears highlight decorations and tracked results.
      */
     public clearDecorations(): void;
 
@@ -162,7 +163,8 @@ declare module '@xterm/addon-search' {
     readonly onBeforeSearch: IEvent<void>;
 
     /**
-     * When decorations are enabled, fires when the search results change.
+     * When decorations are enabled, fires after `findNext`/`findPrevious` when tracked
+     * search results change. Does not fire from `clearDecorations()`.
      */
     readonly onDidChangeResults: IEvent<ISearchResultChangeEvent>;
   }

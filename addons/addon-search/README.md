@@ -20,4 +20,13 @@ terminal.loadAddon(searchAddon);
 searchAddon.findNext('foo');
 ```
 
+### Search options
+
+- `decorations` (`ISearchDecorationOptions`): Enables match highlighting and result tracking; pass a decoration options object (colors may be omitted).
+- `highlightLimit` (constructor option): Caps how many matches are tracked/highlighted (default `1000`).
+- `incremental`: Expands the current selection when the term still matches.
+- `wholeWord`, `regex`, `caseSensitive`: Control match semantics.
+
+`onDidChangeResults` fires after `findNext`/`findPrevious` when `decorations` is set. `clearDecorations()` clears highlights and tracked results but does not emit this event.
+
 See the full [API](https://github.com/xtermjs/xterm.js/blob/master/addons/addon-search/typings/addon-search.d.ts) for more advanced usage.

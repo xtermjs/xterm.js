@@ -1,0 +1,13 @@
+{
+  "APP_PATH": ".benchmark",
+  "evalConfig": {
+    "tolerance": {
+      "*": [0.9, 1.2],
+      "SearchAddon.benchmark.js.*.averageRuntime.mean": [0.93, 1.12]
+    },
+    "skip": [
+      "*.median",
+      "*.runs"
+    ]
+  }
+}

@@ -19,6 +19,9 @@
     "prepackage": "../../node_modules/.bin/tsgo -p .",
     "package": "../../node_modules/.bin/webpack",
     "prepublishOnly": "npm run package",
-    "start": "node ../../demo/start"
+    "start": "node ../../demo/start",
+    "benchmark": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 5 -c benchmark/benchmark.json out-benchmark/benchmark/*benchmark.js",
+    "benchmark-baseline": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 10 -c benchmark/benchmark.json --baseline out-benchmark/benchmark/*benchmark.js",
+    "benchmark-eval": "NODE_PATH=../../out:./out:./out-benchmark/ ../../node_modules/.bin/xterm-benchmark -r 10 -c benchmark/benchmark.json --eval -F out-benchmark/benchmark/*benchmark.js"
   }
 }
