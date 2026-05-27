@@ -8,7 +8,7 @@ import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandle
 import { utf32ToString } from 'common/input/TextDecoder';
 import { Params } from 'common/parser/Params';
 import { ParserConstants } from 'common/parser/Constants';
-import { PayloadStringBuffer } from 'common/parser/PayloadStringBuffer';
+import { LimitedStringBuilder } from 'common/StringBuilder';
 
 const EMPTY_HANDLERS: IDcsHandler[] = [];
 
@@ -141,7 +141,7 @@ EMPTY_PARAMS.addParam(0);
 export class DcsHandler implements IDcsHandler {
   private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
 
-  private _data = new PayloadStringBuffer();
+  private _data = new LimitedStringBuilder(DcsHandler._payloadLimit);
   private _params: IParams = EMPTY_PARAMS;
   private _hitLimit: boolean = false;
 
@@ -161,7 +161,7 @@ export class DcsHandler implements IDcsHandler {
     if (this._hitLimit) {
       return;
     }
-    if (this._data.add(utf32ToString(data, start, end), DcsHandler._payloadLimit)) {
+    if (this._data.append(utf32ToString(data, start, end))) {
       this._hitLimit = true;
     }
   }

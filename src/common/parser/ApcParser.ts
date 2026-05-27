@@ -7,7 +7,7 @@ import { IApcHandler, IHandlerCollection, ApcFallbackHandlerType, IApcParser, IS
 import { ParserConstants } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
-import { PayloadStringBuffer } from 'common/parser/PayloadStringBuffer';
+import { LimitedStringBuilder } from 'common/StringBuilder';
 
 const EMPTY_HANDLERS: IApcHandler[] = [];
 
@@ -154,7 +154,7 @@ export class ApcParser implements IApcParser {
 export class ApcHandler implements IApcHandler {
   private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
 
-  private _data = new PayloadStringBuffer();
+  private _data = new LimitedStringBuilder(ApcHandler._payloadLimit);
   private _hitLimit: boolean = false;
 
   constructor(private _handler: (data: string) => boolean | Promise<boolean>) { }
@@ -168,7 +168,7 @@ export class ApcHandler implements IApcHandler {
     if (this._hitLimit) {
       return;
     }
-    if (this._data.add(utf32ToString(data, start, end), ApcHandler._payloadLimit)) {
+    if (this._data.append(utf32ToString(data, start, end))) {
       this._hitLimit = true;
     }
   }

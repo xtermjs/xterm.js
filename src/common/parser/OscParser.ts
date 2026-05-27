@@ -7,7 +7,7 @@ import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser, IS
 import { OscState, ParserConstants } from 'common/parser/Constants';
 import { utf32ToString } from 'common/input/TextDecoder';
 import { IDisposable } from 'common/Types';
-import { PayloadStringBuffer } from 'common/parser/PayloadStringBuffer';
+import { LimitedStringBuilder } from 'common/StringBuilder';
 
 const EMPTY_HANDLERS: IOscHandler[] = [];
 
@@ -195,7 +195,7 @@ export class OscParser implements IOscParser {
 export class OscHandler implements IOscHandler {
   private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
 
-  private _data = new PayloadStringBuffer();
+  private _data = new LimitedStringBuilder(OscHandler._payloadLimit);
   private _hitLimit: boolean = false;
 
   constructor(private _handler: (data: string) => boolean | Promise<boolean>) { }
@@ -209,7 +209,7 @@ export class OscHandler implements IOscHandler {
     if (this._hitLimit) {
       return;
     }
-    if (this._data.add(utf32ToString(data, start, end), OscHandler._payloadLimit)) {
+    if (this._data.append(utf32ToString(data, start, end))) {
       this._hitLimit = true;
     }
   }
