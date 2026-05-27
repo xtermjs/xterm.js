@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { AltMouseCursorController, MouseService } from 'browser/services/MouseService';
+import { AltMouseCursorController, MouseEventCssClasses, MouseService } from 'browser/services/MouseService';
 import { MouseStateService } from 'common/services/MouseStateService';
 import { CoreMouseAction, CoreMouseButton } from 'common/Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
@@ -279,15 +279,15 @@ describe('MouseService mouseEventsRequireAlt', () => {
     }, disposable => disposable, () => {});
 
     mouseStateService.activeProtocol = 'ANY';
-    assert.isTrue(element.classList.contains('enable-mouse-events'));
+    assert.isTrue(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
     assert.equal(selectionService.disableCount, 1);
 
     optionsService.options.mouseEventsRequireAlt = true;
-    assert.isFalse(element.classList.contains('enable-mouse-events'));
+    assert.isFalse(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
     assert.equal(selectionService.enableCount, 2);
 
     optionsService.options.mouseEventsRequireAlt = false;
-    assert.isTrue(element.classList.contains('enable-mouse-events'));
+    assert.isTrue(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
     assert.equal(selectionService.disableCount, 2);
   });
 
@@ -344,10 +344,10 @@ describe('MouseService mouseEventsRequireAlt', () => {
       getModifierState: (key: string) => key === 'Alt' && altHeld
     } as KeyboardEvent);
 
-    assert.isFalse(element.classList.contains('enable-mouse-events'));
+    assert.isFalse(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
     sync(true);
-    assert.isTrue(element.classList.contains('enable-mouse-events'));
+    assert.isTrue(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
     sync(false);
-    assert.isFalse(element.classList.contains('enable-mouse-events'));
+    assert.isFalse(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
   });
 });

@@ -13,6 +13,10 @@ import { Gesture, EventType as GestureEventType, IGestureEvent } from 'browser/s
 
 type RequestedMouseEvents = Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener | null>;
 
+export const enum MouseEventCssClasses {
+  ENABLE_MOUSE_EVENTS = 'enable-mouse-events'
+}
+
 interface IMouseBindContext {
   readonly target: IMouseServiceTarget;
   readonly focus: () => void;
@@ -384,11 +388,11 @@ export class MouseService implements IMouseService {
         this._altMouseCursor?.resetClass();
         this._selectionService.enable();
       } else {
-        element.classList.add('enable-mouse-events');
+        element.classList.add(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
         this._selectionService.disable();
       }
     } else {
-      element.classList.remove('enable-mouse-events');
+      element.classList.remove(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
       this._selectionService.enable();
     }
   }
@@ -577,7 +581,7 @@ export class MouseService implements IMouseService {
 }
 
 /**
- * Toggles `enable-mouse-events` on the terminal element while alt is held when
+ * Toggles MouseEventCssClasses.ENABLE_MOUSE_EVENTS on the terminal element while alt is held when
  * `mouseEventsRequireAlt` is active. DOM listeners are only registered while active.
  */
 export class AltMouseCursorController implements IDisposable {
@@ -630,9 +634,9 @@ export class AltMouseCursorController implements IDisposable {
 
   private _updateClass(altHeld: boolean): void {
     if (altHeld) {
-      this._element.classList.add('enable-mouse-events');
+      this._element.classList.add(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
     } else {
-      this._element.classList.remove('enable-mouse-events');
+      this._element.classList.remove(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
     }
   }
 }
