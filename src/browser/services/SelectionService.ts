@@ -15,7 +15,7 @@ import { IBufferLine, ICellData, IDisposable } from 'common/Types';
 import { getRangeLength } from 'common/buffer/BufferRange';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
-import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
+import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'common/Event';
 
 const enum Constants {
@@ -127,6 +127,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     @ICoreService private readonly _coreService: ICoreService,
     @IMouseCoordsService private readonly _mouseCoordsService: IMouseCoordsService,
     @IOptionsService private readonly _optionsService: IOptionsService,
+    @IMouseStateService private readonly _mouseStateService: IMouseStateService,
     @IRenderService private readonly _renderService: IRenderService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
   ) {
@@ -434,6 +435,10 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   public shouldForceSelection(event: MouseEvent): boolean {
+    if (this._optionsService.rawOptions.altClickForMouseEvents && this._mouseStateService.areMouseEventsActive) {
+      return !event.altKey;
+    }
+
     if (Browser.isMac) {
       return event.altKey && this._optionsService.rawOptions.macOptionClickForcesSelection;
     }
@@ -455,6 +460,10 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     // Only action the primary button
     if (event.button !== 0) {
+      return;
+    }
+
+    if (this._optionsService.rawOptions.altClickForMouseEvents && this._mouseStateService.areMouseEventsActive && event.altKey) {
       return;
     }
 
@@ -596,6 +605,9 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event the mouse or keyboard event
    */
   public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
+    if (this._optionsService.rawOptions.altClickForMouseEvents && this._mouseStateService.areMouseEventsActive) {
+      return false;
+    }
     return event.altKey && !(Browser.isMac && this._optionsService.rawOptions.macOptionClickForcesSelection);
   }
 

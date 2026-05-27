@@ -209,6 +209,7 @@ export type LogLevel = 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'off';
 export interface ITerminalOptions {
   allowProposedApi?: boolean;
   allowTransparency?: boolean;
+  altClickForMouseEvents?: boolean;
   altClickMovesCursor?: boolean;
   cols?: number;
   convertEol?: boolean;

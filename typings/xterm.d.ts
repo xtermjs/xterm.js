@@ -46,6 +46,16 @@ declare module '@xterm/xterm' {
     altClickMovesCursor?: boolean;
 
     /**
+     * When enabled and the terminal is in mouse events mode, mouse click, drag,
+     * and move events are only sent to the underlying application when the alt
+     * key is held. Wheel events are not affected. This allows normal text
+     * selection by default while still supporting application mouse interaction
+     * and scrolling when holding alt. When enabled, this takes precedence over
+     * `macOptionClickForcesSelection`.
+     */
+    altClickForMouseEvents?: boolean;
+
+    /**
      * When enabled the cursor will be set to the beginning of the next line
      * with every new line. This is equivalent to sending `\r\n` for each `\n`.
      * Normally the settings of the underlying PTY (`termios`) deal with the

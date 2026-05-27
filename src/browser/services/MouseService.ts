@@ -153,6 +153,13 @@ export class MouseService implements IMouseService {
       return false;
     }
 
+    if (but !== CoreMouseButton.WHEEL
+      && this._optionsService.rawOptions.altClickForMouseEvents
+      && this._mouseStateService.areMouseEventsActive
+      && !ev.altKey) {
+      return false;
+    }
+
     return this._triggerMouseEvent({
       col: pos.col,
       row: pos.row,
@@ -361,8 +368,12 @@ export class MouseService implements IMouseService {
       if (this._optionsService.rawOptions.logLevel === 'debug') {
         this._logService.debug('Binding to mouse events:', this._explainEvents(events));
       }
-      element.classList.add('enable-mouse-events');
-      this._selectionService.disable();
+      if (this._optionsService.rawOptions.altClickForMouseEvents) {
+        this._selectionService.enable();
+      } else {
+        element.classList.add('enable-mouse-events');
+        this._selectionService.disable();
+      }
     } else {
       this._logService.debug('Unbinding from mouse events.');
       element.classList.remove('enable-mouse-events');

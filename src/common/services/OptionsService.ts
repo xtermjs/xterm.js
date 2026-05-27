@@ -52,6 +52,7 @@ export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   windowOptions: {},
   windowsPty: {},
   wordSeparator: ' ()[]{}\',"`',
+  altClickForMouseEvents: false,
   altClickMovesCursor: true,
   convertEol: false,
   termName: 'xterm',
