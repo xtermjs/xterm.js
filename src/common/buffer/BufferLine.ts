@@ -42,6 +42,7 @@ export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 // Work variables to avoid garbage collection
 let $startIndex = 0;
 const $workCell = new CellData();
+const $translateToStringBuilder = new StringBuilder();
 
 export interface IBufferLineStringCacheEntry {
   value: string | undefined;
@@ -571,12 +572,12 @@ export class BufferLine implements IBufferLine {
     if (outColumns) {
       outColumns.length = 0;
     }
-    const resultBuilder = new StringBuilder();
+    $translateToStringBuilder.reset();
     while (startCol < endCol) {
       const content = this._data[startCol * Constants.CELL_INDICIES + Cell.CONTENT];
       const cp = content & Content.CODEPOINT_MASK;
       const chars = (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
-      resultBuilder.append(chars);
+      $translateToStringBuilder.append(chars);
       if (outColumns) {
         for (let i = 0; i < chars.length; ++i) {
           outColumns.push(startCol);
@@ -587,7 +588,8 @@ export class BufferLine implements IBufferLine {
     if (outColumns) {
       outColumns.push(startCol);
     }
-    const result = resultBuilder.toString();
+    const result = $translateToStringBuilder.toString();
+    $translateToStringBuilder.reset();
     if (isCanonicalRequest) {
       const cacheEntry = this._getStringCacheEntry(true)!;
       cacheEntry.value = result;
