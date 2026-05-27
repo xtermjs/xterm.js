@@ -9,7 +9,7 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { Terminal } from '@xterm/xterm';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject, type IRasterizedGlyph, type ITextureAtlas } from './Types';
 import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
-import type { IOptionsService } from 'common/services/Services';
+import type { ILogService, IOptionsService } from 'common/services/Services';
 import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 interface IVertices {
@@ -114,7 +114,8 @@ export class GlyphRenderer extends Disposable {
     private readonly _terminal: Terminal,
     private readonly _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions,
-    private readonly _optionsService: IOptionsService
+    private readonly _optionsService: IOptionsService,
+    private readonly _logService: ILogService
   ) {
     super();
 
@@ -127,7 +128,7 @@ export class GlyphRenderer extends Disposable {
       TextureAtlas.maxTextureSize = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_SIZE) as number | null);
     }
 
-    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(TextureAtlas.maxAtlasPages)));
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(TextureAtlas.maxAtlasPages), this._logService));
     this._register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations

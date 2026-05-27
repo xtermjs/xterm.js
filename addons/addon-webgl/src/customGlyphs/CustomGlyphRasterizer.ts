@@ -4,6 +4,7 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import type { ILogService } from 'common/services/Services';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
 import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 
@@ -22,6 +23,7 @@ export function tryDrawCustomGlyph(
   deviceCharHeight: number,
   fontSize: number,
   devicePixelRatio: number,
+  logService: ILogService,
   backgroundColor?: string,
   variantOffset: number = 0
 ): boolean {
@@ -30,7 +32,7 @@ export function tryDrawCustomGlyph(
     // Normalize to array for uniform handling
     const parts = Array.isArray(unifiedCharDefinition) ? unifiedCharDefinition : [unifiedCharDefinition];
     for (const part of parts) {
-      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, fontSize, devicePixelRatio, backgroundColor, variantOffset);
+      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, fontSize, devicePixelRatio, logService, backgroundColor, variantOffset);
     }
     return true;
   }
@@ -49,6 +51,7 @@ function drawDefinitionPart(
   deviceCharHeight: number,
   fontSize: number,
   devicePixelRatio: number,
+  logService: ILogService,
   backgroundColor?: string,
   variantOffset: number = 0
 ): void {
@@ -79,7 +82,7 @@ function drawDefinitionPart(
       drawPatternChar(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, variantOffset);
       break;
     case CustomGlyphDefinitionType.PATH_FUNCTION:
-      drawPathFunctionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, part.strokeWidth);
+      drawPathFunctionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, logService, part.strokeWidth);
       break;
     case CustomGlyphDefinitionType.PATH:
       drawPathDefinitionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, part.strokeWidth);
@@ -88,7 +91,7 @@ function drawDefinitionPart(
       drawPathNegativeDefinitionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, backgroundColor);
       break;
     case CustomGlyphDefinitionType.VECTOR_SHAPE:
-      drawVectorShape(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, fontSize, devicePixelRatio);
+      drawVectorShape(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, fontSize, devicePixelRatio, logService);
       break;
     case CustomGlyphDefinitionType.BRAILLE:
       drawBrailleCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
@@ -510,6 +513,7 @@ function drawPathFunctionCharacter(
   deviceCellWidth: number,
   deviceCellHeight: number,
   devicePixelRatio: number,
+  logService: ILogService,
   strokeWidth?: number
 ): void {
   ctx.save();
@@ -536,7 +540,7 @@ function drawPathFunctionCharacter(
     }
     const f = svgToCanvasInstructionMap[type];
     if (!f) {
-      console.error(`Could not find drawing instructions for "${type}"`);
+      logService.error(`Could not find drawing instructions for "${type}"`);
       continue;
     }
     const args: string[] = instruction.substring(1).split(',');
@@ -598,7 +602,8 @@ function drawVectorShape(
   deviceCellWidth: number,
   deviceCellHeight: number,
   fontSize: number,
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  logService: ILogService
 ): void {
   // Clip the cell to make sure drawing doesn't occur beyond bounds
   const clipRegion = new Path2D();
@@ -619,7 +624,7 @@ function drawVectorShape(
     }
     const f = svgToCanvasInstructionMap[type];
     if (!f) {
-      console.error(`Could not find drawing instructions for "${type}"`);
+      logService.error(`Could not find drawing instructions for "${type}"`);
       continue;
     }
     const args: string[] = instruction.substring(1).split(',');
