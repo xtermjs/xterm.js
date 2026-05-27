@@ -120,10 +120,10 @@ describe('Headless API Tests', function (): void {
       await writeSync('\n\rtest' + i);
     }
     const markers = [
-      term.registerMarker(1)!,
-      term.registerMarker(2)!,
-      term.registerMarker(3)!,
-      term.registerMarker(4)!
+      term.registerMarker(1),
+      term.registerMarker(2),
+      term.registerMarker(3),
+      term.registerMarker(4)
     ];
     let disposeCount = 0;
     for (const marker of markers) {
@@ -418,6 +418,15 @@ describe('Headless API Tests', function (): void {
       strictEqual(term.buffer.active.getLine(0)!.translateToString(), 'norm ');
       strictEqual(term.buffer.normal.getLine(0)!.translateToString(), 'norm ');
       strictEqual(term.buffer.alternate.getLine(0), undefined);
+    });
+
+    it('registerMarker on alternate buffer', async () => {
+      term = new Terminal({ cols: 5, allowProposedApi: true });
+      await writeSync('\x1b[?47h');
+      const marker = term.registerMarker(0);
+      strictEqual(term.buffer.active.type, 'alternate');
+      strictEqual(term.markers.length, 1);
+      strictEqual(term.markers[0], marker);
     });
   });
 
