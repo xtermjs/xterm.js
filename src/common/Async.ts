@@ -73,6 +73,42 @@ export class TimeoutTimer implements IDisposable {
   }
 }
 
+/**
+ * Schedules a single runner on the microtask queue. Unlike {@link TimeoutTimer}, a scheduled
+ * microtask cannot be unqueued; {@link cancel} prevents the runner from executing if it has not
+ * run yet.
+ */
+export class MicrotaskTimer implements IDisposable {
+  private _isScheduled = false;
+  private _isDisposed = false;
+
+  public dispose(): void {
+    this.cancel();
+    this._isDisposed = true;
+  }
+
+  public cancel(): void {
+    this._isScheduled = false;
+  }
+
+  public set(runner: () => void): void {
+    if (this._isDisposed) {
+      throw new Error('Calling set on a disposed MicrotaskTimer');
+    }
+    if (this._isScheduled) {
+      return;
+    }
+    this._isScheduled = true;
+    queueMicrotask(() => {
+      if (!this._isScheduled) {
+        return;
+      }
+      this._isScheduled = false;
+      runner();
+    });
+  }
+}
+
 export class IntervalTimer implements IDisposable {
   private _disposable: IDisposable | undefined;
   private _isDisposed = false;

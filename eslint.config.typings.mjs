@@ -17,7 +17,7 @@ export default tseslint.config(
     rules: {
       '@stylistic/indent': ['warn', 2],
       '@stylistic/semi': ['warn', 'always'],
-      '@stylistic/quotes': ['warn', 'single', { allowTemplateLiterals: true }],
+      '@stylistic/quotes': ['warn', 'single', { allowTemplateLiterals: 'always' }],
       '@stylistic/member-delimiter-style': ['warn', {
         multiline: { delimiter: 'semi', requireLast: true },
         singleline: { delimiter: 'comma', requireLast: false }

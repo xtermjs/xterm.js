@@ -14,7 +14,6 @@ import { Params } from 'common/parser/Params';
 import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockMouseStateService, MockCharsetService, MockUnicodeService, MockOscLinkService, extendedAttributes } from 'common/TestUtils.test';
 import { IBufferService, ICoreService, type IOscLinkService } from 'common/services/Services';
 import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
-import { clone } from 'common/Clone';
 import { BufferService } from 'common/services/BufferService';
 import { CoreService } from 'common/services/CoreService';
 import { OscLinkService } from 'common/services/OscLinkService';
@@ -227,32 +226,32 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.cursorStyle, undefined);
       assert.equal(coreService.decPrivateModes.cursorBlink, undefined);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = structuredClone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([1]));
       assert.equal(coreService.decPrivateModes.cursorStyle, 'block');
       assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = structuredClone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([2]));
       assert.equal(coreService.decPrivateModes.cursorStyle, 'block');
       assert.equal(coreService.decPrivateModes.cursorBlink, false);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = structuredClone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([3]));
       assert.equal(coreService.decPrivateModes.cursorStyle, 'underline');
       assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = structuredClone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([4]));
       assert.equal(coreService.decPrivateModes.cursorStyle, 'underline');
       assert.equal(coreService.decPrivateModes.cursorBlink, false);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = structuredClone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([5]));
       assert.equal(coreService.decPrivateModes.cursorStyle, 'bar');
       assert.equal(coreService.decPrivateModes.cursorBlink, true);
 
-      optionsService.options = clone(DEFAULT_OPTIONS);
+      optionsService.options = structuredClone(DEFAULT_OPTIONS);
       inputHandler.setCursorStyle(Params.fromArray([6]));
       assert.equal(coreService.decPrivateModes.cursorStyle, 'bar');
       assert.equal(coreService.decPrivateModes.cursorBlink, false);

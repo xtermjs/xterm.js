@@ -367,7 +367,7 @@ export class Gesture extends Disposable {
   private _dispatchEvent(event: IGestureEvent): void {
     if (event.type === EventType.TAP) {
       const currentTime = (new Date()).getTime();
-      let setTapCount = 0;
+      let setTapCount;
       if (currentTime - this._lastSetTapCountTime > Gesture._clearTapCountTime) {
         setTapCount = 1;
       } else {

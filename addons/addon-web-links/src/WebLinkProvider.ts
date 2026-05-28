@@ -113,8 +113,8 @@ export class LinkComputer {
     let line: IBufferLine | undefined;
     let topIdx = lineIndex;
     let bottomIdx = lineIndex;
-    let length = 0;
-    let content = '';
+    let length;
+    let content;
     const lines: string[] = [];
 
     if ((line = terminal.buffer.active.getLine(lineIndex))) {
