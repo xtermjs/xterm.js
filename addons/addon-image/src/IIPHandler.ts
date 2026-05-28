@@ -8,7 +8,7 @@ import { IIPImageStorage } from './IIPImageStorage';
 import { CELL_SIZE_DEFAULT } from './ImageStorage';
 import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import QoiDecoder from 'xterm-wasm-parts/lib/qoi/QoiDecoder.wasm';
-import { HeaderParser, IHeaderFields, HeaderState } from './IIPHeaderParser';
+import { HeaderParser, IHeaderFields, HeaderState, SequenceType } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
 
 // Local const enum mirror - esbuild can't inline const enums from external packages
@@ -23,6 +23,7 @@ const enum DecoderConst {
 
 // default IIP header values
 const DEFAULT_HEADER: IHeaderFields = {
+  type: SequenceType.INVALID,
   name: 'Unnamed file',
   size: 0,
   width: 'auto',
@@ -39,6 +40,8 @@ export class IIPHandler implements IOscHandler, IResetHandler {
   private _dec: Base64Decoder;
   private _qoiDec: QoiDecoder;
   private _metrics = UNSUPPORTED_TYPE;
+  private _isMultipart = false;
+  private _abortMulti = false;
 
   constructor(
     private readonly _opts: IImageAddonOptions,
@@ -52,11 +55,14 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     this._qoiDec = new QoiDecoder(DecoderConst.KEEP_DATA);
   }
 
-  public reset(): void {}
+  public reset(): void {
+    this._hp.reset();
+    this._dec.release();
+    this._qoiDec.release();
+  }
 
   public start(): void {
     this._aborted = false;
-    this._header = DEFAULT_HEADER;
     this._metrics  = UNSUPPORTED_TYPE;
     this._hp.reset();
   }
@@ -76,15 +82,27 @@ export class IIPHandler implements IOscHandler, IResetHandler {
         return;
       }
       if (dataPos > 0) {
-        this._header = Object.assign({}, DEFAULT_HEADER, this._hp.fields);
-        if (!this._header.inline || !this._header.size || this._header.size > this._opts.iipSizeLimit) {
+        const seqType = this._hp.fields.type;
+        if (seqType === SequenceType.FILE) {
+          if (this._isMultipart) {
+            this._isMultipart = false;
+            this._abortMulti = false;
+            this._dec.release();
+          }
+          this._header = Object.assign({}, DEFAULT_HEADER, this._hp.fields);
+          if (!this._header.inline) {
+            this._aborted = true;
+            return;
+          }
+          this._dec.init();
+        } else if (this._abortMulti) {
           this._aborted = true;
           return;
         }
-        this._dec.init();
         if ((this._dec.put(data.subarray(dataPos, end)) as number) !== DecoderConst.OK) {
           this._dec.release();
           this._aborted = true;
+          if (this._isMultipart) this._abortMulti = true;
         }
       }
     }
@@ -93,6 +111,44 @@ export class IIPHandler implements IOscHandler, IResetHandler {
   public end(success: boolean): boolean | Promise<boolean> {
     if (this._aborted) return true;
 
+    if (this._hp.state !== HeaderState.END) {
+      if (this._hp.end()) return true;
+    }
+    const seqType = this._hp.fields.type;
+
+    if (seqType === SequenceType.FILEPART) return true;
+
+    if (seqType === SequenceType.REPORTCELLSIZE) {
+      // OSC 1337 ; ReportCellSize=[height];[width];[scale] ST
+      let width = CELL_SIZE_DEFAULT.width;
+      let height = CELL_SIZE_DEFAULT.height;
+      if (this._renderer.dimensions) {
+        width = this._renderer.dimensions.css.canvas.width / this._coreTerminal.cols;
+        height = this._renderer.dimensions.css.canvas.height / this._coreTerminal.rows;
+      }
+      const scale = this._coreTerminal._core._coreBrowserService?.dpr ?? 1;
+      const report = `\x1b]1337;ReportCellSize=${height.toFixed(3)};${width.toFixed(3)};${scale.toFixed(3)}\x1b\\`;
+      this._coreTerminal.input(report, false);
+      return true;
+    }
+
+    if (seqType === SequenceType.MULTIPARTFILE) {
+      this._header = Object.assign({}, DEFAULT_HEADER, this._hp.fields);
+      this._isMultipart = true;
+      this._abortMulti = false;
+      this._dec.release();
+      this._dec.init();
+      return true;
+    }
+
+    if (seqType === SequenceType.FILEEND) {
+      if (!this._isMultipart) return true;
+      this._isMultipart = false;
+      if (this._abortMulti || this._header.type !== SequenceType.MULTIPARTFILE) return true;
+    }
+
+    // fallthrough for SequenceType.FILE & SequenceType.FILEEND
+
     let w = 0;
     let h = 0;
 
@@ -100,15 +156,13 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     let cond: number | boolean;
     if (cond = success) {
       if (cond = !this._dec.end()) {
-        if (cond = this._dec.data8.length === this._header.size) {
-          this._metrics = imageType(this._dec.data8);
-          if (cond = this._metrics.mime !== 'unsupported') {
-            w = this._metrics.width;
-            h = this._metrics.height;
-            if (cond = w && h && w * h < this._opts.pixelLimit) {
-              [w, h] = this._resize(w, h).map(Math.floor);
-              cond = w && h && w * h < this._opts.pixelLimit;
-            }
+        this._metrics = imageType(this._dec.data8);
+        if (cond = this._metrics.mime !== 'unsupported') {
+          w = this._metrics.width;
+          h = this._metrics.height;
+          if (cond = w && h && w * h < this._opts.pixelLimit) {
+            [w, h] = this._resize(w, h).map(Math.floor);
+            cond = w && h && w * h < this._opts.pixelLimit;
           }
         }
       }
