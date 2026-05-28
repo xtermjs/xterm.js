@@ -72,6 +72,8 @@
     "prepackage-headless": "npm run esbuild-package-headless-only",
     "package-headless": "webpack --config ./webpack.config.headless.js",
     "postpackage-headless": "node ./bin/package_headless.js",
+    "test-headless-node": "node headless/test-node-load.cjs && node headless/test-node-load.mjs",
+    "pretest-headless-node": "npm run build && npm run esbuild-package-headless-only && webpack --config ./webpack.config.headless.js",
     "prepublishOnly": "npm run package"
   },
   "devDependencies": {
