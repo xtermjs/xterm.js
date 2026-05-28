@@ -13,22 +13,12 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/mocha"
-    ],
-    "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
-      "@xterm/addon-progress": [
-        "../typings/addon-progress.d.ts"
-      ]
-    }
+    ]
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../typings/xterm.d.ts",
+    "../typings/addon-progress.d.ts"
   ],
   "references": [
     {

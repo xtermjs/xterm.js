@@ -10,17 +10,6 @@
     "outDir": "../out",
     "sourceMap": true,
     "removeComments": true,
-    "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
-      "@xterm/addon-serialize": [
-        "../typings/addon-serialize.d.ts"
-      ]
-    },
     "strict": true,
     "skipLibCheck": true,
     "types": [
@@ -29,7 +18,8 @@
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../typings/xterm.d.ts",
+    "../typings/addon-serialize.d.ts"
   ],
   "references": [
     {

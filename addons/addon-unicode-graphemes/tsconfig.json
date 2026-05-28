@@ -2,8 +2,14 @@
   "files": [],
   "include": [],
   "references": [
-    { "path": "./src" },
-    { "path": "./test" },
-    { "path": "./benchmark" }
+    {
+      "path": "./src"
+    },
+    {
+      "path": "./test"
+    },
+    {
+      "path": "./benchmark"
+    }
   ]
 }

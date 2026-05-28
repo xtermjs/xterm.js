@@ -3,23 +3,12 @@
     "module": "commonjs",
     "target": "ESNext",
     "lib": [
-      "es2021",
+      "es2021"
     ],
     "rootDir": ".",
     "outDir": "../out-test",
     "sourceMap": true,
     "removeComments": true,
-    "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
-      "*": [
-        "./*"
-      ]
-    },
     "strict": true,
     "types": [
       "../../../node_modules/@types/node",

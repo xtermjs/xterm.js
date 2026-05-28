@@ -13,15 +13,11 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/mocha"
-    ],
-    "paths": {
-      "@xterm/addon-web-links": [
-        "../typings/addon-web-links.d.ts"
-      ]
-    }
+    ]
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../typings/xterm.d.ts",
+    "../typings/addon-web-links.d.ts"
   ]
 }

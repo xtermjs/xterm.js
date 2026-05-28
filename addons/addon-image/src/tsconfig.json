@@ -10,20 +10,19 @@
     "preserveWatchOutput": true,
     "types": [
       "../../../node_modules/@types/mocha"
-    ],
-    "paths": {
-      "browser/*": [ "../../../src/browser/*" ],
-      "common/*": [ "../../../src/common/*" ],
-      "@xterm/addon-image": [ "../typings/addon-image.d.ts" ],
-      "*": [ "./*" ]
-    }
+    ]
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../typings/xterm.d.ts",
+    "../typings/addon-image.d.ts"
   ],
   "references": [
-    { "path": "../../../src/browser" },
-    { "path": "../../../src/common" }
+    {
+      "path": "../../../src/browser"
+    },
+    {
+      "path": "../../../src/common"
+    }
   ]
 }

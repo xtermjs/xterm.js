@@ -4,7 +4,7 @@
     "target": "es2021",
     "lib": [
       "dom",
-      "es2021",
+      "es2021"
     ],
     "rootDir": ".",
     "outDir": "../out",
@@ -13,22 +13,12 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/mocha"
-    ],
-    "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
-      "@xterm/addon-search" : [
-        "../typings/addon-search.d.ts"
-      ]
-    }
+    ]
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../typings/xterm.d.ts",
+    "../typings/addon-search.d.ts"
   ],
   "references": [
     {

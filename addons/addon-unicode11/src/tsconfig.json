@@ -11,24 +11,14 @@
     "sourceMap": true,
     "removeComments": true,
     "strict": true,
-    "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "@xterm/addon-unicode11": [
-        "../typings/addon-unicode11.d.ts"
-      ],
-      "*": [
-        "./*"
-      ]
-    },
     "types": [
       "../../../node_modules/@types/mocha"
     ]
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../typings/xterm.d.ts",
+    "../typings/addon-unicode11.d.ts"
   ],
   "references": [
     {

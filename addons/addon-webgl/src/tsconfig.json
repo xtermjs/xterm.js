@@ -10,20 +10,6 @@
     "outDir": "../out",
     "sourceMap": true,
     "removeComments": true,
-    "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
-      "@xterm/addon-webgl": [
-        "../typings/addon-webgl.d.ts"
-      ],
-      "*": [
-        "./*"
-      ]
-    },
     "strict": true,
     "downlevelIteration": true,
     "experimentalDecorators": true,
@@ -33,7 +19,8 @@
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../typings/xterm.d.ts",
+    "../typings/addon-webgl.d.ts"
   ],
   "references": [
     {

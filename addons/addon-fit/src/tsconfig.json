@@ -13,19 +13,12 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/mocha"
-    ],
-    "paths": {
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
-      "@xterm/addon-fit": [
-        "../typings/addon-fit.d.ts"
-      ]
-    }
+    ]
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../typings/xterm.d.ts",
+    "../typings/addon-fit.d.ts"
   ],
   "references": [
     {

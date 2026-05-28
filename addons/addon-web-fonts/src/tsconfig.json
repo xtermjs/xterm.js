@@ -14,15 +14,11 @@
     "strict": true,
     "types": [
       "../../../node_modules/@types/mocha"
-    ],
-    "paths": {
-      "@xterm/addon-web-fonts": [
-        "../typings/addon-web-fonts.d.ts"
-      ]
-    }
+    ]
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../../typings/xterm.d.ts",
+    "../typings/addon-web-fonts.d.ts"
   ]
 }
