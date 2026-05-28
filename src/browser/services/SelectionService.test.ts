@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { SelectionService, SelectionMode } from './SelectionService';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { IBufferLine } from 'common/Types';
-import { MockBufferService, MockOptionsService, MockCoreService, createCellData } from 'common/TestUtils.test';
+import { MockBufferService, MockOptionsService, MockCoreService, MockMouseStateService, createCellData } from 'common/TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { IBufferService, IOptionsService } from 'common/services/Services';
@@ -22,9 +22,10 @@ class TestSelectionService extends SelectionService {
   constructor(
     bufferService: IBufferService,
     optionsService: IOptionsService,
-    renderService: IRenderService
+    renderService: IRenderService,
+    public readonly mouseStateService: MockMouseStateService
   ) {
-    super(null!, null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, renderService, new MockCoreBrowserService());
+    super(null!, null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, mouseStateService, renderService, new MockCoreBrowserService());
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -45,16 +46,18 @@ describe('SelectionService', () => {
   let buffer: IBuffer;
   let bufferService: IBufferService;
   let optionsService: IOptionsService;
+  let mouseStateService: MockMouseStateService;
   let selectionService: TestSelectionService;
 
   beforeEach(() => {
     optionsService = new MockOptionsService();
+    mouseStateService = new MockMouseStateService();
     bufferService = new MockBufferService(20, 20, optionsService);
     buffer = bufferService.buffer;
     const renderService = new MockRenderService();
     renderService.dimensions.css.canvas.height = 10 * 20;
     renderService.dimensions.css.canvas.width = 10 * 20;
-    selectionService = new TestSelectionService(bufferService, optionsService, renderService);
+    selectionService = new TestSelectionService(bufferService, optionsService, renderService, mouseStateService);
   });
 
   function stringToRow(text: string): IBufferLine {
@@ -497,6 +500,22 @@ describe('SelectionService', () => {
       assert.isTrue(selectionService.areCoordsInSelection([0, 1], [2, 0], [2, 1]));
       assert.isTrue(selectionService.areCoordsInSelection([1, 1], [2, 0], [2, 1]));
       assert.isFalse(selectionService.areCoordsInSelection([2, 1], [2, 0], [2, 1]));
+    });
+  });
+
+  describe('shouldForceSelection', () => {
+    it('should force selection without alt when mouseEventsRequireAlt is enabled', () => {
+      optionsService.options.mouseEventsRequireAlt = true;
+      mouseStateService.areMouseEventsActive = true;
+      assert.isTrue(selectionService.shouldForceSelection({ altKey: false } as MouseEvent));
+      assert.isFalse(selectionService.shouldForceSelection({ altKey: true } as MouseEvent));
+    });
+
+    it('should take precedence over macOptionClickForcesSelection', () => {
+      optionsService.options.mouseEventsRequireAlt = true;
+      optionsService.options.macOptionClickForcesSelection = true;
+      mouseStateService.areMouseEventsActive = true;
+      assert.isFalse(selectionService.shouldForceSelection({ altKey: true } as MouseEvent));
     });
   });
 });

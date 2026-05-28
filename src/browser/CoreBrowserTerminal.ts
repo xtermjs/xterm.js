@@ -37,7 +37,7 @@ import { CharacterJoinerService } from 'browser/services/CharacterJoinerService'
 import { CoreBrowserService } from 'browser/services/CoreBrowserService';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
 import { MouseCoordsService } from 'browser/services/MouseCoordsService';
-import { MouseService } from 'browser/services/MouseService';
+import { MouseEventCssClasses, MouseService } from 'browser/services/MouseService';
 import { RenderService } from 'browser/services/RenderService';
 import { SelectionService } from 'browser/services/SelectionService';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseCoordsService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
@@ -618,11 +618,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
-    if (this.mouseStateService.areMouseEventsActive) {
+    if (this.mouseStateService.areMouseEventsActive && !this.options.mouseEventsRequireAlt) {
       this._selectionService.disable();
-      this.element.classList.add('enable-mouse-events');
+      this.element.classList.add(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
     } else {
       this._selectionService.enable();
+      this.element.classList.remove(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
     }
 
     if (this.options.screenReaderMode) {

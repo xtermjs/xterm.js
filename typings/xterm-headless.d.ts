@@ -137,6 +137,17 @@ declare module '@xterm/headless' {
     minimumContrastRatio?: number;
 
     /**
+     * When enabled and the terminal is in mouse events mode, mouse click, drag,
+     * and move events are only sent to the underlying application when the alt
+     * key is held. The alt key is not included in the mouse reports sent to the
+     * application. Wheel events are not affected. This allows normal text
+     * selection by default while still supporting application mouse interaction
+     * and scrolling when holding alt. When enabled, this takes precedence over
+     * `macOptionClickForcesSelection`.
+     */
+    mouseEventsRequireAlt?: boolean;
+
+    /**
      * Whether to reflow the line containing the cursor when the terminal is
      * resized. Defaults to false, because shells usually handle this
      * themselves. Note that this will not move the cursor position, only the
