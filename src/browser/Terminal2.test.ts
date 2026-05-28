@@ -14,7 +14,7 @@ import { IDisposable } from '@xterm/xterm';
 const COLS = 80;
 const ROWS = 25;
 
-const escapeSequenceFilesDir = path.join(__dirname, '../../fixtures/escape_sequence_files');
+const escapeSequenceFilesDir = path.join(__dirname, '../../test/fixtures/escape_sequence_files');
 const TESTFILES = fs.readdirSync(escapeSequenceFilesDir)
   .filter(f => f.endsWith('.in'))
   .map(f => path.join(escapeSequenceFilesDir, f));
