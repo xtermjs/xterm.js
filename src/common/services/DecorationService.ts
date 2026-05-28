@@ -88,12 +88,10 @@ export class DecorationService extends Disposable implements IDecorationService 
     if (!bucket) {
       return;
     }
-    let xmin = 0;
-    let xmax = 0;
     for (const d of bucket) {
-      xmin = d.options.x ?? 0;
-      xmax = xmin + (d.options.width ?? 1);
-      if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
+      $xmin = d.options.x ?? 0;
+      $xmax = $xmin + (d.options.width ?? 1);
+      if (x >= $xmin && x < $xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
         yield d;
       }
     }
