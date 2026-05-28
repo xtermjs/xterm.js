@@ -98,8 +98,7 @@ CHARSETS['4'] = {
  * ESC (C or ESC (5
  * Reference: http://vt100.net/docs/vt220-rm/table2-7.html
  */
-CHARSETS['C'] =
-CHARSETS['5'] = {
+CHARSETS['C'] = CHARSETS['5'] = {
   '[': 'Ä',
   '\\': 'Ö',
   ']': 'Å',
@@ -185,8 +184,7 @@ CHARSETS['Y'] = {
  * ESC (E or ESC (6
  * Reference: http://vt100.net/docs/vt220-rm/table2-12.html
  */
-CHARSETS['E'] =
-CHARSETS['6'] = {
+CHARSETS['E'] = CHARSETS['6'] = {
   '@': 'Ä',
   '[': 'Æ',
   '\\': 'Ø',
@@ -220,8 +218,7 @@ CHARSETS['Z'] = {
  * ESC (H or ESC (7
  * Reference: http://vt100.net/docs/vt220-rm/table2-14.html
  */
-CHARSETS['H'] =
-CHARSETS['7'] = {
+CHARSETS['H'] = CHARSETS['7'] = {
   '@': 'É',
   '[': 'Ä',
   '\\': 'Ö',

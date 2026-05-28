@@ -427,8 +427,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let line: IBufferLine;
     let joinedRanges: [number, number][];
     let isJoined: boolean;
-    let skipJoinedCheckUntilX: number = 0;
-    let isValidJoinRange: boolean = true;
+    let skipJoinedCheckUntilX: number;
+    let isValidJoinRange: boolean;
     let lastCharX: number;
     let range: [number, number];
     let isCursorRow: boolean;

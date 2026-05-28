@@ -572,8 +572,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
    * ```
    */
   public parse(data: Uint32Array, length: number, promiseResult?: boolean): void | Promise<boolean> {
-    let code = 0;
-    let transition = 0;
+    let code: number;
+    let transition: number;
     let start = 0;
     let handlerResult: void | boolean | Promise<boolean>;
 

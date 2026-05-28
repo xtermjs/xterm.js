@@ -285,7 +285,7 @@ function substringJoiner(substring: string): (sequence: string) => [number, numb
   return (sequence: string): [number, number][] => {
     const ranges: [number, number][] = [];
     let searchIndex = 0;
-    let matchIndex = -1;
+    let matchIndex;
 
     while ((matchIndex = sequence.indexOf(substring, searchIndex)) !== -1) {
       const matchEndIndex = matchIndex + substring.length;

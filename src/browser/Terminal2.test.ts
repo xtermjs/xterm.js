@@ -125,7 +125,7 @@ function formatError(input: string, output: string, expected: string): string {
 // simple debug output of terminal cells
 function terminalToString(term: CoreBrowserTerminal): string {
   let result = '';
-  let lineText = '';
+  let lineText: string;
   for (let line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
     lineText = term.buffer.lines.get(line)!.translateToString(true);
     // rtrim empty cells as xterm does

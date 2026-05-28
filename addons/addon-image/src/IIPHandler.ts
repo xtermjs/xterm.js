@@ -97,7 +97,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     let h = 0;
 
     // early exit condition chain
-    let cond: number | boolean = true;
+    let cond: number | boolean;
     if (cond = success) {
       if (cond = !this._dec.end()) {
         if (cond = this._dec.data8.length === this._header.size) {

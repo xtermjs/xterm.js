@@ -918,10 +918,10 @@ export class SelectionService extends Disposable implements ISelectionService {
     // Calculate the start _column_, converting the the string indexes back to
     // column coordinates.
     let start =
-        startIndex // The index of the selection's start char in the line string
-        + charOffset // The difference between the initial char's column and index
-        - leftWideCharCount // The number of wide chars left of the initial char
-        + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+      startIndex // The index of the selection's start char in the line string
+      + charOffset // The difference between the initial char's column and index
+      - leftWideCharCount // The number of wide chars left of the initial char
+      + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
 
     // Calculate the length in _columns_, converting the the string indexes back
     // to column coordinates.
