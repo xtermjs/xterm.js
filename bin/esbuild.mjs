@@ -107,13 +107,20 @@ if (config.addon) {
   };
   outConfig = {
     ...outConfig,
+    bundle: true,
+    platform: 'node',
+    packages: 'external',
     entryPoints: [`addons/addon-${config.addon}/src/**/*.ts`],
-    outdir: `addons/addon-${config.addon}/out-esbuild/`
+    outdir: `addons/addon-${config.addon}/out-esbuild/`,
+    // Public API stays external; src/common|browser are bundled from source.
+    external: ['@xterm/xterm', '@xterm/headless', '@xterm/addon-*'],
   };
+  // Playwright suites only (not run by unit tests); keep unbundled.
   outTestConfig = {
-    ...outConfig,
+    format: 'cjs',
+    sourcemap: true,
     entryPoints: [`addons/addon-${config.addon}/test/**/*.ts`],
-    outdir: `addons/addon-${config.addon}/out-esbuild-test/`
+    outdir: `addons/addon-${config.addon}/out-esbuild-test/`,
   };
 
   if (config.addon === 'ligatures') {

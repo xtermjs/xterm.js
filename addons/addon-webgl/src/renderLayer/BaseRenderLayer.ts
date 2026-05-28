@@ -3,16 +3,16 @@
  * @license MIT
  */
 
-import { ReadonlyColorSet } from '../../../../out/browser/Types';
+import { ReadonlyColorSet } from '../../../../src/browser/Types';
 import { acquireTextureAtlas } from '../CharAtlasCache';
-import { IRenderDimensions } from '../../../../out/browser/renderer/shared/Types';
-import { ICoreBrowserService, IThemeService } from '../../../../out/browser/services/Services';
-import { Disposable, toDisposable } from '../../../../out/common/Lifecycle';
-import { CellData } from '../../../../out/common/buffer/CellData';
-import { IOptionsService } from '../../../../out/common/services/Services';
+import { IRenderDimensions } from '../../../../src/browser/renderer/shared/Types';
+import { ICoreBrowserService, IThemeService } from '../../../../src/browser/services/Services';
+import { Disposable, toDisposable } from '../../../../src/common/Lifecycle';
+import { CellData } from '../../../../src/common/buffer/CellData';
+import { IOptionsService } from '../../../../src/common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
-import { throwIfFalsy } from '../../../../out/browser/renderer/shared/RendererUtils';
+import { throwIfFalsy } from '../../../../src/browser/renderer/shared/RendererUtils';
 import { TEXT_BASELINE } from '../Constants';
 import type { ITextureAtlas } from '../Types';
 

@@ -4,10 +4,10 @@
  */
 
 import { FontWeight } from '@xterm/xterm';
-import { IColorSet } from '../../../out/browser/Types';
-import { ISelectionRenderModel } from '../../../out/browser/renderer/shared/Types';
-import { CursorInactiveStyle, CursorStyle, type IDisposable } from '../../../out/common/Types';
-import type { IEvent } from '../../../out/common/Event';
+import { IColorSet } from '../../../src/browser/Types';
+import { ISelectionRenderModel } from '../../../src/browser/renderer/shared/Types';
+import { CursorInactiveStyle, CursorStyle, type IDisposable } from '../../../src/common/Types';
+import type { IEvent } from '../../../src/common/Event';
 
 export interface IRenderModel {
   cells: Uint32Array;

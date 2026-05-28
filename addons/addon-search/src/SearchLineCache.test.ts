@@ -4,8 +4,8 @@
  */
 import { assert } from 'chai';
 import { SearchLineCache, LineCacheEntry } from './SearchLineCache';
-import { Terminal } from '../../../out/browser/public/Terminal';
-import { timeout } from '../../../out/common/Async';
+import { Terminal } from '../../../src/browser/public/Terminal';
+import { timeout } from '../../../src/common/Async';
 
 function writeP(terminal: Terminal, data: string): Promise<void> {
   return new Promise(r => terminal.write(data, r));

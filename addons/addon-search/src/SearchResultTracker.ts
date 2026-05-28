@@ -5,8 +5,8 @@
 
 import type { ISearchResultChangeEvent } from '@xterm/addon-search';
 import type { IDisposable } from '@xterm/xterm';
-import { Emitter, type IEvent } from '../../../out/common/Event';
-import { Disposable } from '../../../out/common/Lifecycle';
+import { Emitter, type IEvent } from '../../../src/common/Event';
+import { Disposable } from '../../../src/common/Lifecycle';
 import type { ISearchResult } from './SearchEngine';
 
 /**

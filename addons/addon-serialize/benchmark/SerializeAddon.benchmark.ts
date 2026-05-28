@@ -6,8 +6,8 @@
 import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 
 import { spawn } from 'node-pty';
-import { Utf8ToUtf32, stringFromCodePoint } from '../../../out/common/input/TextDecoder';
-import { Terminal } from '../../../out/browser/public/Terminal';
+import { Utf8ToUtf32, stringFromCodePoint } from '../../../src/common/input/TextDecoder';
+import { Terminal } from '../../../src/browser/public/Terminal';
 import { SerializeAddon } from '../src/SerializeAddon';
 
 class TestTerminal extends Terminal {

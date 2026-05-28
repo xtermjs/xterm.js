@@ -5,7 +5,6 @@
     "strict": true,
     "declarationMap": true,
     "experimentalDecorators": true,
-    "downlevelIteration": true,
-    "preserveConstEnums": true
+    "downlevelIteration": true
   }
 }
