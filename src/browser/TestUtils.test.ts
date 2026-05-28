@@ -258,6 +258,15 @@ export class MockBuffer implements IBuffer {
   public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
     return Buffer.prototype.getBlankLine.apply(this, arguments as any);
   }
+  public attachWrappedRow(y: number, fillCellData: ICellData): IBufferLine {
+    return Buffer.prototype.attachWrappedRow.apply(this, arguments as any);
+  }
+  public clearWrappedRow(y: number, fillCellData: ICellData, preserveContent?: boolean): void {
+    Buffer.prototype.clearWrappedRow.apply(this, arguments as any);
+  }
+  public createScrollWrappedLine(lineAbove: IBufferLine | undefined, attr: IAttributeData): IBufferLine {
+    return Buffer.prototype.createScrollWrappedLine.apply(this, arguments as any);
+  }
   public getNullCell(attr?: IAttributeData): ICellData {
     throw new Error('Method not implemented.');
   }

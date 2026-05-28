@@ -9,6 +9,7 @@ import { IdleTaskQueue } from 'common/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { attachWrappedRow, clearWrappedRow, createScrollWrappedLine } from 'common/buffer/BufferLineUtils';
 import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';
 import { CellData } from 'common/buffer/CellData';
@@ -100,7 +101,19 @@ export class Buffer extends Disposable implements IBuffer {
   }
 
   public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
-    return new BufferLine(this._stringCache, this._bufferService.cols, this.getNullCell(attr), isWrapped);
+    return new BufferLine(this._stringCache, this._bufferService.cols, this.getNullCell(attr), !!isWrapped);
+  }
+
+  public attachWrappedRow(y: number, fillCellData: ICellData): IBufferLine {
+    return attachWrappedRow(this.lines, y, this._stringCache, this._cols, fillCellData);
+  }
+
+  public clearWrappedRow(y: number, fillCellData: ICellData, preserveContent: boolean = true): void {
+    clearWrappedRow(this.lines, y, fillCellData, this._stringCache, this._cols, preserveContent);
+  }
+
+  public createScrollWrappedLine(lineAbove: IBufferLine | undefined, attr: IAttributeData): IBufferLine {
+    return createScrollWrappedLine(lineAbove, this._stringCache, this._cols, this.getNullCell(attr), attr);
   }
 
   public get hasScrollback(): boolean {

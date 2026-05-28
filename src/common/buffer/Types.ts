@@ -34,6 +34,9 @@ export interface IBuffer {
   nextStop(x?: number): number;
   prevStop(x?: number): number;
   getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
+  attachWrappedRow(y: number, fillCellData: ICellData): IBufferLine;
+  clearWrappedRow(y: number, fillCellData: ICellData, preserveContent?: boolean): void;
+  createScrollWrappedLine(lineAbove: IBufferLine | undefined, attr: IAttributeData): IBufferLine;
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
   addMarker(y: number): IMarker;
