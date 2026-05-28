@@ -7,9 +7,9 @@
 
 import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
-import { IAttributeData, IColor } from '../../../out-esbuild/common/Types';
-import { DEFAULT_ANSI_COLORS } from '../../../out-esbuild/browser/Types';
-import { UnderlineStyle } from '../../../out-esbuild/common/buffer/Constants';
+import { IAttributeData, IColor } from '../../../out/common/Types';
+import { DEFAULT_ANSI_COLORS } from '../../../out/browser/Types';
+import { UnderlineStyle } from '../../../out/common/buffer/Constants';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));

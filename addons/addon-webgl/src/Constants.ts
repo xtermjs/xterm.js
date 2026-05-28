@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { isFirefox, isLegacyEdge } from '../../../out-esbuild/common/Platform';
+import { isFirefox, isLegacyEdge } from '../../../out/common/Platform';
 
 export const DIM_OPACITY = 0.5;
 // The text baseline is set conditionally by browser. Using 'ideographic' for Firefox or Legacy Edge

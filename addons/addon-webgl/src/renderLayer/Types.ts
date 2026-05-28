@@ -4,7 +4,7 @@
  */
 
 import { IDisposable, Terminal } from '@xterm/xterm';
-import { IRenderDimensions } from '../../../../out-esbuild/browser/renderer/shared/Types';
+import { IRenderDimensions } from '../../../../out/browser/renderer/shared/Types';
 
 export interface IRenderLayer extends IDisposable {
   /**

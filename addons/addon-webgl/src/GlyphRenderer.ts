@@ -3,14 +3,14 @@
  * @license MIT
  */
 import { TextureAtlas } from './TextureAtlas';
-import { IRenderDimensions } from '../../../out-esbuild/browser/renderer/shared/Types';
-import { NULL_CELL_CODE } from '../../../out-esbuild/common/buffer/Constants';
-import { Disposable, toDisposable } from '../../../out-esbuild/common/Lifecycle';
+import { IRenderDimensions } from '../../../out/browser/renderer/shared/Types';
+import { NULL_CELL_CODE } from '../../../out/common/buffer/Constants';
+import { Disposable, toDisposable } from '../../../out/common/Lifecycle';
 import { Terminal } from '@xterm/xterm';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject, type IRasterizedGlyph, type ITextureAtlas } from './Types';
 import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
-import type { ILogService, IOptionsService } from '../../../out-esbuild/common/services/Services';
-import { allowRescaling, throwIfFalsy } from '../../../out-esbuild/browser/renderer/shared/RendererUtils';
+import type { ILogService, IOptionsService } from '../../../out/common/services/Services';
+import { allowRescaling, throwIfFalsy } from '../../../out/browser/renderer/shared/RendererUtils';
 
 interface IVertices {
   attributes: Float32Array;

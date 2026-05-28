@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { throwIfFalsy } from '../../../out-esbuild/browser/renderer/shared/RendererUtils';
-import type { ILogService } from '../../../out-esbuild/common/services/Services';
+import { throwIfFalsy } from '../../../out/browser/renderer/shared/RendererUtils';
+import type { ILogService } from '../../../out/common/services/Services';
 
 /**
  * A matrix that when multiplies will translate 0-1 coordinates (left to right,

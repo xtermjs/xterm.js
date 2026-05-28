@@ -6,13 +6,13 @@
 import { IDisposable, IMarker, Terminal } from '@xterm/xterm';
 
 // private imports from base repo we build against
-import { Attributes, BgFlags, Content, ExtFlags, UnderlineStyle } from '../../../out-esbuild/common/buffer/Constants';
-import type { AttributeData } from '../../../out-esbuild/common/buffer/AttributeData';
-import type { IParams, IDcsHandler, IOscHandler, IApcHandler, IEscapeSequenceParser } from '../../../out-esbuild/common/parser/Types';
-import type { IBufferLine, IExtendedAttrs, IInputHandler } from '../../../out-esbuild/common/Types';
-import type { ITerminal, ReadonlyColorSet } from '../../../out-esbuild/browser/Types';
-import type { IRenderDimensions } from '../../../out-esbuild/browser/renderer/shared/Types';
-import type { ICoreBrowserService, IRenderService, IThemeService } from '../../../out-esbuild/browser/services/Services';
+import { Attributes, BgFlags, Content, ExtFlags, UnderlineStyle } from '../../../out/common/buffer/Constants';
+import type { AttributeData } from '../../../out/common/buffer/AttributeData';
+import type { IParams, IDcsHandler, IOscHandler, IApcHandler, IEscapeSequenceParser } from '../../../out/common/parser/Types';
+import type { IBufferLine, IExtendedAttrs, IInputHandler } from '../../../out/common/Types';
+import type { ITerminal, ReadonlyColorSet } from '../../../out/browser/Types';
+import type { IRenderDimensions } from '../../../out/browser/renderer/shared/Types';
+import type { ICoreBrowserService, IRenderService, IThemeService } from '../../../out/browser/services/Services';
 
 export const enum Cell {
   CONTENT = 0,  // codepoint and wcwidth information (enum Content)

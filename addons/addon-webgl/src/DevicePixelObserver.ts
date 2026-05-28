@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { toDisposable, IDisposable } from '../../../out-esbuild/common/Lifecycle';
+import { toDisposable, IDisposable } from '../../../out/common/Lifecycle';
 
 export function observeDevicePixelDimensions(element: HTMLElement, parentWindow: Window & typeof globalThis, callback: (deviceWidth: number, deviceHeight: number) => void): IDisposable {
   // Observe any resizes to the element and extract the actual pixel size of the element if the

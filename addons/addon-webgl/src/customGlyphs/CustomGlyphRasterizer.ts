@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { throwIfFalsy } from '../../../../out-esbuild/browser/renderer/shared/RendererUtils';
-import type { ILogService } from '../../../../out-esbuild/common/services/Services';
+import { throwIfFalsy } from '../../../../out/browser/renderer/shared/RendererUtils';
+import type { ILogService } from '../../../../out/common/services/Services';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
 import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 

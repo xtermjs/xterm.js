@@ -4,10 +4,10 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { Attributes } from '../../../out-esbuild/common/buffer/Constants';
+import { Attributes } from '../../../out/common/buffer/Constants';
 import { ITerminalOptions } from '@xterm/xterm';
-import { IColorSet, ReadonlyColorSet } from '../../../out-esbuild/browser/Types';
-import { NULL_COLOR } from '../../../out-esbuild/common/Color';
+import { IColorSet, ReadonlyColorSet } from '../../../out/browser/Types';
+import { NULL_COLOR } from '../../../out/common/Color';
 
 export function generateConfig(deviceCellWidth: number, deviceCellHeight: number, deviceCharWidth: number, deviceCharHeight: number, options: Required<ITerminalOptions>, colors: ReadonlyColorSet, devicePixelRatio: number, deviceMaxTextureSize: number, customGlyphs: boolean = true): ICharAtlasConfig {
   // null out some fields that don't matter

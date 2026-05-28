@@ -1,12 +1,12 @@
-import { ISelectionRenderModel } from '../../../out-esbuild/browser/renderer/shared/Types';
-import { ICoreBrowserService, IThemeService } from '../../../out-esbuild/browser/services/Services';
-import { ReadonlyColorSet } from '../../../out-esbuild/browser/Types';
-import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle } from '../../../out-esbuild/common/buffer/Constants';
-import { IDecorationService, IOptionsService } from '../../../out-esbuild/common/services/Services';
-import { ICellData } from '../../../out-esbuild/common/Types';
+import { ISelectionRenderModel } from '../../../out/browser/renderer/shared/Types';
+import { ICoreBrowserService, IThemeService } from '../../../out/browser/services/Services';
+import { ReadonlyColorSet } from '../../../out/browser/Types';
+import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle } from '../../../out/common/buffer/Constants';
+import { IDecorationService, IOptionsService } from '../../../out/common/services/Services';
+import { ICellData } from '../../../out/common/Types';
 import { Terminal } from '@xterm/xterm';
-import { rgba } from '../../../out-esbuild/common/Color';
-import { treatGlyphAsBackgroundColor } from '../../../out-esbuild/browser/renderer/shared/RendererUtils';
+import { rgba } from '../../../out/common/Color';
+import { treatGlyphAsBackgroundColor } from '../../../out/browser/renderer/shared/RendererUtils';
 import { blockPatternCodepoints } from './customGlyphs/CustomGlyphDefinitions';
 
 // Work variables to avoid garbage collection

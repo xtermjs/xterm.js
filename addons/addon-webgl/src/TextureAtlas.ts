@@ -3,19 +3,19 @@
  * @license MIT
  */
 
-import { IColorContrastCache } from '../../../out-esbuild/browser/Types';
+import { IColorContrastCache } from '../../../out/browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from './Constants';
 import { tryDrawCustomGlyph } from './customGlyphs/CustomGlyphRasterizer';
-import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from '../../../out-esbuild/browser/renderer/shared/RendererUtils';
+import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from '../../../out/browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from './Types';
-import { NULL_COLOR, channels, color, rgba } from '../../../out-esbuild/common/Color';
-import { FourKeyMap } from '../../../out-esbuild/common/MultiKeyMap';
-import { IdleTaskQueue } from '../../../out-esbuild/common/TaskQueue';
-import { IColor } from '../../../out-esbuild/common/Types';
-import { AttributeData } from '../../../out-esbuild/common/buffer/AttributeData';
-import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from '../../../out-esbuild/common/buffer/Constants';
-import { ILogService, IUnicodeService } from '../../../out-esbuild/common/services/Services';
-import { Emitter } from '../../../out-esbuild/common/Event';
+import { NULL_COLOR, channels, color, rgba } from '../../../out/common/Color';
+import { FourKeyMap } from '../../../out/common/MultiKeyMap';
+import { IdleTaskQueue } from '../../../out/common/TaskQueue';
+import { IColor } from '../../../out/common/Types';
+import { AttributeData } from '../../../out/common/buffer/AttributeData';
+import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from '../../../out/common/buffer/Constants';
+import { ILogService, IUnicodeService } from '../../../out/common/services/Services';
+import { Emitter } from '../../../out/common/Event';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.

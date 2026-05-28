@@ -4,8 +4,8 @@
  */
 
 import { IUnicodeVersionProvider } from '@xterm/xterm';
-import { UnicodeCharProperties, UnicodeCharWidth } from '../../../out-esbuild/common/services/Services';
-import { UnicodeService } from '../../../out-esbuild/common/services/UnicodeService';
+import { UnicodeCharProperties, UnicodeCharWidth } from '../../../out/common/services/Services';
+import { UnicodeService } from '../../../out/common/services/UnicodeService';
 import * as UC from './third-party/UnicodeProperties';
 
 export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {

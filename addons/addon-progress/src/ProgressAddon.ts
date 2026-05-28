@@ -5,7 +5,7 @@
 
 import type { Terminal, ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { ProgressAddon as IProgressApi, IProgressState } from '@xterm/addon-progress';
-import type { Emitter, IEvent } from '../../../out-esbuild/common/Event';
+import type { Emitter, IEvent } from '../../../out/common/Event';
 
 
 const enum ProgressType {
