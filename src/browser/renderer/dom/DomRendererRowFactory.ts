@@ -3,18 +3,18 @@
  * @license MIT
  */
 
-import { IBufferLine, ICellData, IColor } from 'common/Types';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
-import { WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
-import { CellData } from 'common/buffer/CellData';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { channels, color } from 'common/Color';
-import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { JoinedCellData } from 'browser/services/CharacterJoinerService';
-import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { WidthCache } from 'browser/renderer/dom/WidthCache';
-import { IColorContrastCache } from 'browser/Types';
+import { IBufferLine, ICellData, IColor } from '../../../common/Types';
+import { INVERTED_DEFAULT_COLOR } from '../shared/Constants';
+import { WHITESPACE_CELL_CHAR, Attributes } from '../../../common/buffer/Constants';
+import { CellData } from '../../../common/buffer/CellData';
+import { ICoreService, IDecorationService, IOptionsService } from '../../../common/services/Services';
+import { channels, color } from '../../../common/Color';
+import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from '../../services/Services';
+import { JoinedCellData } from '../../services/CharacterJoinerService';
+import { treatGlyphAsBackgroundColor } from '../shared/RendererUtils';
+import { AttributeData } from '../../../common/buffer/AttributeData';
+import { WidthCache } from './WidthCache';
+import { IColorContrastCache } from '../../Types';
 
 
 export const enum RowCss {

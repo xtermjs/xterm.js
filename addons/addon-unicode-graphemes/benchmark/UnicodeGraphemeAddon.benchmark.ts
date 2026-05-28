@@ -6,9 +6,9 @@
 import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 
 import { spawn } from 'node-pty';
-import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
-import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
-import { UnicodeGraphemeProvider } from 'UnicodeGraphemeProvider';
+import { Utf8ToUtf32, stringFromCodePoint } from '../../../out-esbuild/common/input/TextDecoder';
+import { CoreBrowserTerminal } from '../../../out-esbuild/browser/CoreBrowserTerminal';
+import { UnicodeGraphemeProvider } from '../src/UnicodeGraphemeProvider';
 
 
 function fakedAddonLoad(terminal: any): void {

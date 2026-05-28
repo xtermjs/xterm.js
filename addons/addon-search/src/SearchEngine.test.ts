@@ -5,9 +5,9 @@
 import { assert } from 'chai';
 import { SearchEngine } from './SearchEngine';
 import { SearchLineCache } from './SearchLineCache';
-import { Terminal } from 'browser/public/Terminal';
+import { Terminal } from '../../../out-esbuild/browser/public/Terminal';
 import type { ISearchOptions } from '@xterm/addon-search';
-import { DisposableStore } from 'common/Lifecycle';
+import { DisposableStore } from '../../../out-esbuild/common/Lifecycle';
 
 function writeP(terminal: Terminal, data: string): Promise<void> {
   return new Promise(r => terminal.write(data, r));

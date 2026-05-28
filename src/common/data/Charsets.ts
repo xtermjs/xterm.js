@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { ICharset } from 'common/Types';
+import { ICharset } from '../Types';
 
 /**
  * The character sets supported by the terminal. These enable several languages

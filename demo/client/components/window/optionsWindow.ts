@@ -6,7 +6,7 @@
 import { BaseWindow } from './baseWindow';
 import type { Terminal, ITheme } from '@xterm/xterm';
 import type { IControlWindow } from '../controlBar';
-import type { AddonCollection } from 'types';
+import type { AddonCollection } from '../../types';
 
 const xtermjsTheme: ITheme = Object.freeze({
   foreground: '#F8F8F8',

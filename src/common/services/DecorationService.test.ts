@@ -5,12 +5,12 @@
 
 import { assert } from 'chai';
 import { DecorationLineCache, DecorationService } from './DecorationService';
-import { IMarker } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
-import { Emitter } from 'common/Event';
-import { MockLogService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
-import { Buffer } from 'common/buffer/Buffer';
-import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { IMarker } from '../Types';
+import { Disposable } from '../Lifecycle';
+import { Emitter } from '../Event';
+import { MockLogService, MockBufferService, MockOptionsService } from '../TestUtils.test';
+import { Buffer } from '../buffer/Buffer';
+import { DEFAULT_ATTR_DATA } from '../buffer/BufferLine';
 
 function createFakeMarker(line: number): IMarker {
   return Object.freeze(new class extends Disposable {

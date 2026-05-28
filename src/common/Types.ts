@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
-import { UnderlineStyle } from 'common/buffer/Constants';
-import { IBufferSet } from 'common/buffer/Types';
-import { IParams } from 'common/parser/Types';
-import { IMouseStateService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
+import { IDeleteEvent, IInsertEvent } from './CircularList';
+import { UnderlineStyle } from './buffer/Constants';
+import { IBufferSet } from './buffer/Types';
+import { IParams } from './parser/Types';
+import { IMouseStateService, ICoreService, IOptionsService, IUnicodeService } from './services/Services';
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
-import type { Emitter, IEvent } from 'common/Event';
+import type { Emitter, IEvent } from './Event';
 
 export interface ICoreTerminal {
   mouseStateService: IMouseStateService;

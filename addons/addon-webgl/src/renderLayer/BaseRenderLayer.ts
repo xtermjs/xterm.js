@@ -3,16 +3,16 @@
  * @license MIT
  */
 
-import { ReadonlyColorSet } from 'browser/Types';
+import { ReadonlyColorSet } from '../../../../out-esbuild/browser/Types';
 import { acquireTextureAtlas } from '../CharAtlasCache';
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
-import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { CellData } from 'common/buffer/CellData';
-import { IOptionsService } from 'common/services/Services';
+import { IRenderDimensions } from '../../../../out-esbuild/browser/renderer/shared/Types';
+import { ICoreBrowserService, IThemeService } from '../../../../out-esbuild/browser/services/Services';
+import { Disposable, toDisposable } from '../../../../out-esbuild/common/Lifecycle';
+import { CellData } from '../../../../out-esbuild/common/buffer/CellData';
+import { IOptionsService } from '../../../../out-esbuild/common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
-import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import { throwIfFalsy } from '../../../../out-esbuild/browser/renderer/shared/RendererUtils';
 import { TEXT_BASELINE } from '../Constants';
 import type { ITextureAtlas } from '../Types';
 

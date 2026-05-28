@@ -10,8 +10,8 @@ const path = require('path');
 /**
  * This webpack config does a production build for xterm.js. It works by taking the output from tsc
  * (via `npm run watch` or `npm run prebuild`) which are put into `out/` and webpacks them into a
- * production mode umd library module in `lib/`. The aliases are used fix up the absolute paths
- * output by tsc (because of `baseUrl` and `paths` in `tsconfig.json`.
+ * production mode umd library module in `lib/`. The aliases map legacy bare specifiers
+ * (`common`, `browser`) to the compiled output directories for any non-relative requires.
  *
  * @type {import('webpack').Configuration}
  */

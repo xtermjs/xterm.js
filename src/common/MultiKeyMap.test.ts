@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { FourKeyMap, TwoKeyMap } from 'common/MultiKeyMap';
+import { FourKeyMap, TwoKeyMap } from './MultiKeyMap';
 
 const strictEqual = assert.strictEqual;
 

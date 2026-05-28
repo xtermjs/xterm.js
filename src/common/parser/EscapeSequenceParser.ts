@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType, IApcHandler, IApcParser, ApcFallbackHandlerType } from 'common/parser/Types';
-import { ParserState, ParserAction } from 'common/parser/Constants';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IDisposable } from 'common/Types';
-import { Params } from 'common/parser/Params';
-import { OscParser } from 'common/parser/OscParser';
-import { DcsParser } from 'common/parser/DcsParser';
-import { ApcParser } from 'common/parser/ApcParser';
+import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType, IApcHandler, IApcParser, ApcFallbackHandlerType } from './Types';
+import { ParserState, ParserAction } from './Constants';
+import { Disposable, toDisposable } from '../Lifecycle';
+import { IDisposable } from '../Types';
+import { Params } from './Params';
+import { OscParser } from './OscParser';
+import { DcsParser } from './DcsParser';
+import { ApcParser } from './ApcParser';
 
 /**
  * VT commands done by the parser

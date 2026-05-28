@@ -3,10 +3,10 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { BufferLine } from 'common/buffer/BufferLine';
-import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
-import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { reflowSmallerGetNewLineLengths } from 'common/buffer/BufferReflow';
+import { BufferLine } from './BufferLine';
+import { BufferLineStringCache } from './BufferLineStringCache';
+import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Constants';
+import { reflowSmallerGetNewLineLengths } from './BufferReflow';
 
 const TEST_STRING_CACHE = new BufferLineStringCache();
 

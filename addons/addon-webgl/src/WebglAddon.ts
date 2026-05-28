@@ -5,14 +5,14 @@
 
 import type { ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { IWebglAddonOptions, WebglAddon as IWebglApi } from '@xterm/addon-webgl';
-import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { ITerminal } from 'browser/Types';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { getSafariVersion, isSafari } from 'common/Platform';
-import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
+import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from '../../../out-esbuild/browser/services/Services';
+import { ITerminal } from '../../../out-esbuild/browser/Types';
+import { Disposable, toDisposable } from '../../../out-esbuild/common/Lifecycle';
+import { getSafariVersion, isSafari } from '../../../out-esbuild/common/Platform';
+import { ICoreService, IDecorationService, ILogService, IOptionsService } from '../../../out-esbuild/common/services/Services';
 import { IWebGL2RenderingContext } from './Types';
 import { WebglRenderer } from './WebglRenderer';
-import { Emitter, EventUtils } from 'common/Event';
+import { Emitter, EventUtils } from '../../../out-esbuild/common/Event';
 
 export class WebglAddon extends Disposable implements ITerminalAddon, IWebglApi {
   private _terminal?: Terminal;

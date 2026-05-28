@@ -5,7 +5,7 @@
 
 const RENDER_DEBOUNCE_THRESHOLD_MS = 1000; // 1 Second
 
-import { IRenderDebouncer } from 'browser/Types';
+import { IRenderDebouncer } from './Types';
 
 /**
  * Debounces calls to update screen readers to update at most once configurable interval of time.

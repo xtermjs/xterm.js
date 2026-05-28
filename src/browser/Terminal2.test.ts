@@ -7,7 +7,7 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as pty from 'node-pty';
-import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
+import { CoreBrowserTerminal } from './CoreBrowserTerminal';
 import { IDisposable } from '@xterm/xterm';
 
 // all test files expect terminal in 80x25
