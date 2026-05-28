@@ -24,6 +24,7 @@ test-results/
 
 # Tracing/debug files
 .cursor/nal-trace/
+.cursor/*.log
 
 # Keep bundled code out of Git
 dist/

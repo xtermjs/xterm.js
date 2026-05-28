@@ -528,8 +528,8 @@ export interface IInputHandler {
   /** CSI ' } */ insertColumns(params: IParams): boolean;
   /** CSI ' ~ */ deleteColumns(params: IParams): boolean;
 
-  /** OSC 0
-      OSC 2 */ setTitle(data: string): boolean;
+  /** OSC 0 */
+  /** OSC 2 */ setTitle(data: string): boolean;
   /** OSC 4 */ setOrReportIndexedColor(data: string): boolean;
   /** OSC 10 */ setOrReportFgColor(data: string): boolean;
   /** OSC 11 */ setOrReportBgColor(data: string): boolean;
@@ -542,24 +542,24 @@ export interface IInputHandler {
   /** ESC E */ nextLine(): boolean;
   /** ESC = */ keypadApplicationMode(): boolean;
   /** ESC > */ keypadNumericMode(): boolean;
-  /** ESC % G
-      ESC % @ */ selectDefaultCharset(): boolean;
-  /** ESC ( C
-      ESC ) C
-      ESC * C
-      ESC + C
-      ESC - C
-      ESC . C
-      ESC / C */ selectCharset(collectAndFlag: string): boolean;
+  /** ESC % G */
+  /** ESC % @ */ selectDefaultCharset(): boolean;
+  /** ESC ( C */
+  /** ESC ) C */
+  /** ESC * C */
+  /** ESC + C */
+  /** ESC - C */
+  /** ESC . C */
+  /** ESC / C */ selectCharset(collectAndFlag: string): boolean;
   /** ESC D */ index(): boolean;
   /** ESC H */ tabSet(): boolean;
   /** ESC M */ reverseIndex(): boolean;
   /** ESC c */ fullReset(): boolean;
-  /** ESC n
-      ESC o
-      ESC |
-      ESC }
-      ESC ~ */ setgLevel(level: number): boolean;
+  /** ESC n */
+  /** ESC o */
+  /** ESC | */
+  /** ESC } */
+  /** ESC ~ */ setgLevel(level: number): boolean;
   /** ESC # 8 */ screenAlignmentPattern(): boolean;
 }
 
