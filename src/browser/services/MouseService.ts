@@ -100,9 +100,11 @@ export class MouseService implements IMouseService {
      */
     register(addDisposableListener(element, 'mousedown', (ev: MouseEvent) => this._handleMouseDown(ctx, ev)));
     register(addDisposableListener(element, 'wheel', (ev: WheelEvent) => this._handlePassiveWheel(ctx, ev), { passive: false }));
-    register(Gesture.addTarget(target.screenElement));
-    register(addDisposableListener(target.screenElement, GestureEventType.START, () => this._handleTouchStart()));
-    register(addDisposableListener(target.screenElement, GestureEventType.CHANGE, (e: IGestureEvent) => this._handleTouchChange(ctx, e)));
+    if (!this._shouldUseNativeTouchSelection(ctx)) {
+      register(Gesture.addTarget(target.screenElement));
+      register(addDisposableListener(target.screenElement, GestureEventType.START, () => this._handleTouchStart()));
+      register(addDisposableListener(target.screenElement, GestureEventType.CHANGE, (e: IGestureEvent) => this._handleTouchChange(ctx, e)));
+    }
   }
 
   private _sendEvent(ctx: IMouseBindContext, ev: MouseEvent | WheelEvent): boolean {
@@ -230,6 +232,11 @@ export class MouseService implements IMouseService {
   }
 
   private _handleMouseDown(ctx: IMouseBindContext, ev: MouseEvent): void {
+    if (this._shouldUseNativeTouchSelection(ctx) && !this._mouseStateService.areMouseEventsActive) {
+      ctx.focus();
+      return;
+    }
+
     ev.preventDefault();
     ctx.focus();
 
@@ -252,6 +259,10 @@ export class MouseService implements IMouseService {
     if (ctx.requestedEvents.mousedrag) {
       ctx.target.document.addEventListener('mousemove', ctx.requestedEvents.mousedrag);
     }
+  }
+
+  private _shouldUseNativeTouchSelection(ctx: IMouseBindContext): boolean {
+    return ctx.target.element.classList.contains('xterm-native-touch-selection');
   }
 
   private _handlePassiveWheel(ctx: IMouseBindContext, ev: WheelEvent): false | void {

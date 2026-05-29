@@ -60,6 +60,12 @@ import { Emitter, EventUtils, type IEvent } from 'common/Event';
 import { addDisposableListener } from 'browser/Dom';
 import { MutableDisposable, toDisposable } from 'common/Lifecycle';
 
+function shouldUseNativeTouchSelection(targetWindow: Window): boolean {
+  const navigator = targetWindow.navigator as Navigator & { maxTouchPoints?: number };
+  return (/iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints ?? 0) > 1))
+    && (targetWindow.matchMedia?.('(hover: none) and (pointer: coarse)').matches ?? true);
+}
+
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
   public element: HTMLElement | undefined;
@@ -349,15 +355,16 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     const cellWidth = this._renderService.dimensions.css.cell.width * width;
     const cursorTop = this.buffer.y * this._renderService.dimensions.css.cell.height;
     const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
+    const useNativeTouchSelection = this.element?.classList.contains('xterm-native-touch-selection');
 
     // Sync the textarea to the exact position of the composition view so the IME knows where the
     // text is.
     this.textarea.style.left = cursorLeft + 'px';
     this.textarea.style.top = cursorTop + 'px';
-    this.textarea.style.width = cellWidth + 'px';
-    this.textarea.style.height = cellHeight + 'px';
+    this.textarea.style.width = (useNativeTouchSelection ? Math.max(cellWidth, 80) : cellWidth) + 'px';
+    this.textarea.style.height = (useNativeTouchSelection ? Math.max(cellHeight, 32) : cellHeight) + 'px';
     this.textarea.style.lineHeight = cellHeight + 'px';
-    this.textarea.style.zIndex = '-5';
+    this.textarea.style.zIndex = useNativeTouchSelection ? '10' : '-5';
   }
 
   /**
@@ -508,6 +515,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._document ?? (typeof window !== 'undefined') ? window.document : null as any
     ));
     this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
+    this.element.classList.toggle('xterm-native-touch-selection', shouldUseNativeTouchSelection(this._coreBrowserService.window));
 
     this._register(addDisposableListener(this.textarea, 'focus', (ev: FocusEvent) => this._handleTextAreaFocus(ev)));
     this._register(addDisposableListener(this.textarea, 'blur', () => this._handleTextAreaBlur()));
@@ -615,7 +623,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }));
 
     this._register(this._instantiationService.createInstance(BufferDecorationRenderer, this.screenElement));
-    this._register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
+    this._register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => {
+      if (this.element!.classList.contains('xterm-native-touch-selection')) {
+        return;
+      }
+      this._selectionService!.handleMouseDown(e);
+    }));
 
     // apply mouse event classes set by escape codes before terminal was attached
     if (this.mouseStateService.areMouseEventsActive && !this.options.mouseEventsRequireAlt) {
@@ -1026,6 +1039,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
+    if (ev.inputType === 'insertFromPaste' && this.textarea?.value) {
+      paste(this.textarea.value, this.textarea, this.coreService, this.optionsService);
+      return true;
+    }
+
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
     // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679

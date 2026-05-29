@@ -118,6 +118,11 @@ const xtermjsTheme = {
   white: '#F8F8F8',
   brightWhite: '#FFFFFF'
 } satisfies ITheme;
+
+function hasCoarsePrimaryPointer(): boolean {
+  return window.matchMedia?.('(hover: none) and (pointer: coarse)').matches ?? false;
+}
+
 function setPadding(): void {
   term!.element!.style.padding = parseInt(paddingElement.value, 10).toString() + 'px';
   addons.fit.instance!.fit();
@@ -242,11 +247,13 @@ if (document.location.pathname === '/test') {
   controlBar.setTabVisible('addon-serialize', true);
   controlBar.setTabVisible('addon-web-fonts', true);
   controlBar.setTabVisible('addon-web-links', !!addons.webLinks.instance);
-  controlBar.setTabVisible('addon-webgl', true);
-  addonWebglWindow.setTextureAtlas(addons.webgl.instance!.textureAtlas!);
-  addons.webgl.instance!.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
-  addons.webgl.instance!.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
-  addons.webgl.instance!.onRemoveTextureAtlasCanvas(e => addonWebglWindow.removeTextureAtlas(e));
+  controlBar.setTabVisible('addon-webgl', !!addons.webgl.instance);
+  if (addons.webgl.instance) {
+    addonWebglWindow.setTextureAtlas(addons.webgl.instance.textureAtlas!);
+    addons.webgl.instance.onChangeTextureAtlas(e => addonWebglWindow.setTextureAtlas(e));
+    addons.webgl.instance.onAddTextureAtlasCanvas(e => addonWebglWindow.appendTextureAtlas(e));
+    addons.webgl.instance.onRemoveTextureAtlasCanvas(e => addonWebglWindow.removeTextureAtlas(e));
+  }
 
   paddingElement.value = '0';
   addDomListener(paddingElement, 'change', setPadding);
@@ -304,10 +311,12 @@ function createTerminal(): Terminal {
   addons.progress.instance = new ProgressAddon();
   addons.unicodeGraphemes.instance = new UnicodeGraphemesAddon();
   addons.clipboard.instance = new ClipboardAddon();
-  try {  // try to start with webgl renderer (might throw on older safari/webkit)
-    addons.webgl.instance = new WebglAddon();
-  } catch (e) {
-    console.warn(e);
+  if (!hasCoarsePrimaryPointer()) {
+    try {  // try to start with webgl renderer (might throw on older safari/webkit)
+      addons.webgl.instance = new WebglAddon();
+    } catch (e) {
+      console.warn(e);
+    }
   }
   addons.webLinks.instance = new WebLinksAddon();
   addons.webFonts.instance = new WebFontsAddon();

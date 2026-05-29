@@ -46,6 +46,7 @@ export function copyHandler(ev: ClipboardEvent, selectionService: ISelectionServ
 export function handlePasteEvent(ev: ClipboardEvent, textarea: HTMLTextAreaElement, coreService: ICoreService, optionsService: IOptionsService): void {
   ev.stopPropagation();
   if (ev.clipboardData) {
+    ev.preventDefault();
     const text = ev.clipboardData.getData('text/plain');
     paste(text, textarea, coreService, optionsService);
   }

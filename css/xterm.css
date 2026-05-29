@@ -76,6 +76,14 @@
     resize: none;
 }
 
+.xterm .xterm-char-measure-element,
+.xterm .xterm-width-cache-measure-container {
+    position: absolute;
+    visibility: hidden;
+    left: -9999em;
+    top: 0;
+}
+
 .xterm .composition-view {
     /* TODO: Composition position got messed up somewhere */
     background: #000;
@@ -113,6 +121,39 @@
     position: absolute;
     left: 0;
     top: 0;
+}
+
+.xterm.xterm-native-touch-selection,
+.xterm.xterm-native-touch-selection .xterm-screen,
+.xterm.xterm-native-touch-selection .xterm-rows,
+.xterm.xterm-native-touch-selection .xterm-rows * {
+    -webkit-user-select: text !important;
+    user-select: text !important;
+    -webkit-touch-callout: default;
+}
+
+.xterm.xterm-native-touch-selection .xterm-rows {
+    pointer-events: auto !important;
+}
+
+.xterm.xterm-native-touch-selection .xterm-rows span {
+    display: inline !important;
+}
+
+.xterm.xterm-native-touch-selection .xterm-helper-textarea {
+    opacity: 1;
+    background: transparent;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    caret-color: transparent;
+    outline: none;
+    text-shadow: none;
+    -webkit-appearance: none;
+    appearance: none;
+    -webkit-user-select: text;
+    user-select: text;
+    -webkit-touch-callout: default;
+    pointer-events: auto;
 }
 
 .xterm.enable-mouse-events {
