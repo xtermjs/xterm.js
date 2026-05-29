@@ -85,6 +85,8 @@ class DomMeasureStrategy extends BaseMeasureStategy {
     this._measureElement.classList.add('xterm-char-measure-element');
     this._measureElement.textContent = 'W'.repeat(DomMeasureStrategyConstants.REPEAT);
     this._measureElement.setAttribute('aria-hidden', 'true');
+    this._measureElement.style.position = 'absolute';
+    this._measureElement.style.visibility = 'hidden';
     this._measureElement.style.whiteSpace = 'pre';
     this._measureElement.style.fontKerning = 'none';
     this._parentElement.appendChild(this._measureElement);
