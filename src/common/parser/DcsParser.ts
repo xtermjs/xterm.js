@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from 'common/services/Types';
+import { IDisposable } from 'common/base/Lifecycle';
 import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from 'common/parser/Types';
 import { utf32ToString } from 'common/encoding/TextDecoder';
 import { Params } from 'common/parser/Params';

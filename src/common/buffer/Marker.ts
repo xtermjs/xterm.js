@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker } from 'common/services/Types';
+import type { IDisposable } from 'common/base/Lifecycle';
+import type { IMarker } from 'common/buffer/CellTypes';
 import { Emitter } from 'common/base/Event';
 import { dispose } from 'common/base/Lifecycle';
 

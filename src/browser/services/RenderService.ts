@@ -8,7 +8,7 @@ import { IRenderDebouncerWithCallback } from 'browser/Types';
 import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
 import { Disposable, MutableDisposable, toDisposable } from 'common/base/Lifecycle';
-import { DebouncedIdleTask } from 'common/services/TaskQueue';
+import { DebouncedIdleTask } from 'common/base/TaskQueue';
 import { IBufferService, ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'common/base/Event';
 

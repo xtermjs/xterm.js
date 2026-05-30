@@ -1,8 +1,24 @@
 {
-  "extends": ["../tsconfig.json"],
+  "extends": [
+    "../../tsconfig-library-base",
+    "../tsconfig.compiler.json"
+  ],
   "compilerOptions": {
-    "noEmit": true,
+    "outDir": "../../../out/common/parser",
     "rootDir": "."
   },
-  "include": ["./**/*"]
+  "include": [
+    "./**/*"
+  ],
+  "references": [
+    {
+      "path": "../base"
+    },
+    {
+      "path": "../buffer"
+    }
+  ],
+  "exclude": [
+    "**/*.test.ts"
+  ]
 }

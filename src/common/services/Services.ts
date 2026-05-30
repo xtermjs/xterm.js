@@ -6,32 +6,14 @@
 import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
 import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/services/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
+import type { IBufferResizeEvent, IBufferService as IBufferServiceApi } from 'common/buffer/BufferService';
 import { createDecorator } from 'common/services/ServiceRegistry';
 import type { Emitter, IEvent } from 'common/base/Event';
+import type { IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from 'common/input/UnicodeTypes';
 
+export type { IBufferResizeEvent } from 'common/buffer/BufferService';
+export interface IBufferService extends IBufferServiceApi {}
 export const IBufferService = createDecorator<IBufferService>('BufferService');
-export interface IBufferService {
-  serviceBrand: undefined;
-
-  readonly cols: number;
-  readonly rows: number;
-  readonly buffer: IBuffer;
-  readonly buffers: IBufferSet;
-  isUserScrolling: boolean;
-  onResize: IEvent<IBufferResizeEvent>;
-  onScroll: IEvent<number>;
-  scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
-  scrollLines(disp: number, suppressScrollEvent?: boolean): void;
-  resize(cols: number, rows: number): void;
-  reset(): void;
-}
-
-export interface IBufferResizeEvent {
-  cols: number;
-  rows: number;
-  colsChanged: boolean;
-  rowsChanged: boolean;
-}
 
 export const IMouseStateService = createDecorator<IMouseStateService>('MouseStateService');
 export interface IMouseStateService {
@@ -324,28 +306,7 @@ export interface IOscLinkService {
   getLinkData(linkId: number): IOscLinkData | undefined;
 }
 
-/*
- * Width and Grapheme_Cluster_Break properties of a character as a bit mask.
- *
- * bit 0: shouldJoin - should combine with preceding character.
- * bit 1..2: wcwidth - see UnicodeCharWidth.
- * bit 3..31: class of character (currently only 4 bits are used).
- *   This is used to determined grapheme clustering - i.e. which codepoints
- *   are to be combined into a single compound character.
- *
- * Use the UnicodeService static function createPropertyValue to create a
- * UnicodeCharProperties; use extractShouldJoin, extractWidth, and
- * extractCharKind to extract the components.
- */
-export type UnicodeCharProperties = number;
-
-/**
- * Width in columns of a character.
- * In a CJK context, "half-width" characters (such as Latin) are width 1,
- * while "full-width" characters (such as Kanji) are 2 columns wide.
- * Combining characters (such as accents) are width 0.
- */
-export type UnicodeCharWidth = 0 | 1 | 2;
+export type { UnicodeCharProperties, UnicodeCharWidth, IUnicodeVersionProvider } from 'common/input/UnicodeTypes';
 
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
@@ -369,12 +330,6 @@ export interface IUnicodeService {
    * If preceding != 0, it is the return code from the previous character;
    * in that case the result specifies if the characters should be joined.
    */
-  charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
-}
-
-export interface IUnicodeVersionProvider {
-  readonly version: string;
-  wcwidth(ucs: number): UnicodeCharWidth;
   charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties;
 }
 

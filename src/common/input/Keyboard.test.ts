@@ -1,7 +1,7 @@
 
 import { assert } from 'chai';
 import { evaluateKeyboardEvent } from 'common/input/Keyboard';
-import { IKeyboardResult, IKeyboardEvent } from 'common/services/Types';
+import { IKeyboardResult, IKeyboardEvent } from 'common/input/KeyboardTypes';
 
 /**
  * A helper function for testing which allows passing in a partial event and defaults will be filled

@@ -1,8 +1,21 @@
 {
-  "extends": ["../tsconfig.json"],
+  "extends": [
+    "../../tsconfig-library-base",
+    "../tsconfig.compiler.json"
+  ],
   "compilerOptions": {
-    "noEmit": true,
+    "outDir": "../../../out/common/encoding",
     "rootDir": "."
   },
-  "include": ["./**/*"]
+  "include": [
+    "./**/*"
+  ],
+  "references": [
+    {
+      "path": "../base"
+    }
+  ],
+  "exclude": [
+    "**/*.test.ts"
+  ]
 }

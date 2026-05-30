@@ -3,14 +3,21 @@
  * @license MIT
  */
 
-import type { UnderlineStyle } from 'common/buffer/Constants';
 import type { IBufferSet } from 'common/buffer/Types';
 import type { IParams } from 'common/parser/Types';
 import type { IMouseStateService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
-import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
+import { IFunctionIdentifier } from '@xterm/xterm';
+import type { IDisposable } from 'common/base/Lifecycle';
+import type { ITerminalOptions } from 'common/base/TerminalOptions';
+import type { IColorRGB } from 'common/buffer/CellTypes';
 import type { IEvent } from 'common/base/Event';
 
+export type { IDisposable } from 'common/base/Lifecycle';
+export type { ITerminalOptions } from 'common/base/TerminalOptions';
+export type { CharData, IAttributeData, ICellData, IBufferLine, IExtendedAttrs, IMarker } from 'common/buffer/CellTypes';
 export type { ICharset } from 'common/data/Charsets';
+export type { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/input/KeyboardTypes';
+export type { UnicodeCharProperties, UnicodeCharWidth, IUnicodeVersionProvider } from 'common/input/UnicodeTypes';
 
 export interface ICoreTerminal {
   mouseStateService: IMouseStateService;
@@ -26,73 +33,21 @@ export interface ICoreTerminal {
   registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 }
 
-export interface IDisposable {
-  dispose(): void;
-}
-
-// TODO: The options that are not in the public API should be reviewed
-export interface ITerminalOptions extends IPublicTerminalOptions {
-  [key: string]: any;
-  convertEol?: boolean;
-  termName?: string;
-}
-
 export type CursorStyle = 'block' | 'underline' | 'bar';
 
 export type CursorInactiveStyle = 'outline' | 'block' | 'bar' | 'underline' | 'none';
 
 export type XtermListener = (...args: any[]) => void;
 
-/**
- * A keyboard event interface which does not depend on the DOM, KeyboardEvent implicitly extends
- * this event.
- */
-export interface IKeyboardEvent {
-  altKey: boolean;
-  ctrlKey: boolean;
-  shiftKey: boolean;
-  metaKey: boolean;
-  /** @deprecated See KeyboardEvent.keyCode */
-  keyCode: number;
-  key: string;
-  type: string;
-  code: string;
-}
-
 export interface IScrollEvent {
   position: number;
 }
-
-export const enum KeyboardResultType {
-  SEND_KEY,
-  SELECT_ALL,
-  PAGE_UP,
-  PAGE_DOWN
-}
-
-export interface IKeyboardResult {
-  type: KeyboardResultType;
-  cancel: boolean;
-  key: string | undefined;
-}
-
-export type CharData = [attr: number, char: string, width: number, code: number];
 
 export interface IColor {
   readonly css: string;
   readonly rgba: number; // 32-bit int with rgba in each byte
 }
-export type IColorRGB = [red: number, green: number, blue: number];
-
-export interface IExtendedAttrs {
-  ext: number;
-  underlineStyle: UnderlineStyle;
-  underlineColor: number;
-  underlineVariantOffset: number;
-  urlId: number;
-  clone(): IExtendedAttrs;
-  isEmpty(): boolean;
-}
+export type { IColorRGB } from 'common/buffer/CellTypes';
 
 /**
  * Tracks the current hyperlink. Since these are treated as extended attirbutes, these get passed on
@@ -105,136 +60,6 @@ export interface IOscLinkData {
   uri: string;
 }
 
-/**
- * An object that represents all attributes of a cell.
- */
-export interface IAttributeData {
-  /**
-   * "fg" is a 32-bit unsigned integer that stores the foreground color of the cell in the 24 least
-   * significant bits and additional flags in the remaining 8 bits.
-   */
-  fg: number;
-  /**
-   * "bg" is a 32-bit unsigned integer that stores the background color of the cell in the 24 least
-   * significant bits and additional flags in the remaining 8 bits.
-   */
-  bg: number;
-  /**
-   * "extended", aka "ext", stores extended attributes beyond those available in fg and bg. This
-   * data is optional on a cell and encodes less common data.
-   */
-  extended: IExtendedAttrs;
-
-  clone(): IAttributeData;
-
-  // flags
-  isInverse(): number;
-  isBold(): number;
-  isUnderline(): number;
-  isBlink(): number;
-  isInvisible(): number;
-  isItalic(): number;
-  isDim(): number;
-  isStrikethrough(): number;
-  isProtected(): number;
-  isOverline(): number;
-
-  /**
-   * The color mode of the foreground color which determines how to decode {@link getFgColor},
-   * possible values include {@link Attributes.CM_DEFAULT}, {@link Attributes.CM_P16},
-   * {@link Attributes.CM_P256} and {@link Attributes.CM_RGB}.
-   */
-  getFgColorMode(): number;
-  /**
-   * The color mode of the background color which determines how to decode {@link getBgColor},
-   * possible values include {@link Attributes.CM_DEFAULT}, {@link Attributes.CM_P16},
-   * {@link Attributes.CM_P256} and {@link Attributes.CM_RGB}.
-   */
-  getBgColorMode(): number;
-  isFgRGB(): boolean;
-  isBgRGB(): boolean;
-  isFgPalette(): boolean;
-  isBgPalette(): boolean;
-  isFgDefault(): boolean;
-  isBgDefault(): boolean;
-  isAttributeDefault(): boolean;
-
-  /**
-   * Gets an integer representation of the foreground color, how to decode the color depends on the
-   * color mode {@link getFgColorMode}.
-   */
-  getFgColor(): number;
-  /**
-   * Gets an integer representation of the background color, how to decode the color depends on the
-   * color mode {@link getBgColorMode}.
-   */
-  getBgColor(): number;
-
-  // extended attrs
-  hasExtendedAttrs(): number;
-  updateExtended(): void;
-  getUnderlineColor(): number;
-  getUnderlineColorMode(): number;
-  isUnderlineColorRGB(): boolean;
-  isUnderlineColorPalette(): boolean;
-  isUnderlineColorDefault(): boolean;
-  getUnderlineStyle(): number;
-  getUnderlineVariantOffset(): number;
-}
-
-/** Cell data */
-export interface ICellData extends IAttributeData {
-  content: number;
-  combinedData: string;
-  isCombined(): number;
-  getWidth(): number;
-  getChars(): string;
-  getCode(): number;
-  setFromCharData(value: CharData): void;
-  getAsCharData(): CharData;
-}
-
-/**
- * Interface for a line in the terminal buffer.
- */
-export interface IBufferLine {
-  length: number;
-  isWrapped: boolean;
-  get(index: number): CharData;
-  set(index: number, value: CharData): void;
-  loadCell(index: number, cell: ICellData): ICellData;
-  setCell(index: number, cell: ICellData): void;
-  setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
-  addCodepointToCell(index: number, codePoint: number, width: number): void;
-  insertCells(pos: number, n: number, ch: ICellData): void;
-  deleteCells(pos: number, n: number, fill: ICellData): void;
-  replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
-  resize(cols: number, fill: ICellData): boolean;
-  cleanupMemory(): number;
-  fill(fillCellData: ICellData, respectProtect?: boolean): void;
-  copyFrom(line: IBufferLine): void;
-  clone(): IBufferLine;
-  getTrimmedLength(): number;
-  getNoBgTrimmedLength(): number;
-  translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
-
-  /* direct access to cell attrs */
-  getWidth(index: number): number;
-  hasWidth(index: number): number;
-  getFg(index: number): number;
-  getBg(index: number): number;
-  hasContent(index: number): number;
-  getCodePoint(index: number): number;
-  isCombined(index: number): number;
-  getString(index: number): string;
-}
-
-export interface IMarker extends IDisposable {
-  readonly id: number;
-  readonly isDisposed: boolean;
-  readonly line: number;
-  onDispose: IEvent<void>;
-}
 export interface IModes {
   insertMode: boolean;
 }

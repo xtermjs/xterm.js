@@ -4,10 +4,12 @@
  */
 
 import { Disposable, MutableDisposable } from 'common/base/Lifecycle';
-import { IAttributeData } from 'common/services/Types';
+import type { IAttributeData } from 'common/buffer/CellTypes';
 import { Buffer } from 'common/buffer/Buffer';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IBufferService, ILogService, IOptionsService } from 'common/services/Services';
+import type { IBufferService } from 'common/buffer/BufferService';
+import type { IBufferOptionsService } from 'common/buffer/BufferOptions';
+import type { IBufferLogService } from 'common/buffer/BufferLog';
 import { Emitter } from 'common/base/Event';
 
 /**
@@ -28,9 +30,9 @@ export class BufferSet extends Disposable implements IBufferSet {
    * Create a new BufferSet for the given terminal.
    */
   constructor(
-    private readonly _optionsService: IOptionsService,
+    private readonly _optionsService: IBufferOptionsService,
     private readonly _bufferService: IBufferService,
-    private readonly _logService: ILogService
+    private readonly _logService: IBufferLogService
   ) {
     super();
     this.reset();

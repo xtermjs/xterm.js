@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IdleTaskQueue } from 'common/services/TaskQueue';
+import { IdleTaskQueue } from 'common/base/TaskQueue';
 import type { ILogService } from 'common/services/Services';
 
 // Work variables to avoid garbage collection.

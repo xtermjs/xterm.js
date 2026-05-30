@@ -4,7 +4,9 @@
  */
 
 import { UnicodeV6 } from 'common/input/UnicodeV6';
-import { IUnicodeService, IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
+import { IUnicodeService } from 'common/services/Services';
+import type { IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from 'common/input/UnicodeTypes';
+import { createPropertyValue, extractCharKind, extractShouldJoin, extractWidth } from 'common/input/UnicodeProperties';
 import { Emitter } from 'common/base/Event';
 
 export class UnicodeService implements IUnicodeService {
@@ -17,18 +19,10 @@ export class UnicodeService implements IUnicodeService {
   private readonly _onChange = new Emitter<string>();
   public readonly onChange = this._onChange.event;
 
-  public static extractShouldJoin(value: UnicodeCharProperties): boolean {
-    return (value & 1) !== 0;
-  }
-  public static extractWidth(value: UnicodeCharProperties): UnicodeCharWidth {
-    return ((value >> 1) & 0x3) as UnicodeCharWidth;
-  }
-  public static extractCharKind(value: UnicodeCharProperties): number {
-    return value >> 3;
-  }
-  public static createPropertyValue(state: number, width: number, shouldJoin: boolean = false): UnicodeCharProperties {
-    return ((state & 0xffffff) << 3) | ((width & 3) << 1) | (shouldJoin?1:0);
-  }
+  public static extractShouldJoin = extractShouldJoin;
+  public static extractWidth = extractWidth;
+  public static extractCharKind = extractCharKind;
+  public static createPropertyValue = createPropertyValue;
 
   constructor() {
     const defaultProvider = new UnicodeV6();

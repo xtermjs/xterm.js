@@ -10,7 +10,7 @@ import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from './Types';
 import { NULL_COLOR, channels, color, rgba } from 'common/services/Color';
 import { FourKeyMap } from 'common/base/MultiKeyMap';
-import { IdleTaskQueue } from 'common/services/TaskQueue';
+import { IdleTaskQueue } from 'common/base/TaskQueue';
 import { IColor } from 'common/services/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';

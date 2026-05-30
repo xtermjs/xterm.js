@@ -10,7 +10,7 @@ import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/encodi
 import { ParserState } from 'common/parser/Constants';
 import { Params } from 'common/parser/Params';
 import { OscHandler } from 'common/parser/OscParser';
-import { IDisposable } from 'common/services/Types';
+import type { IDisposable } from 'common/base/Lifecycle';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { ApcHandler } from 'common/parser/ApcParser';
 

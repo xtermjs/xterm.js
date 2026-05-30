@@ -1,8 +1,34 @@
 {
-  "extends": ["../tsconfig.json"],
+  "extends": [
+    "../../tsconfig-library-base",
+    "../tsconfig.compiler.json"
+  ],
   "compilerOptions": {
-    "noEmit": true,
+    "outDir": "../../../out/common/public",
     "rootDir": "."
   },
-  "include": ["./**/*"]
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../base"
+    },
+    {
+      "path": "../buffer"
+    },
+    {
+      "path": "../parser"
+    },
+    {
+      "path": "../services"
+    },
+    {
+      "path": "../terminal"
+    }
+  ],
+  "exclude": [
+    "**/*.test.ts"
+  ]
 }

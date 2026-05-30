@@ -54,7 +54,8 @@ flowchart BT
 
 ## TypeScript projects
 
-- **`common/tsconfig.json`** — composite build for all layers (resolves existing `buffer` ↔ `services` imports).
-- **`common/<layer>/tsconfig.json`** — per-layer config extending the root (`noEmit`) for tooling and future split into referenced composite projects.
+- **`common/tsconfig.json`** — solution root; references each layer project (no sources).
+- **`common/tsconfig.compiler.json`** — shared `lib`, `paths`, and `types` for layer projects.
+- **`common/<layer>/tsconfig.json`** — composite project with `references` matching the dependency graph above. Test files (`**/*.test.ts`) are excluded from composite builds; unit tests compile via esbuild.
 
-Enforcing one-way project references at compile time (separate `out` per layer) is follow-up work once `Types` and buffer service interfaces are decoupled.
+Buffer-layer code depends on `buffer/BufferService`, `buffer/BufferOptions`, and `buffer/BufferLog` instead of `services` so the `buffer` project does not reference `services`.

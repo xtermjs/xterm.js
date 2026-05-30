@@ -1,0 +1,28 @@
+{
+  "compilerOptions": {
+    "lib": [
+      "es2015",
+      "es2016.Array.Include",
+      "es2019.string",
+      "es2021.weakref",
+      "dom"
+    ],
+    "types": [
+      "../../node_modules/@types/mocha"
+    ],
+    "paths": {
+      "@xterm/xterm": ["../../typings/xterm.d.ts"],
+      "common/base/*": ["./base/*"],
+      "common/encoding/*": ["./encoding/*"],
+      "common/data/*": ["./data/*"],
+      "common/buffer/*": ["./buffer/*"],
+      "common/parser/*": ["./parser/*"],
+      "common/input/*": ["./input/*"],
+      "common/services/*": ["./services/*"],
+      "common/terminal/*": ["./terminal/*"],
+      "common/public/*": ["./public/*"],
+      "common/*": ["./*"],
+      "*": ["../*"]
+    }
+  }
+}
