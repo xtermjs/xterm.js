@@ -1,9 +1,30 @@
 {
-  "extends": [
-    "../../tsconfig-library-base",
-    "../tsconfig.compiler.json"
-  ],
+  "extends": "../../tsconfig-library-base",
   "compilerOptions": {
+    "lib": [
+      "es2015",
+      "es2016.Array.Include",
+      "es2019.string",
+      "es2021.weakref",
+      "dom"
+    ],
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ],
+    "paths": {
+      "@xterm/xterm": ["../../../typings/xterm.d.ts"],
+      "common/base/*": ["../base/*"],
+      "common/encoding/*": ["../encoding/*"],
+      "common/data/*": ["../data/*"],
+      "common/buffer/*": ["../buffer/*"],
+      "common/parser/*": ["../parser/*"],
+      "common/input/*": ["../input/*"],
+      "common/services/*": ["./*"],
+      "common/terminal/*": ["../terminal/*"],
+      "common/public/*": ["../public/*"],
+      "common/*": ["../*"],
+      "*": ["../../*"]
+    },
     "outDir": "../../../out/common/services",
     "rootDir": "."
   },
@@ -11,27 +32,15 @@
     "./**/*",
     "../../../typings/xterm.d.ts"
   ],
-  "references": [
-    {
-      "path": "../base"
-    },
-    {
-      "path": "../encoding"
-    },
-    {
-      "path": "../data"
-    },
-    {
-      "path": "../buffer"
-    },
-    {
-      "path": "../parser"
-    },
-    {
-      "path": "../input"
-    }
-  ],
   "exclude": [
     "**/*.test.ts"
+  ],
+  "references": [
+    { "path": "../base" },
+    { "path": "../encoding" },
+    { "path": "../data" },
+    { "path": "../buffer" },
+    { "path": "../parser" },
+    { "path": "../input" }
   ]
 }

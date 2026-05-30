@@ -55,7 +55,6 @@ flowchart BT
 ## TypeScript projects
 
 - **`common/tsconfig.json`** — solution root; references each layer project (no sources).
-- **`common/tsconfig.compiler.json`** — shared `lib`, `paths`, and `types` for layer projects.
-- **`common/<layer>/tsconfig.json`** — composite project with `references` matching the dependency graph above. Test files (`**/*.test.ts`) are excluded from composite builds; unit tests compile via esbuild.
+- **`common/<layer>/tsconfig.json`** — self-contained composite project (`lib`, `paths`, `types`, `references`, `outDir`). Test files (`**/*.test.ts`) are excluded from composite builds; unit tests compile via esbuild.
 
 Buffer-layer code depends on `buffer/BufferService`, `buffer/BufferOptions`, and `buffer/BufferLog` instead of `services` so the `buffer` project does not reference `services`.
