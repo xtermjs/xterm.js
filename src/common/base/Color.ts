@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IColor, IColorRGB } from 'common/services/Types';
+import type { IColor } from 'common/base/ColorTypes';
+import type { IColorRGB } from 'common/base/ColorTypes';
 
 let $r = 0;
 let $g = 0;

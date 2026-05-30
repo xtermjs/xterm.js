@@ -5,7 +5,7 @@
 
 import { IBufferCellPosition, ILink, ILinkDecorations, ILinkWithState, ILinkifier2, ILinkifierEvent } from 'browser/Types';
 import { Disposable, dispose, toDisposable } from 'common/base/Lifecycle';
-import { IDisposable } from 'common/services/Types';
+import type { IDisposable } from 'common/base/Lifecycle';
 import { IBufferService } from 'common/services/Services';
 import { ILinkProviderService, IMouseCoordsService, IRenderService } from './services/Services';
 import { Emitter } from 'common/base/Event';

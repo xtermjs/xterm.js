@@ -5,7 +5,8 @@
 
 import { assert } from 'chai';
 import { InputHandler } from 'common/terminal/InputHandler';
-import { IBufferLine, IAttributeData, IColorEvent, ColorRequestType, SpecialColorIndex } from 'common/services/Types';
+import type { IBufferLine, IAttributeData } from 'common/buffer/CellTypes';
+import { IColorEvent, ColorRequestType, SpecialColorIndex } from 'common/terminal/InputHandlerTypes';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';

@@ -8,7 +8,7 @@ import { IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { Attributes, FgFlags } from 'common/buffer/Constants';
 import { Disposable, toDisposable } from 'common/base/Lifecycle';
-import { IColor } from 'common/services/Types';
+import type { IColor } from 'common/base/ColorTypes';
 import { Terminal } from '@xterm/xterm';
 import { RenderModelConstants } from './RenderModel';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';

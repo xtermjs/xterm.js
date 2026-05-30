@@ -5,7 +5,7 @@
 
 import { Terminal } from '@xterm/xterm';
 import { ITerminal } from 'browser/Types';
-import { IDisposable } from 'common/services/Types';
+import type { IDisposable } from 'common/base/Lifecycle';
 import type { IEvent } from 'common/base/Event';
 
 export interface IDimensions {

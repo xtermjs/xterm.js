@@ -19,6 +19,9 @@
     "./**/*",
     "../../typings/xterm.d.ts"
   ],
+  "exclude": [
+    "**/*.test.ts"
+  ],
   "references": [
     { "path": "../common" }
   ]

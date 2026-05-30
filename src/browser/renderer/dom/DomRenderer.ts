@@ -12,7 +12,7 @@ import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateMan
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
-import { color } from 'common/services/Color';
+import { color } from 'common/base/Color';
 import { Disposable, toDisposable } from 'common/base/Lifecycle';
 import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from 'common/services/Services';
 import { Emitter } from 'common/base/Event';

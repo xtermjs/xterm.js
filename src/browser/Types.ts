@@ -3,10 +3,13 @@
  * @license MIT
  */
 
-import { CharData, IColor, ICoreTerminal, ITerminalOptions } from 'common/services/Types';
+import type { CharData } from 'common/buffer/CellTypes';
+import type { IColor } from 'common/base/ColorTypes';
+import type { ICoreTerminal } from 'common/terminal/CoreTerminalTypes';
+import type { ITerminalOptions } from 'common/services/Services';
 import { IBuffer } from 'common/buffer/Types';
 import { IDisposable, IRenderDimensions as IRenderDimensionsApi, Terminal as ITerminalApi } from '@xterm/xterm';
-import { channels, css } from 'common/services/Color';
+import { channels, css } from 'common/base/Color';
 import type { IEvent } from 'common/base/Event';
 
 /**

@@ -7,7 +7,7 @@ import { ICharAtlasConfig } from './Types';
 import { Attributes } from 'common/buffer/Constants';
 import { ITerminalOptions } from '@xterm/xterm';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
-import { NULL_COLOR } from 'common/services/Color';
+import { NULL_COLOR } from 'common/base/Color';
 
 export function generateConfig(deviceCellWidth: number, deviceCellHeight: number, deviceCharWidth: number, deviceCharHeight: number, options: Required<ITerminalOptions>, colors: ReadonlyColorSet, devicePixelRatio: number, deviceMaxTextureSize: number, customGlyphs: boolean = true): ICharAtlasConfig {
   // null out some fields that don't matter

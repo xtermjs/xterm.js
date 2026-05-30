@@ -4,7 +4,12 @@
  */
 
 import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
-import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/services/Types';
+import type { IAttributeData } from 'common/buffer/CellTypes';
+import type { ICharset } from 'common/data/Charsets';
+import type { IColor } from 'common/base/ColorTypes';
+import type { IDisposable } from 'common/base/Lifecycle';
+import type { IWindowOptions } from 'common/input/WindowOptions';
+import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IKittyKeyboardState, IModes, IOscLinkData } from 'common/services/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import type { IBufferResizeEvent, IBufferService as IBufferServiceApi } from 'common/buffer/BufferService';
 import { createDecorator } from 'common/services/ServiceRegistry';
@@ -238,7 +243,7 @@ export interface ITerminalOptions {
   vtExtensions?: IVtExtensions;
 
   [key: string]: any;
-  termName: string;
+  termName?: string;
 }
 
 export interface ITheme {

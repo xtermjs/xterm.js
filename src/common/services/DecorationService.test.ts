@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { DecorationLineCache, DecorationService } from './DecorationService';
-import { IMarker } from 'common/services/Types';
+import type { IMarker } from 'common/buffer/CellTypes';
 import { Disposable } from 'common/base/Lifecycle';
 import { Emitter } from 'common/base/Event';
 import { MockLogService, MockBufferService, MockOptionsService } from 'common/terminal/TestUtils.test';

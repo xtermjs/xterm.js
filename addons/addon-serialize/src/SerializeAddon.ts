@@ -7,7 +7,8 @@
 
 import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
-import { IAttributeData, IColor } from 'common/services/Types';
+import type { IAttributeData } from 'common/buffer/CellTypes';
+import type { IColor } from 'common/base/ColorTypes';
 import { DEFAULT_ANSI_COLORS } from 'browser/Types';
 import { UnderlineStyle } from 'common/buffer/Constants';
 

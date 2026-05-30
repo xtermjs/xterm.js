@@ -9,7 +9,7 @@ import { assert } from 'chai';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
 import { MockUnicodeService, createCellData } from 'common/terminal/TestUtils.test';
-import { IMarker } from 'common/services/Types';
+import type { IMarker } from 'common/buffer/CellTypes';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

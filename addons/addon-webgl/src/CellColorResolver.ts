@@ -3,9 +3,9 @@ import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
 import { IDecorationService, IOptionsService } from 'common/services/Services';
-import { ICellData } from 'common/services/Types';
+import type { ICellData } from 'common/buffer/CellTypes';
 import { Terminal } from '@xterm/xterm';
-import { rgba } from 'common/services/Color';
+import { rgba } from 'common/base/Color';
 import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
 import { blockPatternCodepoints } from './customGlyphs/CustomGlyphDefinitions';
 

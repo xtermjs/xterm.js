@@ -24,7 +24,8 @@
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
 import { CoreTerminal } from 'common/terminal/CoreTerminal';
-import { IMarker, ITerminalOptions } from 'common/services/Types';
+import type { IMarker } from 'common/buffer/CellTypes';
+import type { ITerminalOptions } from 'common/services/Services';
 import { Emitter, EventUtils } from 'common/base/Event';
 
 export class Terminal extends CoreTerminal {

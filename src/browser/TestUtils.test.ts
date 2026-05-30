@@ -9,7 +9,11 @@ import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/rende
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from 'browser/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import type { ICircularList } from 'common/base/CircularList';
-import { IBufferLine, ICellData, IAttributeData, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/services/Types';
+import type { IBufferLine, ICellData, IAttributeData } from 'common/buffer/CellTypes';
+import type { ICharset } from 'common/data/Charsets';
+import type { ITerminalOptions } from 'common/services/Services';
+import type { XtermListener } from 'common/terminal/CoreTerminalTypes';
+import { ColorIndex } from 'common/terminal/InputHandlerTypes';
 import { Buffer } from 'common/buffer/Buffer';
 import * as Browser from 'common/base/Platform';
 import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
@@ -17,7 +21,7 @@ import { IUnicodeService, IOptionsService, ICoreService, IMouseStateService } fr
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
-import { css } from 'common/services/Color';
+import { css } from 'common/base/Color';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { Emitter, type IEvent } from 'common/base/Event';
 

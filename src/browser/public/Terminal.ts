@@ -7,7 +7,7 @@ import * as Strings from 'browser/LocalizableStrings';
 import { CoreBrowserTerminal as TerminalCore } from 'browser/CoreBrowserTerminal';
 import { IBufferRange, ITerminal } from 'browser/Types';
 import { Disposable } from 'common/base/Lifecycle';
-import { ITerminalOptions } from 'common/services/Types';
+import type { ITerminalOptions } from 'common/services/Services';
 import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';

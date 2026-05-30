@@ -4,7 +4,7 @@
  */
 
 import { Disposable } from 'common/base/Lifecycle';
-import { IAttributeData, IBufferLine } from 'common/services/Types';
+import type { IAttributeData, IBufferLine } from 'common/buffer/CellTypes';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from 'common/services/Services';

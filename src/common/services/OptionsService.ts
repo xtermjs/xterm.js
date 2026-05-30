@@ -5,7 +5,8 @@
 
 import { Disposable, toDisposable } from 'common/base/Lifecycle';
 import { isMac } from 'common/base/Platform';
-import { CursorStyle, IDisposable } from 'common/services/Types';
+import type { IDisposable } from 'common/base/Lifecycle';
+import { CursorStyle } from 'common/services/Types';
 import { FontWeight, IOptionsService, ITerminalOptions } from 'common/services/Services';
 import { Emitter } from 'common/base/Event';
 

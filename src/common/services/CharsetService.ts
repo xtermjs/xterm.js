@@ -4,7 +4,7 @@
  */
 
 import { ICharsetService } from 'common/services/Services';
-import { ICharset } from 'common/services/Types';
+import type { ICharset } from 'common/data/Charsets';
 
 export class CharsetService implements ICharsetService {
   public serviceBrand: any;

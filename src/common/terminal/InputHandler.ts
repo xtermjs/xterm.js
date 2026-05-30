@@ -4,7 +4,10 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/services/Types';
+import type { IAttributeData } from 'common/buffer/CellTypes';
+import type { IDisposable } from 'common/base/Lifecycle';
+import type { IWindowOptions } from 'common/input/WindowOptions';
+import { IInputHandler, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/terminal/InputHandlerTypes';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';

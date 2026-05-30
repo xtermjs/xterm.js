@@ -11,7 +11,8 @@ import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 
 import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from 'browser/services/Services';
 import { Disposable, MutableDisposable, toDisposable } from 'common/base/Lifecycle';
 import * as Browser from 'common/base/Platform';
-import { IBufferLine, ICellData, IDisposable } from 'common/services/Types';
+import type { IBufferLine, ICellData } from 'common/buffer/CellTypes';
+import type { IDisposable } from 'common/base/Lifecycle';
 import { getRangeLength } from 'common/buffer/BufferRange';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';

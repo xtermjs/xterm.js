@@ -4,7 +4,7 @@
  */
 
 import { IColorContrastCache } from 'browser/Types';
-import { IColor } from 'common/services/Types';
+import type { IColor } from 'common/base/ColorTypes';
 import { TwoKeyMap } from 'common/base/MultiKeyMap';
 
 export class ColorContrastCache implements IColorContrastCache {

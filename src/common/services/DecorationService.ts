@@ -5,11 +5,11 @@
 
 import type { ICircularList, IDeleteEvent, IInsertEvent } from 'common/base/CircularList';
 import { MicrotaskTimer } from 'common/base/Async';
-import { css } from 'common/services/Color';
+import { css } from 'common/base/Color';
 import { Disposable, DisposableStore, MutableDisposable, toDisposable } from 'common/base/Lifecycle';
+import type { IColor } from 'common/base/ColorTypes';
 import { IBufferService, IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
 import { SortedList } from 'common/services/SortedList';
-import { IColor } from 'common/services/Types';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from 'common/base/Event';
 

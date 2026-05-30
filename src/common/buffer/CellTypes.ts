@@ -7,9 +7,9 @@ import type { UnderlineStyle } from 'common/buffer/Constants';
 import type { IDisposable } from 'common/base/Lifecycle';
 import type { IEvent } from 'common/base/Event';
 
-export type CharData = [attr: number, char: string, width: number, code: number];
+export type { IColorRGB } from 'common/base/ColorTypes';
 
-export type IColorRGB = [red: number, green: number, blue: number];
+export type CharData = [attr: number, char: string, width: number, code: number];
 
 export interface IExtendedAttrs {
   ext: number;
