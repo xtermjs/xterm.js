@@ -12,7 +12,11 @@
       "../../node_modules/@types/node"
     ],
     "paths": {
-      "common/*": [ "./../common/*" ],
+      "common/*": [
+        "./../common/primitives/*",
+        "./../common/runtime/*",
+        "./../common/*"
+      ],
       "*": [ "./../*" ]
     }
   },

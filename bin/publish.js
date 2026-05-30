@@ -81,7 +81,7 @@ function checkAndPublishPackage(packageDir, repoCommit, peerDependencies, update
 
   // Update Version.ts with the new version
   if (updateVersionTs) {
-    const versionTsPath = path.join(packageDir, 'src/common/Version.ts');
+    const versionTsPath = path.join(packageDir, 'src/common/primitives/Version.ts');
     const versionTsContent = fs.readFileSync(versionTsPath, 'utf8');
     const updatedVersionTs = versionTsContent.replace(
       /export const XTERM_VERSION = '[^']+';/,

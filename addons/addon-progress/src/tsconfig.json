@@ -16,6 +16,8 @@
     ],
     "paths": {
       "common/*": [
+        "../../../src/common/primitives/*",
+        "../../../src/common/runtime/*",
         "../../../src/common/*"
       ],
       "browser/*": [

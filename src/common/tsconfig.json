@@ -12,12 +12,18 @@
       "../../node_modules/@types/mocha"
     ],
     "paths": {
-      "common/*": [ "./../common/*" ],
+      "common/*": [
+        "./primitives/*",
+        "./runtime/*",
+        "./*"
+      ],
       "*": [ "./../*" ]
     }
   },
   "include": [
-    "./**/*",
+    "./primitives/**/*",
+    "./runtime/**/*",
+    "./*.ts",
     "../../typings/xterm.d.ts"
   ]
 }

@@ -53,7 +53,7 @@ import { C0, C1ESCAPED } from 'common/data/EscapeSequences';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';
-import { WindowsOptionsReportType } from '../common/InputHandler';
+import { WindowsOptionsReportType } from 'common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
 import { Emitter, EventUtils, type IEvent } from 'common/Event';

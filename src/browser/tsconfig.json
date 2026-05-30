@@ -11,7 +11,11 @@
     ],
     "skipLibCheck": true,
     "paths": {
-      "common/*": [ "./../common/*" ],
+      "common/*": [
+        "./../common/primitives/*",
+        "./../common/runtime/*",
+        "./../common/*"
+      ],
       "*": [ "./../*" ]
     }
   },

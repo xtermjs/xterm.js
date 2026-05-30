@@ -13,7 +13,11 @@
     ],
     "paths": {
       "browser/*": [ "../../../src/browser/*" ],
-      "common/*": [ "../../../src/common/*" ],
+      "common/*": [
+        "../../../src/common/primitives/*",
+        "../../../src/common/runtime/*",
+        "../../../src/common/*"
+      ],
       "@xterm/addon-image": [ "../typings/addon-image.d.ts" ],
       "*": [ "./*" ]
     }
