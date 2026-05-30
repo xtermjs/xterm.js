@@ -1,48 +1,65 @@
 # Browser folder rearchitecture
 
-This document proposes splitting `src/browser/` into composite TypeScript projects with enforced dependencies, mirroring the layered layout planned for `src/common/`.
+Composite TypeScript projects with enforced dependencies, mirroring the layered layout planned for `src/common/`.
 
-## Dependency graph
+## Platform layer rule
+
+A module is **platform** only if **no class** in that project has a **service** injected via its constructor. That includes:
+
+- Common services (`@IBufferService`, `@IOptionsService`, `@ICoreService`, `@IInstantiationService`, etc.)
+- Browser services (`@ICoreBrowserService`, `@IRenderService`, `@IThemeService`, `@ICharSizeService`, …)
+
+Passing a service into a **function** (e.g. `moveToCellSequence(…, bufferService)`) is fine. `new TextBlinkStateManager(…, coreBrowserService, optionsService)` is not — that class belongs in integration.
+
+Interface-only modules (`browser/selection/Types.ts`, `renderer/shared/Types.ts`) are platform. Implementations that take services are not.
+
+## Dependency graph (corrected)
 
 ```mermaid
 flowchart BT
-  subgraph platform["Platform layer — core building blocks"]
+  subgraph platform["Platform layer — no ctor service injection"]
     direction LR
     base["browser/base"]
     scrollable["browser/scrollable"]
-    selection["browser/selection"]
     input["browser/input"]
-    renderShared["browser/renderer/shared"]
-    renderDom["browser/renderer/dom"]
+    selectionTypes["browser/selection/types"]
+    renderCore["browser/renderer/core"]
+    decorStore["browser/decorations/store"]
 
     scrollable --> base
-    selection --> base
     input --> base
-    renderShared --> base
-    renderDom --> renderShared
-    renderDom --> base
+    selectionTypes --> base
+    renderCore --> base
+    decorStore --> base
   end
 
-  subgraph integration["Integration layer — stateful services and composition"]
+  subgraph integration["Integration layer — DI and wiring"]
     direction LR
     services["browser/services"]
+    renderer["browser/renderer"]
     decorations["browser/decorations"]
     terminal["browser/terminal"]
 
     services --> base
-    services --> selection
     services --> input
-    services --> renderShared
+    services --> selectionTypes
+    services --> renderCore
+    services --> decorStore
+    renderer --> services
+    renderer --> renderCore
+    renderer --> base
     decorations --> services
+    decorations --> decorStore
+    decorations --> renderCore
     terminal --> services
+    terminal --> renderer
     terminal --> decorations
     terminal --> input
-    terminal --> renderDom
     terminal --> scrollable
     terminal --> base
   end
 
-  subgraph api_layer["API layer — public API"]
+  subgraph api_layer["API layer"]
     public["browser/public"]
   end
 
@@ -52,68 +69,105 @@ flowchart BT
   public --> terminal
 ```
 
-Every arrow is a TypeScript project reference (`tsconfig` `references`). Lower layers must not import from higher layers.
+`browser/renderer` is **not** platform: it owns `DomRenderer`, `DomRendererRowFactory`, and `TextBlinkStateManager`, all of which take injected services.
 
-## Package contents
+## Constructor audit (current tree)
 
-### Platform layer
+### Platform-eligible
 
-| Project | Role | Source (current → target) |
+| Location | Type | Notes |
 | --- | --- | --- |
-| `browser/base` | DOM helpers, shared types, constants, theme/contrast utilities, **browser service interfaces** | `Dom.ts`, `Types.ts`, `LocalizableStrings.ts`, `ColorContrastCache.ts`, `TimeBasedDebouncer.ts`, `shared/`; extract interfaces from `services/Services.ts` |
-| `browser/scrollable` | Scrollbar / scrollable element widgets (VS Code–derived) | `scrollable/**` (already isolated; `touch.ts` imports `base/Dom`) |
-| `browser/selection` | Selection geometry model | `selection/**` |
-| `browser/input` | Pointer geometry and selection cursor motion | `input/Mouse.ts`, `input/MoveToCell.ts` |
-| `browser/renderer/shared` | Renderer-agnostic types and helpers | `renderer/shared/**` |
-| `browser/renderer/dom` | DOM row factory and renderer | `renderer/dom/**` |
+| `Dom.ts`, `Types.ts`, `LocalizableStrings.ts`, `ColorContrastCache.ts`, `TimeBasedDebouncer.ts`, `shared/` | classes / functions | no DI |
+| `scrollable/**` | widgets | `touch.ts` uses `Dom` only |
+| `input/Mouse.ts` | functions | pure DOM math |
+| `input/MoveToCell.ts` | functions | `IBufferService` passed as argument, not ctor-injected |
+| `selection/Types.ts` | interfaces | no classes with DI |
+| `renderer/shared/Constants.ts`, `RendererUtils.ts`, `Types.ts`, `SelectionRenderModel.ts` | classes | no DI |
+| `renderer/dom/WidthCache.ts` | class | canvas factory only, no services |
+| `decorations/ColorZoneStore.ts` | class | common types only, no DI |
 
-`browser/selection` and `browser/input` today depend only on `common/`. After `selection` is tied to `base`, it should depend on `browser/base` only for shared browser types (if any); `SelectionModel` can stay on `common` services alone.
+### Integration-only (ctor service injection)
 
-### Integration layer
-
-| Project | Role | Source (current → target) |
-| --- | --- | --- |
-| `browser/services` | Browser DI services and render debouncing | `services/**`, `RenderDebouncer.ts` |
-| `browser/decorations` | Buffer / overview decoration rendering | `decorations/**` (`ColorZoneStore` is common-only; renderers need services) |
-| `browser/terminal` | `CoreBrowserTerminal` and UI orchestration | `CoreBrowserTerminal.ts`, `Viewport.ts`, `Linkifier.ts`, `Clipboard.ts`, `AccessibilityManager.ts`, `OscLinkProvider.ts`, `input/CompositionHelper.ts` (moved — see below) |
-
-### API layer
-
-| Project | Role | Source |
-| --- | --- | --- |
-| `browser/public` | Public `Terminal` export | `public/Terminal.ts` |
-
-## Breaking upward dependencies
-
-A strict platform layer requires moving **interface-only** imports out of implementations:
-
-| Today | Change |
+| Location | Injected services (representative) |
 | --- | --- |
-| `renderer/shared/TextBlinkStateManager` → `browser/services/Services` | `ICoreBrowserService` (and related) live in `browser/base`; `TextBlinkStateManager` depends on `base` only |
-| `input/CompositionHelper` → `browser/services/Services` | Move `CompositionHelper` to `browser/terminal`; it wires IME UI to `IRenderService` at integration time |
-| `services/Services.ts` → `renderer/shared/Types`, `selection/Types` | Keep type-only imports, or duplicate minimal event types in `base` if needed to avoid `services` → `renderShared` for types only |
-| `services/RenderService` → `browser/RenderDebouncer` | Colocate `RenderDebouncer` under `services/` |
+| `selection/SelectionModel.ts` | `IBufferService` |
+| `input/CompositionHelper.ts` | `IBufferService`, `IOptionsService`, `ICoreService`, `IRenderService` |
+| `renderer/shared/TextBlinkStateManager.ts` | `ICoreBrowserService`, `IOptionsService` |
+| `renderer/dom/DomRendererRowFactory.ts` | `ICharacterJoinerService`, `IOptionsService`, `ICoreBrowserService`, `ICoreService`, `IDecorationService`, `IThemeService` |
+| `renderer/dom/DomRenderer.ts` | `IInstantiationService`, `ICharSizeService`, `IOptionsService`, `IBufferService`, `ICoreService`, `ICoreBrowserService`, `IThemeService`; creates `DomRendererRowFactory` via `IInstantiationService` |
+| `renderer/dom/DomRenderer` inner `CursorBlinkStateManager` | `ICoreBrowserService` |
+| `services/**` | common + browser services (all `@…` ctor params) |
+| `RenderDebouncer.ts` | `ICoreBrowserService` |
+| `decorations/BufferDecorationRenderer.ts`, `OverviewRulerRenderer.ts` | `IBufferService`, `ICoreBrowserService`, `IDecorationService`, `IRenderService`, `IThemeService`, … |
+| `Viewport.ts`, `Linkifier.ts`, `AccessibilityManager.ts`, `OscLinkProvider.ts` | multiple common + browser services |
+| `CoreBrowserTerminal.ts` | orchestrates service registration and renderer construction |
 
-## External importers
+`Clipboard.ts` has no class ctor DI; handlers receive `ISelectionService` at call sites — keep with `terminal`.
 
-Path alias `browser/*` → `src/browser/*` stays valid as files move (e.g. `browser/base/Types`). Addons and tests that import `browser/Types`, `browser/Dom`, etc. will need path updates when `base/` lands.
+## Target package layout
 
-## Umbrella project
+### Platform
 
-Replace the single `src/browser/tsconfig.json` with a solution-style config that references, in build order:
+| Project | Contents |
+| --- | --- |
+| `browser/base` | `Dom`, `Types`, `LocalizableStrings`, `ColorContrastCache`, `TimeBasedDebouncer`, `shared/`; browser **service interfaces** (extracted from `services/Services.ts`) |
+| `browser/scrollable` | `scrollable/**` |
+| `browser/input` | `Mouse.ts`, `MoveToCell.ts` only |
+| `browser/selection/types` | `selection/Types.ts` (or merge into `base` if preferred) |
+| `browser/renderer/core` | `renderer/shared/{Constants,RendererUtils,Types,SelectionRenderModel}.ts`, `renderer/dom/WidthCache.ts` |
+| `browser/decorations/store` | `ColorZoneStore.ts` |
 
-1. `base`, `scrollable`, `selection`, `input`, `renderer/shared`, `renderer/dom`
-2. `services`, `decorations`, `terminal`
-3. `public`
+`SelectionModel` moves to **`browser/services`** (only consumer is `SelectionService`).
 
-`tsconfig.all.json` continues to reference `src/browser` (umbrella) or lists each sub-project explicitly.
+`CompositionHelper` moves to **`browser/terminal`** (or `browser/input/ime` as integration sibling).
+
+`TextBlinkStateManager`, `DomRenderer`, `DomRendererRowFactory` move to **`browser/renderer`** (integration), depending on **`browser/services`**.
+
+### Integration
+
+| Project | Contents |
+| --- | --- |
+| `browser/services` | `services/**`, `selection/SelectionModel.ts`, `RenderDebouncer.ts` |
+| `browser/renderer` | `TextBlinkStateManager.ts`, `renderer/dom/DomRenderer.ts`, `DomRendererRowFactory.ts` (+ tests) |
+| `browser/decorations` | `BufferDecorationRenderer.ts`, `OverviewRulerRenderer.ts` |
+| `browser/terminal` | `CoreBrowserTerminal.ts`, `Viewport.ts`, `Linkifier.ts`, `Clipboard.ts`, `AccessibilityManager.ts`, `OscLinkProvider.ts`, `CompositionHelper.ts` |
+
+### API
+
+| Project | Contents |
+| --- | --- |
+| `browser/public` | `public/Terminal.ts` |
+
+## Build order
+
+1. `base`, `scrollable`, `input`, `selection/types`, `renderer/core`, `decorations/store`
+2. `services`
+3. `renderer`, `decorations`
+4. `terminal`
+5. `public`
+
+## Why `renderer/dom` is not platform
+
+`DomRenderer` (abbreviated):
+
+```ts
+constructor(
+  …,
+  @IInstantiationService instantiationService: IInstantiationService,
+  @ICharSizeService private readonly _charSizeService: ICharSizeService,
+  @IOptionsService private readonly _optionsService: IOptionsService,
+  @IBufferService private readonly _bufferService: IBufferService,
+  @ICoreService private readonly _coreService: ICoreService,
+  @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService,
+  @IThemeService private readonly _themeService: IThemeService
+) {
+  this._rowFactory = instantiationService.createInstance(DomRendererRowFactory, document);
+  this._textBlinkStateManager = this._register(new TextBlinkStateManager(…, this._coreBrowserService, this._optionsService));
+}
+```
+
+`DomRendererRowFactory` similarly injects `ICharacterJoinerService`, `ICoreBrowserService`, `IThemeService`, and other services. So **`renderer/dom` → `browser/services`** (and common services) today; the corrected graph places the whole DOM renderer stack in integration, with only `WidthCache` left in `renderer/core`.
 
 ## Parity with `common/`
 
-| Common layer | Browser analogue |
-| --- | --- |
-| Platform (`base` → `input`) | Platform (`base` → `renderer/dom`) |
-| Integration (`services`, `terminal`) | Integration (`services`, `decorations`, `terminal`) |
-| API (`public`) | API (`public`) |
-
-Browser adds UI-specific platform packages (`scrollable`, `renderer/*`, `selection`) that have no direct counterpart in headless/common-only code.
+Common platform modules contain algorithms and data structures without terminal service wiring. Browser platform modules are the same: DOM/scroll utilities, pointer math, renderer **primitives** (`WidthCache`, selection render geometry), and shared types — not renderers or IME helpers that pull `IRenderService` / `IThemeService` from DI.
