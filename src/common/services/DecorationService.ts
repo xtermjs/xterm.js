@@ -3,19 +3,15 @@
  * @license MIT
  */
 
+import type { IDeleteEvent, IInsertEvent } from 'common/CircularList';
+import { MicrotaskTimer } from 'common/Async';
 import { css } from 'common/Color';
 import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
 import { IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
-import { IColor, IBufferLine } from 'common/Types';
+import { IColor } from 'common/Types';
 import { Marker } from 'common/buffer/Marker';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from 'common/Event';
-
-// Work variables to avoid garbage collection
-let $xmin = 0;
-let $xmax = 0;
-let $ymin = 0;
-let $ymax = 0;
 
 export class DecorationService extends Disposable implements IDecorationService {
   public serviceBrand: any;
@@ -43,11 +39,18 @@ export class DecorationService extends Disposable implements IDecorationService 
   }
   private _firstDecoration: Decoration | undefined;
   private _lastDecoration: Decoration | undefined;
+  private _currentBuffer: IBuffer | undefined;
 
-  constructor(@ILogService private readonly _logService: ILogService) {
+  constructor(
+    @ILogService private readonly _logService: ILogService,
+    @IBufferService private readonly _bufferService: IBufferService
+  ) {
     super();
 
     this._register(toDisposable(() => this.reset()));
+    this._register(this._bufferService.buffers.onBufferActivate(() => {
+      this._currentBuffer = this._bufferService.buffer;
+    }));
   }
 
   public registerDecoration(options: IDecorationOptions): IDecoration | undefined {
@@ -101,25 +104,29 @@ export class DecorationService extends Disposable implements IDecorationService 
    * @deprecated
    */
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
-    let xmin = 0;
-    let xmax = 0;
-    let ymin = 0;
-    let ymax = 0;
-    for (const d of this.decorations) {
-      ymin = d.marker.line;
-      ymax = ymin + (d.options.height ?? 1);
-      if (line < ymin || line >= ymax) {
-        continue;
-      }
-      xmin = d.options.x ?? 0;
-      xmax = xmin + (d.options.width ?? 1);
-      if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
-        yield d;
+    const bline = this._currentBuffer?.lines.get(y);
+    if (! bline) { return; }
+    const lline = bline.logical();
+    for (const m of lline.markers) {
+      const d = m.payload;
+      if (d instanceof Decoration) {
+        const ymin = d.marker.line;
+        const ymax = ymin + (d.options.height ?? 1);
+        if (line < ymin || line >= ymax) {
+          continue;
+        }
+        const xmin = d.options.x ?? 0;
+        const xmax = xmin + (d.options.width ?? 1);
+        if (x >= xmin && x < xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
+          yield d;
+        }
       }
     }
   }
 
-  public forEachDecorationAtCellLine(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void, bline: IBufferLine): void {
+  public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void: void {
+    const bline = this._currentBuffer?.lines.get(y);
+    if (! bline) { return; }
     const lline = bline.logical();
     x += bline.startColumn;
     lline.forEachMarker((marker: IMarker) => {
@@ -133,23 +140,7 @@ export class DecorationService extends Disposable implements IDecorationService 
       }
     });
   }
-
-  public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
-    for (let d = this._firstDecoration; d; d = d.nextDecoration) {
-      $ymin = d.marker.line;
-      $ymax = $ymin + (d.options.height ?? 1);
-      if (line < $ymin || line >= $ymax) {
-        continue;
-      }
-      $xmin = d.options.x ?? 0;
-      $xmax = $xmin + (d.options.width ?? 1);
-      if (x >= $xmin && x < $xmax && (!layer || (d.options.layer ?? 'bottom') === layer)) {
-        callback(d);
-      }
-    }
-  }
 }
-
 
 class Decoration extends DisposableStore implements IInternalDecoration {
   public readonly marker: IMarker;
