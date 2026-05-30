@@ -221,6 +221,7 @@ export interface ICellData extends IAttributeData {
 
 export interface ILogicalLine {
   forEachMarker(callback: (marker: IMarker) => void): void;
+  markers: IterableIterator<IMarker>;
   reflowNeeded: boolean;
   isEmpty(): boolean;
 }
@@ -262,14 +263,8 @@ export interface IBufferLine {
 }
 
 export interface IMarker extends IDisposable {
-  /**
-   * @deprecated
-   */
   readonly id: number;
   readonly isDisposed: boolean;
-  /**
-   * @deprecated
-   */
   readonly line: number;
   onDispose: IEvent<void>;
   payload?: IDisposable;

@@ -588,10 +588,12 @@ export class Buffer extends Disposable implements IBuffer {
   public addMarker(y: number, x?: number, m?: Marker): Marker {
     const bline = this.lines.get(y) as BufferLine;
     if (bline._voffset < 0) {
-      const line0offset = (this.lines.get(0) as BufferLine)._voffset;
-      if (line0offset >= 0) {
-        bline._voffset = y + line0offset;
+      let line0offset = (this.lines.get(0) as BufferLine)._voffset;
+      if (line0offset < 0) {
+        line0offset = 0;
+        (this.lines.get(0) as BufferLine)._voffset = line0offset;
       }
+      bline._voffset = y + line0offset;
     }
     const marker = m ?? new Marker();
     marker.addToLine(this, bline, x ?? bline.startColumn);

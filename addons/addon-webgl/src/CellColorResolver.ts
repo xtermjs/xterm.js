@@ -3,7 +3,7 @@ import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
 import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
 import { IDecorationService, IOptionsService } from 'common/services/Services';
-import { ICellData, IBufferLine } from 'common/Types';
+import { ICellData } from 'common/Types';
 import { Terminal } from '@xterm/xterm';
 import { rgba } from 'common/Color';
 import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
@@ -43,7 +43,7 @@ export class CellColorResolver {
    * Resolves colors for the cell, putting the result into the shared {@link result}. This resolves
    * overrides, inverse and selection for the cell which can then be used to feed into the renderer.
    */
-  public resolve(line: IBufferLine, cell: ICellData, x: number, y: number, deviceCellWidth: number, deviceCellHeight: number): void {
+  public resolve(cell: ICellData, x: number, y: number, deviceCellWidth: number, deviceCellHeight: number): void {
     this.result.bg = cell.bg;
     this.result.fg = cell.fg;
     this.result.ext = cell.bg & BgFlags.HAS_EXTENDED ? cell.extended.ext : 0;
@@ -68,7 +68,7 @@ export class CellColorResolver {
       $variantOffset = ((x * deviceCellWidth) % 2) * 2 + ((y * deviceCellHeight) % 2);
     }
     // Apply decorations on the bottom layer
-    this._decorationService.forEachDecorationAtCellLine(x, y, 'bottom', d => {
+    this._decorationService.forEachDecorationAtCell(x, y, 'bottom', d => {
       if (d.backgroundColorRGB) {
         $bg = d.backgroundColorRGB.rgba >> 8 & Attributes.RGB_MASK;
         $hasBg = true;
@@ -77,7 +77,7 @@ export class CellColorResolver {
         $fg = d.foregroundColorRGB.rgba >> 8 & Attributes.RGB_MASK;
         $hasFg = true;
       }
-    }, line);
+    });
 
     // Apply the selection color if needed
     $isSelected = this._selectionRenderModel.isCellSelected(this._terminal, x, y);
@@ -175,7 +175,7 @@ export class CellColorResolver {
     }
 
     // Apply decorations on the top layer
-    this._decorationService.forEachDecorationAtCellLine(x, y, 'top', d => {
+    this._decorationService.forEachDecorationAtCell(x, y, 'top', d => {
       if (d.backgroundColorRGB) {
         $bg = d.backgroundColorRGB.rgba >> 8 & Attributes.RGB_MASK;
         $hasBg = true;
@@ -184,7 +184,7 @@ export class CellColorResolver {
         $fg = d.foregroundColorRGB.rgba >> 8 & Attributes.RGB_MASK;
         $hasFg = true;
       }
-    }, line);
+    });
 
     // Convert any overrides from rgba to the fg/bg packed format. This resolves the inverse flag
     // ahead of time in order to use the correct cache key

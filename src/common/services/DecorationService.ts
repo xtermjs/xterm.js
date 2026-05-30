@@ -3,12 +3,11 @@
  * @license MIT
  */
 
-import type { IDeleteEvent, IInsertEvent } from 'common/CircularList';
-import { MicrotaskTimer } from 'common/Async';
 import { css } from 'common/Color';
 import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
-import { IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
+import { IBufferService, IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
 import { IColor } from 'common/Types';
+import { IBuffer } from 'common/buffer/Types';
 import { Marker } from 'common/buffer/Marker';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from 'common/Event';
@@ -46,7 +45,7 @@ export class DecorationService extends Disposable implements IDecorationService 
     @IBufferService private readonly _bufferService: IBufferService
   ) {
     super();
-
+    this._currentBuffer = this._bufferService.buffer;
     this._register(toDisposable(() => this.reset()));
     this._register(this._bufferService.buffers.onBufferActivate(() => {
       this._currentBuffer = this._bufferService.buffer;
@@ -58,38 +57,58 @@ export class DecorationService extends Disposable implements IDecorationService 
       return undefined;
     }
     const decoration = new Decoration(options);
-    if (decoration) {
-      const markerDispose = decoration.marker.onDispose(() => decoration.dispose());
-      const listener = decoration.onDispose(() => {
-        listener.dispose();
-        if (decoration) {
-          // Remove from linked list
-          const previous = decoration.previousDecoration;
-          const next = decoration.nextDecoration;
-          if (previous) {
-            previous.nextDecoration = next;
-          } else {
-            this._firstDecoration = next;
+    const extraLineCount = (options.height || 1) - 1;
+    const buffer = (options.marker as Marker).buffer;
+    if (extraLineCount > 0 && buffer) {
+      const extraLineMarkers = new Array<IMarker>(extraLineCount);
+      const line = decoration.marker.line;
+      for (let i = 0; i < extraLineCount; i++) {
+        const extraMarker = buffer.addMarker(line + 1 + i);
+        extraMarker.payload = decoration;
+        extraMarker._startColumn += options.x || 0;
+        extraMarker.onDispose(() => {
+          const index = extraLineMarkers.indexOf(extraMarker);
+          extraLineMarkers.splice(index, 1);
+          if (extraLineMarkers.length === 0 && options.marker.isDisposed) {
+            decoration.dispose();
           }
-          if (next) {
-            next.previousDecoration = previous;
-          } else {
-            this._lastDecoration = previous;
-          }
-          this._onDecorationRemoved.fire(decoration);
-          markerDispose.dispose();
-        }
-      });
-      // insert decoration into linked list
-      decoration.previousDecoration = this._lastDecoration;
-      if (this._lastDecoration) {
-        this._lastDecoration.nextDecoration = decoration;
-      } else {
-        this._firstDecoration = decoration;
+        });
+        extraLineMarkers[i] = extraMarker;
       }
-      this._lastDecoration = decoration;
-      this._onDecorationRegistered.fire(decoration);
+      decoration.extraLineMarkers = extraLineMarkers;
     }
+    const markerDispose = decoration.marker.onDispose(() => {
+      if ((decoration.extraLineMarkers ?? 0) === 0) {
+        decoration.dispose();
+      }
+    });
+    const listener = decoration.onDispose(() => {
+      listener.dispose();
+      // Remove from linked list
+      const previous = decoration.previousDecoration;
+      const next = decoration.nextDecoration;
+      if (previous) {
+        previous.nextDecoration = next;
+      } else {
+        this._firstDecoration = next;
+      }
+      if (next) {
+        next.previousDecoration = previous;
+      } else {
+        this._lastDecoration = previous;
+      }
+      this._onDecorationRemoved.fire(decoration);
+      markerDispose.dispose();
+    });
+    // insert decoration into linked list
+    decoration.previousDecoration = this._lastDecoration;
+    if (this._lastDecoration) {
+      this._lastDecoration.nextDecoration = decoration;
+    } else {
+      this._firstDecoration = decoration;
+    }
+    this._lastDecoration = decoration;
+    this._onDecorationRegistered.fire(decoration);
     return decoration;
   }
 
@@ -101,10 +120,9 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   /**
    * Only used in tests.
-   * @deprecated
    */
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
-    const bline = this._currentBuffer?.lines.get(y);
+    const bline = this._currentBuffer?.lines.get(line);
     if (! bline) { return; }
     const lline = bline.logical();
     for (const m of lline.markers) {
@@ -124,8 +142,8 @@ export class DecorationService extends Disposable implements IDecorationService 
     }
   }
 
-  public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void: void {
-    const bline = this._currentBuffer?.lines.get(y);
+  public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
+    const bline = this._currentBuffer?.lines.get(line);
     if (! bline) { return; }
     const lline = bline.logical();
     x += bline.startColumn;
@@ -144,6 +162,8 @@ export class DecorationService extends Disposable implements IDecorationService 
 
 class Decoration extends DisposableStore implements IInternalDecoration {
   public readonly marker: IMarker;
+  // markers for lower lines if height > 1.
+  public extraLineMarkers: IMarker[] | undefined;
   public element: HTMLElement | undefined;
   public nextDecoration: Decoration | undefined;
   public previousDecoration: Decoration | undefined;

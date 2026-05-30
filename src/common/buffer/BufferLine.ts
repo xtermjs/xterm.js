@@ -109,6 +109,24 @@ export class LogicalLine implements ILogicalLine {
     }
   }
 
+  public get markers(): IterableIterator<IMarker> {
+    const iterator = {
+      current: this._firstMarker,
+      next: (): IteratorResult<IMarker> => {
+        const m = iterator.current;
+        if (m) {
+          iterator.current = m._nextMarker;
+          return { done: false, value: m };
+        }
+        return { done: true, value: undefined };
+      },
+      [Symbol.iterator]: () => {
+        return iterator;
+      }
+    };
+    return iterator;
+  }
+
   /**
    * @internal
    */
@@ -351,7 +369,6 @@ export class BufferLine implements IBufferLine {
   public nextBufferLine: BufferLine | undefined;
   protected _stringCacheEntryRef: WeakRef<IBufferLineStringCacheEntry> | undefined;
   public _voffset: number = -1;
-
   /** Number of logical columns in previous rows.
    * Also: logical column number (column number assuming infinitely-wide
    * terminal) corresponding to the start of this row.

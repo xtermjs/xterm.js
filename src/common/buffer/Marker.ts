@@ -12,6 +12,7 @@ import { dispose } from 'common/Lifecycle';
 export class Marker implements IMarker {
   public payload?: IDisposable;
   private _buffer: Buffer | undefined;
+  public get buffer(): Buffer | undefined { return this._buffer; }
   /** @internal */
   public _lineData: BufferLine | undefined;
   /**

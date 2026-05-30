@@ -568,8 +568,6 @@ declare module '@xterm/xterm' {
     /**
      * The actual line index in the buffer at this point in time. This is set to
      * -1 if the marker has been disposed.
-     * This is an expensive operation.
-     * @deprecated
      */
     readonly line: number;
     payload?: IDisposable;
