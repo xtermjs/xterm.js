@@ -4,6 +4,7 @@
       "dom",
       "es2021",
     ],
+    "rootDir": ".",
     "outDir": "../../out-test/benchmark",
     "types": [
       "../../node_modules/@types/node"
@@ -25,8 +26,4 @@
   "exclude": [
     "../../**/*test.ts"
   ],
-  "references": [
-    { "path": "../../src/common" },
-    { "path": "../../src/browser" },
-  ]
 }

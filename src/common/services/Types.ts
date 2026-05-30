@@ -16,7 +16,8 @@ export type { IDisposable } from 'common/base/Lifecycle';
 export type { ITerminalOptions } from 'common/base/TerminalOptions';
 export type { CharData, IAttributeData, ICellData, IBufferLine, IExtendedAttrs, IMarker } from 'common/buffer/CellTypes';
 export type { ICharset } from 'common/data/Charsets';
-export type { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/input/KeyboardTypes';
+export type { IKeyboardEvent, IKeyboardResult } from 'common/input/KeyboardTypes';
+export { KeyboardResultType } from 'common/input/KeyboardTypes';
 export type { UnicodeCharProperties, UnicodeCharWidth, IUnicodeVersionProvider } from 'common/input/UnicodeTypes';
 
 export interface ICoreTerminal {

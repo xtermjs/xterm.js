@@ -5,7 +5,6 @@
     { "path": "./demo" },
     { "path": "./src/browser" },
     { "path": "./src/headless" },
-    { "path": "./test/benchmark" },
     { "path": "./test/playwright" },
     { "path": "./addons/addon-attach" },
     { "path": "./addons/addon-clipboard" },
