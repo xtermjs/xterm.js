@@ -6,8 +6,8 @@
 import { assert } from 'chai';
 import { SelectionService, SelectionMode } from './SelectionService';
 import { SelectionModel } from 'browser/selection/SelectionModel';
-import { IBufferLine } from 'common/Types';
-import { MockBufferService, MockOptionsService, MockCoreService, MockMouseStateService, createCellData } from 'common/TestUtils.test';
+import { IBufferLine } from 'common/services/Types';
+import { MockBufferService, MockOptionsService, MockCoreService, MockMouseStateService, createCellData } from 'common/terminal/TestUtils.test';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { IBufferService, IOptionsService } from 'common/services/Services';

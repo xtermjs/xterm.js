@@ -5,8 +5,8 @@
  * Minimal DOM helpers for xterm.js browser code.
  */
 
-import { IntervalTimer } from 'common/Async';
-import { IDisposable } from 'common/Lifecycle';
+import { IntervalTimer } from 'common/base/Async';
+import { IDisposable } from 'common/base/Lifecycle';
 
 export function getWindow(e: Node | UIEvent | undefined | null): Window {
   const candidateNode = e as Node | undefined | null;

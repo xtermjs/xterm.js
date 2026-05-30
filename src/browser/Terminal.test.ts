@@ -8,8 +8,8 @@ import type { IBrowser } from 'browser/Types';
 import { assert } from 'chai';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { CellData } from 'common/buffer/CellData';
-import { MockUnicodeService, createCellData } from 'common/TestUtils.test';
-import { IMarker } from 'common/Types';
+import { MockUnicodeService, createCellData } from 'common/terminal/TestUtils.test';
+import { IMarker } from 'common/services/Types';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -1146,7 +1146,7 @@ describe('Terminal', () => {
     assert.equal(termConverting.buffer.lines.get(1)!.translateToString(true), 'World');
   });
 
-  // FIXME: move to common/CoreTerminal.test once the trimming is moved over
+  // FIXME: move to common/terminal/CoreTerminal.test once the trimming is moved over
   describe('marker lifecycle', () => {
     // create a 10x5 terminal with markers on every line
     // to test marker lifecycle under various terminal actions

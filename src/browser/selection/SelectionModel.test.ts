@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { SelectionModel } from './SelectionModel';
-import { MockBufferService } from 'common/TestUtils.test';
+import { MockBufferService } from 'common/terminal/TestUtils.test';
 
 describe('SelectionModel', () => {
   let model: SelectionModel;

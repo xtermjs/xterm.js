@@ -5,8 +5,8 @@
 
 import { IOptionsService } from 'common/services/Services';
 import { ICharSizeService } from 'browser/services/Services';
-import { Disposable } from 'common/Lifecycle';
-import { Emitter } from 'common/Event';
+import { Disposable } from 'common/base/Lifecycle';
+import { Emitter } from 'common/base/Event';
 
 export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;

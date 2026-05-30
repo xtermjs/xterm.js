@@ -3,13 +3,13 @@
  * @license MIT
  */
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from 'common/buffer/Constants';
-import { BufferLine } from 'common/buffer//BufferLine';
+import { BufferLine } from 'common/buffer/BufferLine';
 import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { CellData } from 'common/buffer/CellData';
-import { CharData, IBufferLine, ICellData } from '../Types';
+import { CharData, IBufferLine, ICellData } from 'common/services/Types';
 import { assert } from 'chai';
 import { AttributeData } from 'common/buffer/AttributeData';
-import { createCellData, NULL_CELL_DATA, extendedAttributes } from 'common/TestUtils.test';
+import { createCellData, NULL_CELL_DATA, extendedAttributes } from 'common/terminal/TestUtils.test';
 
 const TEST_STRING_CACHE = new BufferLineStringCache();
 

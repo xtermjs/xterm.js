@@ -4,7 +4,7 @@
  */
 import { assert } from 'chai';
 import { OscParser, OscHandler } from 'common/parser/OscParser';
-import { StringToUtf32, utf32ToString } from 'common/input/TextDecoder';
+import { StringToUtf32, utf32ToString } from 'common/encoding/TextDecoder';
 import { IOscHandler } from 'common/parser/Types';
 
 function toUtf32(s: string): Uint32Array {

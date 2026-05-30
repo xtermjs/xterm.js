@@ -4,9 +4,9 @@
  * @license MIT
  */
 
-import { TimeoutTimer } from 'common/Async';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { Emitter } from 'common/Event';
+import { TimeoutTimer } from 'common/base/Async';
+import { Disposable, toDisposable } from 'common/base/Lifecycle';
+import { Emitter } from 'common/base/Event';
 
 const enum Constants {
   /**

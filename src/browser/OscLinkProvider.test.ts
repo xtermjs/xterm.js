@@ -6,9 +6,9 @@
 import { assert } from 'chai';
 import { OscLinkProvider } from 'browser/OscLinkProvider';
 import { ILink } from 'browser/Types';
-import { createCellData, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
+import { createCellData, MockBufferService, MockOptionsService } from 'common/terminal/TestUtils.test';
 import { IBufferService, IOscLinkService } from 'common/services/Services';
-import { IBufferLine, IOscLinkData } from 'common/Types';
+import { IBufferLine, IOscLinkData } from 'common/services/Types';
 
 class TestOscLinkService implements IOscLinkService {
   public serviceBrand: any;

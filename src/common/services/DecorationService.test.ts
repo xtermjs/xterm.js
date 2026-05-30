@@ -5,10 +5,10 @@
 
 import { assert } from 'chai';
 import { DecorationLineCache, DecorationService } from './DecorationService';
-import { IMarker } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
-import { Emitter } from 'common/Event';
-import { MockLogService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
+import { IMarker } from 'common/services/Types';
+import { Disposable } from 'common/base/Lifecycle';
+import { Emitter } from 'common/base/Event';
+import { MockLogService, MockBufferService, MockOptionsService } from 'common/terminal/TestUtils.test';
 import { Buffer } from 'common/buffer/Buffer';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 

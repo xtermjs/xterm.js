@@ -6,7 +6,7 @@
  * @see https://sw.kovidgoyal.net/kitty/keyboard-protocol/
  */
 
-import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/Types';
+import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/services/Types';
 import { C0 } from 'common/data/EscapeSequences';
 
 /**

@@ -4,9 +4,9 @@
  */
 
 import { ICoreBrowserService } from './Services';
-import { Emitter, EventUtils } from 'common/Event';
+import { Emitter, EventUtils } from 'common/base/Event';
 import { addDisposableListener } from 'browser/Dom';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/base/Lifecycle';
 
 export class CoreBrowserService extends Disposable implements ICoreBrowserService {
   public serviceBrand: undefined;

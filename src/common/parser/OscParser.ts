@@ -5,9 +5,9 @@
 
 import { IOscHandler, IHandlerCollection, OscFallbackHandlerType, IOscParser, ISubParserStackState } from 'common/parser/Types';
 import { OscState, ParserConstants } from 'common/parser/Constants';
-import { utf32ToString } from 'common/input/TextDecoder';
-import { IDisposable } from 'common/Types';
-import { LimitedStringBuilder } from 'common/StringBuilder';
+import { utf32ToString } from 'common/encoding/TextDecoder';
+import { IDisposable } from 'common/services/Types';
+import { LimitedStringBuilder } from 'common/base/StringBuilder';
 
 const EMPTY_HANDLERS: IOscHandler[] = [];
 

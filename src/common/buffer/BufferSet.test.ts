@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { BufferSet } from 'common/buffer/BufferSet';
 import { Buffer } from 'common/buffer/Buffer';
-import { MockOptionsService, MockBufferService, MockLogService, createCellData } from 'common/TestUtils.test';
+import { MockOptionsService, MockBufferService, MockLogService, createCellData } from 'common/terminal/TestUtils.test';
 
 describe('BufferSet', () => {
   let bufferSet: BufferSet;

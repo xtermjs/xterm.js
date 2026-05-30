@@ -8,17 +8,17 @@ import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseS
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from 'browser/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/Types';
+import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from 'common/services/Types';
 import { Buffer } from 'common/buffer/Buffer';
-import * as Browser from 'common/Platform';
+import * as Browser from 'common/base/Platform';
 import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
 import { IUnicodeService, IOptionsService, ICoreService, IMouseStateService } from 'common/services/Services';
 import { IFunctionIdentifier, IParams } from 'common/parser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
-import { css } from 'common/Color';
+import { css } from 'common/services/Color';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { Emitter, type IEvent } from 'common/Event';
+import { Emitter, type IEvent } from 'common/base/Event';
 
 export class TestTerminal extends CoreBrowserTerminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }

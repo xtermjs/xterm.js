@@ -4,7 +4,7 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IDisposable } from 'common/Types';
+import { IDisposable } from 'common/services/Types';
 import { FontWeight } from 'common/services/Services';
 
 

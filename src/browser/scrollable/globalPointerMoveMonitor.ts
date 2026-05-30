@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as dom from '../Dom';
-import { DisposableStore, IDisposable, toDisposable } from 'common/Lifecycle';
+import { DisposableStore, IDisposable, toDisposable } from 'common/base/Lifecycle';
 
 type PointerMoveCallback = (event: PointerEvent) => void;
 type OnStopCallback = () => void;

@@ -9,14 +9,14 @@ import { moveToCellSequence } from 'browser/input/MoveToCell';
 import { SelectionModel } from 'browser/selection/SelectionModel';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
 import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import * as Browser from 'common/Platform';
-import { IBufferLine, ICellData, IDisposable } from 'common/Types';
+import { Disposable, MutableDisposable, toDisposable } from 'common/base/Lifecycle';
+import * as Browser from 'common/base/Platform';
+import { IBufferLine, ICellData, IDisposable } from 'common/services/Types';
 import { getRangeLength } from 'common/buffer/BufferRange';
 import { CellData } from 'common/buffer/CellData';
 import { IBuffer } from 'common/buffer/Types';
 import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'common/Event';
+import { Emitter } from 'common/base/Event';
 
 const enum Constants {
   /**

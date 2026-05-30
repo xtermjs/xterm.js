@@ -4,10 +4,10 @@
  */
 
 import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
-import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
+import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/services/Types';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { createDecorator } from 'common/services/ServiceRegistry';
-import type { Emitter, IEvent } from 'common/Event';
+import type { Emitter, IEvent } from 'common/base/Event';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {

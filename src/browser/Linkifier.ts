@@ -4,11 +4,11 @@
  */
 
 import { IBufferCellPosition, ILink, ILinkDecorations, ILinkWithState, ILinkifier2, ILinkifierEvent } from 'browser/Types';
-import { Disposable, dispose, toDisposable } from 'common/Lifecycle';
-import { IDisposable } from 'common/Types';
+import { Disposable, dispose, toDisposable } from 'common/base/Lifecycle';
+import { IDisposable } from 'common/services/Types';
 import { IBufferService } from 'common/services/Services';
 import { ILinkProviderService, IMouseCoordsService, IRenderService } from './services/Services';
-import { Emitter } from 'common/Event';
+import { Emitter } from 'common/base/Event';
 import { addDisposableListener } from 'browser/Dom';
 
 export class Linkifier extends Disposable implements ILinkifier2 {

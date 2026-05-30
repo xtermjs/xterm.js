@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { CircularList, IInsertEvent } from 'common/CircularList';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IdleTaskQueue } from 'common/TaskQueue';
-import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
+import { CircularList, IInsertEvent } from 'common/services/CircularList';
+import { Disposable, toDisposable } from 'common/base/Lifecycle';
+import { IdleTaskQueue } from 'common/services/TaskQueue';
+import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/services/Types';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';

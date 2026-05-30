@@ -5,7 +5,7 @@
 
 import { IParams } from 'common/parser/Types';
 import { IDisposable, IFunctionIdentifier, IParser } from '@xterm/xterm';
-import { ICoreTerminal } from 'common/Types';
+import { ICoreTerminal } from 'common/services/Types';
 
 export class ParserApi implements IParser {
   constructor(private _core: ICoreTerminal) { }

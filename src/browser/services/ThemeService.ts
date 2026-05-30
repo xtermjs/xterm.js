@@ -6,11 +6,11 @@
 import { ColorContrastCache } from 'browser/ColorContrastCache';
 import { IThemeService } from 'browser/services/Services';
 import { DEFAULT_ANSI_COLORS, IColorContrastCache, IColorSet, ReadonlyColorSet } from 'browser/Types';
-import { color, css, NULL_COLOR } from 'common/Color';
-import { Disposable } from 'common/Lifecycle';
+import { color, css, NULL_COLOR } from 'common/services/Color';
+import { Disposable } from 'common/base/Lifecycle';
 import { IOptionsService, ITheme } from 'common/services/Services';
-import { AllColorIndex, IColor, SpecialColorIndex } from 'common/Types';
-import { Emitter } from 'common/Event';
+import { AllColorIndex, IColor, SpecialColorIndex } from 'common/services/Types';
+import { Emitter } from 'common/base/Event';
 
 interface IRestoreColorSet {
   foreground: IColor;

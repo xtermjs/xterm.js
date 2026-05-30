@@ -4,7 +4,7 @@
  */
 import { assert } from 'chai';
 import { ApcParser, ApcHandler } from 'common/parser/ApcParser';
-import { StringToUtf32, utf32ToString } from 'common/input/TextDecoder';
+import { StringToUtf32, utf32ToString } from 'common/encoding/TextDecoder';
 import { IApcHandler, IFunctionIdentifier } from 'common/parser/Types';
 
 function toUtf32(s: string): Uint32Array {

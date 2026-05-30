@@ -23,9 +23,9 @@
 
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
-import { CoreTerminal } from 'common/CoreTerminal';
-import { IMarker, ITerminalOptions } from 'common/Types';
-import { Emitter, EventUtils } from 'common/Event';
+import { CoreTerminal } from 'common/terminal/CoreTerminal';
+import { IMarker, ITerminalOptions } from 'common/services/Types';
+import { Emitter, EventUtils } from 'common/base/Event';
 
 export class Terminal extends CoreTerminal {
   private readonly _onBell = this._register(new Emitter<void>());

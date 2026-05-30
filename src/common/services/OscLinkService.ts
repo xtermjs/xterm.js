@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { IBufferService, IOscLinkService } from 'common/services/Services';
-import { IMarker, IOscLinkData } from 'common/Types';
+import { IMarker, IOscLinkData } from 'common/services/Types';
 
 export class OscLinkService implements IOscLinkService {
   public serviceBrand: any;

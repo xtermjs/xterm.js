@@ -5,9 +5,9 @@
 
 import { IApcHandler, IHandlerCollection, ApcFallbackHandlerType, IApcParser, ISubParserStackState } from 'common/parser/Types';
 import { ParserConstants } from 'common/parser/Constants';
-import { utf32ToString } from 'common/input/TextDecoder';
-import { IDisposable } from 'common/Types';
-import { LimitedStringBuilder } from 'common/StringBuilder';
+import { utf32ToString } from 'common/encoding/TextDecoder';
+import { IDisposable } from 'common/services/Types';
+import { LimitedStringBuilder } from 'common/base/StringBuilder';
 
 const EMPTY_HANDLERS: IApcHandler[] = [];
 

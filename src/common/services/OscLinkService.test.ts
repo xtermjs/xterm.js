@@ -9,7 +9,7 @@ import { BufferService } from 'common/services/BufferService';
 import { OptionsService } from 'common/services/OptionsService';
 import { OscLinkService } from 'common/services/OscLinkService';
 import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
-import { MockLogService } from 'common/TestUtils.test';
+import { MockLogService } from 'common/terminal/TestUtils.test';
 
 describe('OscLinkService', () => {
   describe('constructor', () => {

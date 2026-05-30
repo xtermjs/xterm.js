@@ -5,8 +5,8 @@
 
 import { assert } from 'chai';
 import { Buffer } from 'common/buffer/Buffer';
-import { CircularList } from 'common/CircularList';
-import { MockOptionsService, MockBufferService, MockLogService, createCellData } from 'common/TestUtils.test';
+import { CircularList } from 'common/services/CircularList';
+import { MockOptionsService, MockBufferService, MockLogService, createCellData } from 'common/terminal/TestUtils.test';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
 import { CellData } from 'common/buffer/CellData';

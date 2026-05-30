@@ -4,7 +4,7 @@
  */
 
 import { CellData } from 'common/buffer/CellData';
-import { IBufferLine, ICellData } from 'common/Types';
+import { IBufferLine, ICellData } from 'common/services/Types';
 import { IBufferCell as IBufferCellApi, IBufferLine as IBufferLineApi } from '@xterm/xterm';
 
 export class BufferLineApiView implements IBufferLineApi {

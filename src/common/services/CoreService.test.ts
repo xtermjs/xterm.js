@@ -5,7 +5,7 @@
 
 import { ICoreService } from 'common/services/Services';
 import { CoreService } from 'common/services/CoreService';
-import { MockBufferService, MockLogService, MockOptionsService } from 'common/TestUtils.test';
+import { MockBufferService, MockLogService, MockOptionsService } from 'common/terminal/TestUtils.test';
 import { assert } from 'chai';
 
 describe('CoreService', () => {

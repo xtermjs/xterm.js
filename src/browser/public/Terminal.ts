@@ -6,14 +6,14 @@
 import * as Strings from 'browser/LocalizableStrings';
 import { CoreBrowserTerminal as TerminalCore } from 'browser/CoreBrowserTerminal';
 import { IBufferRange, ITerminal } from 'browser/Types';
-import { Disposable } from 'common/Lifecycle';
-import { ITerminalOptions } from 'common/Types';
+import { Disposable } from 'common/base/Lifecycle';
+import { ITerminalOptions } from 'common/services/Types';
 import { AddonManager } from 'common/public/AddonManager';
 import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
 import { ParserApi } from 'common/public/ParserApi';
 import { UnicodeApi } from 'common/public/UnicodeApi';
 import { IBufferNamespace as IBufferNamespaceApi, IDecoration, IDecorationOptions, IDisposable, ILinkProvider, ILocalizableStrings, IMarker, IModes, IParser, IRenderDimensions, ITerminalAddon, Terminal as ITerminalApi, ITerminalInitOnlyOptions, IUnicodeHandling } from '@xterm/xterm';
-import type { IEvent } from 'common/Event';
+import type { IEvent } from 'common/base/Event';
 
 /**
  * The set of options that only have an effect when set in the Terminal constructor.

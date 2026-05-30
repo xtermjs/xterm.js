@@ -5,8 +5,8 @@
 
 import { Terminal } from '@xterm/xterm';
 import { ITerminal } from 'browser/Types';
-import { IDisposable } from 'common/Types';
-import type { IEvent } from 'common/Event';
+import { IDisposable } from 'common/services/Types';
+import type { IEvent } from 'common/base/Event';
 
 export interface IDimensions {
   width: number;

@@ -6,7 +6,7 @@
 import { IBufferRange, ILink } from 'browser/Types';
 import { ILinkProvider } from 'browser/services/Services';
 import { CellData } from 'common/buffer/CellData';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine } from 'common/services/Types';
 import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
 
 export class OscLinkProvider implements ILinkProvider {

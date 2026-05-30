@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { IBufferService } from 'common/services/Services';
 import { Linkifier } from './Linkifier';
-import { MockBufferService } from 'common/TestUtils.test';
+import { MockBufferService } from 'common/terminal/TestUtils.test';
 import { ILink } from 'browser/Types';
 import { LinkProviderService } from 'browser/services/LinkProviderService';
 import jsdom = require('jsdom');

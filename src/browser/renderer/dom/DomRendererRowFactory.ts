@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { IBufferLine, ICellData, IColor } from 'common/Types';
+import { IBufferLine, ICellData, IColor } from 'common/services/Types';
 import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
 import { WHITESPACE_CELL_CHAR, Attributes } from 'common/buffer/Constants';
 import { CellData } from 'common/buffer/CellData';
 import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
-import { channels, color } from 'common/Color';
+import { channels, color } from 'common/services/Color';
 import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { JoinedCellData } from 'browser/services/CharacterJoinerService';
 import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';

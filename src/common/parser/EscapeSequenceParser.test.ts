@@ -6,11 +6,11 @@
 import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier, IParserStackState, ParserStackType } from 'common/parser/Types';
 import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
 import { assert } from 'chai';
-import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
+import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/encoding/TextDecoder';
 import { ParserState } from 'common/parser/Constants';
 import { Params } from 'common/parser/Params';
 import { OscHandler } from 'common/parser/OscParser';
-import { IDisposable } from 'common/Types';
+import { IDisposable } from 'common/services/Types';
 import { DcsHandler } from 'common/parser/DcsParser';
 import { ApcHandler } from 'common/parser/ApcParser';
 

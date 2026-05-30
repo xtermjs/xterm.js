@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { OptionsService, DEFAULT_OPTIONS } from 'common/services/OptionsService';
-import { IDisposable } from 'common/Types';
+import { IDisposable } from 'common/services/Types';
 
 describe('OptionsService', () => {
   describe('constructor', () => {

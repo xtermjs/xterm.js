@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferLine, ICellData, CharData } from 'common/Types';
+import { IBufferLine, ICellData, CharData } from 'common/services/Types';
 import { ICharacterJoiner } from 'browser/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';

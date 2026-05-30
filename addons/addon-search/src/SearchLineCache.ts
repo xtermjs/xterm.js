@@ -4,8 +4,8 @@
  */
 
 import type { Terminal } from '@xterm/xterm';
-import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import { disposableTimeout } from 'common/Async';
+import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/base/Lifecycle';
+import { disposableTimeout } from 'common/base/Async';
 
 export type LineCacheEntry = [
   /**

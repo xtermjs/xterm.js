@@ -4,7 +4,7 @@
  */
 
 import { perfContext, before, RuntimeCase } from 'xterm-benchmark';
-import { Emitter } from 'common/Event';
+import { Emitter } from 'common/base/Event';
 
 const ITERATIONS = 1_000_000;
 

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/base/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration } from 'common/services/Services';
 
 export class BufferDecorationRenderer extends Disposable {

@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { Disposable, MutableDisposable } from 'common/Lifecycle';
-import { IAttributeData } from 'common/Types';
+import { Disposable, MutableDisposable } from 'common/base/Lifecycle';
+import { IAttributeData } from 'common/services/Types';
 import { Buffer } from 'common/buffer/Buffer';
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import { IBufferService, ILogService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'common/Event';
+import { Emitter } from 'common/base/Event';
 
 /**
  * The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and

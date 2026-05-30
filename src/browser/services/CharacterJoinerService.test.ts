@@ -8,9 +8,9 @@ import { ICharacterJoinerService } from 'browser/services/Services';
 import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
 import { BufferLine } from 'common/buffer/BufferLine';
 import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
-import { IBufferLine } from 'common/Types';
+import { IBufferLine } from 'common/services/Types';
 import { CellData } from 'common/buffer/CellData';
-import { MockBufferService, createCellData } from 'common/TestUtils.test';
+import { MockBufferService, createCellData } from 'common/terminal/TestUtils.test';
 
 const TEST_STRING_CACHE = new BufferLineStringCache();
 

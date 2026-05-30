@@ -4,7 +4,7 @@
  */
 
 import { ICoreBrowserService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, toDisposable } from 'common/base/Lifecycle';
 import { IOptionsService } from 'common/services/Services';
 
 export class TextBlinkStateManager extends Disposable {

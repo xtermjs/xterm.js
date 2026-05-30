@@ -3,7 +3,9 @@
  * @license MIT
  */
 
-import { ICharset } from 'common/Types';
+export interface ICharset {
+  [key: string]: string | undefined;
+}
 
 /**
  * The character sets supported by the terminal. These enable several languages
