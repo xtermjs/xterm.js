@@ -5,13 +5,12 @@
  */
 
 import type { IAttributeData } from 'common/buffer/CellTypes';
-import type { IDisposable } from 'common/base/Lifecycle';
+import { Disposable, type IDisposable } from 'common/base/Lifecycle';
 import type { IWindowOptions } from 'common/input/WindowOptions';
 import { IInputHandler, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/terminal/InputHandlerTypes';
 import { C0, C1 } from 'common/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { Disposable } from 'common/base/Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/encoding/TextDecoder';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
