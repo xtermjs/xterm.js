@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CircularList, IInsertEvent } from 'common/services/CircularList';
+import { CircularList, IInsertEvent } from 'common/base/CircularList';
 import { Disposable, toDisposable } from 'common/base/Lifecycle';
 import { IdleTaskQueue } from 'common/services/TaskQueue';
 import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/services/Types';

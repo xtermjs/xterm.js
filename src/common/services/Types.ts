@@ -3,13 +3,12 @@
  * @license MIT
  */
 
-import type { IDeleteEvent, IInsertEvent } from 'common/services/CircularList';
 import type { UnderlineStyle } from 'common/buffer/Constants';
 import type { IBufferSet } from 'common/buffer/Types';
 import type { IParams } from 'common/parser/Types';
 import type { IMouseStateService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
-import type { Emitter, IEvent } from 'common/base/Event';
+import type { IEvent } from 'common/base/Event';
 
 export type { ICharset } from 'common/data/Charsets';
 
@@ -62,28 +61,6 @@ export interface IKeyboardEvent {
 
 export interface IScrollEvent {
   position: number;
-}
-
-export interface ICircularList<T> {
-  length: number;
-  maxLength: number;
-  isFull: boolean;
-
-  onDeleteEmitter: Emitter<IDeleteEvent>;
-  onDelete: IEvent<IDeleteEvent>;
-  onInsertEmitter: Emitter<IInsertEvent>;
-  onInsert: IEvent<IInsertEvent>;
-  onTrimEmitter: Emitter<number>;
-  onTrim: IEvent<number>;
-
-  get(index: number): T | undefined;
-  set(index: number, value: T): void;
-  push(value: T): void;
-  recycle(): T;
-  pop(): T | undefined;
-  splice(start: number, deleteCount: number, ...items: T[]): void;
-  trimStart(count: number): void;
-  shiftElements(start: number, count: number, offset: number): void;
 }
 
 export const enum KeyboardResultType {

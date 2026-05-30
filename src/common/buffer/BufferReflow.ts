@@ -4,7 +4,7 @@
  */
 
 import { BufferLine } from 'common/buffer/BufferLine';
-import { CircularList } from 'common/services/CircularList';
+import { CircularList } from 'common/base/CircularList';
 import { IBufferLine, ICellData } from 'common/services/Types';
 
 export interface INewLayoutResult {

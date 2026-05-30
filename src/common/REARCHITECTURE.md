@@ -42,13 +42,13 @@ flowchart BT
 
 | Project | Role | Notable sources |
 | --- | --- | --- |
-| `common/base` | Core utilities (lifecycle, events, platform) | `Async`, `Event`, `Lifecycle`, `Platform`, `StringBuilder`, `Version` |
+| `common/base` | Core utilities (lifecycle, events, platform) | `Async`, `Event`, `Lifecycle`, `Platform`, `StringBuilder`, `Version`, `CircularList` |
 | `common/encoding` | UTF conversion | `TextDecoder` (moved from `input/`) |
 | `common/data` | Static terminal data | `Charsets`, `EscapeSequences` |
 | `common/buffer` | Screen buffer | `Buffer`, `BufferLine`, … |
 | `common/parser` | Escape sequence parser | `EscapeSequenceParser`, … |
 | `common/input` | Keyboard / write path helpers | `Keyboard`, `WriteBuffer`, … |
-| `common/services` | DI services and shared types | `Services`, `Types`, `CircularList`, … |
+| `common/services` | DI services and shared types | `Services`, `Types`, `Color`, … |
 | `common/terminal` | Core terminal + input handler | `CoreTerminal`, `InputHandler`, `WindowsMode` |
 | `common/public` | Public API adapters | `AddonManager`, buffer API views |
 

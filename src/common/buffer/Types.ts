@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker, ICharset, IDisposable } from 'common/services/Types';
+import type { ICircularList } from 'common/base/CircularList';
+import { IAttributeData, IBufferLine, ICellData, IMarker, ICharset, IDisposable } from 'common/services/Types';
 import type { IEvent } from 'common/base/Event';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
