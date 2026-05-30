@@ -7,7 +7,7 @@
  */
 
 import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/input/KeyboardTypes';
-import { C0 } from 'common/data/EscapeSequences';
+import { C0 } from 'common/base/EscapeSequences';
 
 /**
  * Kitty keyboard protocol enhancement flags (bitfield).

@@ -4,7 +4,7 @@
  */
 
 import { CharData, ICellData, IExtendedAttrs } from 'common/buffer/CellTypes';
-import { stringFromCodePoint } from 'common/encoding/TextDecoder';
+import { stringFromCodePoint } from 'common/base/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from 'common/buffer/Constants';
 import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
 import type { IBufferCell as IBufferCellApi } from '@xterm/xterm';

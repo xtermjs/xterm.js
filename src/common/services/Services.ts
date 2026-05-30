@@ -5,7 +5,7 @@
 
 import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
 import type { IAttributeData } from 'common/buffer/CellTypes';
-import type { ICharset } from 'common/data/Charsets';
+import type { ICharset } from 'common/base/Charsets';
 import type { IColor } from 'common/base/ColorTypes';
 import type { IDisposable } from 'common/base/Lifecycle';
 import type { IWindowOptions } from 'common/input/WindowOptions';

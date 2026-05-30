@@ -7,7 +7,7 @@ import { CircularList, IInsertEvent } from 'common/base/CircularList';
 import { Disposable, toDisposable } from 'common/base/Lifecycle';
 import { IdleTaskQueue } from 'common/base/TaskQueue';
 import type { IAttributeData, IBufferLine, ICellData } from 'common/buffer/CellTypes';
-import type { ICharset } from 'common/data/Charsets';
+import type { ICharset } from 'common/base/Charsets';
 import type { IBufferService } from 'common/buffer/BufferService';
 import type { IBufferOptionsService } from 'common/buffer/BufferOptions';
 import type { IBufferLogService } from 'common/buffer/BufferLog';
@@ -19,7 +19,7 @@ import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
 import { Marker } from 'common/buffer/Marker';
 import { IBuffer } from 'common/buffer/Types';
-import { DEFAULT_CHARSET } from 'common/data/Charsets';
+import { DEFAULT_CHARSET } from 'common/base/Charsets';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 

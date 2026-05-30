@@ -5,7 +5,7 @@
 import { perfContext, before, beforeEach, ThroughputRuntimeCase } from 'xterm-benchmark';
 
 import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { C0, C1 } from 'common/data/EscapeSequences';
+import { C0, C1 } from 'common/base/EscapeSequences';
 import { IDcsHandler, IOscHandler, IApcHandler, IParams } from 'common/parser/Types';
 import { OscHandler } from 'common/parser/OscParser';
 import { DcsHandler } from 'common/parser/DcsParser';

@@ -7,7 +7,7 @@ import type { ICircularList } from 'common/base/CircularList';
 import type { IDisposable } from 'common/base/Lifecycle';
 import type { IEvent } from 'common/base/Event';
 import type { IAttributeData, IBufferLine, ICellData, IMarker } from 'common/buffer/CellTypes';
-import type { ICharset } from 'common/data/Charsets';
+import type { ICharset } from 'common/base/Charsets';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]
 export type BufferIndex = [number, number];

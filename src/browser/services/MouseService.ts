@@ -7,7 +7,7 @@ import { addDisposableListener } from 'browser/Dom';
 import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
 import type { IDisposable } from 'common/base/Lifecycle';
 import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent } from 'common/services/Types';
-import { C0 } from 'common/data/EscapeSequences';
+import { C0 } from 'common/base/EscapeSequences';
 import { DisposableStore, MutableDisposable, toDisposable } from 'common/base/Lifecycle';
 import { ICoreBrowserService, IMouseCoordsService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';
 import { Gesture, EventType as GestureEventType, IGestureEvent } from 'browser/scrollable/touch';

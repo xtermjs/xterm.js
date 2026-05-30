@@ -9,16 +9,11 @@ flowchart BT
   subgraph platform["Platform layer"]
     direction LR
     base["common/base"]
-    encoding["common/encoding"]
-    data["common/data"]
     buffer["common/buffer"]
     parser["common/parser"]
     input["common/input"]
 
-    encoding --> base
-    data --> base
-    buffer --> encoding
-    buffer --> data
+    buffer --> base
     parser --> buffer
     input --> parser
   end
@@ -42,14 +37,12 @@ flowchart BT
 
 | Project | Role | Notable sources |
 | --- | --- | --- |
-| `common/base` | Core utilities (lifecycle, events, platform) | `Async`, `Event`, `Lifecycle`, `Platform`, `StringBuilder`, `Version`, `CircularList`, `Color`, `ColorTypes` |
-| `common/encoding` | UTF conversion | `TextDecoder` (moved from `input/`) |
-| `common/data` | Static terminal data | `Charsets`, `EscapeSequences` |
+| `common/base` | Core utilities, UTF conversion, static terminal data | `Async`, `Event`, `Lifecycle`, `Color`, `TextDecoder`, `Charsets`, `EscapeSequences`, … |
 | `common/buffer` | Screen buffer | `Buffer`, `BufferLine`, … |
 | `common/parser` | Escape sequence parser | `EscapeSequenceParser`, … |
 | `common/input` | Keyboard / write path helpers | `Keyboard`, `WriteBuffer`, … |
 | `common/services` | DI service implementations | `Services`, `Types` (modes, mouse, osc link), … |
-| `common/terminal` | Core terminal + input handler | `CoreTerminal`, `CoreTerminalTypes`, `InputHandler`, `InputHandlerTypes`, `WindowsMode` |
+| `common/terminal` | Core terminal + input handler | `CoreTerminal`, `CoreTerminalTypes`, `InputHandler`, … |
 | `common/public` | Public API adapters | `AddonManager`, buffer API views |
 
 ## TypeScript projects

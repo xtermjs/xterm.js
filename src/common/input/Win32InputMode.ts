@@ -15,7 +15,7 @@
  */
 
 import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/input/KeyboardTypes';
-import { C0 } from 'common/data/EscapeSequences';
+import { C0 } from 'common/base/EscapeSequences';
 
 /**
  * Win32 control key state flags (from Windows API).

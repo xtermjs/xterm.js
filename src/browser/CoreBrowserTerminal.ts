@@ -51,7 +51,7 @@ import { ColorRequestType, IColorEvent, SpecialColorIndex } from 'common/termina
 import { KeyboardResultType } from 'common/input/KeyboardTypes';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { IBuffer } from 'common/buffer/Types';
-import { C0, C1ESCAPED } from 'common/data/EscapeSequences';
+import { C0, C1ESCAPED } from 'common/base/EscapeSequences';
 import { toRgbString } from 'common/input/XParseColor';
 import { DecorationService } from 'common/services/DecorationService';
 import { IDecorationService } from 'common/services/Services';

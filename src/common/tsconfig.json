@@ -3,8 +3,6 @@
   "files": [],
   "references": [
     { "path": "./base" },
-    { "path": "./encoding" },
-    { "path": "./data" },
     { "path": "./buffer" },
     { "path": "./parser" },
     { "path": "./input" },

@@ -9,7 +9,7 @@ import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
 import { IBufferSet, IBuffer } from 'common/buffer/Types';
 import { BufferSet } from 'common/buffer/BufferSet';
 import type { IAttributeData, IBufferLine, IExtendedAttrs } from 'common/buffer/CellTypes';
-import type { ICharset } from 'common/data/Charsets';
+import type { ICharset } from 'common/base/Charsets';
 import type { IDisposable } from 'common/base/Lifecycle';
 import { CoreMouseEventType, ICoreMouseEvent, IDecPrivateModes, IKittyKeyboardState, IModes, IOscLinkData } from 'common/services/Types';
 import { UnicodeV6 } from 'common/input/UnicodeV6';

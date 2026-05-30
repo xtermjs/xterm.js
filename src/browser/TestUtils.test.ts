@@ -10,7 +10,7 @@ import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHel
 import { IBuffer, IBufferSet } from 'common/buffer/Types';
 import type { ICircularList } from 'common/base/CircularList';
 import type { IBufferLine, ICellData, IAttributeData } from 'common/buffer/CellTypes';
-import type { ICharset } from 'common/data/Charsets';
+import type { ICharset } from 'common/base/Charsets';
 import type { ITerminalOptions } from 'common/services/Services';
 import type { XtermListener } from 'common/terminal/CoreTerminalTypes';
 import { ColorIndex } from 'common/terminal/InputHandlerTypes';

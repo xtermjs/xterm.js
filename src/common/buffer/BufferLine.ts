@@ -7,7 +7,7 @@ import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
-import { stringFromCodePoint } from 'common/encoding/TextDecoder';
+import { stringFromCodePoint } from 'common/base/TextDecoder';
 import { StringBuilder } from 'common/base/StringBuilder';
 
 // Buffer memory layout:

@@ -14,8 +14,6 @@
     "paths": {
       "@xterm/xterm": ["../../../typings/xterm.d.ts"],
       "common/base/*": ["../base/*"],
-      "common/encoding/*": ["../encoding/*"],
-      "common/data/*": ["../data/*"],
       "common/buffer/*": ["../buffer/*"],
       "common/parser/*": ["./*"],
       "common/input/*": ["../input/*"],
@@ -36,8 +34,6 @@
   ],
   "references": [
     { "path": "../base" },
-    { "path": "../encoding" },
-    { "path": "../data" },
     { "path": "../buffer" }
   ]
 }

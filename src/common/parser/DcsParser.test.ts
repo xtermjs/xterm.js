@@ -5,7 +5,7 @@
 import { assert } from 'chai';
 import { DcsParser, DcsHandler } from 'common/parser/DcsParser';
 import { IDcsHandler, IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { utf32ToString, StringToUtf32 } from 'common/encoding/TextDecoder';
+import { utf32ToString, StringToUtf32 } from 'common/base/TextDecoder';
 import { Params } from 'common/parser/Params';
 
 function toUtf32(s: string): Uint32Array {

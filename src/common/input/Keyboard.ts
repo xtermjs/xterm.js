@@ -5,7 +5,7 @@
  */
 
 import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/input/KeyboardTypes';
-import { C0 } from 'common/data/EscapeSequences';
+import { C0 } from 'common/base/EscapeSequences';
 
 // reg + shift key mappings for digits and special chars
 const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {

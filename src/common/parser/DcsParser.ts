@@ -5,7 +5,7 @@
 
 import { IDisposable } from 'common/base/Lifecycle';
 import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from 'common/parser/Types';
-import { utf32ToString } from 'common/encoding/TextDecoder';
+import { utf32ToString } from 'common/base/TextDecoder';
 import { Params } from 'common/parser/Params';
 import { ParserConstants } from 'common/parser/Constants';
 import { LimitedStringBuilder } from 'common/base/StringBuilder';
