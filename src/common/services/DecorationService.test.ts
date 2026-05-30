@@ -12,27 +12,18 @@ import { MockLogService, MockBufferService, MockOptionsService } from 'common/Te
 import { Buffer } from 'common/buffer/Buffer';
 import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 
-function createFakeMarker(line: number): IMarker {
-  return Object.freeze(new class extends Disposable {
-    public readonly id = 1;
-    public readonly line = line;
-    public readonly isDisposed = false;
-    public readonly onDispose = new Emitter<void>().event;
-  }());
-}
-
-function createDecorationService(): DecorationService {
-  const bufferService = new MockBufferService(80, 24, new MockOptionsService());
-  return new DecorationService(new MockLogService(), bufferService);
-}
-
-const fakeMarker: IMarker = createFakeMarker(1);
-
 describe('DecorationService', () => {
+  let bufferService: MockBufferService;
+  let service: DecorationService;
+
+  beforeEach(() => {
+    bufferService = new MockBufferService(80, 24, new MockOptionsService());
+    service = new DecorationService(new MockLogService(), bufferService);
+  });
+
   it('should set isDisposed to true after dispose', () => {
-    const service = createDecorationService();
     const decoration = service.registerDecoration({
-      marker: fakeMarker
+      marker: bufferService.buffer.addMarker(1)
     });
     assert.ok(decoration);
     assert.isFalse(decoration!.isDisposed);
@@ -42,22 +33,19 @@ describe('DecorationService', () => {
 
   describe('forEachDecorationAtCell', () => {
     it('should find decoration at its marker line', () => {
-      const service = createDecorationService();
       const decoration = service.registerDecoration({
-        marker: createFakeMarker(5),
+        marker: bufferService.buffer.addMarker(5),
         width: 10
       });
       assert.ok(decoration);
-
       const found: typeof decoration[] = [];
       service.forEachDecorationAtCell(0, 5, undefined, d => found.push(d));
       assert.strictEqual(found.length, 1);
     });
 
     it('should find decoration with height > 1 on subsequent lines', () => {
-      const service = createDecorationService();
       const decoration = service.registerDecoration({
-        marker: createFakeMarker(5),
+        marker: bufferService.buffer.addMarker(5),
         width: 10,
         height: 3
       });
@@ -81,15 +69,13 @@ describe('DecorationService', () => {
     });
 
     it('should not find decoration outside its x range', () => {
-      const service = createDecorationService();
       const decoration = service.registerDecoration({
-        marker: createFakeMarker(5),
+        marker: bufferService.buffer.addMarker(5),
         x: 5,
         width: 3,
         height: 2
       });
       assert.ok(decoration);
-
       const foundAtX4: typeof decoration[] = [];
       service.forEachDecorationAtCell(4, 5, undefined, d => foundAtX4.push(d));
       assert.strictEqual(foundAtX4.length, 0);
@@ -113,7 +99,7 @@ describe('DecorationService', () => {
       const buffer = bufferService.buffer;
       (buffer as Buffer).fillViewportRows();
 
-      for (let i = 0; i < 100; i++) {
+      for (let i = 0; i < buffer.lines.length; i++) {
         serviceWithBuffer.registerDecoration({
           marker: buffer.addMarker(i),
           width: 5
@@ -134,9 +120,8 @@ describe('DecorationService', () => {
 
   describe('getDecorationsAtCell', () => {
     it('should find decoration with height > 1 on subsequent lines', () => {
-      const service = createDecorationService();
       const decoration = service.registerDecoration({
-        marker: createFakeMarker(5),
+        marker: bufferService.buffer.addMarker(5),
         width: 10,
         height: 3
       });
