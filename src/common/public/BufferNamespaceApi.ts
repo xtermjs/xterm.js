@@ -4,10 +4,10 @@
  */
 
 import { IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi } from '@xterm/xterm';
-import { BufferApiView } from 'common/public/BufferApiView';
-import { ICoreTerminal } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
-import { Emitter } from 'common/Event';
+import { BufferApiView } from './BufferApiView';
+import { ICoreTerminal } from '../Types';
+import { Disposable } from '../Lifecycle';
+import { Emitter } from '../Event';
 
 export class BufferNamespaceApi extends Disposable implements IBufferNamespaceApi {
   private _normal: BufferApiView;
@@ -20,7 +20,7 @@ export class BufferNamespaceApi extends Disposable implements IBufferNamespaceAp
     super();
     this._normal = new BufferApiView(this._core.buffers.normal, 'normal');
     this._alternate = new BufferApiView(this._core.buffers.alt, 'alternate');
-    this._core.buffers.onBufferActivate(() => this._onBufferChange.fire(this.active));
+    this._register(this._core.buffers.onBufferActivate(() => this._onBufferChange.fire(this.active)));
   }
   public get active(): IBufferApi {
     if (this._core.buffers.active === this._core.buffers.normal) { return this.normal; }

@@ -4,11 +4,11 @@
  */
 
 import { assert } from 'chai';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService } from '../common/services/Services';
 import { Linkifier } from './Linkifier';
-import { MockBufferService } from 'common/TestUtils.test';
-import { ILink } from 'browser/Types';
-import { LinkProviderService } from 'browser/services/LinkProviderService';
+import { MockBufferService } from '../common/TestUtils.test';
+import { ILink } from './Types';
+import { LinkProviderService } from './services/LinkProviderService';
 import jsdom = require('jsdom');
 
 class TestLinkifier2 extends Linkifier {
@@ -39,6 +39,20 @@ describe('Linkifier2', () => {
       end: {
         x: 7,
         y: 1
+      }
+    },
+    activate: () => { }
+  };
+  const multiLineLink: ILink = {
+    text: 'foo',
+    range: {
+      start: {
+        x: 2,
+        y: 1
+      },
+      end: {
+        x: 4,
+        y: 2
       }
     },
     activate: () => { }
@@ -84,6 +98,32 @@ describe('Linkifier2', () => {
     });
 
     linkifier.linkLeave({ classList: { add: () => { } } } as any, link, {} as any);
+  });
+
+  it('onShowLinkUnderline event range is correct for wrapped links', done => {
+    linkifier.onShowLinkUnderline(e => {
+      assert.equal(multiLineLink.range.start.x - 1, e.x1);
+      assert.equal(multiLineLink.range.start.y - 1, e.y1);
+      assert.equal(multiLineLink.range.end.x, e.x2);
+      assert.equal(multiLineLink.range.end.y - 1, e.y2);
+
+      done();
+    });
+
+    linkifier.linkHover({ classList: { add: () => { } } } as any, multiLineLink, {} as any);
+  });
+
+  it('onHideLinkUnderline event range is correct for wrapped links', done => {
+    linkifier.onHideLinkUnderline(e => {
+      assert.equal(multiLineLink.range.start.x - 1, e.x1);
+      assert.equal(multiLineLink.range.start.y - 1, e.y1);
+      assert.equal(multiLineLink.range.end.x, e.x2);
+      assert.equal(multiLineLink.range.end.y - 1, e.y2);
+
+      done();
+    });
+
+    linkifier.linkLeave({ classList: { add: () => { } } } as any, multiLineLink, {} as any);
   });
 
 });

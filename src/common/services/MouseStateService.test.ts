@@ -2,9 +2,9 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { MouseStateService } from 'common/services/MouseStateService';
+import { MouseStateService } from './MouseStateService';
 import { assert } from 'chai';
-import { ICoreMouseEvent, CoreMouseEventType } from 'common/Types';
+import { ICoreMouseEvent, CoreMouseEventType } from '../Types';
 
 function toBytes(s: string | undefined): number[] {
   if (!s) {

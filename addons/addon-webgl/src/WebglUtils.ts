@@ -4,6 +4,7 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import type { ILogService } from 'common/services/Services';
 
 /**
  * A matrix that when multiplies will translate 0-1 coordinates (left to right,
@@ -16,21 +17,21 @@ export const PROJECTION_MATRIX = new Float32Array([
   -1, 1, 0, 1
 ]);
 
-export function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragmentSource: string): WebGLProgram | undefined {
+export function createProgram(gl: WebGLRenderingContext, vertexSource: string, fragmentSource: string, logService: ILogService): WebGLProgram | undefined {
   const program = throwIfFalsy(gl.createProgram());
-  gl.attachShader(program, throwIfFalsy(createShader(gl, gl.VERTEX_SHADER, vertexSource)));
-  gl.attachShader(program, throwIfFalsy(createShader(gl, gl.FRAGMENT_SHADER, fragmentSource)));
+  gl.attachShader(program, throwIfFalsy(createShader(gl, gl.VERTEX_SHADER, vertexSource, logService)));
+  gl.attachShader(program, throwIfFalsy(createShader(gl, gl.FRAGMENT_SHADER, fragmentSource, logService)));
   gl.linkProgram(program);
   const success = gl.getProgramParameter(program, gl.LINK_STATUS);
   if (success) {
     return program;
   }
 
-  console.error(gl.getProgramInfoLog(program));
+  logService.error(gl.getProgramInfoLog(program));
   gl.deleteProgram(program);
 }
 
-export function createShader(gl: WebGLRenderingContext, type: number, source: string): WebGLShader | undefined {
+export function createShader(gl: WebGLRenderingContext, type: number, source: string, logService: ILogService): WebGLShader | undefined {
   const shader = throwIfFalsy(gl.createShader(type));
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
@@ -39,7 +40,7 @@ export function createShader(gl: WebGLRenderingContext, type: number, source: st
     return shader;
   }
 
-  console.error(gl.getShaderInfoLog(shader));
+  logService.error(gl.getShaderInfoLog(shader));
   gl.deleteShader(shader);
 }
 

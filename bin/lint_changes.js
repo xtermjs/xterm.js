@@ -33,17 +33,47 @@ if (files.length === 0) {
 
 console.log(`Linting ${files.length} changed file(s)...`);
 
-const eslintArgs = ['--max-warnings', '0', '--no-warn-ignored'];
-if (fix) {
-  eslintArgs.push('--fix');
+const cwd = path.join(__dirname, '..');
+const isWin = process.platform === 'win32';
+
+/**
+ * @param {string} command
+ * @param {string[]} args
+ * @returns {Promise<void>}
+ */
+function run(command, args) {
+  return new Promise(/** @type {(resolve: () => void, reject: (reason: Error) => void) => void} */ ((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: 'inherit',
+      cwd,
+      shell: isWin
+    });
+    child.on('close', code => {
+      if (code === 0) {
+        resolve();
+      } else {
+        reject(new Error(`${command} exited with code ${code}`));
+      }
+    });
+  }));
 }
-eslintArgs.push(...files);
 
-const eslint = process.platform === 'win32' ? 'eslint.cmd' : 'eslint';
-const child = spawn(eslint, eslintArgs, {
-  stdio: 'inherit',
-  cwd: path.join(__dirname, '..'),
-  shell: process.platform === 'win32'
+async function main() {
+  const oxlintArgs = ['--type-aware', '--max-warnings', '0'];
+  if (fix) {
+    oxlintArgs.push('--fix');
+  }
+  oxlintArgs.push(...files);
+
+  const oxlint = isWin ? 'oxlint.cmd' : 'oxlint';
+  await run(oxlint, oxlintArgs);
+
+  const eslintArgs = ['--config', 'eslint.config.naming.mjs', '--max-warnings', '0', ...files];
+  const eslint = isWin ? 'eslint.cmd' : 'eslint';
+  await run(eslint, eslintArgs);
+}
+
+main().catch(err => {
+  console.error(err.message);
+  process.exit(1);
 });
-
-child.on('close', code => process.exit(code ?? 0));

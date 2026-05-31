@@ -3,20 +3,20 @@
  * @license MIT
  */
 
-import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererRowFactory';
-import { WidthCache } from 'browser/renderer/dom/WidthCache';
-import { INVERTED_DEFAULT_COLOR, RendererConstants } from 'browser/renderer/shared/Constants';
-import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
-import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
-import { color } from 'common/Color';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'common/Event';
-import { addDisposableListener } from 'browser/Dom';
+import { DomRendererRowFactory, RowCss } from './DomRendererRowFactory';
+import { WidthCache } from './WidthCache';
+import { INVERTED_DEFAULT_COLOR, RendererConstants } from '../shared/Constants';
+import { createRenderDimensions } from '../shared/RendererUtils';
+import { createSelectionRenderModel } from '../shared/SelectionRenderModel';
+import { TextBlinkStateManager } from '../shared/TextBlinkStateManager';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from '../shared/Types';
+import { ICharSizeService, ICoreBrowserService, IThemeService } from '../../services/Services';
+import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from '../../Types';
+import { color } from '../../../common/Color';
+import { Disposable, toDisposable } from '../../../common/Lifecycle';
+import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from '../../../common/services/Services';
+import { Emitter } from '../../../common/Event';
+import { addDisposableListener } from '../../Dom';
 
 
 const enum Constants {

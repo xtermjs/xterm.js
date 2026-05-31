@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import type { ILogService } from 'common/services/Services';
+import type { ILogService } from './services/Services';
 
 interface ITaskQueue {
   /**
@@ -74,10 +74,10 @@ abstract class TaskQueue implements ITaskQueue {
 
   private _process(deadline: ITaskDeadline): void {
     this._idleCallback = undefined;
-    let taskDuration = 0;
+    let taskDuration: number;
     let longestTask = 0;
     let lastDeadlineRemaining = deadline.timeRemaining();
-    let deadlineRemaining = 0;
+    let deadlineRemaining: number;
     while (this._i < this._tasks.length) {
       taskDuration = performance.now();
       if (!this._tasks[this._i]()) {

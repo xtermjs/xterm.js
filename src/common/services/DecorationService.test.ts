@@ -5,12 +5,12 @@
 
 import { assert } from 'chai';
 import { DecorationService } from './DecorationService';
-import { IMarker } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
-import { Emitter } from 'common/Event';
-import { MockLogService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
-import { Buffer } from 'common/buffer/Buffer';
-import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
+import { IMarker } from '../Types';
+import { Disposable } from '../Lifecycle';
+import { Emitter } from '../Event';
+import { MockLogService, MockBufferService, MockOptionsService } from '../TestUtils.test';
+import { Buffer } from '../buffer/Buffer';
+import { DEFAULT_ATTR_DATA } from '../buffer/BufferLine';
 
 describe('DecorationService', () => {
   let bufferService: MockBufferService;
@@ -94,18 +94,16 @@ describe('DecorationService', () => {
     });
 
     it('should find multi-line decoration when single-line decorations exist on other lines', () => {
-      const bufferService = new MockBufferService(80, 24, new MockOptionsService());
-      const serviceWithBuffer = new DecorationService(new MockLogService(), bufferService);
       const buffer = bufferService.buffer;
       (buffer as Buffer).fillViewportRows();
 
       for (let i = 0; i < buffer.lines.length; i++) {
-        serviceWithBuffer.registerDecoration({
+        service.registerDecoration({
           marker: buffer.addMarker(i),
           width: 5
         });
       }
-      const multiLine = serviceWithBuffer.registerDecoration({
+      const multiLine = service.registerDecoration({
         marker: buffer.addMarker(10),
         width: 10,
         height: 3
@@ -113,7 +111,7 @@ describe('DecorationService', () => {
       assert.ok(multiLine);
 
       const found: typeof multiLine[] = [];
-      serviceWithBuffer.forEachDecorationAtCell(0, 11, undefined, d => found.push(d));
+      service.forEachDecorationAtCell(0, 11, undefined, d => found.push(d));
       assert.include(found, multiLine);
     });
   });
@@ -136,8 +134,6 @@ describe('DecorationService', () => {
 
   describe('line index maintenance', () => {
     it('should keep lookups correct after buffer trim', () => {
-      const bufferService = new MockBufferService(80, 5, new MockOptionsService({ scrollback: 0 }));
-      const service = new DecorationService(new MockLogService(), bufferService);
       const buffer = bufferService.buffer;
       (buffer as Buffer).fillViewportRows();
 
@@ -153,8 +149,6 @@ describe('DecorationService', () => {
     });
 
     it('should remove decoration from line index when marker is trimmed off buffer', () => {
-      const bufferService = new MockBufferService(80, 5, new MockOptionsService({ scrollback: 0 }));
-      const service = new DecorationService(new MockLogService(), bufferService);
       const buffer = bufferService.buffer;
       (buffer as Buffer).fillViewportRows();
 
@@ -172,8 +166,6 @@ describe('DecorationService', () => {
     });
 
     it('should keep multi-line decoration indexed after line insert', async () => {
-      const bufferService = new MockBufferService(80, 10, new MockOptionsService({ scrollback: 100 }));
-      const service = new DecorationService(new MockLogService(), bufferService);
       const buffer = bufferService.buffer;
       (buffer as Buffer).fillViewportRows();
 

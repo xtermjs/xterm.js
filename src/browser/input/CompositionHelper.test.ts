@@ -4,9 +4,9 @@
  */
 
 import { assert } from 'chai';
-import { CompositionHelper } from 'browser/input/CompositionHelper';
-import { MockRenderService } from 'browser/TestUtils.test';
-import { MockCoreService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
+import { CompositionHelper } from './CompositionHelper';
+import { MockRenderService } from '../TestUtils.test';
+import { MockCoreService, MockBufferService, MockOptionsService } from '../../common/TestUtils.test';
 
 describe('CompositionHelper', () => {
   let compositionHelper: CompositionHelper;

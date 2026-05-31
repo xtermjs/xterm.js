@@ -9,15 +9,18 @@ import { ITestContext, createTestContext, openTerminal } from '../../../test/pla
 
 
 let ctx: ITestContext;
-test.beforeAll(async ({ browser }) => {
-  ctx = await createTestContext(browser);
-  ctx.page.setViewportSize({ width: 1024, height: 768 });
-  await openTerminal(ctx);
-});
-test.afterAll(async () => await ctx.page.close());
-
 
 test.describe('ProgressAddon', () => {
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeAll(async ({ browser }) => {
+    ctx = await createTestContext(browser);
+    await openTerminal(ctx);
+  });
+  test.afterAll(async () => {
+    await ctx?.page?.close();
+  });
+
   test.beforeEach(async function(): Promise<any> {
     await ctx.page.evaluate(`
       window.progressStack = [];

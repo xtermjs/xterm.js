@@ -5,11 +5,9 @@
 
 import { IDisposable } from '@xterm/xterm';
 import { ImageRenderer } from './ImageRenderer';
-import type { ITerminalExt, IImageAddonOptions, IImageSpec, ICellSize, ImageLayer } from './Types';
+import type { ITerminalExt, IImageAddonOptions, IImageSpec, ICellSize, IAddImageOpts } from './Types';
 import type { IBufferLine } from 'common/Types';
 import { CellData } from 'common/buffer/CellData';
-
-
 
 // fallback default cell size
 export const CELL_SIZE_DEFAULT: ICellSize = {
@@ -158,13 +156,15 @@ export class ImageStorage implements IDisposable {
   /**
    * Method to add an image to the storage.
    * @param img - The image to add (canvas or bitmap).
-   * @param scrolling - When true, cursor advances with the image (lineFeed per row).
-   *   When false, image is placed at (0,0) and cursor is restored (DECSET 80 / sixel origin mode).
-   * @param layer - Which canvas layer to render on ('top' or 'bottom').
-   * @param zIndex - Z-index for image layering within the same layer.
+   * @param opts - Options for addImage:
+   *   - scrolling:  When true, cursor advances with the image.
+   *                 When false, image is placed at ORIGIN and cursor does not move.
+   *   - layer:      Which canvas layer to render on ('top' or 'bottom').
+   *   - zIndex:     Z-index for image layering within the same layer.
+   *   - cursorPos:  'vt340' for bottom-left, 'iip' for bottom.right.
    * @returns The internal image ID assigned to the stored image.
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap, scrolling: boolean, layer: ImageLayer = 'top', zIndex: number = 0): number {
+  public addImage(img: HTMLCanvasElement | ImageBitmap, opts: IAddImageOpts): number {
     // never allow storage to exceed memory limit
     this._evictOldest(img.width * img.height);
 
@@ -186,7 +186,7 @@ export class ImageStorage implements IDisposable {
     let offset = originX;
     let tileCount = 0;
 
-    if (!scrolling) {
+    if (!opts.scrolling) {
       buffer.x = 0;
       buffer.y = 0;
       offset = 0;
@@ -200,7 +200,7 @@ export class ImageStorage implements IDisposable {
         this._writeToCell(line, offset + col, imageId, row * cols + col);
         tileCount++;
       }
-      if (scrolling) {
+      if (opts.scrolling) {
         if (row < rows - 1) this._terminal._core._inputHandler.lineFeed();
       } else {
         if (++buffer.y >= termRows) break;
@@ -210,8 +210,12 @@ export class ImageStorage implements IDisposable {
     this._terminal._core._inputHandler._dirtyRowTracker.markDirty(buffer.y);
 
     // cursor positioning modes
-    if (scrolling) {
-      buffer.x = offset;
+    if (opts.scrolling) {
+      if (opts.cursorPos === 'iip') {
+        buffer.x = Math.min(offset + cols, termCols);
+      } else {
+        buffer.x = offset;
+      }
     } else {
       buffer.x = originX;
       buffer.y = originY;
@@ -254,8 +258,8 @@ export class ImageStorage implements IDisposable {
       marker: endMarker || undefined,
       tileCount,
       bufferType: this._terminal.buffer.active.type,
-      layer,
-      zIndex
+      layer: opts.layer,
+      zIndex: opts.zIndex
     };
 
     // finally add the image
@@ -375,7 +379,6 @@ export class ImageStorage implements IDisposable {
             if (! (nextE instanceof ImageTileInfo) || !nextE || nextE.imageId !== imageId || nextE.tileId !== startTile + count) {
               break;
             }
-            e = nextE;
             count++;
           }
           col--;

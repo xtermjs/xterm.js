@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { css } from 'common/Color';
-import { Disposable, DisposableStore, toDisposable } from 'common/Lifecycle';
-import { IBufferService, IDecorationService, IInternalDecoration, ILogService } from 'common/services/Services';
-import { IColor } from 'common/Types';
-import { IBuffer } from 'common/buffer/Types';
-import { Marker } from 'common/buffer/Marker';
+import { css } from '../Color';
+import { Disposable, DisposableStore, toDisposable } from '../Lifecycle';
+import { IBufferService, IDecorationService, IInternalDecoration, ILogService } from './Services';
+import { IColor } from '../Types';
+import { IBuffer } from '../buffer/Types';
+import { Marker } from '../buffer/Marker';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
-import { Emitter } from 'common/Event';
+import { Emitter } from '../Event';
 
 export class DecorationService extends Disposable implements IDecorationService {
   public serviceBrand: any;

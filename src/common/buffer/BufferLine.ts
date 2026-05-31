@@ -3,12 +3,13 @@
  * @license MIT
  */
 
-import { CharData, IAttributeData, IBufferLine, ILogicalLine, ICellData, IExtendedAttrs, IMarker } from 'common/Types';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { CellData } from 'common/buffer/CellData';
-import { Marker } from 'common/buffer/Marker';
-import { Attributes, BgFlags, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from 'common/buffer/Constants';
-import { stringFromCodePoint } from 'common/input/TextDecoder';
+import { CharData, IAttributeData, IBufferLine, ILogicalLine, ICellData, IExtendedAttrs, IMarker } from '../Types';
+import { AttributeData } from './AttributeData';
+import { CellData } from './CellData';
+import { Marker } from './Marker';
+import { Attributes, BgFlags, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from './Constants';
+import { stringFromCodePoint } from '../input/TextDecoder';
+import { StringBuilder } from '../StringBuilder';
 
 // Buffer memory layout:
 //
@@ -53,6 +54,7 @@ export const DEFAULT_ATTR_DATA = Object.freeze(new AttributeData());
 
 // Work variable to avoid garbage collection
 const $workCell = new CellData();
+const $translateToStringBuilder = new StringBuilder();
 
 export interface IBufferLineStringCacheEntry {
   value: string | undefined;
@@ -327,13 +329,13 @@ export class LogicalLine implements ILogicalLine {
     if (outColumns) {
       outColumns.length = 0;
     }
-    let result = '';
+    $translateToStringBuilder.reset();
     while (startCol < endCol) {
       const content = startCol >= dataLength ? 0
         : this._data[startCol * Constants.CELL_INDICIES + Cell.CONTENT];
       const cp = content & Content.CODEPOINT_MASK;
       const chars = (content & Content.IS_COMBINED_MASK) ? this._combined[startCol] : (cp) ? stringFromCodePoint(cp) : WHITESPACE_CELL_CHAR;
-      result += chars;
+      $translateToStringBuilder.append(chars);
       if (outColumns) {
         for (let i = 0; i < chars.length; ++i) {
           outColumns.push(startCol);
@@ -344,6 +346,8 @@ export class LogicalLine implements ILogicalLine {
     if (outColumns) {
       outColumns.push(startCol);
     }
+    const result = $translateToStringBuilder.toString();
+    $translateToStringBuilder.reset();
     return result;
   }
 }

@@ -148,7 +148,7 @@ export class Utf8ToUtf32 {
     let byte2: number;
     let byte3: number;
     let byte4: number;
-    let codepoint = 0;
+    let codepoint;
     let startPos = 0;
 
     // handle leftover bytes

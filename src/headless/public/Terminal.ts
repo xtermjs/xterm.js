@@ -3,15 +3,15 @@
  * @license MIT
  */
 
-import { BufferNamespaceApi } from 'common/public/BufferNamespaceApi';
-import { ParserApi } from 'common/public/ParserApi';
-import { UnicodeApi } from 'common/public/UnicodeApi';
+import { BufferNamespaceApi } from '../../common/public/BufferNamespaceApi';
+import { ParserApi } from '../../common/public/ParserApi';
+import { UnicodeApi } from '../../common/public/UnicodeApi';
 import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITerminalAddon, ITerminalInitOnlyOptions, IUnicodeHandling, Terminal as ITerminalApi } from '@xterm/headless';
-import { Terminal as TerminalCore } from 'headless/Terminal';
-import { AddonManager } from 'common/public/AddonManager';
-import { ITerminalOptions } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
-import type { IEvent } from 'common/Event';
+import { Terminal as TerminalCore } from '../Terminal';
+import { AddonManager } from '../../common/public/AddonManager';
+import { ITerminalOptions } from '../../common/Types';
+import { Disposable } from '../../common/Lifecycle';
+import type { IEvent } from '../../common/Event';
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */
@@ -40,15 +40,6 @@ export class Terminal extends Disposable implements ITerminalApi {
     };
 
     for (const propName in this._core.options) {
-      Object.defineProperty(this._publicOptions, propName, {
-        get: () => {
-          return this._core.options[propName];
-        },
-        set: (value: any) => {
-          this._checkReadonlyOptions(propName);
-          this._core.options[propName] = value;
-        }
-      });
       const desc = {
         get: getter.bind(this, propName),
         set: setter.bind(this, propName)
@@ -139,11 +130,11 @@ export class Terminal extends Disposable implements ITerminalApi {
     this._verifyIntegers(columns, rows);
     this._core.resize(columns, rows);
   }
-  public registerMarker(cursorYOffset: number = 0): IMarker | undefined {
+  public registerMarker(cursorYOffset: number = 0): IMarker {
     this._verifyIntegers(cursorYOffset);
-    return this._core.addMarker(cursorYOffset);
+    return this._core.registerMarker(cursorYOffset);
   }
-  public addMarker(cursorYOffset: number): IMarker | undefined {
+  public addMarker(cursorYOffset: number): IMarker {
     return this.registerMarker(cursorYOffset);
   }
   public dispose(): void {

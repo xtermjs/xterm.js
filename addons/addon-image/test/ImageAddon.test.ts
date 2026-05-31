@@ -264,6 +264,67 @@ test.describe('ImageAddon', () => {
     });
   });
 
+  test.describe('IIP support', () => {
+    test('size params is optional/informative', async () => {
+      // too small size param
+      await ctx.proxy.write(`\x1b]1337;File=inline=1;size=5:${PALETTE_PNG_BASE64}\x07`);
+      deepStrictEqual(await getOrigSize(1), [640, 80]);
+      // no size aparm at all
+      await ctx.proxy.write(`\x1b[10H\x1b]1337;File=inline=1:${PALETTE_QOI_BASE64}\x07`);
+      deepStrictEqual(await getOrigSize(2), [640, 80]);
+    });
+    test.skip('FilePart support - bytewise', async () => {
+      // opener
+      await ctx.proxy.write(`\x1b]1337;MultipartFile=inline=1\x07`);
+      // byte-wise
+      for (let i = 0; i < PALETTE_PNG_BASE64.length; ++i) {
+        await ctx.proxy.write(`\x1b]1337;FilePart=${PALETTE_PNG_BASE64[i]}\x07`);
+      }
+      // finalizer
+      await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
+      deepStrictEqual(await getOrigSize(1), [640, 80]);
+    });
+    test('FilePart support - chunks', async () => {
+      // opener
+      await ctx.proxy.write(`\x1b]1337;MultipartFile=inline=1\x07`);
+      // chunks
+      for (let i = 0; i < PALETTE_PNG_BASE64.length; i += 256) {
+        await ctx.proxy.write(`\x1b]1337;FilePart=${PALETTE_PNG_BASE64.slice(i, i + 256)}\x07`);
+      }
+      // finalizer
+      await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
+      deepStrictEqual(await getOrigSize(1), [640, 80]);
+    });
+    test('FilePart support - edgecases', async () => {
+      // multiple opener do not harm
+      for (let i = 0; i < 10; ++i) {
+        await ctx.proxy.write(`\x1b]1337;MultipartFile=inline=1\x07`);
+      }
+      // multiple finalizer do not harm
+      for (let i = 0; i < 5; ++i) {
+        await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
+      }
+      // chunks w'o opener are ignored
+      for (let i = 0; i < PALETTE_PNG_BASE64.length; i += 256) {
+        await ctx.proxy.write(`\x1b]1337;FilePart=${PALETTE_PNG_BASE64.slice(i, i + 256)}\x07`);
+      }
+      await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
+      pollFor(ctx.page, 'window.imageAddon._storage._images.size', 0);
+    });
+    test('FilePart support - other IIP sequence cancels chunked image', async () => {
+      // opener
+      await ctx.proxy.write(`\x1b]1337;MultipartFile=inline=1\x07`);
+      // chunks
+      for (let i = 0; i < PALETTE_PNG_BASE64.length; i += 256) {
+        await ctx.proxy.write(`\x1b]1337;FilePart=${PALETTE_PNG_BASE64.slice(i, i + 256)}\x07`);
+      }
+      // finalizer skipped
+      // write spinfox.png
+      await ctx.proxy.write(TESTDATA_IIP[1][0]);
+      deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[1][1]);
+    });
+  });
+
   test.describe('IIP support - testimages', () => {
     test('palette.png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[0][0]);

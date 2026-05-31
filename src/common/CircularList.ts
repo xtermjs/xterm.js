@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { ICircularList } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
-import { Emitter } from 'common/Event';
+import { ICircularList } from './Types';
+import { Disposable } from './Lifecycle';
+import { Emitter } from './Event';
 
 export interface IInsertEvent {
   index: number;

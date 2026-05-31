@@ -3,9 +3,9 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { BufferLine } from 'common/buffer/BufferLine';
-import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
-import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { BufferLine } from './BufferLine';
+import { BufferLineStringCache } from './BufferLineStringCache';
+import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Constants';
 
 /**
  * Gets the new line lengths for a given wrapped line. The purpose of this function it to pre-

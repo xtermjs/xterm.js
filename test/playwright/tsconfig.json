@@ -16,17 +16,9 @@
     "strict": true,
     "noImplicitAny": false,
     "declaration": true,
-    "moduleResolution": "node",
-    "paths": {
-      "browser/*": [
-        "../../src/browser/*"
-      ],
-      "common/*": [
-        "../../src/common/*"
-      ]
-    },
+    "moduleResolution": "nodenext",
     "target": "ESNext",
-    "module": "commonjs",
+    "module": "nodenext",
     "composite": true
   },
   "include": [

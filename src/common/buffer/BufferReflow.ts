@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { BufferLine } from 'common/buffer/BufferLine';
+import { BufferLine } from './BufferLine';
 
 export interface INewLayoutResult {
   layout: number[];

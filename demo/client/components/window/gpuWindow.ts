@@ -43,7 +43,7 @@ export class GpuWindow extends BaseWindow implements IControlWindow {
   }
 
   private _styleAtlasPage(canvas: HTMLCanvasElement): void {
-    // eslint-disable-next-line no-restricted-syntax
+    // oxlint-disable-next-line eslint-js/no-restricted-syntax
     const dpr = window.devicePixelRatio;
     canvas.style.width = `${canvas.width / dpr}px`;
     canvas.style.height = `${canvas.height / dpr}px`;

@@ -3,11 +3,12 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { MouseService } from 'browser/services/MouseService';
-import { MouseStateService } from 'common/services/MouseStateService';
-import { CoreMouseAction, CoreMouseButton } from 'common/Types';
-import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
-import { MockCoreBrowserService, MockRenderService, MockSelectionService } from 'browser/TestUtils.test';
+import { AltMouseCursorController, MouseEventCssClasses, MouseService } from './MouseService';
+import { MouseStateService } from '../../common/services/MouseStateService';
+import { CoreMouseAction, CoreMouseButton } from '../../common/Types';
+import { IBufferService, ICoreService, ILogService, IOptionsService } from '../../common/services/Services';
+import { OptionsService } from '../../common/services/OptionsService';
+import { MockCoreBrowserService, MockRenderService, MockSelectionService } from '../TestUtils.test';
 
 function toBytes(s: string | undefined): number[] {
   if (!s) {
@@ -41,6 +42,36 @@ const logService: ILogService = {
   warn: () => {},
   error: () => {}
 } as any;
+
+class TestSelectionService extends MockSelectionService {
+  public enableCount = 0;
+  public disableCount = 0;
+
+  public override enable(): void {
+    this.enableCount++;
+  }
+
+  public override disable(): void {
+    this.disableCount++;
+  }
+
+  public override shouldForceSelection(): boolean {
+    return false;
+  }
+}
+
+function createTestMouseTargetElement(): HTMLElement {
+  const classes = new Set<string>();
+  return {
+    classList: {
+      add: (className: string) => classes.add(className),
+      remove: (className: string) => classes.delete(className),
+      contains: (className: string) => classes.has(className)
+    },
+    addEventListener: () => {},
+    removeEventListener: () => {}
+  } as any;
+}
 
 describe('MouseService _triggerMouseEvent', () => {
   let mouseService: MouseService;
@@ -209,5 +240,114 @@ describe('MouseService _triggerMouseEvent', () => {
     assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.NONE, action: CoreMouseAction.MOVE, ctrl: true, alt: true, shift: true }), true);
     assert.deepEqual(reports, ['\x1b[MS!!', '\x1b[MK!!', '\x1b[MG!!', '\x1b[M[!!', '\x1b[MO!!', '\x1b[M_!!']);
     reports = [];
+  });
+});
+
+describe('MouseService mouseEventsRequireAlt', () => {
+  it('should update selection state and cursor class when toggled while mouse events are active', () => {
+    const mouseStateService = new MouseStateService();
+    const optionsService = new OptionsService({});
+    const selectionService = new TestSelectionService();
+    const mouseService = new MouseService(
+      new MockRenderService(),
+      {
+        getMouseReportCoords: (_ev: MouseEvent, _el: HTMLElement) => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      mouseStateService,
+      {
+        triggerDataEvent: () => {},
+        triggerBinaryEvent: () => {},
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      bufferService,
+      optionsService,
+      selectionService,
+      logService,
+      new MockCoreBrowserService()
+    );
+    const element = createTestMouseTargetElement();
+    const screenElement = createTestMouseTargetElement();
+    const document = {
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    } as any;
+
+    mouseService.bindMouse({
+      element,
+      screenElement,
+      document
+    }, disposable => disposable, () => {});
+
+    mouseStateService.activeProtocol = 'ANY';
+    assert.isTrue(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
+    assert.equal(selectionService.disableCount, 1);
+
+    optionsService.options.mouseEventsRequireAlt = true;
+    assert.isFalse(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
+    assert.equal(selectionService.enableCount, 2);
+
+    optionsService.options.mouseEventsRequireAlt = false;
+    assert.isTrue(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
+    assert.equal(selectionService.disableCount, 2);
+  });
+
+  it('should strip alt modifier from forwarded mouse reports', () => {
+    const mouseStateService = new MouseStateService();
+    mouseStateService.activeProtocol = 'ANY';
+    mouseStateService.activeEncoding = 'SGR';
+    const optionsService = new OptionsService({ mouseEventsRequireAlt: true });
+    const reports: string[] = [];
+    const mouseService = new MouseService(
+      new MockRenderService(),
+      {
+        getMouseReportCoords: () => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      mouseStateService,
+      {
+        triggerDataEvent: (data: string) => reports.push(data),
+        triggerBinaryEvent: () => {},
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      bufferService,
+      optionsService,
+      new TestSelectionService(),
+      logService,
+      new MockCoreBrowserService()
+    );
+    const ctx = {
+      target: {
+        screenElement: createTestMouseTargetElement()
+      },
+      requestedEvents: {}
+    } as any;
+
+    const sent = (mouseService as any)._sendEvent(ctx, {
+      type: 'mousedown',
+      button: 0,
+      altKey: true,
+      ctrlKey: false,
+      shiftKey: false
+    } as MouseEvent);
+
+    assert.isTrue(sent);
+    assert.deepEqual(reports, ['\x1b[<0;1;1M']);
+  });
+
+  it('should toggle enable-mouse-events class when alt modifier changes', () => {
+    const element = createTestMouseTargetElement();
+    const altMouseCursor = new AltMouseCursorController(element, {
+      addEventListener: () => {},
+      removeEventListener: () => {}
+    } as any, () => true);
+
+    const sync = (altHeld: boolean) => altMouseCursor.syncFromModifier({
+      getModifierState: (key: string) => key === 'Alt' && altHeld
+    } as KeyboardEvent);
+
+    assert.isFalse(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
+    sync(true);
+    assert.isTrue(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
+    sync(false);
+    assert.isFalse(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
   });
 });

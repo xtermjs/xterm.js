@@ -21,24 +21,24 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, IMouseStateService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
-import { InstantiationService } from 'common/services/InstantiationService';
-import { LogService } from 'common/services/LogService';
-import { BufferService, BufferServiceConstants } from 'common/services/BufferService';
-import { OptionsService } from 'common/services/OptionsService';
-import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
-import { CoreService } from 'common/services/CoreService';
-import { MouseStateService } from 'common/services/MouseStateService';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { CharsetService } from 'common/services/CharsetService';
-import { updateWindowsModeWrappedState } from 'common/WindowsMode';
-import { IFunctionIdentifier, IParams } from 'common/parser/Types';
-import { IBufferSet } from 'common/buffer/Types';
-import { InputHandler } from 'common/InputHandler';
-import { WriteBuffer } from 'common/input/WriteBuffer';
-import { OscLinkService } from 'common/services/OscLinkService';
-import { Emitter, EventUtils, type IEvent } from 'common/Event';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, IMouseStateService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from './services/Services';
+import { InstantiationService } from './services/InstantiationService';
+import { LogService } from './services/LogService';
+import { BufferService, BufferServiceConstants } from './services/BufferService';
+import { OptionsService } from './services/OptionsService';
+import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from './Types';
+import { CoreService } from './services/CoreService';
+import { MouseStateService } from './services/MouseStateService';
+import { UnicodeService } from './services/UnicodeService';
+import { CharsetService } from './services/CharsetService';
+import { updateWindowsModeWrappedState } from './WindowsMode';
+import { IFunctionIdentifier, IParams } from './parser/Types';
+import { IBufferSet } from './buffer/Types';
+import { InputHandler } from './InputHandler';
+import { WriteBuffer } from './input/WriteBuffer';
+import { OscLinkService } from './services/OscLinkService';
+import { Emitter, EventUtils, type IEvent } from './Event';
+import { Disposable, MutableDisposable, toDisposable } from './Lifecycle';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -263,7 +263,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _handleWindowsPtyOptionChange(): void {
     let value = false;
     const windowsPty = this.optionsService.rawOptions.windowsPty;
-    if (windowsPty && windowsPty.buildNumber !== undefined && windowsPty.buildNumber !== undefined) {
+    if (windowsPty && windowsPty.backend !== undefined && windowsPty.buildNumber !== undefined) {
       value = !!(windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376);
     }
     if (value) {
