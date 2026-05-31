@@ -34,6 +34,7 @@
     "start": "node demo/start",
     "dev": "concurrently -k -p [{name}] -n tsc,esbuild,esbuild-demo-client,esbuild-demo-server,server -c blue,yellow,cyan,green,magenta \"npm:tsc-watch\" \"npm:esbuild-watch\" \"npm:esbuild-demo-client-watch\" \"npm:esbuild-demo-server-watch\" \"npm:start\"",
     "build": "npm run tsc",
+    "build:parser-wasm": "bash bin/build_parser_wasm.sh",
     "watch": "npm run tsc-watch",
     "tsc": "tsgo -b ./tsconfig.all.json",
     "tsc-watch": "tsgo -b -w ./tsconfig.all.json --preserveWatchOutput",

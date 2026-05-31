@@ -77,10 +77,10 @@ class TestEscapeSequenceParser extends EscapeSequenceParser {
   public get realParams(): IParams {
     return this._params;
   }
-  public get collect(): string {
+  public get collectStr(): string {
     return this.identToString(this._collect);
   }
-  public set collect(value: string) {
+  public set collectStr(value: string) {
     this._collect = 0;
     for (let i = 0; i < value.length; ++i) {
       this._collect <<= 8;
@@ -248,19 +248,19 @@ describe('EscapeSequenceParser', () => {
       assert.equal(parser.currentState, ParserState.GROUND);
       assert.equal(parser.osc, '');
       assert.deepEqual(parser.params, [0]);
-      assert.equal(parser.collect, '');
+      assert.equal(parser.collectStr, '');
     });
     it('reset states', () => {
       parser.currentState = 124;
       parser.osc = '#';
       parser.params = [123];
-      parser.collect = '#';
+      parser.collectStr = '#';
 
       parser.reset();
       assert.equal(parser.currentState, ParserState.GROUND);
       assert.equal(parser.osc, '');
       assert.deepEqual(parser.params, [0]);
-      assert.equal(parser.collect, '');
+      assert.equal(parser.collectStr, '');
     });
   });
   describe('state transitions and actions', () => {
@@ -327,11 +327,11 @@ describe('EscapeSequenceParser', () => {
       for (state in states) {
         parser.currentState = state;
         parser.params = [23];
-        parser.collect = '#';
+        parser.collectStr = '#';
         parse(parser, '\x1b');
         assert.equal(parser.currentState, ParserState.ESCAPE);
         assert.deepEqual(parser.params, [0]);
-        assert.equal(parser.collect, '');
+        assert.equal(parser.collectStr, '');
         parser.reset();
       }
     });
@@ -383,7 +383,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.ESCAPE;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.ESCAPE_INTERMEDIATE);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -419,7 +419,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.ESCAPE_INTERMEDIATE;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.ESCAPE_INTERMEDIATE);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -442,21 +442,21 @@ describe('EscapeSequenceParser', () => {
       // C0
       parser.currentState = ParserState.ESCAPE;
       parser.params = [123];
-      parser.collect = '#';
+      parser.collectStr = '#';
       parse(parser, '[');
       assert.equal(parser.currentState, ParserState.CSI_ENTRY);
       assert.deepEqual(parser.params, [0]);
-      assert.equal(parser.collect, '');
+      assert.equal(parser.collectStr, '');
       parser.reset();
       // C1
       for (state in states) {
         parser.currentState = state;
         parser.params = [123];
-        parser.collect = '#';
+        parser.collectStr = '#';
         parse(parser, '\x9b');
         assert.equal(parser.currentState, ParserState.CSI_ENTRY);
         assert.deepEqual(parser.params, [0]);
-        assert.equal(parser.collect, '');
+        assert.equal(parser.collectStr, '');
         parser.reset();
       }
     });
@@ -517,7 +517,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.CSI_ENTRY;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.CSI_PARAM);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -582,7 +582,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.CSI_ENTRY;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.CSI_INTERMEDIATE);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -593,7 +593,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.CSI_PARAM;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.CSI_INTERMEDIATE);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -619,7 +619,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.CSI_INTERMEDIATE;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.CSI_INTERMEDIATE);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -848,7 +848,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.DCS_ENTRY;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.DCS_PARAM);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -930,7 +930,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.DCS_ENTRY;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.DCS_INTERMEDIATE);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -941,7 +941,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.DCS_PARAM;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.DCS_INTERMEDIATE);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -965,7 +965,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.DCS_INTERMEDIATE;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.DCS_INTERMEDIATE);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
@@ -976,7 +976,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.DCS_INTERMEDIATE;
         parse(parser, '\x20' + chars[i]);
         assert.equal(parser.currentState, ParserState.DCS_IGNORE);
-        assert.equal(parser.collect, '\x20');
+        assert.equal(parser.collectStr, '\x20');
         parser.reset();
       }
     });
@@ -1079,7 +1079,7 @@ describe('EscapeSequenceParser', () => {
         parser.currentState = ParserState.APC_ENTRY;
         parse(parser, collect[i]);
         assert.equal(parser.currentState, ParserState.APC_INTERMEDIATE);
-        assert.equal(parser.collect, collect[i]);
+        assert.equal(parser.collectStr, collect[i]);
         parser.reset();
       }
     });
