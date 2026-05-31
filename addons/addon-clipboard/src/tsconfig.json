@@ -15,6 +15,9 @@
       "../../../node_modules/@types/mocha"
     ],
     "paths": {
+      "browser/*": [
+        "../../../src/browser/*"
+      ],
       "@xterm/addon-clipboard": [
         "../typings/addon-clipboard.d.ts"
       ]

@@ -6,36 +6,24 @@
     ],
     "rootDir": "..",
     "outDir": "../out-benchmark",
-    "types": [
-      "../../../node_modules/@types/node"
-    ],
+    "types": ["../../../node_modules/@types/node"],
     "moduleResolution": "nodenext",
     "strict": false,
     "target": "es2021",
     "module": "nodenext",
     "paths": {
-      "SerializeAddon": [
-        "../src/SerializeAddon"
-      ],
+      "common/*": ["../../../src/common/*"],
+      "browser/*": ["../../../src/browser/*"],
+      "SerializeAddon": ["../src/SerializeAddon"],
       "@xterm/addon-serialize": [
         "../typings/addon-serialize.d.ts"
       ]
     }
   },
-  "include": [
-    "../**/*",
-    "../../../typings/xterm.d.ts"
-  ],
-  "exclude": [
-    "../../../**/*test.ts",
-    "../../**/*api.ts"
-  ],
+  "include": ["../**/*", "../../../typings/xterm.d.ts"],
+  "exclude": ["../../../**/*test.ts", "../../**/*api.ts"],
   "references": [
-    {
-      "path": "../../../src/common"
-    },
-    {
-      "path": "../../../src/browser"
-    }
+    { "path": "../../../src/common" },
+    { "path": "../../../src/browser" }
   ]
 }

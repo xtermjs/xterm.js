@@ -6,7 +6,7 @@
 import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from '@xterm/xterm';
 import { ICellSize, ImageLayer, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
-import { Disposable, MutableDisposable, toDisposable } from '../../../src/common/Lifecycle';
+import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 
 const enum Constants {
   PLACEHOLDER_LENGTH = 4096,

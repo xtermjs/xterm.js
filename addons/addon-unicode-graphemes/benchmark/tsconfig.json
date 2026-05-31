@@ -1,41 +1,26 @@
 {
   "compilerOptions": {
-    "lib": [
-      "dom",
-      "es6"
-    ],
+    "lib": ["dom", "es6"],
     "rootDir": "..",
     "outDir": "../out-benchmark",
-    "types": [
-      "../../../node_modules/@types/node"
-    ],
+    "types": ["../../../node_modules/@types/node"],
     "moduleResolution": "nodenext",
     "strict": false,
     "target": "es2015",
     "module": "nodenext",
     "paths": {
-      "UnicodeGraphemeProvider": [
-        "../src/UnicodeGraphemeProvider"
-      ],
+      "common/*": ["../../../src/common/*"],
+      "browser/*": ["../../../src/browser/*"],
+      "UnicodeGraphemeProvider": ["../src/UnicodeGraphemeProvider"],
       "@xterm/addon-unicode-graphemes": [
         "../typings/addon-unicode-graphemes.d.ts"
       ]
     }
   },
-  "include": [
-    "../**/*",
-    "../../../typings/xterm.d.ts"
-  ],
-  "exclude": [
-    "../../../**/*test.ts",
-    "../../**/*api.ts"
-  ],
+  "include": ["../**/*", "../../../typings/xterm.d.ts"],
+  "exclude": ["../../../**/*test.ts", "../../**/*api.ts"],
   "references": [
-    {
-      "path": "../../../src/common"
-    },
-    {
-      "path": "../../../src/browser"
-    }
+    { "path": "../../../src/common" },
+    { "path": "../../../src/browser" }
   ]
 }

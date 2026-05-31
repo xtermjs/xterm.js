@@ -5,7 +5,7 @@
 
 import type { ITerminalAddon, IDisposable } from '@xterm/xterm';
 import type { ImageAddon as IImageApi } from '@xterm/addon-image';
-import { Emitter, type IEvent } from '../../../src/common/Event';
+import { Emitter, type IEvent } from 'common/Event';
 import { IIPHandler } from './IIPHandler';
 import { ImageRenderer } from './ImageRenderer';
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';

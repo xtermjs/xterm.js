@@ -3,19 +3,19 @@
  * @license MIT
  */
 
-import { IColorContrastCache } from '../../../src/browser/Types';
+import { IColorContrastCache } from 'browser/Types';
 import { DIM_OPACITY, TEXT_BASELINE } from './Constants';
 import { tryDrawCustomGlyph } from './customGlyphs/CustomGlyphRasterizer';
-import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from '../../../src/browser/renderer/shared/RendererUtils';
+import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from './Types';
-import { NULL_COLOR, channels, color, rgba } from '../../../src/common/Color';
-import { FourKeyMap } from '../../../src/common/MultiKeyMap';
-import { IdleTaskQueue } from '../../../src/common/TaskQueue';
-import { IColor } from '../../../src/common/Types';
-import { AttributeData } from '../../../src/common/buffer/AttributeData';
-import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from '../../../src/common/buffer/Constants';
-import { ILogService, IUnicodeService } from '../../../src/common/services/Services';
-import { Emitter } from '../../../src/common/Event';
+import { NULL_COLOR, channels, color, rgba } from 'common/Color';
+import { FourKeyMap } from 'common/MultiKeyMap';
+import { IdleTaskQueue } from 'common/TaskQueue';
+import { IColor } from 'common/Types';
+import { AttributeData } from 'common/buffer/AttributeData';
+import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
+import { ILogService, IUnicodeService } from 'common/services/Services';
+import { Emitter } from 'common/Event';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.

@@ -12,8 +12,14 @@
     "removeComments": true,
     "strict": true,
     "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
       "@xterm/addon-unicode11": [
         "../typings/addon-unicode11.d.ts"
+      ],
+      "*": [
+        "./*"
       ]
     },
     "types": [

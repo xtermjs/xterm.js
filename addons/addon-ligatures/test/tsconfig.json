@@ -10,6 +10,11 @@
     "sourceMap": true,
     "removeComments": true,
     "strict": true,
+    "paths": {
+      "*": [
+        "./*"
+      ]
+    },
     "types": [
       "../../../node_modules/@types/mocha",
       "../../../node_modules/@types/node"

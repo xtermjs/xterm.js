@@ -5,7 +5,7 @@
 
 import type { Terminal, ITerminalAddon, IRenderDimensions } from '@xterm/xterm';
 import type { FitAddon as IFitApi } from '@xterm/addon-fit';
-import { ViewportConstants } from '../../../src/browser/shared/Constants';
+import { ViewportConstants } from 'browser/shared/Constants';
 
 interface ITerminalDimensions {
   /**

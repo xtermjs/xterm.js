@@ -8,6 +8,10 @@ const path = require('path');
 
 const COVERAGE_LINES_THRESHOLD = 40;
 
+// Add `out-esbuild` to NODE_PATH so addon path-mapped imports (common/*, browser/*) resolve.
+const env = { ...process.env };
+env.NODE_PATH = path.resolve(__dirname, '../out-esbuild');
+
 let testFiles = ['**/out-esbuild/**/*.test.js'];
 
 let flagArgs = [];
@@ -42,7 +46,7 @@ if (checkCoverage) {
     args,
     {
       cwd: path.resolve(__dirname, '..'),
-      env: process.env,
+      env,
       shell: true,
       stdio: 'inherit'
     }
@@ -55,7 +59,7 @@ const run = cp.spawnSync(
   [...testFiles, ...flagArgs],
   {
     cwd: path.resolve(__dirname, '..'),
-    env: process.env,
+    env,
     shell: true,
     stdio: 'inherit'
   }
