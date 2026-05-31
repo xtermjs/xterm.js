@@ -192,14 +192,14 @@ if (config.addon) {
   outBuilds = [
     {
       ...outConfig,
-      entryPoints: ['src/common/primitives/**/*.ts'],
-      outbase: 'src/common/primitives',
+      entryPoints: ['src/primitives/**/*.ts'],
+      outbase: 'src/primitives',
       outdir: 'out-esbuild/common',
     },
     {
       ...outConfig,
-      entryPoints: ['src/common/runtime/**/*.ts'],
-      outbase: 'src/common/runtime',
+      entryPoints: ['src/runtime/**/*.ts'],
+      outbase: 'src/runtime',
       outdir: 'out-esbuild/common',
     },
     {

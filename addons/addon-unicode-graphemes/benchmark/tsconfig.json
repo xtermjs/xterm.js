@@ -10,9 +10,8 @@
     "module": "nodenext",
     "paths": {
       "common/*": [
-        "../../../src/common/primitives/*",
-        "../../../src/common/runtime/*",
-        "../../../src/common/*"
+        "../../../src/primitives/*",
+        "../../../src/runtime/*",
       ],
       "target-browser/*": ["../../../src/target-browser/*"],
       "UnicodeGraphemeProvider": ["../src/UnicodeGraphemeProvider"],
@@ -24,7 +23,7 @@
   "include": ["../**/*", "../../../typings/xterm.d.ts"],
   "exclude": ["../../../**/*test.ts", "../../**/*api.ts"],
   "references": [
-    { "path": "../../../src/common" },
+    { "path": "../../../src" },
     { "path": "../../../src/target-browser" }
   ]
 }

@@ -6,8 +6,8 @@ This document describes how `src/` is organized. The layout follows [issue #5963
 
 ```mermaid
 flowchart BT
-  primitives["common/primitives<br/>building blocks"]
-  runtime["common/runtime<br/>services, integration"]
+  primitives["primitives<br/>building blocks"]
+  runtime["runtime<br/>services, integration"]
   targetBrowser["target-browser<br/>DOM terminal"]
   targetHeadless["target-headless<br/>Node terminal"]
 
@@ -20,15 +20,15 @@ flowchart BT
 
 | Project | `tsconfig` | Output | Role |
 | --- | --- | --- | --- |
-| Primitives | `src/common/primitives/tsconfig.json` | `out/common/primitives/` | Buffer, parser, input helpers, static data, shared utilities. Must not import from `runtime/`. |
-| Runtime | `src/common/runtime/tsconfig.json` | `out/common/runtime/` | Services (DI), `CoreTerminal`, `InputHandler`, public API adapters, `Types.ts`. References primitives. |
-| Common (solution) | `src/common/tsconfig.json` | — | Solution root; references primitives + runtime only. |
-| Target browser | `src/target-browser/tsconfig.json` | `out/target-browser/` | Browser rendering, input, public `Terminal`. References common. |
-| Target headless | `src/target-headless/tsconfig.json` | `out/target-headless/` | Headless terminal. References common. |
+| Primitives | `src/primitives/tsconfig.json` | `out/primitives/` | Buffer, parser, input helpers, static data, shared utilities. Must not import from `runtime/`. |
+| Runtime | `src/runtime/tsconfig.json` | `out/runtime/` | Services (DI), `CoreTerminal`, `InputHandler`, public API adapters, `Types.ts`. References primitives. |
+| Source (solution) | `src/tsconfig.json` | — | Solution root; references primitives + runtime only. |
+| Target browser | `src/target-browser/tsconfig.json` | `out/target-browser/` | Browser rendering, input, public `Terminal`. References `src/`. |
+| Target headless | `src/target-headless/tsconfig.json` | `out/target-headless/` | Headless terminal. References `src/`. |
 
 Unit test files (`**/*.test.ts`) are excluded from composite library builds; they are compiled via esbuild for `npm run test-unit`.
 
-## `common/primitives/`
+## `primitives/`
 
 | Area | Contents |
 | --- | --- |
@@ -40,7 +40,7 @@ Unit test files (`**/*.test.ts`) are excluded from composite library builds; the
 
 Primitives depend only on other primitives (and `@xterm/xterm` typings where needed). Buffer code uses `IBufferService` from `common/buffer/BufferService`, not `common/services/Services`.
 
-## `common/runtime/`
+## `runtime/`
 
 | Area | Contents |
 | --- | --- |
@@ -52,12 +52,12 @@ Primitives depend only on other primitives (and `@xterm/xterm` typings where nee
 
 ## Import paths
 
-Source keeps the `common/...` prefix. Each project's `paths` in `tsconfig.json` map that prefix to the correct layer (primitives first, then runtime, for targets).
+Source keeps the `common/...` prefix (logical module name, not a physical `common/` folder). Each project's `paths` in `tsconfig.json` map that prefix to `primitives/` and/or `runtime/`.
 
 Platform code uses:
 
-- `target-browser/...` — was `browser/...`
-- `target-headless/...` — was `headless/...`
+- `target-browser/...` — browser terminal
+- `target-headless/...` — Node terminal
 
 ## Published packages vs source folders
 

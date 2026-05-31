@@ -1,5 +1,5 @@
 {
-  "extends": "../../tsconfig-library-base",
+  "extends": "../tsconfig-library-base",
   "compilerOptions": {
     "lib": [
       "es2015",
@@ -9,23 +9,23 @@
     ],
     "composite": true,
     "rootDir": ".",
-    "outDir": "../../../out/common/primitives",
+    "outDir": "../../out/primitives",
     "types": [
-      "../../../node_modules/@types/mocha"
+      "../../node_modules/@types/mocha"
     ],
     "paths": {
-      "@xterm/xterm": ["../../../typings/xterm.d.ts"],
+      "@xterm/xterm": ["../../typings/xterm.d.ts"],
       "common/buffer/*": ["./buffer/*"],
       "common/data/*": ["./data/*"],
       "common/input/*": ["./input/*"],
       "common/parser/*": ["./parser/*"],
       "common/*": ["./*"],
-      "*": ["../../*"]
+      "*": ["../*"]
     }
   },
   "include": [
     "./**/*",
-    "../../../typings/xterm.d.ts"
+    "../../typings/xterm.d.ts"
   ],
   "exclude": [
     "**/*.test.ts"

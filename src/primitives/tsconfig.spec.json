@@ -4,7 +4,7 @@
     "composite": false,
     "noEmit": true,
     "paths": {
-      "@xterm/xterm": ["../../../typings/xterm.d.ts"],
+      "@xterm/xterm": ["../../typings/xterm.d.ts"],
       "common/buffer/*": ["./buffer/*"],
       "common/data/*": ["./data/*"],
       "common/input/*": ["./input/*"],
@@ -13,7 +13,7 @@
       "common/TestUtils.test": ["../runtime/TestUtils.test"],
       "common/Types": ["../runtime/Types"],
       "common/*": ["./*", "../runtime/*"],
-      "*": ["../../*"]
+      "*": ["../*"]
     }
   },
   "include": [

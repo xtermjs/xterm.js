@@ -12,9 +12,8 @@
     "removeComments": true,
     "paths": {
       "common/*": [
-        "../../../src/common/primitives/*",
-        "../../../src/common/runtime/*",
-        "../../../src/common/*"
+        "../../../src/primitives/*",
+        "../../../src/runtime/*",
       ],
       "target-browser/*": [
         "../../../src/target-browser/*"
@@ -35,7 +34,7 @@
   ],
   "references": [
     {
-      "path": "../../../src/common"
+      "path": "../../../src"
     },
     {
       "path": "../../../src/target-browser"

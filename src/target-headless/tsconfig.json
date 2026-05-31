@@ -12,14 +12,14 @@
       "../../node_modules/@types/node"
     ],
     "paths": {
-      "common/buffer/*": ["../common/primitives/buffer/*"],
-      "common/data/*": ["../common/primitives/data/*"],
-      "common/input/*": ["../common/primitives/input/*"],
-      "common/parser/*": ["../common/primitives/parser/*"],
-      "common/services/*": ["../common/runtime/services/*"],
-      "common/public/*": ["../common/runtime/public/*"],
-      "common/Types": ["../common/runtime/Types"],
-      "common/*": ["../common/primitives/*", "../common/runtime/*"],
+      "common/buffer/*": ["../primitives/buffer/*"],
+      "common/data/*": ["../primitives/data/*"],
+      "common/input/*": ["../primitives/input/*"],
+      "common/parser/*": ["../primitives/parser/*"],
+      "common/services/*": ["../runtime/services/*"],
+      "common/public/*": ["../runtime/public/*"],
+      "common/Types": ["../runtime/Types"],
+      "common/*": ["../primitives/*", "../runtime/*"],
       "*": [ "./../*" ]
     }
   },
@@ -32,6 +32,6 @@
     "**/*.test.ts"
   ],
   "references": [
-    { "path": "../common" }
+    { "path": ".." }
   ]
 }

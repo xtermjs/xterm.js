@@ -30,7 +30,10 @@ const config = {
     modules: ['./node_modules'],
     extensions: [ '.js' ],
     alias: {
-      common: path.resolve('./out/common'),
+      common: [
+        path.resolve('./out/runtime'),
+        path.resolve('./out/primitives'),
+      ],
       headless: path.resolve('./out/target-headless'),
       vs: path.resolve('./out/vs')
     }

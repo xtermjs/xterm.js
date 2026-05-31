@@ -14,9 +14,8 @@
     "paths": {
       "target-browser/*": [ "../../../src/target-browser/*" ],
       "common/*": [
-        "../../../src/common/primitives/*",
-        "../../../src/common/runtime/*",
-        "../../../src/common/*"
+        "../../../src/primitives/*",
+        "../../../src/runtime/*",
       ],
       "@xterm/addon-image": [ "../typings/addon-image.d.ts" ],
       "*": [ "./*" ]
@@ -28,6 +27,6 @@
   ],
   "references": [
     { "path": "../../../src/target-browser" },
-    { "path": "../../../src/common" }
+    { "path": "../../../src" }
   ]
 }

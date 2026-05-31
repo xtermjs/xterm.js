@@ -22,9 +22,8 @@
         "../../src/target-browser/*"
       ],
       "common/*": [
-        "../../src/common/primitives/*",
-        "../../src/common/runtime/*",
-        "../../src/common/*"
+        "../../src/primitives/*",
+        "../../src/runtime/*",
       ]
     },
     "target": "ESNext",
@@ -40,7 +39,7 @@
       "path": "../../src/target-browser"
     },
     {
-      "path": "../../src/common"
+      "path": "../../src"
     }
   ]
 }

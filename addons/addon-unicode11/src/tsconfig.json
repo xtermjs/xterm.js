@@ -13,9 +13,8 @@
     "strict": true,
     "paths": {
       "common/*": [
-        "../../../src/common/primitives/*",
-        "../../../src/common/runtime/*",
-        "../../../src/common/*"
+        "../../../src/primitives/*",
+        "../../../src/runtime/*",
       ],
       "@xterm/addon-unicode11": [
         "../typings/addon-unicode11.d.ts"
@@ -34,7 +33,7 @@
   ],
   "references": [
     {
-      "path": "../../../src/common"
+      "path": "../../../src"
     }
   ]
 }

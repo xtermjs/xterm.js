@@ -1,5 +1,5 @@
 {
-  "extends": "../tsconfig-library-base",
+  "extends": "./tsconfig-library-base",
   "files": [],
   "references": [
     { "path": "./primitives" },
