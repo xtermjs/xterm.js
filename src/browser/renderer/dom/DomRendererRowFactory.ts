@@ -231,7 +231,6 @@ export class DomRendererRowFactory {
           }
           charElement = this._document.createElement('span');
           cellAmount = 0;
-          // eslint-disable-next-line no-useless-assignment
           text = '';
         }
       }

@@ -1,0 +1,372 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": [
+    "typescript"
+  ],
+  "categories": {
+    "correctness": "off"
+  },
+  "options": {
+    "typeAware": true,
+    "maxWarnings": 0
+  },
+  "env": {
+    "builtin": true
+  },
+  "ignorePatterns": [
+    "addons/*/src/third-party/*.ts",
+    "**/out/*",
+    "**/out-test/*",
+    "**/out-esbuild/*",
+    "**/out-esbuild-test/*",
+    "**/inwasm-sdks/*",
+    "**/typings/*.d.ts",
+    "**/node_modules",
+    "**/*.js",
+    "**/*.mjs"
+  ],
+  "rules": {
+    "constructor-super": "error",
+    "for-direction": "error",
+    "getter-return": "error",
+    "no-async-promise-executor": "error",
+    "no-case-declarations": "error",
+    "no-class-assign": "error",
+    "no-compare-neg-zero": "error",
+    "no-cond-assign": "error",
+    "no-const-assign": "error",
+    "no-constant-binary-expression": "error",
+    "no-constant-condition": "error",
+    "no-control-regex": "error",
+    "no-debugger": "error",
+    "no-delete-var": "error",
+    "no-dupe-class-members": "error",
+    "no-dupe-else-if": "error",
+    "no-dupe-keys": "error",
+    "no-duplicate-case": "error",
+    "no-empty": "error",
+    "no-empty-character-class": "error",
+    "no-empty-pattern": "error",
+    "no-empty-static-block": "error",
+    "no-ex-assign": "error",
+    "no-extra-boolean-cast": "error",
+    "no-fallthrough": "error",
+    "no-func-assign": "error",
+    "no-global-assign": "error",
+    "no-import-assign": "error",
+    "no-invalid-regexp": "error",
+    "no-irregular-whitespace": "error",
+    "no-loss-of-precision": "error",
+    "no-misleading-character-class": "error",
+    "no-new-native-nonconstructor": "error",
+    "no-nonoctal-decimal-escape": "error",
+    "no-obj-calls": "error",
+    "no-prototype-builtins": "error",
+    "no-redeclare": "error",
+    "no-regex-spaces": "error",
+    "no-self-assign": "error",
+    "no-setter-return": "error",
+    "no-shadow-restricted-names": "error",
+    "no-sparse-arrays": "error",
+    "no-this-before-super": "error",
+    "no-unassigned-vars": "error",
+    "no-unexpected-multiline": "error",
+    "no-unreachable": "error",
+    "no-unsafe-finally": "error",
+    "no-unsafe-negation": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-unused-labels": "error",
+    "no-unused-private-class-members": "error",
+    "no-unused-vars": "error",
+    "no-useless-backreference": "error",
+    "no-useless-catch": "error",
+    "no-useless-escape": "error",
+    "no-with": "error",
+    "preserve-caught-error": "error",
+    "require-yield": "error",
+    "use-isnan": "error",
+    "valid-typeof": "error",
+    "no-array-constructor": "error",
+    "no-unused-expressions": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/no-explicit-any": "error",
+    "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-namespace": "error",
+    "typescript/no-non-null-asserted-optional-chain": "error",
+    "typescript/no-require-imports": "error",
+    "typescript/no-this-alias": "error",
+    "typescript/no-unnecessary-type-constraint": "error",
+    "typescript/no-unsafe-declaration-merging": "error",
+    "typescript/no-unsafe-function-type": "error",
+    "typescript/no-wrapper-object-types": "error",
+    "typescript/prefer-as-const": "error",
+    "typescript/prefer-namespace-keyword": "error",
+    "typescript/triple-slash-reference": "error"
+  },
+  "overrides": [
+    {
+      "files": [
+        "**/*.ts",
+        "**/*.tsx",
+        "**/*.mts",
+        "**/*.cts"
+      ],
+      "rules": {
+        "constructor-super": "off",
+        "getter-return": "off",
+        "no-class-assign": "off",
+        "no-const-assign": "off",
+        "no-dupe-class-members": "off",
+        "no-dupe-keys": "off",
+        "no-func-assign": "off",
+        "no-import-assign": "off",
+        "no-new-native-nonconstructor": "off",
+        "no-obj-calls": "off",
+        "no-redeclare": "off",
+        "no-setter-return": "off",
+        "no-this-before-super": "off",
+        "no-unreachable": "off",
+        "no-unsafe-negation": "off",
+        "no-var": "error",
+        "no-with": "off",
+        "prefer-const": "error",
+        "prefer-rest-params": "error",
+        "prefer-spread": "error"
+      }
+    },
+    {
+      "files": [
+        "**/*.ts"
+      ],
+      "jsPlugins": [
+        "@stylistic/eslint-plugin",
+        {
+          "name": "jsdoc-js",
+          "specifier": "eslint-plugin-jsdoc"
+        },
+        "oxlint-plugin-eslint"
+      ],
+      "rules": {
+        "@stylistic/comma-spacing": [
+          "warn",
+          {
+            "before": false,
+            "after": true
+          }
+        ],
+        "@stylistic/indent": [
+          "warn",
+          2
+        ],
+        "@stylistic/semi": [
+          "warn",
+          "always"
+        ],
+        "@stylistic/quotes": [
+          "warn",
+          "single",
+          {
+            "allowTemplateLiterals": "always"
+          }
+        ],
+        "@stylistic/member-delimiter-style": [
+          "warn",
+          {
+            "multiline": {
+              "delimiter": "semi",
+              "requireLast": true
+            },
+            "singleline": {
+              "delimiter": "comma",
+              "requireLast": false
+            }
+          }
+        ],
+        "@stylistic/type-annotation-spacing": "warn",
+        "@stylistic/space-unary-ops": "warn",
+        "@stylistic/keyword-spacing": "warn",
+        "@stylistic/max-len": [
+          "warn",
+          {
+            "code": 1000,
+            "comments": 100,
+            "ignoreTrailingComments": true,
+            "ignoreUrls": true,
+            "ignorePattern": "^ *((?<vt_comment>(//|\\*) @vt)|(?<table_comment>\\* \\| )|(?<commented_code>//  ))"
+          }
+        ],
+        "@stylistic/new-parens": "warn",
+        "@stylistic/no-extra-semi": "error",
+        "@stylistic/no-trailing-spaces": "warn",
+        "eslint-js/object-curly-spacing": [
+          "warn",
+          "always"
+        ],
+        "@stylistic/spaced-comment": [
+          "warn",
+          "always",
+          {
+            "markers": [
+              "/"
+            ],
+            "exceptions": [
+              "-"
+            ]
+          }
+        ],
+        "jsdoc-js/check-alignment": "warn",
+        "jsdoc-js/check-param-names": "warn",
+        "jsdoc-js/multiline-blocks": "warn",
+        "jsdoc-js/no-multi-asterisks": "warn",
+        "eslint-js/one-var": [
+          "warn",
+          "never"
+        ],
+        "eslint-js/no-restricted-syntax": [
+          "warn",
+          {
+            "selector": "CallExpression[callee.name='requestAnimationFrame']",
+            "message": "The global requestAnimationFrame() should be avoided, call it on the parent window from ICoreBrowserService."
+          },
+          {
+            "selector": "CallExpression[callee.name='cancelAnimationFrame']",
+            "message": "The global cancelAnimationFrame() should be avoided, call it on the parent window from ICoreBrowserService."
+          },
+          {
+            "selector": "CallExpression > MemberExpression[object.name='window'][property.name='requestAnimationFrame']",
+            "message": "window.requestAnimationFrame() should be avoided, call it on the parent window from ICoreBrowserService."
+          },
+          {
+            "selector": "CallExpression > MemberExpression[object.name='window'][property.name='cancelAnimationFrame']",
+            "message": "window.cancelAnimationFrame() should be avoided, call it on the parent window from ICoreBrowserService."
+          },
+          {
+            "selector": "MemberExpression[object.name='window'][property.name='devicePixelRatio']",
+            "message": "window.devicePixelRatio should be avoided, get it from ICoreBrowserService."
+          }
+        ],
+        "curly": [
+          "warn",
+          "multi-line"
+        ],
+        "eqeqeq": [
+          "warn",
+          "always"
+        ],
+        "no-duplicate-imports": "warn",
+        "no-else-return": [
+          "warn",
+          {
+            "allowElseIf": false
+          }
+        ],
+        "no-eval": "warn",
+        "no-irregular-whitespace": "warn",
+        "no-restricted-imports": [
+          "warn",
+          {
+            "patterns": [
+              ".*\\/out\\/.*"
+            ]
+          }
+        ],
+        "no-unsafe-finally": "warn",
+        "no-unused-vars": "off",
+        "no-var": "warn",
+        "no-empty": "off",
+        "no-empty-pattern": "off",
+        "no-cond-assign": "off",
+        "no-case-declarations": "off",
+        "for-direction": "off",
+        "no-prototype-builtins": "off",
+        "no-useless-escape": "off",
+        "no-self-assign": "off",
+        "no-async-promise-executor": "off",
+        "prefer-rest-params": "off",
+        "no-control-regex": "off",
+        "no-fallthrough": "off",
+        "prefer-spread": "off",
+        "prefer-const": "warn",
+        "no-unused-expressions": "off",
+        "typescript/array-type": [
+          "warn",
+          {
+            "default": "array",
+            "readonly": "generic"
+          }
+        ],
+        "typescript/consistent-type-assertions": "warn",
+        "typescript/consistent-type-definitions": "warn",
+        "typescript/explicit-function-return-type": [
+          "warn",
+          {
+            "allowExpressions": true
+          }
+        ],
+        "typescript/explicit-member-accessibility": [
+          "warn",
+          {
+            "accessibility": "explicit",
+            "overrides": {
+              "constructors": "off"
+            }
+          }
+        ],
+        "typescript/no-confusing-void-expression": [
+          "warn",
+          {
+            "ignoreArrowShorthand": true
+          }
+        ],
+        "typescript/no-useless-constructor": "warn",
+        "typescript/prefer-nullish-coalescing": [
+          "warn",
+          {
+            "ignorePrimitives": true
+          }
+        ],
+        "typescript/prefer-namespace-keyword": "warn",
+        "typescript/no-unused-vars": [
+          "warn",
+          {
+            "vars": "all",
+            "args": "none"
+          }
+        ],
+        "typescript/no-require-imports": "off",
+        "typescript/no-explicit-any": "off",
+        "typescript/no-wrapper-object-types": "off",
+        "typescript/no-empty-object-type": "off",
+        "typescript/no-unsafe-function-type": "off",
+        "typescript/no-this-alias": "off",
+        "typescript/no-namespace": "off",
+        "typescript/no-duplicate-enum-values": "off"
+      }
+    },
+    {
+      "files": [
+        "**/*.api.ts",
+        "**/*.test.ts"
+      ],
+      "rules": {
+        "eslint-js/object-curly-spacing": "off",
+        "@stylistic/max-len": "off",
+        "typescript/no-unused-vars": "off",
+        "typescript/explicit-function-return-type": "off",
+        "typescript/explicit-member-accessibility": "off"
+      }
+    },
+    {
+      "files": [
+        "demo/**/*.ts",
+        "**/*.benchmark.ts"
+      ],
+      "rules": {
+        "typescript/prefer-nullish-coalescing": "off"
+      }
+    }
+  ]
+}
