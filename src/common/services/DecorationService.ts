@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import type { IDeleteEvent, IInsertEvent } from '../CircularList';
+import type { ICircularList, IDeleteEvent, IInsertEvent } from '../CircularList';
 import { MicrotaskTimer } from '../Async';
 import { css } from '../Color';
 import { Disposable, DisposableStore, MutableDisposable, toDisposable } from '../Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, ILogService } from './Services';
 import { SortedList } from '../SortedList';
-import { IColor, ICircularList } from '../Types';
+import { IColor } from '../Types';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from '../Event';
 

@@ -8,7 +8,8 @@ import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseS
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from './renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from './Types';
 import { IAttributeData, IBuffer, IBufferLine, IBufferSet, ICellData } from '../common/buffer/Types';
-import { ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from '../common/Types';
+import { ICircularList } from '../common/CircularList';
+import { XtermListener, ICharset, ITerminalOptions, ColorIndex } from '../common/Types';
 import { Buffer } from '../common/buffer/Buffer';
 import * as Browser from '../common/Platform';
 import { CoreBrowserTerminal } from './CoreBrowserTerminal';

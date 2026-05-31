@@ -3,11 +3,40 @@
  * @license MIT
  */
 
-import { ICircularList, IDeleteEvent, IInsertEvent } from './Types';
 import { Disposable } from './Lifecycle';
-import { Emitter } from './Event';
+import { Emitter, type IEvent } from './Event';
 
-export type { IDeleteEvent, IInsertEvent } from './Types';
+export interface IInsertEvent {
+  index: number;
+  amount: number;
+}
+
+export interface IDeleteEvent {
+  index: number;
+  amount: number;
+}
+
+export interface ICircularList<T> {
+  length: number;
+  maxLength: number;
+  isFull: boolean;
+
+  onDeleteEmitter: Emitter<IDeleteEvent>;
+  onDelete: IEvent<IDeleteEvent>;
+  onInsertEmitter: Emitter<IInsertEvent>;
+  onInsert: IEvent<IInsertEvent>;
+  onTrimEmitter: Emitter<number>;
+  onTrim: IEvent<number>;
+
+  get(index: number): T | undefined;
+  set(index: number, value: T): void;
+  push(value: T): void;
+  recycle(): T;
+  pop(): T | undefined;
+  splice(start: number, deleteCount: number, ...items: T[]): void;
+  trimStart(count: number): void;
+  shiftElements(start: number, count: number, offset: number): void;
+}
 
 /**
  * Represents a circular list; a list with a maximum size that wraps around when push is called,

@@ -4,17 +4,7 @@
  */
 
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
-import type { Emitter, IEvent } from './Event';
-
-export interface IInsertEvent {
-  index: number;
-  amount: number;
-}
-
-export interface IDeleteEvent {
-  index: number;
-  amount: number;
-}
+import type { IEvent } from './Event';
 
 /** sequence params serialized to js arrays */
 export type ParamsArray = (number | number[])[];
@@ -76,28 +66,6 @@ export interface IKeyboardEvent {
 
 export interface IScrollEvent {
   position: number;
-}
-
-export interface ICircularList<T> {
-  length: number;
-  maxLength: number;
-  isFull: boolean;
-
-  onDeleteEmitter: Emitter<IDeleteEvent>;
-  onDelete: IEvent<IDeleteEvent>;
-  onInsertEmitter: Emitter<IInsertEvent>;
-  onInsert: IEvent<IInsertEvent>;
-  onTrimEmitter: Emitter<number>;
-  onTrim: IEvent<number>;
-
-  get(index: number): T | undefined;
-  set(index: number, value: T): void;
-  push(value: T): void;
-  recycle(): T;
-  pop(): T | undefined;
-  splice(start: number, deleteCount: number, ...items: T[]): void;
-  trimStart(count: number): void;
-  shiftElements(start: number, count: number, offset: number): void;
 }
 
 export const enum KeyboardResultType {
