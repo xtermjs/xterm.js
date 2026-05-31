@@ -5,7 +5,7 @@
 
 import { IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi } from '@xterm/xterm';
 import { BufferApiView } from './BufferApiView';
-import { ICoreTerminal } from '../Types';
+import { ICoreTerminal } from '../CoreTerminal';
 import { Disposable } from '../Lifecycle';
 import { Emitter } from '../Event';
 

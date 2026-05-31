@@ -3,26 +3,51 @@
  * @license MIT
  */
 
-import { IDeleteEvent, IInsertEvent } from './CircularList';
-import { UnderlineStyle } from './buffer/Constants';
-import { IBufferSet } from './buffer/Types';
-import { IParams } from './parser/Types';
-import { IMouseStateService, ICoreService, IOptionsService, IUnicodeService } from './services/Services';
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
 import type { Emitter, IEvent } from './Event';
 
-export interface ICoreTerminal {
-  mouseStateService: IMouseStateService;
-  coreService: ICoreService;
-  optionsService: IOptionsService;
-  unicodeService: IUnicodeService;
-  buffers: IBufferSet;
-  options: Required<ITerminalOptions>;
-  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
-  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
-  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
-  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
-  registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+export interface IInsertEvent {
+  index: number;
+  amount: number;
+}
+
+export interface IDeleteEvent {
+  index: number;
+  amount: number;
+}
+
+/** sequence params serialized to js arrays */
+export type ParamsArray = (number | number[])[];
+
+/** Interface of Params storage class. */
+export interface IParams {
+  /** from ctor */
+  maxLength: number;
+  maxSubParamsLength: number;
+
+  /** param values and its length */
+  params: Int32Array;
+  length: number;
+
+  /** methods */
+  clone(): IParams;
+  toArray(): ParamsArray;
+  reset(): void;
+  resetZdm(): void;
+  addParam(value: number): void;
+  addSubParam(value: number): void;
+  hasSubParams(idx: number): boolean;
+  getSubParams(idx: number): Int32Array | null;
+  getSubParamsAll(): {[idx: number]: Int32Array};
+}
+
+export const enum UnderlineStyle {
+  NONE = 0,
+  SINGLE = 1,
+  DOUBLE = 2,
+  CURLY = 3,
+  DOTTED = 4,
+  DASHED = 5
 }
 
 export interface IDisposable {
@@ -260,6 +285,53 @@ export interface IMarker extends IDisposable {
   readonly line: number;
   onDispose: IEvent<void>;
 }
+
+export interface IBuffer {
+  readonly lines: ICircularList<IBufferLine>;
+  ydisp: number;
+  ybase: number;
+  y: number;
+  x: number;
+  tabs: any;
+  scrollBottom: number;
+  scrollTop: number;
+  hasScrollback: boolean;
+  savedY: number;
+  savedX: number;
+  savedCharset: ICharset | undefined;
+  savedCharsets: (ICharset | undefined)[];
+  savedGlevel: number;
+  savedOriginMode: boolean;
+  savedWraparoundMode: boolean;
+  savedCurAttrData: IAttributeData;
+  isCursorInViewport: boolean;
+  markers: IMarker[];
+  translateBufferLineToString(lineIndex: number, trimRight: boolean, startCol?: number, endCol?: number): string;
+  getWrappedRangeForLine(y: number): { first: number, last: number };
+  nextStop(x?: number): number;
+  prevStop(x?: number): number;
+  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
+  getNullCell(attr?: IAttributeData): ICellData;
+  getWhitespaceCell(attr?: IAttributeData): ICellData;
+  addMarker(y: number): IMarker;
+  clearMarkers(y: number): void;
+  clearAllMarkers(): void;
+}
+
+export interface IBufferSet extends IDisposable {
+  alt: IBuffer;
+  normal: IBuffer;
+  active: IBuffer;
+
+  onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
+
+  activateNormalBuffer(): void;
+  activateAltBuffer(fillAttr?: IAttributeData): void;
+  reset(): void;
+  resize(newCols: number, newRows: number): void;
+  setupTabStops(i?: number): void;
+}
+
 export interface IModes {
   insertMode: boolean;
 }

@@ -3,19 +3,11 @@
  * @license MIT
  */
 
-import { ICircularList } from './Types';
+import { ICircularList, IDeleteEvent, IInsertEvent } from './Types';
 import { Disposable } from './Lifecycle';
 import { Emitter } from './Event';
 
-export interface IInsertEvent {
-  index: number;
-  amount: number;
-}
-
-export interface IDeleteEvent {
-  index: number;
-  amount: number;
-}
+export type { IDeleteEvent, IInsertEvent } from './Types';
 
 /**
  * Represents a circular list; a list with a maximum size that wraps around when push is called,
