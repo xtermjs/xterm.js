@@ -16,8 +16,8 @@
         "../../../src/common/runtime/*",
         "../../../src/common/*"
       ],
-      "browser/*": [
-        "../../../src/browser/*"
+      "target-browser/*": [
+        "../../../src/target-browser/*"
       ],
       "@xterm/addon-webgl": [
         "../typings/addon-webgl.d.ts"
@@ -41,7 +41,7 @@
       "path": "../../../src/common"
     },
     {
-      "path": "../../../src/browser"
+      "path": "../../../src/target-browser"
     }
   ]
 }

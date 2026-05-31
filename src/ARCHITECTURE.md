@@ -1,79 +1,70 @@
 # xterm.js source architecture
 
-This document describes how `src/` is organized, with emphasis on the shared core under `src/common/`. The layout follows the refined proposal in [issue #5963](https://github.com/xtermjs/xterm.js/issues/5963): separate **primitives** (building blocks) from **runtime** (services and integration), while **browser** and **headless** remain target-specific entry points.
+This document describes how `src/` is organized. The layout follows [issue #5963](https://github.com/xtermjs/xterm.js/issues/5963): **primitives** and **runtime** as separate TypeScript composite projects, with **target-browser** and **target-headless** as platform entry points.
 
-## Layer overview
+## Dependency graph
 
 ```mermaid
 flowchart BT
-  primitives["common/primitives<br/>building blocks, high test coverage expected"]
+  primitives["common/primitives<br/>building blocks"]
   runtime["common/runtime<br/>services, integration"]
-  browser["browser<br/>DOM terminal target"]
-  headless["headless<br/>Node terminal target"]
+  targetBrowser["target-browser<br/>DOM terminal"]
+  targetHeadless["target-headless<br/>Node terminal"]
 
   runtime --> primitives
-  browser --> runtime
-  headless --> runtime
+  targetBrowser --> runtime
+  targetHeadless --> runtime
 ```
 
-| Layer | Path | Role |
-| --- | --- | --- |
-| Primitives | `src/common/primitives/` | Low-level, mostly stateless building blocks: buffer, parser, escape/input helpers, static data, and shared utilities. These modules should be easy to unit test in isolation. |
-| Runtime | `src/common/runtime/` | Stateful services (DI), `CoreTerminal`, `InputHandler`, public API adapters under `public/`, and other code that wires primitives into a working terminal core. |
-| Shared types | `src/common/Types.ts` | Cross-cutting interfaces and types used by both layers (kept at the `common/` root until a stricter module API is introduced). |
-| Browser target | `src/browser/` | Browser-only rendering, input, and the public `Terminal` wrapper. |
-| Headless target | `src/headless/` | Node-oriented terminal without DOM; same public API shape as the browser build where applicable. |
+## TypeScript projects
+
+| Project | `tsconfig` | Output | Role |
+| --- | --- | --- | --- |
+| Primitives | `src/common/primitives/tsconfig.json` | `out/common/primitives/` | Buffer, parser, input helpers, static data, shared utilities. Must not import from `runtime/`. |
+| Runtime | `src/common/runtime/tsconfig.json` | `out/common/runtime/` | Services (DI), `CoreTerminal`, `InputHandler`, public API adapters, `Types.ts`. References primitives. |
+| Common (solution) | `src/common/tsconfig.json` | — | Solution root; references primitives + runtime only. |
+| Target browser | `src/target-browser/tsconfig.json` | `out/target-browser/` | Browser rendering, input, public `Terminal`. References common. |
+| Target headless | `src/target-headless/tsconfig.json` | `out/target-headless/` | Headless terminal. References common. |
+
+Unit test files (`**/*.test.ts`) are excluded from composite library builds; they are compiled via esbuild for `npm run test-unit`.
 
 ## `common/primitives/`
 
 | Area | Contents |
 | --- | --- |
-| Root utilities | `Async`, `CircularList`, `Color`, `Event`, `Lifecycle`, `MultiKeyMap`, `Platform`, `SortedList`, `StringBuilder`, `TaskQueue`, `Version` |
-| `buffer/` | Screen buffer, cells, lines, markers, reflow |
-| `data/` | Static tables (`Charsets`, `EscapeSequences`) |
-| `input/` | UTF decoding, keyboard helpers, write buffer, color parsing |
-| `parser/` | Escape-sequence parser (CSI, OSC, DCS, APC) |
+| Root utilities | `Async`, `CircularList`, `Color`, `ColorTypes`, `Event`, `KeyboardTypes`, `Lifecycle`, `MultiKeyMap`, `Platform`, `SortedList`, `StringBuilder`, `TaskQueue`, `TerminalOptions`, `Version` |
+| `buffer/` | Screen buffer, `CellTypes`, `BufferService` / `BufferOptions` / `BufferLog` interfaces (buffer-layer contracts) |
+| `data/` | `Charsets`, `EscapeSequences` |
+| `input/` | UTF decoding, keyboard helpers, `UnicodeTypes`, `UnicodeProperties` |
+| `parser/` | Escape-sequence parser |
 
-**Goals**
-
-- Prefer comprehensive unit tests here; behavior should be understandable without constructing the full terminal stack.
-- Avoid importing from `runtime/` when possible. Some legacy edges still reach into `common/services` (for example buffer logging hooks); tightening that is follow-up work, not a blocker for the folder split.
-- Future work may split primitives into finer TypeScript projects (`base`, `encoding`, `buffer`, …) with enforced one-way references.
+Primitives depend only on other primitives (and `@xterm/xterm` typings where needed). Buffer code uses `IBufferService` from `common/buffer/BufferService`, not `common/services/Services`.
 
 ## `common/runtime/`
 
 | Area | Contents |
 | --- | --- |
-| `services/` | Dependency-injection services (`BufferService`, `OptionsService`, `CoreService`, …) |
-| `public/` | Public API surface adapters (`AddonManager`, buffer/parser API views) |
-| Root integration | `CoreTerminal`, `InputHandler`, `WindowsMode`, test helpers (`TestUtils.test.ts`) |
+| `services/` | DI implementations (`BufferService`, `OptionsService`, …) |
+| `public/` | Public API adapters (`AddonManager`, buffer/parser views) |
+| Root | `CoreTerminal`, `InputHandler`, `WindowsMode`, `Types.ts`, `TestUtils.test.ts` |
 
-**Goals**
-
-- Own composition: instantiation, service registry, and the large integration classes (`InputHandler`).
-- May depend on `primitives/` and on `common/Types.ts`; must not be depended on by primitives in the steady state (existing cycles are technical debt to remove incrementally).
-- Integration and addon-facing behavior is validated by unit tests here and by browser/headless/integration tests at the target layer.
+`Types.ts` re-exports primitive types and adds integration types (`IInputHandler`, `ICoreTerminal`, mouse/color helpers, etc.).
 
 ## Import paths
 
-Source continues to use the existing `common/...` import prefix (for example `common/buffer/Buffer`, `common/services/Services`). TypeScript `paths` in `tsconfig.json` files map that prefix onto `primitives/`, `runtime/`, and the `common/` root so this restructure did not require mass import rewrites.
+Source keeps the `common/...` prefix. Each project's `paths` in `tsconfig.json` map that prefix to the correct layer (primitives first, then runtime, for targets).
 
-## Targets vs core
+Platform code uses:
 
-```mermaid
-flowchart LR
-  subgraph core["Shared core"]
-    primitives
-    runtime
-  end
-  browser --> runtime
-  headless --> runtime
-```
+- `target-browser/...` — was `browser/...`
+- `target-headless/...` — was `headless/...`
 
-Browser and headless add platform code (renderers, DOM, Node specifics) on top of the same runtime core. Addons and the demo build against the published packages; their tsconfigs use the same `common/*` path mapping.
+## Published packages vs source folders
+
+The npm package directory `headless/` (e.g. `headless/lib-headless/`) is unchanged; only the **source** tree uses `src/target-headless/`.
 
 ## Related issues
 
-- [#5963](https://github.com/xtermjs/xterm.js/issues/5963) — module split and TypeScript project structure
-- [#5896](https://github.com/xtermjs/xterm.js/issues/5896) — relative imports (possible follow-up)
-- [#5897](https://github.com/xtermjs/xterm.js/issues/5897) — `import/no-cycle` lint enforcement
+- [#5963](https://github.com/xtermjs/xterm.js/issues/5963) — module split
+- [#5896](https://github.com/xtermjs/xterm.js/issues/5896) — relative imports
+- [#5897](https://github.com/xtermjs/xterm.js/issues/5897) — `import/no-cycle` lint

@@ -38,4 +38,4 @@ function findUnusedSymbols(
 }
 
 // Example usage
-findUnusedSymbols("./src/browser/tsconfig.json");
+findUnusedSymbols("./src/target-browser/tsconfig.json");

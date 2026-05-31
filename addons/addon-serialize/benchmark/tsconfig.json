@@ -17,7 +17,7 @@
         "../../../src/common/runtime/*",
         "../../../src/common/*"
       ],
-      "browser/*": ["../../../src/browser/*"],
+      "target-browser/*": ["../../../src/target-browser/*"],
       "SerializeAddon": ["../src/SerializeAddon"],
       "@xterm/addon-serialize": [
         "../typings/addon-serialize.d.ts"
@@ -28,6 +28,6 @@
   "exclude": ["../../../**/*test.ts", "../../**/*api.ts"],
   "references": [
     { "path": "../../../src/common" },
-    { "path": "../../../src/browser" }
+    { "path": "../../../src/target-browser" }
   ]
 }

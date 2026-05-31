@@ -5,7 +5,7 @@
 
 import { TextureAtlas } from './TextureAtlas';
 import { ITerminalOptions, Terminal } from '@xterm/xterm';
-import { ITerminal, ReadonlyColorSet } from 'browser/Types';
+import { ITerminal, ReadonlyColorSet } from 'target-browser/Types';
 import { ICharAtlasConfig, ITextureAtlas } from './Types';
 import { generateConfig, configEquals } from './CharAtlasUtils';
 import type { ILogService } from 'common/services/Services';

@@ -3,18 +3,18 @@
  * @license MIT
  */
 
-import { ITerminal } from 'browser/Types';
+import { ITerminal } from 'target-browser/Types';
 import { CellColorResolver } from './CellColorResolver';
 import { acquireTextureAtlas, removeTerminalFromCache } from './CharAtlasCache';
 import { CursorBlinkStateManager } from './CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from './DevicePixelObserver';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'target-browser/renderer/shared/Types';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'target-browser/services/Services';
 import { CharData, IBufferLine, ICellData } from 'common/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
+import { TextBlinkStateManager } from 'target-browser/renderer/shared/TextBlinkStateManager';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
@@ -24,9 +24,9 @@ import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
 import { Emitter, EventUtils } from 'common/Event';
-import { addDisposableListener } from 'browser/Dom';
+import { addDisposableListener } from 'target-browser/Dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
+import { createRenderDimensions } from 'target-browser/renderer/shared/RendererUtils';
 
 const enum Constants {
   MERGE_RETRY_LIMIT = 32

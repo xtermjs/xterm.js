@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import type { ILogService } from 'common/services/Services';
+import type { IBufferLogService } from 'common/buffer/BufferLog';
 
 interface ITaskQueue {
   /**
@@ -34,9 +34,9 @@ abstract class TaskQueue implements ITaskQueue {
   private _tasks: (() => boolean | void)[] = [];
   private _idleCallback?: number;
   private _i = 0;
-  protected readonly _logService: ILogService;
+  protected readonly _logService: IBufferLogService;
 
-  constructor(logService: ILogService) {
+  constructor(logService: IBufferLogService) {
     this._logService = logService;
   }
 
@@ -156,7 +156,7 @@ export const IdleTaskQueue = ('requestIdleCallback' in globalThis) ? IdleTaskQue
 export class DebouncedIdleTask {
   private _queue: ITaskQueue;
 
-  constructor(logService: ILogService) {
+  constructor(logService: IBufferLogService) {
     this._queue = new IdleTaskQueue(logService);
   }
 

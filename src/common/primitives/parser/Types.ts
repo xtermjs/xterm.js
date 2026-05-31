@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable } from 'common/Types';
+import type { IDisposable } from 'common/Lifecycle';
 import { ParserState } from 'common/parser/Constants';
 
 

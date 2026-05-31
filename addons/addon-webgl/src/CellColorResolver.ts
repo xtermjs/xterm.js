@@ -1,12 +1,12 @@
-import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ReadonlyColorSet } from 'browser/Types';
+import { ISelectionRenderModel } from 'target-browser/renderer/shared/Types';
+import { ICoreBrowserService, IThemeService } from 'target-browser/services/Services';
+import { ReadonlyColorSet } from 'target-browser/Types';
 import { Attributes, BgFlags, ExtFlags, FgFlags, NULL_CELL_CODE, UnderlineStyle } from 'common/buffer/Constants';
 import { IDecorationService, IOptionsService } from 'common/services/Services';
 import { ICellData } from 'common/Types';
 import { Terminal } from '@xterm/xterm';
 import { rgba } from 'common/Color';
-import { treatGlyphAsBackgroundColor } from 'browser/renderer/shared/RendererUtils';
+import { treatGlyphAsBackgroundColor } from 'target-browser/renderer/shared/RendererUtils';
 import { blockPatternCodepoints } from './customGlyphs/CustomGlyphDefinitions';
 
 // Work variables to avoid garbage collection

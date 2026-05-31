@@ -18,8 +18,8 @@
     "declaration": true,
     "moduleResolution": "nodenext",
     "paths": {
-      "browser/*": [
-        "../../src/browser/*"
+      "target-browser/*": [
+        "../../src/target-browser/*"
       ],
       "common/*": [
         "../../src/common/primitives/*",
@@ -37,7 +37,7 @@
   ],
   "references": [
     {
-      "path": "../../src/browser"
+      "path": "../../src/target-browser"
     },
     {
       "path": "../../src/common"

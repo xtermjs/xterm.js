@@ -5,7 +5,7 @@
 import { assert } from 'chai';
 import { SearchEngine } from './SearchEngine';
 import { SearchLineCache } from './SearchLineCache';
-import { Terminal } from 'browser/public/Terminal';
+import { Terminal } from 'target-browser/public/Terminal';
 import type { ISearchOptions } from '@xterm/addon-search';
 import { DisposableStore } from 'common/Lifecycle';
 

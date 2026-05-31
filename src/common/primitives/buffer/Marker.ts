@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker } from 'common/Types';
+import { dispose, type IDisposable } from 'common/Lifecycle';
+import { IMarker } from 'common/buffer/CellTypes';
 import { Emitter } from 'common/Event';
-import { dispose } from 'common/Lifecycle';
 
 export class Marker implements IMarker {
   private static _nextId = 1;

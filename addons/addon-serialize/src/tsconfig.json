@@ -16,8 +16,8 @@
         "../../../src/common/runtime/*",
         "../../../src/common/*"
       ],
-      "browser/*": [
-        "../../../src/browser/*"
+      "target-browser/*": [
+        "../../../src/target-browser/*"
       ],
       "@xterm/addon-serialize": [
         "../typings/addon-serialize.d.ts"
@@ -38,7 +38,7 @@
       "path": "../../../src/common"
     },
     {
-      "path": "../../../src/browser"
+      "path": "../../../src/target-browser"
     }
   ]
 }

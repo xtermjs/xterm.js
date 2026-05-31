@@ -4,8 +4,8 @@
  */
 
 import { ICursorRenderModel, IRenderModel } from './Types';
-import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
+import { ISelectionRenderModel } from 'target-browser/renderer/shared/Types';
+import { createSelectionRenderModel } from 'target-browser/renderer/shared/SelectionRenderModel';
 
 export const enum RenderModelConstants {
   INDICIES_PER_CELL = 4,

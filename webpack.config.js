@@ -16,7 +16,7 @@ const path = require('path');
  * @type {import('webpack').Configuration}
  */
 const config = {
-  entry: './out/browser/public/Terminal.js',
+  entry: './out/target-browser/public/Terminal.js',
   devtool: 'source-map',
   module: {
     rules: [
@@ -33,7 +33,7 @@ const config = {
     extensions: [ '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      browser: path.resolve('./out/browser'),
+      browser: path.resolve('./out/target-browser'),
       vs: path.resolve('./out/vs'),
     }
   },

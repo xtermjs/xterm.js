@@ -6,7 +6,10 @@
 import { CircularList, IInsertEvent } from 'common/CircularList';
 import { Disposable, toDisposable } from 'common/Lifecycle';
 import { IdleTaskQueue } from 'common/TaskQueue';
-import { IAttributeData, IBufferLine, ICellData, ICharset } from 'common/Types';
+import { IAttributeData, IBufferLine, ICellData } from 'common/buffer/CellTypes';
+import { IBufferLogService } from 'common/buffer/BufferLog';
+import { IBufferOptionsService } from 'common/buffer/BufferOptions';
+import { IBufferService } from 'common/buffer/BufferService';
 import { ExtendedAttrs } from 'common/buffer/AttributeData';
 import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
 import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
@@ -15,8 +18,7 @@ import { CellData } from 'common/buffer/CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from 'common/buffer/Constants';
 import { Marker } from 'common/buffer/Marker';
 import { IBuffer } from 'common/buffer/Types';
-import { DEFAULT_CHARSET } from 'common/data/Charsets';
-import { IBufferService, ILogService, IOptionsService } from 'common/services/Services';
+import { DEFAULT_CHARSET, ICharset } from 'common/data/Charsets';
 
 export const MAX_BUFFER_SIZE = 4294967295; // 2^32 - 1
 
@@ -56,9 +58,9 @@ export class Buffer extends Disposable implements IBuffer {
 
   constructor(
     private _hasScrollback: boolean,
-    private _optionsService: IOptionsService,
+    private _optionsService: IBufferOptionsService,
     private _bufferService: IBufferService,
-    private readonly _logService: ILogService
+    private readonly _logService: IBufferLogService
   ) {
     super();
     this._cols = this._bufferService.cols;

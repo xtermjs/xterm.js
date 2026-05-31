@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { RendererConstants } from 'browser/renderer/shared/Constants';
-import { ICoreBrowserService } from 'browser/services/Services';
+import { RendererConstants } from 'target-browser/renderer/shared/Constants';
+import { ICoreBrowserService } from 'target-browser/services/Services';
 
 const enum Constants {
   /**

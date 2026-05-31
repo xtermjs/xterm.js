@@ -92,6 +92,9 @@ let outConfig = {
 }
 let skipOut = false;
 
+/** @type {esbuild.BuildOptions[] | undefined} */
+let outBuilds;
+
 /** @type {esbuild.BuildOptions} */
 let outTestConfig = {
   format: 'cjs',
@@ -171,7 +174,7 @@ if (config.addon) {
 } else if (config.isHeadless) {
   bundleConfig = {
     ...bundleConfig,
-    entryPoints: [`src/headless/public/Terminal.ts`],
+    entryPoints: [`src/target-headless/public/Terminal.ts`],
     outfile: `headless/lib-headless/xterm-headless.mjs`
   };
   outConfig = {
@@ -183,20 +186,35 @@ if (config.addon) {
 } else {
   bundleConfig = {
     ...bundleConfig,
-    entryPoints: [`src/browser/public/Terminal.ts`],
+    entryPoints: [`src/target-browser/public/Terminal.ts`],
     outfile: `lib/xterm.mjs`
   };
-  outConfig = {
-    ...outConfig,
-    entryPoints: [
-      'src/browser/**/*.ts',
-      'src/common/primitives/**/*.ts',
-      'src/common/runtime/**/*.ts',
-      'src/common/*.ts',
-      'src/headless/**/*.ts'
-    ],
-    outdir: 'out-esbuild/'
-  };
+  outBuilds = [
+    {
+      ...outConfig,
+      entryPoints: ['src/common/primitives/**/*.ts'],
+      outbase: 'src/common/primitives',
+      outdir: 'out-esbuild/common',
+    },
+    {
+      ...outConfig,
+      entryPoints: ['src/common/runtime/**/*.ts'],
+      outbase: 'src/common/runtime',
+      outdir: 'out-esbuild/common',
+    },
+    {
+      ...outConfig,
+      entryPoints: ['src/target-browser/**/*.ts'],
+      outbase: 'src',
+      outdir: 'out-esbuild',
+    },
+    {
+      ...outConfig,
+      entryPoints: ['src/target-headless/**/*.ts'],
+      outbase: 'src',
+      outdir: 'out-esbuild',
+    },
+  ];
   outTestConfig = {
     ...outConfig,
     entryPoints: ['test/**/*.ts'],
@@ -207,7 +225,9 @@ if (config.addon) {
 if (config.isWatch) {
   context(bundleConfig).then(e => e.watch());
   if (!skipOut) {
-    context(outConfig).then(e => e.watch());
+    for (const buildConfig of outBuilds ?? [outConfig]) {
+      context(buildConfig).then(e => e.watch());
+    }
   }
   if (!skipOutTest) {
     context(outTestConfig).then(e => e.watch());
@@ -215,7 +235,9 @@ if (config.isWatch) {
 } else {
   await build(bundleConfig);
   if (!skipOut) {
-    await build(outConfig);
+    for (const buildConfig of outBuilds ?? [outConfig]) {
+      await build(buildConfig);
+    }
   }
   if (!skipOutTest) {
     await build(outTestConfig);

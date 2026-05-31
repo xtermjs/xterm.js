@@ -10,9 +10,9 @@ import { Attributes, BgFlags, Content, ExtFlags, UnderlineStyle } from 'common/b
 import type { AttributeData } from 'common/buffer/AttributeData';
 import type { IParams, IDcsHandler, IOscHandler, IApcHandler, IEscapeSequenceParser } from 'common/parser/Types';
 import type { IBufferLine, IExtendedAttrs, IInputHandler } from 'common/Types';
-import type { ITerminal, ReadonlyColorSet } from 'browser/Types';
-import type { IRenderDimensions } from 'browser/renderer/shared/Types';
-import type { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
+import type { ITerminal, ReadonlyColorSet } from 'target-browser/Types';
+import type { IRenderDimensions } from 'target-browser/renderer/shared/Types';
+import type { ICoreBrowserService, IRenderService, IThemeService } from 'target-browser/services/Services';
 
 export const enum Cell {
   CONTENT = 0,  // codepoint and wcwidth information (enum Content)

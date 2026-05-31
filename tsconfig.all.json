@@ -3,8 +3,8 @@
   "include": [],
   "references": [
     { "path": "./demo" },
-    { "path": "./src/browser" },
-    { "path": "./src/headless" },
+    { "path": "./src/target-browser" },
+    { "path": "./src/target-headless" },
     { "path": "./test/benchmark" },
     { "path": "./test/playwright" },
     { "path": "./addons/addon-attach" },

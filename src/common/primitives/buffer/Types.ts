@@ -3,7 +3,10 @@
  * @license MIT
  */
 
-import { IAttributeData, ICircularList, IBufferLine, ICellData, IMarker, ICharset, IDisposable } from 'common/Types';
+import { IAttributeData, IBufferLine, ICellData, IMarker } from 'common/buffer/CellTypes';
+import { ICircularList } from 'common/CircularList';
+import { ICharset } from 'common/data/Charsets';
+import type { IDisposable } from 'common/Lifecycle';
 import type { IEvent } from 'common/Event';
 
 // BufferIndex denotes a position in the buffer: [rowIndex, colIndex]

@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/Types';
+import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/KeyboardTypes';
 import { C0 } from 'common/data/EscapeSequences';
 
 // reg + shift key mappings for digits and special chars

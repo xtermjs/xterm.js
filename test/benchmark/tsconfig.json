@@ -5,6 +5,7 @@
       "es2021",
     ],
     "outDir": "../../out-test/benchmark",
+    "rootDir": "../..",
     "types": [
       "../../node_modules/@types/node"
     ],
@@ -18,7 +19,7 @@
         "../../src/common/runtime/*",
         "../../src/common/*"
       ],
-      "browser/*": [ "../../src/browser/*" ],
+      "target-browser/*": [ "../../src/target-browser/*" ],
       "Terminal": ["../../src/Terminal"]
     },
   },
@@ -31,6 +32,6 @@
   ],
   "references": [
     { "path": "../../src/common" },
-    { "path": "../../src/browser" },
+    { "path": "../../src/target-browser" },
   ]
 }

@@ -1,29 +1,8 @@
 {
   "extends": "../tsconfig-library-base",
-  "compilerOptions": {
-    "lib": [
-      "es2015",
-      "es2016.Array.Include",
-      "es2019.string",
-      "es2021.weakref"
-    ],
-    "outDir": "../../out",
-    "types": [
-      "../../node_modules/@types/mocha"
-    ],
-    "paths": {
-      "common/*": [
-        "./primitives/*",
-        "./runtime/*",
-        "./*"
-      ],
-      "*": [ "./../*" ]
-    }
-  },
-  "include": [
-    "./primitives/**/*",
-    "./runtime/**/*",
-    "./*.ts",
-    "../../typings/xterm.d.ts"
+  "files": [],
+  "references": [
+    { "path": "./primitives" },
+    { "path": "./runtime" }
   ]
 }

@@ -20,8 +20,8 @@
         "../../../src/common/runtime/*",
         "../../../src/common/*"
       ],
-      "browser/*": [
-        "../../../src/browser/*"
+      "target-browser/*": [
+        "../../../src/target-browser/*"
       ],
       "@xterm/addon-search" : [
         "../typings/addon-search.d.ts"
@@ -37,7 +37,7 @@
       "path": "../../../src/common"
     },
     {
-      "path": "../../../src/browser"
+      "path": "../../../src/target-browser"
     }
   ]
 }

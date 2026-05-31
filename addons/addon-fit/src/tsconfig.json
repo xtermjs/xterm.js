@@ -15,8 +15,8 @@
       "../../../node_modules/@types/mocha"
     ],
     "paths": {
-      "browser/*": [
-        "../../../src/browser/*"
+      "target-browser/*": [
+        "../../../src/target-browser/*"
       ],
       "@xterm/addon-fit": [
         "../typings/addon-fit.d.ts"
@@ -29,7 +29,7 @@
   ],
   "references": [
     {
-      "path": "../../../src/browser"
+      "path": "../../../src/target-browser"
     }
   ]
 }

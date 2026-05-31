@@ -2,10 +2,13 @@
 
 ## Architecture Overview
 
-**Core Structure**: xterm.js is a multi-target terminal emulator with three main distributions:
-- `src/browser/`: Full-featured browser terminal with DOM rendering
-- `src/headless/`: Server-side terminal for Node.js (no DOM)
-- `src/common/`: Shared core logic (parsing, buffer management, terminal state)
+**Core Structure**: xterm.js is a multi-target terminal emulator with these main source areas:
+- `src/common/primitives/`: Building blocks (buffer, parser, input, data, utilities); TypeScript project `src/common/primitives/tsconfig.json`
+- `src/common/runtime/`: Services, `CoreTerminal`, `InputHandler`, public API adapters; TypeScript project `src/common/runtime/tsconfig.json`
+- `src/target-browser/`: Browser terminal with DOM rendering
+- `src/target-headless/`: Node terminal without DOM
+
+See `src/ARCHITECTURE.md` for the dependency graph and import-path conventions (`common/*`, `target-browser/*`, `target-headless/*`).
 
 **Key Classes**:
 - `Terminal` (browser/headless): Public API wrapper

@@ -1,0 +1,26 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "noEmit": true,
+    "paths": {
+      "@xterm/xterm": ["../../../typings/xterm.d.ts"],
+      "common/buffer/*": ["./buffer/*"],
+      "common/data/*": ["./data/*"],
+      "common/input/*": ["./input/*"],
+      "common/parser/*": ["./parser/*"],
+      "common/services/*": ["../runtime/services/*"],
+      "common/TestUtils.test": ["../runtime/TestUtils.test"],
+      "common/Types": ["../runtime/Types"],
+      "common/*": ["./*", "../runtime/*"],
+      "*": ["../../*"]
+    }
+  },
+  "include": [
+    "./**/*.test.ts"
+  ],
+  "references": [
+    { "path": "./tsconfig.json" },
+    { "path": "../runtime" }
+  ]
+}

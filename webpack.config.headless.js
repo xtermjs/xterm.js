@@ -14,7 +14,7 @@ const path = require('path');
  * @type {import('webpack').Configuration}
  */
 const config = {
-  entry: './out/headless/public/Terminal.js',
+  entry: './out/target-headless/public/Terminal.js',
   devtool: 'source-map',
   module: {
     rules: [
@@ -31,7 +31,7 @@ const config = {
     extensions: [ '.js' ],
     alias: {
       common: path.resolve('./out/common'),
-      headless: path.resolve('./out/headless'),
+      headless: path.resolve('./out/target-headless'),
       vs: path.resolve('./out/vs')
     }
   },

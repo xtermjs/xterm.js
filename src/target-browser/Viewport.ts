@@ -1,0 +1,227 @@
+/**
+ * Copyright (c) 2024 The xterm.js authors. All rights reserved.
+ * @license MIT
+ */
+
+import { ICoreBrowserService, IRenderService, IThemeService } from 'target-browser/services/Services';
+import { ViewportConstants } from 'target-browser/shared/Constants';
+import { Disposable, toDisposable } from 'common/Lifecycle';
+import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from 'common/services/Services';
+import { CoreMouseEventType } from 'common/Types';
+import { scheduleAtNextAnimationFrame } from 'target-browser/Dom';
+import { SmoothScrollableElement } from 'target-browser/scrollable/scrollableElement';
+import type { IScrollableElementChangeOptions } from 'target-browser/scrollable/scrollableElementOptions';
+import { Emitter, EventUtils } from 'common/Event';
+import { Scrollable, ScrollbarVisibility, type IScrollEvent } from 'target-browser/scrollable/scrollable';
+
+export class Viewport extends Disposable {
+
+  protected _onRequestScrollLines = this._register(new Emitter<number>());
+  public readonly onRequestScrollLines = this._onRequestScrollLines.event;
+
+  private _scrollableElement: SmoothScrollableElement;
+  private _styleElement: HTMLStyleElement;
+
+  private _queuedAnimationFrame?: number;
+  private _latestYDisp?: number;
+  private _isSyncing: boolean = false;
+  private _isHandlingScroll: boolean = false;
+  private _suppressOnScrollHandler: boolean = false;
+  private _needsSyncOnRender: boolean = false;
+
+  constructor(
+    element: HTMLElement,
+    screenElement: HTMLElement,
+    @IBufferService private readonly _bufferService: IBufferService,
+    @ICoreBrowserService coreBrowserService: ICoreBrowserService,
+    @ICoreService private readonly _coreService: ICoreService,
+    @IMouseStateService mouseStateService: IMouseStateService,
+    @IThemeService themeService: IThemeService,
+    @IOptionsService private readonly _optionsService: IOptionsService,
+    @IRenderService private readonly _renderService: IRenderService
+  ) {
+    super();
+
+    const scrollable = this._register(new Scrollable({
+      forceIntegerValues: false,
+      smoothScrollDuration: this._optionsService.rawOptions.smoothScrollDuration,
+      // This is used over `IRenderService.addRefreshCallback` since it can be canceled
+      scheduleAtNextAnimationFrame: cb => scheduleAtNextAnimationFrame(coreBrowserService.window, cb)
+    }));
+    this._register(this._optionsService.onSpecificOptionChange('smoothScrollDuration', () => {
+      scrollable.setSmoothScrollDuration(this._optionsService.rawOptions.smoothScrollDuration);
+    }));
+
+    this._scrollableElement = this._register(new SmoothScrollableElement(screenElement, {
+      vertical: ScrollbarVisibility.AUTO,
+      horizontal: ScrollbarVisibility.HIDDEN,
+      useShadows: false,
+      mouseWheelSmoothScroll: true,
+      verticalHasArrows: this._optionsService.rawOptions.scrollbar?.showArrows ?? false,
+      ...this._getChangeOptions()
+    }, scrollable));
+    this._register(this._optionsService.onMultipleOptionChange([
+      'scrollSensitivity',
+      'fastScrollSensitivity',
+      'scrollbar'
+    ], () => this._scrollableElement.updateOptions(this._getChangeOptions())));
+    // Don't handle mouse wheel if wheel events are supported by the current mouse prototcol
+    this._register(mouseStateService.onProtocolChange(type => {
+      this._scrollableElement.updateOptions({
+        handleMouseWheel: !(type & CoreMouseEventType.WHEEL)
+      });
+    }));
+
+    this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
+    this._register(EventUtils.runAndSubscribe(themeService.onChangeColors, () => {
+      element.style.backgroundColor = themeService.colors.background.css;
+      this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
+    }));
+    element.appendChild(this._scrollableElement.getDomNode());
+    this._register(toDisposable(() => this._scrollableElement.getDomNode().remove()));
+
+    this._styleElement = coreBrowserService.mainDocument.createElement('style');
+    screenElement.appendChild(this._styleElement);
+    this._register(toDisposable(() => this._styleElement.remove()));
+    this._register(EventUtils.runAndSubscribe(themeService.onChangeColors, () => {
+      this._styleElement.textContent = [
+        `.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider {`,
+        `  background: ${themeService.colors.scrollbarSliderBackground.css};`,
+        `}`,
+        `.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider:hover {`,
+        `  background: ${themeService.colors.scrollbarSliderHoverBackground.css};`,
+        `}`,
+        `.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider.xterm-active {`,
+        `  background: ${themeService.colors.scrollbarSliderActiveBackground.css};`,
+        `}`
+      ].join('\n');
+    }));
+
+    this._register(this._bufferService.onResize(() => this.queueSync()));
+    this._register(this._bufferService.buffers.onBufferActivate(() => {
+      // Reset _latestYDisp when switching buffers to prevent stale scroll position
+      // from alt buffer contaminating normal buffer scroll position
+      this._latestYDisp = undefined;
+      this.queueSync();
+    }));
+    this._register(this._bufferService.onScroll(() => this._sync()));
+
+    // Flush deferred viewport sync after a render completes (e.g. after ESU ends
+    // synchronized output mode). This ensures DOM scroll position updates atomically
+    // with the canvas render.
+    this._register(this._renderService.onRender(() => {
+      if (this._needsSyncOnRender) {
+        this._needsSyncOnRender = false;
+        this._sync();
+      }
+    }));
+
+    this._register(this._scrollableElement.onScroll(e => this._handleScroll(e)));
+
+  }
+
+  public scrollLines(disp: number): void {
+    const pos = this._scrollableElement.getScrollPosition();
+    this._scrollableElement.setScrollPosition({
+      reuseAnimation: true,
+      scrollTop: pos.scrollTop + disp * this._renderService.dimensions.css.cell.height
+    });
+  }
+
+  public scrollToLine(line: number, disableSmoothScroll?: boolean): void {
+    if (disableSmoothScroll) {
+      this._latestYDisp = line;
+    }
+    this._scrollableElement.setScrollPosition({
+      reuseAnimation: !disableSmoothScroll,
+      scrollTop: line * this._renderService.dimensions.css.cell.height
+    });
+  }
+
+  private _getChangeOptions(): IScrollableElementChangeOptions {
+    const showScrollbar = this._optionsService.rawOptions.scrollbar?.showScrollbar ?? true;
+    const showArrows = this._optionsService.rawOptions.scrollbar?.showArrows ?? false;
+    const verticalScrollbarSize = showScrollbar
+      ? (this._optionsService.rawOptions.scrollbar?.width ?? ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH)
+      : 0;
+    return {
+      mouseWheelScrollSensitivity: this._optionsService.rawOptions.scrollSensitivity,
+      fastScrollSensitivity: this._optionsService.rawOptions.fastScrollSensitivity,
+      vertical: showScrollbar ? ScrollbarVisibility.AUTO : ScrollbarVisibility.HIDDEN,
+      verticalScrollbarSize,
+      verticalHasArrows: showArrows
+    };
+  }
+
+  public queueSync(ydisp?: number): void {
+    // Update state
+    if (ydisp !== undefined) {
+      this._latestYDisp = ydisp;
+    }
+
+    // Don't queue more than one callback
+    if (this._queuedAnimationFrame !== undefined) {
+      return;
+    }
+    this._queuedAnimationFrame = this._renderService.addRefreshCallback(() => {
+      this._queuedAnimationFrame = undefined;
+      this._sync(this._latestYDisp);
+    });
+  }
+
+  private _sync(ydisp: number = this._bufferService.buffer.ydisp): void {
+    if (!this._renderService || this._isSyncing) {
+      return;
+    }
+    // Defer DOM scroll updates during synchronized output to prevent visible
+    // scroll position flickering while the canvas content is frozen.
+    if (this._coreService.decPrivateModes.synchronizedOutput) {
+      this._needsSyncOnRender = true;
+      return;
+    }
+    this._isSyncing = true;
+
+    // Ignore any onScroll event that happens as a result of dimensions changing as this should
+    // never cause a scrollLines call, only setScrollPosition can do that.
+    this._suppressOnScrollHandler = true;
+    this._scrollableElement.setScrollDimensions({
+      height: this._renderService.dimensions.css.canvas.height,
+      scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length
+    });
+    this._suppressOnScrollHandler = false;
+
+    // If ydisp has been changed by some other component (input/buffer), then stop animating smooth
+    // scroll and scroll there immediately.
+    if (ydisp !== this._latestYDisp) {
+      this._scrollableElement.setScrollPosition({
+        scrollTop: ydisp * this._renderService.dimensions.css.cell.height
+      });
+    }
+
+    this._isSyncing = false;
+  }
+
+  private _handleScroll(e: IScrollEvent): void {
+    if (!this._renderService) {
+      return;
+    }
+    if (this._isHandlingScroll || this._suppressOnScrollHandler) {
+      return;
+    }
+    this._isHandlingScroll = true;
+    const newRow = Math.round(e.scrollTop / this._renderService.dimensions.css.cell.height);
+    const diff = newRow - this._bufferService.buffer.ydisp;
+    if (diff !== 0) {
+      this._latestYDisp = newRow;
+      this._onRequestScrollLines.fire(diff);
+    }
+    this._isHandlingScroll = false;
+  }
+
+  public handleTouchScroll(translationY: number): void {
+    const pos = this._scrollableElement.getScrollPosition();
+    this._scrollableElement.setScrollPosition({
+      scrollTop: pos.scrollTop - translationY
+    });
+  }
+}

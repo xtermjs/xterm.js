@@ -20,8 +20,8 @@
         "../../../src/common/runtime/*",
         "../../../src/common/*"
       ],
-      "browser/*": [
-        "../../../src/browser/*"
+      "target-browser/*": [
+        "../../../src/target-browser/*"
       ],
       "@xterm/addon-progress": [
         "../typings/addon-progress.d.ts"
@@ -34,7 +34,7 @@
   ],
   "references": [
     {
-      "path": "../../../src/browser"
+      "path": "../../../src/target-browser"
     },
     {
       "path": "../../../src/common"

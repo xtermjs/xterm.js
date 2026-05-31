@@ -5,7 +5,7 @@
 import { test } from '@playwright/test';
 import { deepStrictEqual, notStrictEqual, strictEqual } from 'assert';
 import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from './TestUtils';
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
+import { IRenderDimensions } from 'target-browser/renderer/shared/Types';
 
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {

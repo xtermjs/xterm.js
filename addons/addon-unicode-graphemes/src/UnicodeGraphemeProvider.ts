@@ -4,8 +4,8 @@
  */
 
 import { IUnicodeVersionProvider } from '@xterm/xterm';
-import { UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
-import { UnicodeService } from 'common/services/UnicodeService';
+import { createPropertyValue, extractCharKind, extractWidth } from 'common/input/UnicodeProperties';
+import { UnicodeCharProperties, UnicodeCharWidth } from 'common/input/UnicodeTypes';
 import * as UC from './third-party/UnicodeProperties';
 
 export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
@@ -19,7 +19,7 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
   }
 
   private static readonly _plainNarrowProperties: UnicodeCharProperties
-    = UnicodeService.createPropertyValue(UC.GRAPHEME_BREAK_Other, 1, false);
+    = createPropertyValue(UC.GRAPHEME_BREAK_Other, 1, false);
 
   public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
     // Optimize the simple ASCII case, under the condition that
@@ -39,9 +39,9 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
       w = 1;
     }
     if (preceding !== 0) {
-      const oldWidth = UnicodeService.extractWidth(preceding);
+      const oldWidth = extractWidth(preceding);
       if (this.handleGraphemes) {
-        charInfo = UC.shouldJoin(UnicodeService.extractCharKind(preceding), charInfo);
+        charInfo = UC.shouldJoin(extractCharKind(preceding), charInfo);
       } else {
         charInfo = w === 0 ? 1 : 0;
       }
@@ -54,7 +54,7 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
         }
       }
     }
-    return UnicodeService.createPropertyValue(charInfo, w, shouldJoin);
+    return createPropertyValue(charInfo, w, shouldJoin);
   }
 
   public wcwidth(codepoint: number): UnicodeCharWidth {

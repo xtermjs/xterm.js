@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig-library-base",
+  "compilerOptions": {
+    "lib": [
+      "es2015",
+      "es2016.Array.Include",
+      "es2019.string",
+      "es2021.weakref"
+    ],
+    "composite": true,
+    "rootDir": ".",
+    "outDir": "../../../out/common/runtime",
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ],
+    "paths": {
+      "@xterm/xterm": ["../../../typings/xterm.d.ts"],
+      "common/buffer/*": ["../primitives/buffer/*"],
+      "common/data/*": ["../primitives/data/*"],
+      "common/input/*": ["../primitives/input/*"],
+      "common/parser/*": ["../primitives/parser/*"],
+      "common/services/*": ["./services/*"],
+      "common/public/*": ["./public/*"],
+      "common/Types": ["./Types"],
+      "common/*": ["../primitives/*", "./*"],
+      "*": ["../../*"]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts"
+  ],
+  "exclude": [
+    "**/*.test.ts"
+  ],
+  "references": [
+    { "path": "../primitives" }
+  ]
+}

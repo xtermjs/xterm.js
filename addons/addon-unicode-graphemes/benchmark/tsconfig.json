@@ -14,7 +14,7 @@
         "../../../src/common/runtime/*",
         "../../../src/common/*"
       ],
-      "browser/*": ["../../../src/browser/*"],
+      "target-browser/*": ["../../../src/target-browser/*"],
       "UnicodeGraphemeProvider": ["../src/UnicodeGraphemeProvider"],
       "@xterm/addon-unicode-graphemes": [
         "../typings/addon-unicode-graphemes.d.ts"
@@ -25,6 +25,6 @@
   "exclude": ["../../../**/*test.ts", "../../**/*api.ts"],
   "references": [
     { "path": "../../../src/common" },
-    { "path": "../../../src/browser" }
+    { "path": "../../../src/target-browser" }
   ]
 }
