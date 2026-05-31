@@ -17,6 +17,7 @@ docs/
 npm-debug.log
 /.idea/
 .env
+mise.toml
 build/
 .DS_Store
 yarn.lock
