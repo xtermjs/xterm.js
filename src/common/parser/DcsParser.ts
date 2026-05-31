@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import { IDisposable } from 'common/Types';
-import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from 'common/parser/Types';
-import { utf32ToString } from 'common/input/TextDecoder';
-import { Params } from 'common/parser/Params';
-import { ParserConstants } from 'common/parser/Constants';
-import { LimitedStringBuilder } from 'common/StringBuilder';
+import { IDisposable } from '../Types';
+import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from './Types';
+import { utf32ToString } from '../input/TextDecoder';
+import { Params } from './Params';
+import { ParserConstants } from './Constants';
+import { LimitedStringBuilder } from '../StringBuilder';
 
 const EMPTY_HANDLERS: IDcsHandler[] = [];
 

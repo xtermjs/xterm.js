@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { addDisposableListener } from 'browser/Dom';
-import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
-import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent, IDisposable } from 'common/Types';
-import { C0 } from 'common/data/EscapeSequences';
-import { DisposableStore, MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { addDisposableListener } from '../Dom';
+import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptionsService } from '../../common/services/Services';
+import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent, IDisposable } from '../../common/Types';
+import { C0 } from '../../common/data/EscapeSequences';
+import { DisposableStore, MutableDisposable, toDisposable } from '../../common/Lifecycle';
 import { ICoreBrowserService, IMouseCoordsService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';
-import { Gesture, EventType as GestureEventType, IGestureEvent } from 'browser/scrollable/touch';
+import { Gesture, EventType as GestureEventType, IGestureEvent } from '../scrollable/touch';
 
 type RequestedMouseEvents = Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener | null>;
 

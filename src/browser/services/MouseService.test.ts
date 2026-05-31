@@ -3,12 +3,12 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { AltMouseCursorController, MouseEventCssClasses, MouseService } from 'browser/services/MouseService';
-import { MouseStateService } from 'common/services/MouseStateService';
-import { CoreMouseAction, CoreMouseButton } from 'common/Types';
-import { IBufferService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
-import { OptionsService } from 'common/services/OptionsService';
-import { MockCoreBrowserService, MockRenderService, MockSelectionService } from 'browser/TestUtils.test';
+import { AltMouseCursorController, MouseEventCssClasses, MouseService } from './MouseService';
+import { MouseStateService } from '../../common/services/MouseStateService';
+import { CoreMouseAction, CoreMouseButton } from '../../common/Types';
+import { IBufferService, ICoreService, ILogService, IOptionsService } from '../../common/services/Services';
+import { OptionsService } from '../../common/services/OptionsService';
+import { MockCoreBrowserService, MockRenderService, MockSelectionService } from '../TestUtils.test';
 
 function toBytes(s: string | undefined): number[] {
   if (!s) {

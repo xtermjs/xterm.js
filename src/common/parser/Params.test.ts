@@ -3,8 +3,8 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { Params } from 'common/parser/Params';
-import { ParamsArray } from 'common/parser/Types';
+import { Params } from './Params';
+import { ParamsArray } from './Types';
 
 class TestParams extends Params {
   public get subParams(): Int32Array {

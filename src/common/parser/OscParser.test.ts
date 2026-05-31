@@ -3,9 +3,9 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { OscParser, OscHandler } from 'common/parser/OscParser';
-import { StringToUtf32, utf32ToString } from 'common/input/TextDecoder';
-import { IOscHandler } from 'common/parser/Types';
+import { OscParser, OscHandler } from './OscParser';
+import { StringToUtf32, utf32ToString } from '../input/TextDecoder';
+import { IOscHandler } from './Types';
 
 function toUtf32(s: string): Uint32Array {
   const utf32 = new Uint32Array(s.length);

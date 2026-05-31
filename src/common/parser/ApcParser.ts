@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IApcHandler, IHandlerCollection, ApcFallbackHandlerType, IApcParser, ISubParserStackState } from 'common/parser/Types';
-import { ParserConstants } from 'common/parser/Constants';
-import { utf32ToString } from 'common/input/TextDecoder';
-import { IDisposable } from 'common/Types';
-import { LimitedStringBuilder } from 'common/StringBuilder';
+import { IApcHandler, IHandlerCollection, ApcFallbackHandlerType, IApcParser, ISubParserStackState } from './Types';
+import { ParserConstants } from './Constants';
+import { utf32ToString } from '../input/TextDecoder';
+import { IDisposable } from '../Types';
+import { LimitedStringBuilder } from '../StringBuilder';
 
 const EMPTY_HANDLERS: IApcHandler[] = [];
 

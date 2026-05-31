@@ -2,10 +2,10 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IMouseStateService } from 'common/services/Services';
-import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
-import { Emitter } from 'common/Event';
+import { IMouseStateService } from './Services';
+import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from '../Types';
+import { Disposable } from '../Lifecycle';
+import { Emitter } from '../Event';
 
 /**
  * Supported default protocols.

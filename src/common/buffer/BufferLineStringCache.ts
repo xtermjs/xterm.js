@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import type { IBufferLineStringCache, IBufferLineStringCacheEntry } from 'common/buffer/BufferLine';
-import { disposableTimeout } from 'common/Async';
-import { Disposable, MutableDisposable, toDisposable, type IDisposable } from 'common/Lifecycle';
+import type { IBufferLineStringCache, IBufferLineStringCacheEntry } from './BufferLine';
+import { disposableTimeout } from '../Async';
+import { Disposable, MutableDisposable, toDisposable, type IDisposable } from '../Lifecycle';
 
 const enum Constants {
   CACHE_TTL_MS = 15000

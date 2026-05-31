@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IParams, ParamsArray } from 'common/parser/Types';
+import { IParams, ParamsArray } from './Types';
 
 const enum Constants {
   /**

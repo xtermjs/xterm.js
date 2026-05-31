@@ -11,7 +11,7 @@ import { ScrollbarArrow, IScrollbarArrowOptions } from './scrollbarArrow';
 import { ScrollbarState } from './scrollbarState';
 import { ScrollbarVisibilityController } from './scrollbarVisibilityController';
 import { Widget } from './widget';
-import * as platform from 'common/Platform';
+import * as platform from '../../common/Platform';
 import { INewScrollPosition, Scrollable, ScrollbarVisibility } from './scrollable';
 
 /**

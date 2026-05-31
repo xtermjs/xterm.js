@@ -2,8 +2,8 @@
  * Copyright (c) 2022 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IBufferService, IOscLinkService } from 'common/services/Services';
-import { IMarker, IOscLinkData } from 'common/Types';
+import { IBufferService, IOscLinkService } from './Services';
+import { IMarker, IOscLinkData } from '../Types';
 
 export class OscLinkService implements IOscLinkService {
   public serviceBrand: any;

@@ -3,9 +3,9 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { ApcParser, ApcHandler } from 'common/parser/ApcParser';
-import { StringToUtf32, utf32ToString } from 'common/input/TextDecoder';
-import { IApcHandler, IFunctionIdentifier } from 'common/parser/Types';
+import { ApcParser, ApcHandler } from './ApcParser';
+import { StringToUtf32, utf32ToString } from '../input/TextDecoder';
+import { IApcHandler, IFunctionIdentifier } from './Types';
 
 function toUtf32(s: string): Uint32Array {
   const utf32 = new Uint32Array(s.length);

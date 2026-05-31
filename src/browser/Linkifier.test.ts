@@ -4,11 +4,11 @@
  */
 
 import { assert } from 'chai';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService } from '../common/services/Services';
 import { Linkifier } from './Linkifier';
-import { MockBufferService } from 'common/TestUtils.test';
-import { ILink } from 'browser/Types';
-import { LinkProviderService } from 'browser/services/LinkProviderService';
+import { MockBufferService } from '../common/TestUtils.test';
+import { ILink } from './Types';
+import { LinkProviderService } from './services/LinkProviderService';
 import jsdom = require('jsdom');
 
 class TestLinkifier2 extends Linkifier {

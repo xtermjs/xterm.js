@@ -4,8 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { SortedList } from 'common/SortedList';
-import { MockLogService } from 'common/TestUtils.test';
+import { SortedList } from './SortedList';
+import { MockLogService } from './TestUtils.test';
 
 const deepStrictEqual = assert.deepStrictEqual;
 

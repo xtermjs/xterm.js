@@ -3,10 +3,10 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { DcsParser, DcsHandler } from 'common/parser/DcsParser';
-import { IDcsHandler, IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { utf32ToString, StringToUtf32 } from 'common/input/TextDecoder';
-import { Params } from 'common/parser/Params';
+import { DcsParser, DcsHandler } from './DcsParser';
+import { IDcsHandler, IParams, IFunctionIdentifier } from './Types';
+import { utf32ToString, StringToUtf32 } from '../input/TextDecoder';
+import { Params } from './Params';
 
 function toUtf32(s: string): Uint32Array {
   const utf32 = new Uint32Array(s.length);

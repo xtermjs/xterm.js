@@ -21,11 +21,11 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { IBuffer } from 'common/buffer/Types';
-import { CoreTerminal } from 'common/CoreTerminal';
-import { IMarker, ITerminalOptions } from 'common/Types';
-import { Emitter, EventUtils } from 'common/Event';
+import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
+import { IBuffer } from '../common/buffer/Types';
+import { CoreTerminal } from '../common/CoreTerminal';
+import { IMarker, ITerminalOptions } from '../common/Types';
+import { Emitter, EventUtils } from '../common/Event';
 
 export class Terminal extends CoreTerminal {
   private readonly _onBell = this._register(new Emitter<void>());

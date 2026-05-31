@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IAddImageOpts } from 'Types';
+import { IAddImageOpts } from './Types';
 import { ImageStorage } from './ImageStorage';
 
 /**

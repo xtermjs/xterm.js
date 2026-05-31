@@ -3,20 +3,20 @@
  * @license MIT
  */
 
-import { IBufferRange, ILinkifier2 } from 'browser/Types';
-import { getCoordsRelativeToElement } from 'browser/input/Mouse';
-import { moveToCellSequence } from 'browser/input/MoveToCell';
-import { SelectionModel } from 'browser/selection/SelectionModel';
-import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
-import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import * as Browser from 'common/Platform';
-import { IBufferLine, ICellData, IDisposable } from 'common/Types';
-import { getRangeLength } from 'common/buffer/BufferRange';
-import { CellData } from 'common/buffer/CellData';
-import { IBuffer } from 'common/buffer/Types';
-import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'common/Event';
+import { IBufferRange, ILinkifier2 } from '../Types';
+import { getCoordsRelativeToElement } from '../input/Mouse';
+import { moveToCellSequence } from '../input/MoveToCell';
+import { SelectionModel } from '../selection/SelectionModel';
+import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from '../selection/Types';
+import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from './Services';
+import { Disposable, MutableDisposable, toDisposable } from '../../common/Lifecycle';
+import * as Browser from '../../common/Platform';
+import { IBufferLine, ICellData, IDisposable } from '../../common/Types';
+import { getRangeLength } from '../../common/buffer/BufferRange';
+import { CellData } from '../../common/buffer/CellData';
+import { IBuffer } from '../../common/buffer/Types';
+import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from '../../common/services/Services';
+import { Emitter } from '../../common/Event';
 
 const enum Constants {
   /**
