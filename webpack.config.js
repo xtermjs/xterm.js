@@ -37,6 +37,7 @@ const config = {
         path.resolve('./out/primitives'),
       ],
       browser: path.resolve('./out/target-browser'),
+      'target-browser': path.resolve('./out/target-browser'),
       vs: path.resolve('./out/vs'),
     }
   },

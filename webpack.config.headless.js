@@ -35,6 +35,7 @@ const config = {
         path.resolve('./out/primitives'),
       ],
       headless: path.resolve('./out/target-headless'),
+      'target-headless': path.resolve('./out/target-headless'),
       vs: path.resolve('./out/vs')
     }
   },
