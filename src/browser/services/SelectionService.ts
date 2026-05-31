@@ -11,10 +11,10 @@ import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 
 import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from './Services';
 import { Disposable, MutableDisposable, toDisposable } from '../../common/Lifecycle';
 import * as Browser from '../../common/Platform';
-import { IBufferLine, ICellData, IDisposable } from '../../common/Types';
+import { IDisposable } from '../../common/Types';
+import { IBuffer, IBufferLine, ICellData } from '../../common/buffer/Types';
 import { getRangeLength } from '../../common/buffer/BufferRange';
 import { CellData } from '../../common/buffer/CellData';
-import { IBuffer } from '../../common/buffer/Types';
 import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from '../../common/services/Services';
 import { Emitter } from '../../common/Event';
 

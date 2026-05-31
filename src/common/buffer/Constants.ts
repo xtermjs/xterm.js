@@ -147,4 +147,11 @@ export const enum ExtFlags {
   VARIANT_OFFSET = 0xE0000000
 }
 
-export { UnderlineStyle } from '../Types';
+export const enum UnderlineStyle {
+  NONE = 0,
+  SINGLE = 1,
+  DOUBLE = 2,
+  CURLY = 3,
+  DOTTED = 4,
+  DASHED = 5
+}

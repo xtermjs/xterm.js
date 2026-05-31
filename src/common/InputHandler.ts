@@ -4,7 +4,8 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
+import { IInputHandler, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
+import { IAttributeData, IBuffer } from './buffer/Types';
 import { C0, C1 } from './data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './data/Charsets';
 import { EscapeSequenceParser } from './parser/EscapeSequenceParser';
@@ -20,7 +21,6 @@ import { UnicodeService } from './services/UnicodeService';
 import { OscHandler } from './parser/OscParser';
 import { DcsHandler } from './parser/DcsParser';
 import { ApcHandler } from './parser/ApcParser';
-import { IBuffer } from './buffer/Types';
 import { parseColor } from './input/XParseColor';
 import { Emitter } from './Event';
 import { XTERM_VERSION } from './Version';

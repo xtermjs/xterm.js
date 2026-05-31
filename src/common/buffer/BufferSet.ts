@@ -4,9 +4,8 @@
  */
 
 import { Disposable, MutableDisposable } from '../Lifecycle';
-import { IAttributeData } from '../Types';
 import { Buffer } from './Buffer';
-import { IBuffer, IBufferSet } from './Types';
+import { IAttributeData, IBuffer, IBufferSet } from './Types';
 import { IBufferService, ILogService, IOptionsService } from '../services/Services';
 import { Emitter } from '../Event';
 

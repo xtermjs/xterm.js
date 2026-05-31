@@ -7,8 +7,8 @@ import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration, I
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from './services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from './renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from './Types';
-import { IBuffer, IBufferSet } from '../common/buffer/Types';
-import { IBufferLine, ICellData, IAttributeData, ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from '../common/Types';
+import { IAttributeData, IBuffer, IBufferLine, IBufferSet, ICellData } from '../common/buffer/Types';
+import { ICircularList, XtermListener, ICharset, ITerminalOptions, ColorIndex } from '../common/Types';
 import { Buffer } from '../common/buffer/Buffer';
 import * as Browser from '../common/Platform';
 import { CoreBrowserTerminal } from './CoreBrowserTerminal';

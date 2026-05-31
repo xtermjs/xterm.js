@@ -6,7 +6,7 @@ import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content,
 import { BufferLine } from './BufferLine';
 import { BufferLineStringCache } from './BufferLineStringCache';
 import { CellData } from './CellData';
-import { CharData, IBufferLine, ICellData } from '../Types';
+import { CharData, IBufferLine, ICellData } from './Types';
 import { assert } from 'chai';
 import { AttributeData } from './AttributeData';
 import { createCellData, NULL_CELL_DATA, extendedAttributes } from '../TestUtils.test';

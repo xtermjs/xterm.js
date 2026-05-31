@@ -6,7 +6,8 @@
 import { CircularList, IInsertEvent } from '../CircularList';
 import { Disposable, toDisposable } from '../Lifecycle';
 import { IdleTaskQueue } from '../TaskQueue';
-import { IAttributeData, IBufferLine, ICellData, ICharset } from '../Types';
+import { ICharset } from '../Types';
+import { IAttributeData, IBuffer, IBufferLine, ICellData } from './Types';
 import { ExtendedAttrs } from './AttributeData';
 import { BufferLine, DEFAULT_ATTR_DATA } from './BufferLine';
 import { BufferLineStringCache } from './BufferLineStringCache';
@@ -14,7 +15,6 @@ import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCr
 import { CellData } from './CellData';
 import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from './Constants';
 import { Marker } from './Marker';
-import { IBuffer } from './Types';
 import { DEFAULT_CHARSET } from '../data/Charsets';
 import { IBufferService, ILogService, IOptionsService } from '../services/Services';
 
