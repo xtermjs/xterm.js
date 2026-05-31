@@ -5,9 +5,10 @@
 #include "transition_table.h"
 #include <stddef.h>
 
-/* Place scratch memory above static data (transition table ~8.5KB in linear memory 0) */
+/* Static transition table is linked at 65536; scratch must sit above it. */
 #define MEM_BASE 65536
-#define MEM_STATE MEM_BASE
+#define PARSER_TABLE_BYTE_SIZE (PARSER_TABLE_SIZE * sizeof(uint16_t))
+#define MEM_STATE (((MEM_BASE + PARSER_TABLE_BYTE_SIZE) + 255u) & ~255u)
 /* ParserWasmState is ~2.3KB; keep header and op buffers past it */
 #define MEM_HEADER (MEM_STATE + 2048)
 #define MEM_KINDS (MEM_HEADER + 64)

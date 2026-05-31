@@ -71,6 +71,13 @@ function loadParams(host: IWasmParseHost, scan: ScanResult, opIndex: number): vo
   }
 }
 
+/** True when a chunked WASM scan of `data` is still in progress (e.g. nested parse during print). */
+function isActiveWasmParse(scanCache: IWasmScanCache, data: Uint32Array, length: number): boolean {
+  return scanCache.data === data
+    && (scanCache.inputOffset ?? 0) < length
+    && (scanCache.scan !== undefined || scanCache.chunkStart !== undefined);
+}
+
 export function parseWithWasmScanner(
   host: IWasmParseHost,
   data: Uint32Array,
@@ -85,10 +92,14 @@ export function parseWithWasmScanner(
     return resumeWasmParse(host, data, length, promiseResult, scanCache);
   }
 
-  scanCache.stateBeforeScan = host.currentState;
-  scanCache.inputOffset = 0;
-  scanCache.scan = undefined;
-  scanCache.opIndex = 0;
+  if (!isActiveWasmParse(scanCache, data, length)) {
+    scanCache.stateBeforeScan = host.currentState;
+    scanCache.inputOffset = 0;
+    scanCache.scan = undefined;
+    scanCache.opIndex = 0;
+    scanCache.data = undefined;
+    scanCache.chunkStart = undefined;
+  }
   return runWasmScanChunks(host, data, length, promiseResult, scanCache);
 }
 
@@ -123,13 +134,18 @@ function runWasmScanChunks(
       host.collect = WasmEscapeScanner.collect;
     }
 
-    const result = dispatchScanOps(host, data, scanCache.scan, scanCache.opIndex, scanCache, promiseResult, stateBeforeScan);
+    const scan = scanCache.scan;
+    if (!scan) {
+      throw new Error('Wasm parser scan cache missing during chunked parse');
+    }
+
+    const result = dispatchScanOps(host, data, scan, scanCache.opIndex, scanCache, promiseResult, stateBeforeScan);
     if (result instanceof Promise) {
       scanCache.inputOffset = pos;
       return result;
     }
 
-    const nextOffset = scanCache.scan.nextOffset;
+    const nextOffset = scan.nextOffset;
     if (nextOffset <= pos) {
       throw new Error(`Wasm parser scan did not advance (stuck at input offset ${pos})`);
     }
@@ -141,6 +157,8 @@ function runWasmScanChunks(
 
   scanCache.inputOffset = length;
   scanCache.scan = undefined;
+  scanCache.data = undefined;
+  scanCache.chunkStart = undefined;
 }
 
 function resumeWasmParse(
