@@ -4,6 +4,7 @@
  */
 
 import { assert } from 'chai';
+import { UnicodeV6 } from '../input/UnicodeV6';
 import { UnicodeService } from './UnicodeService';
 import { IUnicodeVersionProvider } from './Services';
 
@@ -21,6 +22,7 @@ describe('unicode provider', () => {
   let us: UnicodeService;
   beforeEach(() => {
     us = new UnicodeService();
+    us.register(new UnicodeV6());
   });
   it('default to V6', () => {
     assert.equal(us.activeVersion, '6');

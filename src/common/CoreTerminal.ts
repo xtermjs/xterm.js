@@ -21,19 +21,20 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, IMouseStateService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from './services/Services';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, IMouseStateService, IUnicodeService, LogLevelEnum, IOscLinkService } from './services/Services';
 import { InstantiationService } from './services/InstantiationService';
 import { LogService } from './services/LogService';
 import { BufferService, BufferServiceConstants } from './services/BufferService';
 import { OptionsService } from './services/OptionsService';
-import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from './Types';
+import { IDisposable, IScrollEvent, ITerminalOptions, IParams } from './Types';
+import { IAttributeData, IBufferSet } from './buffer/Types';
 import { CoreService } from './services/CoreService';
 import { MouseStateService } from './services/MouseStateService';
+import { UnicodeV6 } from './input/UnicodeV6';
 import { UnicodeService } from './services/UnicodeService';
 import { CharsetService } from './services/CharsetService';
 import { updateWindowsModeWrappedState } from './WindowsMode';
-import { IFunctionIdentifier, IParams } from './parser/Types';
-import { IBufferSet } from './buffer/Types';
+import { IFunctionIdentifier } from './parser/Types';
 import { InputHandler } from './InputHandler';
 import { WriteBuffer } from './input/WriteBuffer';
 import { OscLinkService } from './services/OscLinkService';
@@ -42,6 +43,20 @@ import { Disposable, MutableDisposable, toDisposable } from './Lifecycle';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
+
+export interface ICoreTerminal {
+  mouseStateService: IMouseStateService;
+  coreService: ICoreService;
+  optionsService: IOptionsService;
+  unicodeService: IUnicodeService;
+  buffers: IBufferSet;
+  options: Required<ITerminalOptions>;
+  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
+  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+  registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+}
 
 export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _instantiationService: IInstantiationService;
@@ -116,6 +131,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.mouseStateService = this._register(this._instantiationService.createInstance(MouseStateService));
     this._instantiationService.setService(IMouseStateService, this.mouseStateService);
     this.unicodeService = this._register(this._instantiationService.createInstance(UnicodeService));
+    this.unicodeService.register(new UnicodeV6());
     this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
     this._instantiationService.setService(ICharsetService, this._charsetService);

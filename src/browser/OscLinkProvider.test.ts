@@ -8,7 +8,8 @@ import { OscLinkProvider } from './OscLinkProvider';
 import { ILink } from './Types';
 import { createCellData, MockBufferService, MockOptionsService } from '../common/TestUtils.test';
 import { IBufferService, IOscLinkService } from '../common/services/Services';
-import { IBufferLine, IOscLinkData } from '../common/Types';
+import { IOscLinkData } from '../common/Types';
+import { IBufferLine } from '../common/buffer/Types';
 
 class TestOscLinkService implements IOscLinkService {
   public serviceBrand: any;

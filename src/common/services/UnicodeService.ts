@@ -3,7 +3,6 @@
  * @license MIT
  */
 
-import { UnicodeV6 } from '../input/UnicodeV6';
 import { IUnicodeService, IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from './Services';
 import { Emitter } from '../Event';
 
@@ -12,7 +11,7 @@ export class UnicodeService implements IUnicodeService {
 
   private _providers: {[key: string]: IUnicodeVersionProvider} = Object.create(null);
   private _active: string = '';
-  private _activeProvider: IUnicodeVersionProvider;
+  private _activeProvider!: IUnicodeVersionProvider;
 
   private readonly _onChange = new Emitter<string>();
   public readonly onChange = this._onChange.event;
@@ -28,13 +27,6 @@ export class UnicodeService implements IUnicodeService {
   }
   public static createPropertyValue(state: number, width: number, shouldJoin: boolean = false): UnicodeCharProperties {
     return ((state & 0xffffff) << 3) | ((width & 3) << 1) | (shouldJoin?1:0);
-  }
-
-  constructor() {
-    const defaultProvider = new UnicodeV6();
-    this.register(defaultProvider);
-    this._active = defaultProvider.version;
-    this._activeProvider = defaultProvider;
   }
 
   public dispose(): void {
@@ -60,6 +52,9 @@ export class UnicodeService implements IUnicodeService {
 
   public register(provider: IUnicodeVersionProvider): void {
     this._providers[provider.version] = provider;
+    if (!this._active) {
+      this.activeVersion = provider.version;
+    }
   }
 
   /**

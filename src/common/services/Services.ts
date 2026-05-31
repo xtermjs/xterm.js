@@ -4,9 +4,9 @@
  */
 
 import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
-import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from '../Types';
-import { IBuffer, IBufferSet } from '../buffer/Types';
-import { createDecorator } from './ServiceRegistry';
+import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from '../Types';
+import { IAttributeData, IBuffer, IBufferSet } from '../buffer/Types';
+import { createDecorator, IServiceIdentifier } from './ServiceRegistry';
 import type { Emitter, IEvent } from '../Event';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
@@ -117,12 +117,6 @@ export interface ICharsetService {
    * @param charset
    */
   setgCharset(g: number, charset: ICharset | undefined): void;
-}
-
-export interface IServiceIdentifier<T> {
-  (...args: any[]): void;
-  type: T;
-  _id: string;
 }
 
 export interface IBrandedService {
