@@ -10,12 +10,6 @@
     "sourceMap": true,
     "removeComments": true,
     "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
       "*": [
         "./*"
       ]

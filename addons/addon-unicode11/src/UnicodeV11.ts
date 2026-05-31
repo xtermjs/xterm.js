@@ -4,8 +4,8 @@
  */
 
 import { IUnicodeVersionProvider } from '@xterm/xterm';
-import { UnicodeCharProperties, UnicodeCharWidth } from 'common/services/Services';
-import { UnicodeService } from 'common/services/UnicodeService';
+import { UnicodeCharProperties, UnicodeCharWidth } from '../../../src/common/services/Services';
+import { UnicodeService } from '../../../src/common/services/UnicodeService';
 
 const BMP_COMBINING = [
   [0x0300, 0x036F], [0x0483, 0x0489], [0x0591, 0x05BD],

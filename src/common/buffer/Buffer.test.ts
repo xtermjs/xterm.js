@@ -4,13 +4,13 @@
  */
 
 import { assert } from 'chai';
-import { Buffer } from 'common/buffer/Buffer';
-import { CircularList } from 'common/CircularList';
-import { MockOptionsService, MockBufferService, MockLogService, createCellData } from 'common/TestUtils.test';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
-import { CellData } from 'common/buffer/CellData';
-import { ExtendedAttrs } from 'common/buffer/AttributeData';
+import { Buffer } from './Buffer';
+import { CircularList } from '../CircularList';
+import { MockOptionsService, MockBufferService, MockLogService, createCellData } from '../TestUtils.test';
+import { BufferLine, DEFAULT_ATTR_DATA } from './BufferLine';
+import { BufferLineStringCache } from './BufferLineStringCache';
+import { CellData } from './CellData';
+import { ExtendedAttrs } from './AttributeData';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

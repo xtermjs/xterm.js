@@ -3,18 +3,18 @@
  * @license MIT
  */
 
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
-import { IThemeService } from 'browser/services/Services';
-import { ReadonlyColorSet } from 'browser/Types';
-import { Attributes, FgFlags } from 'common/buffer/Constants';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IColor } from 'common/Types';
+import { IRenderDimensions } from '../../../src/browser/renderer/shared/Types';
+import { IThemeService } from '../../../src/browser/services/Services';
+import { ReadonlyColorSet } from '../../../src/browser/Types';
+import { Attributes, FgFlags } from '../../../src/common/buffer/Constants';
+import { Disposable, toDisposable } from '../../../src/common/Lifecycle';
+import { IColor } from '../../../src/common/Types';
 import { Terminal } from '@xterm/xterm';
 import { RenderModelConstants } from './RenderModel';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
-import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import type { ILogService } from 'common/services/Services';
+import { throwIfFalsy } from '../../../src/browser/renderer/shared/RendererUtils';
+import type { ILogService } from '../../../src/common/services/Services';
 
 const enum VertexAttribLocations {
   POSITION = 0,

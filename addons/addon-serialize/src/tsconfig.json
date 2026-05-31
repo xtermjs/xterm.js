@@ -11,12 +11,6 @@
     "sourceMap": true,
     "removeComments": true,
     "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
       "@xterm/addon-serialize": [
         "../typings/addon-serialize.d.ts"
       ]

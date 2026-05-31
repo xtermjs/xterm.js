@@ -9,7 +9,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IServiceIdentifier } from 'common/services/Services';
+import { IServiceIdentifier } from './Services';
 
 const enum Constants {
   DI_TARGET = 'di$target',

@@ -11,17 +11,8 @@
     "sourceMap": true,
     "removeComments": true,
     "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
       "@xterm/addon-webgl": [
         "../typings/addon-webgl.d.ts"
-      ],
-      "*": [
-        "./*"
       ]
     },
     "strict": true,

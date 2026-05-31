@@ -3,17 +3,17 @@
  * @license MIT
  */
 
-import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IMouseStateService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from 'common/services/Services';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
-import { IBufferSet, IBuffer } from 'common/buffer/Types';
-import { BufferSet } from 'common/buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable, IBufferLine, IExtendedAttrs } from 'common/Types';
-import { UnicodeV6 } from 'common/input/UnicodeV6';
+import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IMouseStateService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from './services/Services';
+import { UnicodeService } from './services/UnicodeService';
+import { DEFAULT_OPTIONS } from './services/OptionsService';
+import { IBufferSet, IBuffer } from './buffer/Types';
+import { BufferSet } from './buffer/BufferSet';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable, IBufferLine, IExtendedAttrs } from './Types';
+import { UnicodeV6 } from './input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
-import { Emitter, type IEvent } from 'common/Event';
-import { CellData } from 'common/buffer/CellData';
-import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from 'common/buffer/Constants';
+import { Emitter, type IEvent } from './Event';
+import { CellData } from './buffer/CellData';
+import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from './buffer/Constants';
 
 export function createCellData(attr: number, char: string, width: number): CellData {
   return CellData.fromCharData([attr, char, width, char.length === 0 ? 0 : char.charCodeAt(0)]);

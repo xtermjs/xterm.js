@@ -6,8 +6,8 @@
 import { assert } from 'chai';
 import { configEquals } from './CharAtlasUtils';
 import { ICharAtlasConfig } from './Types';
-import { NULL_COLOR } from 'common/Color';
-import { IColor } from 'common/Types';
+import { NULL_COLOR } from '../../../src/common/Color';
+import { IColor } from '../../../src/common/Types';
 
 function createTestConfig(overrides: Partial<ICharAtlasConfig> = {}): ICharAtlasConfig {
   const color: IColor = { css: '#ffffff', rgba: 0xffffffff };

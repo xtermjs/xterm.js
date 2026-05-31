@@ -4,8 +4,8 @@
  */
 
 import { perfContext, before, RuntimeCase } from 'xterm-benchmark';
-import { DecorationService } from 'common/services/DecorationService';
-import { MockLogService, MockBufferService, MockOptionsService } from 'common/TestUtils.test';
+import { DecorationService } from '../../src/common/services/DecorationService';
+import { MockLogService, MockBufferService, MockOptionsService } from '../../src/common/TestUtils.test';
 const enum Constants {
   COLS = 80,
   ROWS = 30,

@@ -4,19 +4,19 @@
  */
 
 import { assert } from 'chai';
-import { InputHandler } from 'common/InputHandler';
-import { IBufferLine, IAttributeData, IColorEvent, ColorRequestType, SpecialColorIndex } from 'common/Types';
-import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { CellData } from 'common/buffer/CellData';
-import { Attributes, BgFlags, UnderlineStyle } from 'common/buffer/Constants';
-import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
-import { Params } from 'common/parser/Params';
-import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockMouseStateService, MockCharsetService, MockUnicodeService, MockOscLinkService, extendedAttributes } from 'common/TestUtils.test';
-import { IBufferService, ICoreService, type IOscLinkService } from 'common/services/Services';
-import { DEFAULT_OPTIONS } from 'common/services/OptionsService';
-import { BufferService } from 'common/services/BufferService';
-import { CoreService } from 'common/services/CoreService';
-import { OscLinkService } from 'common/services/OscLinkService';
+import { InputHandler } from './InputHandler';
+import { IBufferLine, IAttributeData, IColorEvent, ColorRequestType, SpecialColorIndex } from './Types';
+import { DEFAULT_ATTR_DATA } from './buffer/BufferLine';
+import { CellData } from './buffer/CellData';
+import { Attributes, BgFlags, UnderlineStyle } from './buffer/Constants';
+import { AttributeData, ExtendedAttrs } from './buffer/AttributeData';
+import { Params } from './parser/Params';
+import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockMouseStateService, MockCharsetService, MockUnicodeService, MockOscLinkService, extendedAttributes } from './TestUtils.test';
+import { IBufferService, ICoreService, type IOscLinkService } from './services/Services';
+import { DEFAULT_OPTIONS } from './services/OptionsService';
+import { BufferService } from './services/BufferService';
+import { CoreService } from './services/CoreService';
+import { OscLinkService } from './services/OscLinkService';
 
 
 function getCursor(bufferService: IBufferService): number[] {

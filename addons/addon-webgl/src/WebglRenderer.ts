@@ -3,19 +3,19 @@
  * @license MIT
  */
 
-import { ITerminal } from 'browser/Types';
+import { ITerminal } from '../../../src/browser/Types';
 import { CellColorResolver } from './CellColorResolver';
 import { acquireTextureAtlas, removeTerminalFromCache } from './CharAtlasCache';
 import { CursorBlinkStateManager } from './CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from './DevicePixelObserver';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
-import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { CharData, IBufferLine, ICellData } from 'common/Types';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
-import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
-import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from '../../../src/browser/renderer/shared/Types';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from '../../../src/browser/services/Services';
+import { CharData, IBufferLine, ICellData } from '../../../src/common/Types';
+import { AttributeData } from '../../../src/common/buffer/AttributeData';
+import { CellData } from '../../../src/common/buffer/CellData';
+import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from '../../../src/common/buffer/Constants';
+import { TextBlinkStateManager } from '../../../src/browser/renderer/shared/TextBlinkStateManager';
+import { ICoreService, IDecorationService, ILogService, IOptionsService } from '../../../src/common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
@@ -23,10 +23,10 @@ import { COMBINED_CHAR_BIT_MASK, RenderModel, RenderModelConstants } from './Ren
 import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { Emitter, EventUtils } from 'common/Event';
-import { addDisposableListener } from 'browser/Dom';
-import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
+import { Emitter, EventUtils } from '../../../src/common/Event';
+import { addDisposableListener } from '../../../src/browser/Dom';
+import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from '../../../src/common/Lifecycle';
+import { createRenderDimensions } from '../../../src/browser/renderer/shared/RendererUtils';
 
 const enum Constants {
   MERGE_RETRY_LIMIT = 32

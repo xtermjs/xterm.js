@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import * as platform from 'common/Platform';
+import * as platform from '../../common/Platform';
 
 interface IWindowChainElement {
   readonly window: WeakRef<Window>;

@@ -15,12 +15,6 @@
       "../../../node_modules/@types/mocha"
     ],
     "paths": {
-      "common/*": [
-        "../../../src/common/*"
-      ],
-      "browser/*": [
-        "../../../src/browser/*"
-      ],
       "@xterm/addon-search" : [
         "../typings/addon-search.d.ts"
       ]

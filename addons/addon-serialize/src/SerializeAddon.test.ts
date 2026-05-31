@@ -6,10 +6,10 @@
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { SerializeAddon } from './SerializeAddon';
-import { Terminal } from 'browser/public/Terminal';
-import { SelectionModel } from 'browser/selection/SelectionModel';
-import { IBufferService } from 'common/services/Services';
-import { ThemeService } from 'browser/services/ThemeService';
+import { Terminal } from '../../../src/browser/public/Terminal';
+import { SelectionModel } from '../../../src/browser/selection/SelectionModel';
+import { IBufferService } from '../../../src/common/services/Services';
+import { ThemeService } from '../../../src/browser/services/ThemeService';
 
 function sgr(...seq: string[]): string {
   return `\x1b[${seq.join(';')}m`;

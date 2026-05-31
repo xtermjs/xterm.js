@@ -5,9 +5,9 @@
 
 import type { Terminal, IDisposable, ITerminalAddon } from '@xterm/xterm';
 import type { SearchAddon as ISearchApi, ISearchOptions, ISearchAddonOptions, ISearchResultChangeEvent, ISearchDecorationOptions } from '@xterm/addon-search';
-import { Emitter, type IEvent } from 'common/Event';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import { disposableTimeout } from 'common/Async';
+import { Emitter, type IEvent } from '../../../src/common/Event';
+import { Disposable, MutableDisposable, toDisposable } from '../../../src/common/Lifecycle';
+import { disposableTimeout } from '../../../src/common/Async';
 import { SearchLineCache } from './SearchLineCache';
 import { SearchState } from './SearchState';
 import { SearchEngine, type ISearchResult } from './SearchEngine';

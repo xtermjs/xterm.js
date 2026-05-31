@@ -4,26 +4,26 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
-import { C0, C1 } from 'common/data/EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { Disposable } from 'common/Lifecycle';
-import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
-import { CellData } from 'common/buffer/CellData';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { OscHandler } from 'common/parser/OscParser';
-import { DcsHandler } from 'common/parser/DcsParser';
-import { ApcHandler } from 'common/parser/ApcParser';
-import { IBuffer } from 'common/buffer/Types';
-import { parseColor } from 'common/input/XParseColor';
-import { Emitter } from 'common/Event';
-import { XTERM_VERSION } from 'common/Version';
+import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
+import { C0, C1 } from './data/EscapeSequences';
+import { CHARSETS, DEFAULT_CHARSET } from './data/Charsets';
+import { EscapeSequenceParser } from './parser/EscapeSequenceParser';
+import { Disposable } from './Lifecycle';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from './input/TextDecoder';
+import { BufferLine, DEFAULT_ATTR_DATA } from './buffer/BufferLine';
+import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from './parser/Types';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from './buffer/Constants';
+import { CellData } from './buffer/CellData';
+import { AttributeData } from './buffer/AttributeData';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from './services/Services';
+import { UnicodeService } from './services/UnicodeService';
+import { OscHandler } from './parser/OscParser';
+import { DcsHandler } from './parser/DcsParser';
+import { ApcHandler } from './parser/ApcParser';
+import { IBuffer } from './buffer/Types';
+import { parseColor } from './input/XParseColor';
+import { Emitter } from './Event';
+import { XTERM_VERSION } from './Version';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.

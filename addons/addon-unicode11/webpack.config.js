@@ -24,10 +24,6 @@ module.exports = {
   resolve: {
     modules: ['./node_modules'],
     extensions: [ '.js' ],
-    alias: {
-      common: path.resolve('../../out/common'),
-      vs: path.resolve('../../out/vs')
-    }
   },
   output: {
     filename: mainFile,

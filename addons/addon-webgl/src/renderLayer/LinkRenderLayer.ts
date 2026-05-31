@@ -4,11 +4,11 @@
  */
 
 import { is256Color } from '../CharAtlasUtils';
-import { INVERTED_DEFAULT_COLOR } from 'browser/renderer/shared/Constants';
-import { IRenderDimensions } from 'browser/renderer/shared/Types';
-import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ILinkifier2, ILinkifierEvent } from 'browser/Types';
-import { IOptionsService } from 'common/services/Services';
+import { INVERTED_DEFAULT_COLOR } from '../../../../src/browser/renderer/shared/Constants';
+import { IRenderDimensions } from '../../../../src/browser/renderer/shared/Types';
+import { ICoreBrowserService, IThemeService } from '../../../../src/browser/services/Services';
+import { ILinkifier2, ILinkifierEvent } from '../../../../src/browser/Types';
+import { IOptionsService } from '../../../../src/common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { BaseRenderLayer } from './BaseRenderLayer';
 

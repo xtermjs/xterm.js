@@ -3,16 +3,16 @@
  * @license MIT
  */
 
-import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier, IParserStackState, ParserStackType } from 'common/parser/Types';
-import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
+import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier, IParserStackState, ParserStackType } from './Types';
+import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from './EscapeSequenceParser';
 import { assert } from 'chai';
-import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
-import { ParserState } from 'common/parser/Constants';
-import { Params } from 'common/parser/Params';
-import { OscHandler } from 'common/parser/OscParser';
-import { IDisposable } from 'common/Types';
-import { DcsHandler } from 'common/parser/DcsParser';
-import { ApcHandler } from 'common/parser/ApcParser';
+import { StringToUtf32, stringFromCodePoint, utf32ToString } from '../input/TextDecoder';
+import { ParserState } from './Constants';
+import { Params } from './Params';
+import { OscHandler } from './OscParser';
+import { IDisposable } from '../Types';
+import { DcsHandler } from './DcsParser';
+import { ApcHandler } from './ApcParser';
 
 
 function r(a: number, b: number): string[] {
