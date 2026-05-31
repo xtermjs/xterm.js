@@ -302,7 +302,14 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     chunkPos: 0
   };
 
-  protected _scanCache: { opIndex: number, stateBeforeScan?: number } = { opIndex: 0 };
+  protected _scanCache: {
+    opIndex: number;
+    stateBeforeScan?: number;
+    inputOffset?: number;
+    chunkStart?: number;
+    scan?: import('./ScanTypes').ScanResult;
+    data?: Uint32Array;
+  } = { opIndex: 0 };
 
   constructor(
     protected readonly _transitions: TransitionTable = VT500_TRANSITION_TABLE
@@ -510,6 +517,11 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     this._collect = 0;
     this.precedingJoinState = 0;
     this._scanCache.opIndex = 0;
+    this._scanCache.inputOffset = 0;
+    this._scanCache.chunkStart = undefined;
+    this._scanCache.scan = undefined;
+    this._scanCache.data = undefined;
+    this._scanCache.stateBeforeScan = undefined;
     // abort pending continuation from async handler
     // Here the RESET type indicates, that the next parse call will
     // ignore any saved stack, instead continues sync with next codepoint from GROUND

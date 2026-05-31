@@ -76,7 +76,7 @@ export function parseWithWasmScanner(
   data: Uint32Array,
   length: number,
   promiseResult: boolean | undefined,
-  scanCache: { scan?: ScanResult; data?: Uint32Array; opIndex: number; stateBeforeScan?: number }
+  scanCache: IWasmScanCache
 ): void | Promise<boolean> {
   ensureWasm();
 
@@ -85,18 +85,62 @@ export function parseWithWasmScanner(
     return resumeWasmParse(host, data, length, promiseResult, scanCache);
   }
 
-  const stateBeforeScan = host.currentState;
-  scanCache.stateBeforeScan = stateBeforeScan;
-  WasmEscapeScanner.syncParserState(host.currentState, host.collect, host._params);
-  const scan = WasmEscapeScanner.scan(data, length);
-  scanCache.scan = scan;
-  scanCache.data = data;
+  scanCache.stateBeforeScan = host.currentState;
+  scanCache.inputOffset = 0;
+  scanCache.scan = undefined;
   scanCache.opIndex = 0;
+  return runWasmScanChunks(host, data, length, promiseResult, scanCache);
+}
 
-  host.currentState = WasmEscapeScanner.currentState;
-  host.collect = WasmEscapeScanner.collect;
+interface IWasmScanCache {
+  scan?: ScanResult;
+  data?: Uint32Array;
+  opIndex: number;
+  stateBeforeScan?: number;
+  inputOffset?: number;
+  chunkStart?: number;
+}
 
-  return dispatchScanOps(host, data, scan, 0, scanCache, promiseResult, stateBeforeScan);
+function runWasmScanChunks(
+  host: IWasmParseHost,
+  data: Uint32Array,
+  length: number,
+  promiseResult: boolean | undefined,
+  scanCache: IWasmScanCache
+): void | Promise<boolean> {
+  let pos = scanCache.inputOffset ?? 0;
+  const stateBeforeScan = scanCache.stateBeforeScan ?? host.currentState;
+
+  while (pos < length) {
+    if (!scanCache.scan || scanCache.data !== data || scanCache.chunkStart !== pos) {
+      WasmEscapeScanner.syncParserState(host.currentState, host.collect, host._params);
+      const scan = WasmEscapeScanner.scan(data, length, pos);
+      scanCache.scan = scan;
+      scanCache.data = data;
+      scanCache.chunkStart = pos;
+      scanCache.opIndex = 0;
+      host.currentState = WasmEscapeScanner.currentState;
+      host.collect = WasmEscapeScanner.collect;
+    }
+
+    const result = dispatchScanOps(host, data, scanCache.scan, scanCache.opIndex, scanCache, promiseResult, stateBeforeScan);
+    if (result instanceof Promise) {
+      scanCache.inputOffset = pos;
+      return result;
+    }
+
+    const nextOffset = scanCache.scan.nextOffset;
+    if (nextOffset <= pos) {
+      throw new Error(`Wasm parser scan did not advance (stuck at input offset ${pos})`);
+    }
+    pos = nextOffset;
+    scanCache.inputOffset = pos;
+    scanCache.scan = undefined;
+    scanCache.opIndex = 0;
+  }
+
+  scanCache.inputOffset = length;
+  scanCache.scan = undefined;
 }
 
 function resumeWasmParse(
@@ -104,7 +148,7 @@ function resumeWasmParse(
   data: Uint32Array,
   length: number,
   promiseResult: boolean | undefined,
-  scanCache: { scan?: ScanResult; data?: Uint32Array; opIndex: number; stateBeforeScan?: number }
+  scanCache: IWasmScanCache
 ): void | Promise<boolean> {
   if (host._parseStack.state === ParserStackType.RESET) {
     host._parseStack.state = ParserStackType.NONE;
@@ -113,7 +157,7 @@ function resumeWasmParse(
     if (!scanCache.scan || scanCache.data !== data) {
       return parseWithWasmScanner(host, data, length, promiseResult, scanCache);
     }
-    return dispatchScanOps(host, data, scanCache.scan, scanCache.opIndex, scanCache, promiseResult, scanCache.stateBeforeScan ?? host.currentState);
+    return runWasmScanChunks(host, data, length, promiseResult, scanCache);
   }
 
   if (promiseResult === undefined || host._parseStack.state === ParserStackType.FAIL) {
@@ -194,7 +238,7 @@ function resumeWasmParse(
 
   host._parseStack.state = ParserStackType.NONE;
   host.precedingJoinState = 0;
-  return dispatchScanOps(host, data, scan, scanCache.opIndex, scanCache, promiseResult, scanCache.stateBeforeScan ?? host.currentState);
+  return runWasmScanChunks(host, data, length, promiseResult, scanCache);
 }
 
 function dispatchScanOps(
@@ -202,7 +246,7 @@ function dispatchScanOps(
   data: Uint32Array,
   scan: ScanResult,
   fromOp: number,
-  scanCache: { scan?: ScanResult; data?: Uint32Array; opIndex: number },
+  scanCache: IWasmScanCache,
   promiseResult: boolean | undefined,
   stateBeforeScan: number
 ): void | Promise<boolean> {
@@ -214,7 +258,7 @@ function dispatchScanOps(
     const start = scan.starts[o];
     const len = scan.lengths[o];
     const aux = scan.aux[o];
-    const chunkPos = (kind === Op.Csi || kind === Op.Esc) ? len : start;
+    const chunkPos = kind === Op.Csi ? len : start;
 
     switch (kind) {
       case Op.Print:
@@ -222,14 +266,17 @@ function dispatchScanOps(
         break;
       case Op.Execute: {
         const code = aux;
-        if (code < 0x18) {
-          const exe = host._executeHandlersArr[code];
-          if (exe) exe(code);
-          else host._executeHandlerFb(code);
-        } else if (host._executeHandlers[code]) {
-          host._executeHandlers[code]!();
-        } else {
-          host._executeHandlerFb(code);
+        const count = len > 0 ? len : 1;
+        for (let n = 0; n < count; n++) {
+          if (code < 0x18) {
+            const exe = host._executeHandlersArr[code];
+            if (exe) exe(code);
+            else host._executeHandlerFb(code);
+          } else if (host._executeHandlers[code]) {
+            host._executeHandlers[code]!();
+          } else {
+            host._executeHandlerFb(code);
+          }
         }
         host.precedingJoinState = 0;
         break;
@@ -255,16 +302,19 @@ function dispatchScanOps(
         host.collect = aux >> 8;
         loadParams(host, scan, o);
         const handlersEsc = host._escHandlers[aux];
-        let jj = handlersEsc ? handlersEsc.length - 1 : -1;
-        for (; jj >= 0; jj--) {
-          handlerResult = handlersEsc![jj]();
-          if (handlerResult === true) break;
-          if (handlerResult instanceof Promise) {
-            host._preserveStack(ParserStackType.ESC, handlersEsc!, jj, 0, chunkPos);
-            return handlerResult;
+        const escCount = len > 0 ? len : 1;
+        escLoop: for (let rep = 0; rep < escCount; rep++) {
+          let jj = handlersEsc ? handlersEsc.length - 1 : -1;
+          for (; jj >= 0; jj--) {
+            handlerResult = handlersEsc![jj]();
+            if (handlerResult === true) continue escLoop;
+            if (handlerResult instanceof Promise) {
+              host._preserveStack(ParserStackType.ESC, handlersEsc!, jj, 0, chunkPos);
+              return handlerResult;
+            }
           }
+          if (jj < 0) host._escHandlerFb(aux);
         }
-        if (jj < 0) host._escHandlerFb(aux);
         host.precedingJoinState = 0;
         break;
       }

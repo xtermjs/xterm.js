@@ -25,4 +25,4 @@ When writing benchmark instructions:
 ## Notes
 
 - Benchmarks run from built JS in `out-test/benchmark/*.benchmark.js`.
-- Keep `NODE_PATH=./out` (handled by the npm script).
+- Benchmark sources import compiled modules from `../../out/common/` and `../../out/browser/` (run `npm run build` first).

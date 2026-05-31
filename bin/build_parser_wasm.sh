@@ -13,7 +13,48 @@ fi
 WASM_DIR=src/common/parser/wasm
 OUT="$WASM_DIR/parser.wasm"
 
-clang --target=wasm32-unknown-unknown -O2 -nostdlib -fuse-ld=lld \
+# Apple Clang (Xcode CLT) has no wasm32 target; prefer Homebrew LLVM when needed.
+wasm_clang_has_target() {
+  "$1" --print-targets 2>/dev/null | grep -q 'wasm32'
+}
+
+resolve_wasm_toolchain() {
+  local clang_bin=clang
+  if wasm_clang_has_target clang; then
+    :
+  else
+    local llvm_prefix=""
+    if command -v brew >/dev/null 2>&1; then
+      llvm_prefix="$(brew --prefix llvm 2>/dev/null || true)"
+    fi
+    for prefix in "$llvm_prefix" /opt/homebrew/opt/llvm /usr/local/opt/llvm; do
+      if [[ -n "$prefix" && -x "$prefix/bin/clang" ]] && wasm_clang_has_target "$prefix/bin/clang"; then
+        clang_bin="$prefix/bin/clang"
+        local lld_prefix=""
+        if command -v brew >/dev/null 2>&1; then
+          lld_prefix="$(brew --prefix lld 2>/dev/null || true)"
+        fi
+        for lld_dir in "$lld_prefix/bin" /opt/homebrew/opt/lld/bin /usr/local/opt/lld/bin; do
+          if [[ -n "$lld_dir" && -x "$lld_dir/lld" ]]; then
+            PATH="$lld_dir:$(dirname "$clang_bin"):$PATH"
+            break
+          fi
+        done
+        PATH="$(dirname "$clang_bin"):$PATH"
+        break
+      fi
+    done
+    if ! wasm_clang_has_target "$clang_bin"; then
+      echo "error: no clang with wasm32 support found (macOS: brew install llvm lld)" >&2
+      exit 1
+    fi
+  fi
+  WASM_CLANG="$clang_bin"
+}
+
+resolve_wasm_toolchain
+
+"$WASM_CLANG" --target=wasm32-unknown-unknown -O2 -nostdlib -fuse-ld=lld \
   -Wl,--no-entry \
   -Wl,--export-memory \
   -Wl,--export=reset \

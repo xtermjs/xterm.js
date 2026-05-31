@@ -19,7 +19,7 @@ let wasmModule: WebAssembly.Instance | undefined;
 let wasmExports: {
   memory: WebAssembly.Memory;
   reset: () => void;
-  scan: (length: number) => number;
+  scan: (offset: number, length: number) => number;
   set_state: (state: number, collect: number) => void;
   get_input_ptr: () => number;
   get_kinds_ptr: () => number;
@@ -162,14 +162,14 @@ export class WasmEscapeScanner {
     }
   }
 
-  public static scan(data: Uint32Array, length: number): ScanResult {
+  public static scan(data: Uint32Array, length: number, offset = 0): ScanResult {
     const ex = ensureWasm();
     const inputPtr = ex.get_input_ptr();
     const mem = ex.memory.buffer;
     const inputView = new Uint32Array(mem, inputPtr, length);
     inputView.set(data.subarray(0, length));
 
-    const opCount = ex.scan(length);
+    const opCount = ex.scan(offset, length);
     if (opCount < 0) {
       throw new Error('Wasm parser op buffer overflow');
     }
@@ -182,9 +182,9 @@ export class WasmEscapeScanner {
     const paramStarts = new Uint32Array(mem, ex.get_param_starts_ptr(), count);
     const paramCounts = new Uint16Array(mem, ex.get_param_counts_ptr(), count);
 
-    const headerPtr = ex.get_header_ptr() >> 2;
-    const headerView = new Uint32Array(mem, ex.get_header_ptr(), 3);
+    const headerView = new Uint32Array(mem, ex.get_header_ptr(), 4);
     const paramsLen = headerView[2];
+    const nextOffset = headerView[3];
 
     const params = new Uint32Array(mem, ex.get_params_ptr(), paramsLen);
 
@@ -196,7 +196,8 @@ export class WasmEscapeScanner {
       params: params.slice(),
       paramStarts: paramStarts.slice(),
       paramCounts: paramCounts.slice(),
-      opCount: count
+      opCount: count,
+      nextOffset
     };
   }
 }

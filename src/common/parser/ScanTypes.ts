@@ -34,4 +34,5 @@ export type ScanResult = {
   paramStarts: Uint32Array;
   paramCounts: Uint16Array;
   opCount: number;
+  nextOffset: number;
 };

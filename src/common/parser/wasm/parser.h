@@ -74,6 +74,7 @@ typedef struct {
   uint32_t op_count;
   uint32_t input_len;
   uint32_t params_arena_len;
+  uint32_t scan_offset;
 } ParserScanHeader;
 
 #endif

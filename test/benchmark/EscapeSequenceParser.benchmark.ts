@@ -4,12 +4,12 @@
  */
 import { perfContext, before, beforeEach, ThroughputRuntimeCase } from 'xterm-benchmark';
 
-import { EscapeSequenceParser } from '../../src/common/parser/EscapeSequenceParser';
-import { C0, C1 } from '../../src/common/data/EscapeSequences';
-import { IDcsHandler, IOscHandler, IApcHandler, IParams } from '../../src/common/parser/Types';
-import { OscHandler } from '../../src/common/parser/OscParser';
-import { DcsHandler } from '../../src/common/parser/DcsParser';
-import { ApcHandler } from '../../src/common/parser/ApcParser';
+import { EscapeSequenceParser } from '../../out/common/parser/EscapeSequenceParser';
+import { C0, C1 } from '../../out/common/data/EscapeSequences';
+import { IDcsHandler, IOscHandler, IApcHandler, IParams } from '../../out/common/parser/Types';
+import { OscHandler } from '../../out/common/parser/OscParser';
+import { DcsHandler } from '../../out/common/parser/DcsParser';
+import { ApcHandler } from '../../out/common/parser/ApcParser';
 
 const SIZE = 5000000;
 

@@ -110,16 +110,37 @@ static void copy_params_to_arena(uint32_t op_idx, ParserWasmState *s) {
 
 static int emit_op(uint8_t kind, uint32_t start, uint32_t length, uint32_t aux_val, ParserWasmState *s) {
   uint32_t idx = header()->op_count;
+  if (idx > 0) {
+    uint32_t prev = idx - 1;
+    if (kind == OP_EXECUTE && kinds()[prev] == OP_EXECUTE && aux()[prev] == aux_val) {
+      lengths()[prev]++;
+      return (int)prev;
+    }
+    if (kind == OP_ESC && kinds()[prev] == OP_ESC && aux()[prev] == aux_val) {
+      lengths()[prev]++;
+      return (int)prev;
+    }
+  }
   if (idx >= PARSER_MAX_OPS) return -1;
   kinds()[idx] = kind;
   starts()[idx] = start;
-  lengths()[idx] = length;
+  if ((kind == OP_EXECUTE || kind == OP_ESC) && length == 0) {
+    lengths()[idx] = 1;
+  } else {
+    lengths()[idx] = length;
+  }
   aux()[idx] = aux_val;
-  if (kind == OP_CSI || kind == OP_ESC || kind == OP_DCS_HOOK) {
+  if (kind == OP_CSI || kind == OP_DCS_HOOK) {
     uint32_t input_pos = start;
     copy_params_to_arena(idx, s);
     lengths()[idx] = input_pos;
     starts()[idx] = param_starts()[idx];
+  } else if (kind == OP_ESC) {
+    uint32_t input_pos = start;
+    uint32_t repeat = lengths()[idx];
+    copy_params_to_arena(idx, s);
+    starts()[idx] = input_pos;
+    lengths()[idx] = repeat;
   } else {
     param_starts()[idx] = 0;
     param_counts()[idx] = 0;
@@ -145,6 +166,7 @@ void reset(void) {
   header()->op_count = 0;
   header()->input_len = 0;
   header()->params_arena_len = 0;
+  header()->scan_offset = 0;
 }
 
 __attribute__((export_name("get_input_ptr")))
@@ -233,14 +255,22 @@ uint32_t probe_action(uint32_t state_id, uint32_t code) {
   return tr >> PARSER_TABLE_ACTION_SHIFT;
 }
 
+static int emit_or_stop(uint8_t kind, uint32_t start, uint32_t length, uint32_t aux_val, ParserWasmState *s, uint32_t stop_at) {
+  if (emit_op(kind, start, length, aux_val, s) < 0) {
+    header()->scan_offset = stop_at;
+    return 0;
+  }
+  return 1;
+}
+
 __attribute__((export_name("scan")))
-int32_t scan(uint32_t length) {
+int32_t scan(uint32_t offset, uint32_t length) {
   ParserWasmState *s = state();
   ParserScanHeader *h = header();
   h->op_count = 0;
   h->params_arena_len = 0;
   h->input_len = length;
-  uint32_t i = 0;
+  uint32_t i = offset;
   uint32_t code;
   uint32_t transition;
   uint32_t action;
@@ -250,7 +280,9 @@ int32_t scan(uint32_t length) {
     code = input()[i];
 
     if (code < 0x18 && s->current_state <= PARSER_STATE_CSI_PARAM + 2) {
-      if (emit_op(OP_EXECUTE, i, 0, code, s) < 0) return -1;
+      if (!emit_or_stop(OP_EXECUTE, i, 0, code, s, i)) {
+        return h->op_count > 0 ? (int32_t)h->op_count : -1;
+      }
       s->preceding_join_state = 0;
       i++;
       continue;
@@ -276,7 +308,9 @@ int32_t scan(uint32_t length) {
           params_add_subparam(s, -1);
         } else if (ch >= 0x40 && ch <= 0x7e) {
           uint32_t ident = (s->collect << 8) | ch;
-          if (emit_op(OP_CSI, k, 0, ident, s) < 0) return -1;
+          if (!emit_or_stop(OP_CSI, k, 0, ident, s, k)) {
+            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+          }
           s->preceding_join_state = 0;
           i = k;
           s->current_state = PARSER_STATE_GROUND;
@@ -300,7 +334,9 @@ int32_t scan(uint32_t length) {
       uint32_t next_state = transition & PARSER_TABLE_STATE_MASK;
       switch (action) {
       case 1: /* ERROR - report state before transition (matches TS parser) */
-        if (emit_op(OP_ERROR, i, 0, (s->current_state << 16) | code, s) < 0) return -1;
+        if (!emit_or_stop(OP_ERROR, i, 0, (s->current_state << 16) | code, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         s->current_state = next_state;
         break;
       default:
@@ -319,12 +355,16 @@ int32_t scan(uint32_t length) {
           c += 4;
         }
         while (c < length && is_printable(input()[c])) c++;
-        if (emit_op(OP_PRINT, print_start, c - print_start, 0, s) < 0) return -1;
+        if (!emit_or_stop(OP_PRINT, print_start, c - print_start, 0, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         i = c - 1;
         break;
       }
       case PARSER_ACTION_EXECUTE:
-        if (emit_op(OP_EXECUTE, i, 0, code, s) < 0) return -1;
+        if (!emit_or_stop(OP_EXECUTE, i, 0, code, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         s->preceding_join_state = 0;
         break;
       case PARSER_ACTION_IGNORE:
@@ -333,7 +373,9 @@ int32_t scan(uint32_t length) {
         break;
       case PARSER_ACTION_CSI_DISPATCH: {
         uint32_t ident = (s->collect << 8) | code;
-        if (emit_op(OP_CSI, i, 0, ident, s) < 0) return -1;
+        if (!emit_or_stop(OP_CSI, i, 0, ident, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         s->preceding_join_state = 0;
         break;
       }
@@ -353,7 +395,9 @@ int32_t scan(uint32_t length) {
         break;
       case PARSER_ACTION_ESC_DISPATCH: {
         uint32_t ident = (s->collect << 8) | code;
-        if (emit_op(OP_ESC, i, 0, ident, s) < 0) return -1;
+        if (!emit_or_stop(OP_ESC, i, 0, ident, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         s->preceding_join_state = 0;
         break;
       }
@@ -362,21 +406,27 @@ int32_t scan(uint32_t length) {
         s->collect = 0;
         break;
       case 4: /* OSC_START */
-        if (emit_op(OP_OSC_START, i, 0, 0, s) < 0) return -1;
+        if (!emit_or_stop(OP_OSC_START, i, 0, 0, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         s->osc_start = i + 1;
         break;
       case 5: /* OSC_PUT */
         for (uint32_t j = i + 1; ; j++) {
           if (j >= length || (code = input()[j]) < 0x20 ||
               (code > 0x7f && code < PARSER_NON_ASCII_PRINTABLE)) {
-            if (j > i && emit_op(OP_OSC_PUT, i, j - i, 0, s) < 0) return -1;
+            if (j > i && !emit_or_stop(OP_OSC_PUT, i, j - i, 0, s, i)) {
+              return h->op_count > 0 ? (int32_t)h->op_count : -1;
+            }
             i = j - 1;
             break;
           }
         }
         break;
       case PARSER_ACTION_OSC_END: {
-        if (emit_op(OP_OSC_END, i, 0, code, s) < 0) return -1;
+        if (!emit_or_stop(OP_OSC_END, i, 0, code, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         s->osc_term = code;
         if (code == 0x1b) s->current_state = PARSER_STATE_ESCAPE;
         params_reset_zdm(s);
@@ -386,21 +436,27 @@ int32_t scan(uint32_t length) {
       }
       case 12: /* DCS_HOOK */
         s->dcs_hook_ident = (s->collect << 8) | code;
-        if (emit_op(OP_DCS_HOOK, i, 0, s->dcs_hook_ident, s) < 0) return -1;
+        if (!emit_or_stop(OP_DCS_HOOK, i, 0, s->dcs_hook_ident, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         s->dcs_start = i + 1;
         break;
       case 13: /* DCS_PUT */
         for (uint32_t j = i + 1; ; j++) {
           if (j >= length || (code = input()[j]) == 0x18 || code == 0x1a || code == 0x1b ||
               (code > 0x7f && code < PARSER_NON_ASCII_PRINTABLE)) {
-            if (j > i && emit_op(OP_DCS_PUT, i, j - i, 0, s) < 0) return -1;
+            if (j > i && !emit_or_stop(OP_DCS_PUT, i, j - i, 0, s, i)) {
+              return h->op_count > 0 ? (int32_t)h->op_count : -1;
+            }
             i = j - 1;
             break;
           }
         }
         break;
       case PARSER_ACTION_DCS_UNHOOK: {
-        if (emit_op(OP_DCS_UNHOOK, i, 0, code, s) < 0) return -1;
+        if (!emit_or_stop(OP_DCS_UNHOOK, i, 0, code, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         if (code == 0x1b) s->current_state = PARSER_STATE_ESCAPE;
         params_reset_zdm(s);
         s->collect = 0;
@@ -409,7 +465,9 @@ int32_t scan(uint32_t length) {
       }
       case 15: /* APC_START */
         s->apc_hook_ident = (s->collect << 8) | code;
-        if (emit_op(OP_APC_START, i, 0, s->apc_hook_ident, s) < 0) return -1;
+        if (!emit_or_stop(OP_APC_START, i, 0, s->apc_hook_ident, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         s->apc_start = i + 1;
         break;
       case 16: /* APC_PUT */
@@ -419,13 +477,17 @@ int32_t scan(uint32_t length) {
             (input()[j] >= 0x08 && input()[j] < 0x0e) ||
             input()[j] >= PARSER_NON_ASCII_PRINTABLE
           )) continue;
-          if (j > i && emit_op(OP_APC_PUT, i, j - i, 0, s) < 0) return -1;
+          if (j > i && !emit_or_stop(OP_APC_PUT, i, j - i, 0, s, i)) {
+            return h->op_count > 0 ? (int32_t)h->op_count : -1;
+          }
           i = j - 1;
           break;
         }
         break;
       case PARSER_ACTION_APC_END: {
-        if (emit_op(OP_APC_END, i, 0, code, s) < 0) return -1;
+        if (!emit_or_stop(OP_APC_END, i, 0, code, s, i)) {
+          return h->op_count > 0 ? (int32_t)h->op_count : -1;
+        }
         if (code == 0x1b) s->current_state = PARSER_STATE_ESCAPE;
         params_reset_zdm(s);
         s->collect = 0;
@@ -437,5 +499,6 @@ int32_t scan(uint32_t length) {
     }
     i++;
   }
+  h->scan_offset = length;
   return (int32_t)h->op_count;
 }
