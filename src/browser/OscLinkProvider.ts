@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IBufferRange, ILink } from 'browser/Types';
-import { ILinkProvider } from 'browser/services/Services';
-import { CellData } from 'common/buffer/CellData';
-import { IBufferLine } from 'common/Types';
-import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
+import { IBufferRange, ILink } from './Types';
+import { ILinkProvider } from './services/Services';
+import { CellData } from '../common/buffer/CellData';
+import { IBufferLine } from '../common/Types';
+import { IBufferService, IOptionsService, IOscLinkService } from '../common/services/Services';
 
 export class OscLinkProvider implements ILinkProvider {
   private readonly _workCell = new CellData();

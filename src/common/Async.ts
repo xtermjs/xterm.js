@@ -5,7 +5,7 @@
  * Minimal async helpers for xterm.js core.
  */
 
-import { DisposableStore, IDisposable, toDisposable } from 'common/Lifecycle';
+import { DisposableStore, IDisposable, toDisposable } from './Lifecycle';
 
 export function timeout(millis: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, millis));

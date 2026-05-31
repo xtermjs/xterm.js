@@ -8,7 +8,7 @@ const path = require('path');
 
 const COVERAGE_LINES_THRESHOLD = 40;
 
-// Add `out` to the NODE_PATH so absolute paths can be resolved.
+// Add `out-esbuild` to NODE_PATH so addon path-mapped imports (common/*, browser/*) resolve.
 const env = { ...process.env };
 env.NODE_PATH = path.resolve(__dirname, '../out-esbuild');
 

@@ -4,7 +4,7 @@
  */
 
 import { deepStrictEqual, strictEqual, throws } from 'assert';
-import { Terminal } from 'headless/public/Terminal';
+import { Terminal } from './Terminal';
 import { ITerminalOptions } from '@xterm/headless';
 
 let term: Terminal;

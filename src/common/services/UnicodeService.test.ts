@@ -4,8 +4,8 @@
  */
 
 import { assert } from 'chai';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { IUnicodeVersionProvider } from 'common/services/Services';
+import { UnicodeService } from './UnicodeService';
+import { IUnicodeVersionProvider } from './Services';
 
 class DummyProvider implements IUnicodeVersionProvider {
   public version = '123';

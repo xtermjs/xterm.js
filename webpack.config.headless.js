@@ -8,8 +8,7 @@ const path = require('path');
 /**
  * This webpack config does a production build for xterm.js headless. It works by taking the output
  * from tsc (via `npm run watch` or `npm run prebuild`) which are put into `out/` and webpacks them
- * into a production mode umd library module in `lib-headless/`. The aliases are used fix up the
- * absolute paths output by tsc (because of `baseUrl` and `paths` in `tsconfig.json`.
+ * into a production mode umd library module in `lib-headless/`.
  *
  * @type {import('webpack').Configuration}
  */
@@ -29,11 +28,6 @@ const config = {
   resolve: {
     modules: ['./node_modules'],
     extensions: [ '.js' ],
-    alias: {
-      common: path.resolve('./out/common'),
-      headless: path.resolve('./out/headless'),
-      vs: path.resolve('./out/vs')
-    }
   },
   output: {
     filename: 'xterm-headless.js',

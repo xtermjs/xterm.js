@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { CharData, IColor, ICoreTerminal, ITerminalOptions } from 'common/Types';
-import { IBuffer } from 'common/buffer/Types';
+import { CharData, IColor, ICoreTerminal, ITerminalOptions } from '../common/Types';
+import { IBuffer } from '../common/buffer/Types';
 import { IDisposable, IRenderDimensions as IRenderDimensionsApi, Terminal as ITerminalApi } from '@xterm/xterm';
-import { channels, css } from 'common/Color';
-import type { IEvent } from 'common/Event';
+import { channels, css } from '../common/Color';
+import type { IEvent } from '../common/Event';
 
 /**
  * A portion of the public API that are implemented identially internally and simply passed through.

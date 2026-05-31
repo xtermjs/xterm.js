@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { LimitedStringBuilder, StringBuilder } from 'common/StringBuilder';
+import { LimitedStringBuilder, StringBuilder } from './StringBuilder';
 
 describe('StringBuilder', () => {
   it('should start empty', () => {

@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as DomUtils from '../Dom';
-import { Disposable, IDisposable, toDisposable } from 'common/Lifecycle';
+import { Disposable, IDisposable, toDisposable } from '../../common/Lifecycle';
 
 const mainWindow = (typeof window === 'object' ? window : globalThis) as Window & typeof globalThis;
 
