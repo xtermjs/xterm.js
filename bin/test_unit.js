@@ -21,7 +21,7 @@ if (process.argv.length > 2) {
   flagArgs = args.filter(e => e.startsWith('--'));
   // ability to inject particular test files via
   // npm run test [testFileA testFileB ...]
-  files = args.filter(e => !e.startsWith('--'));
+  const files = args.filter(e => !e.startsWith('--'));
   if (files.length) {
     testFiles = files;
   }
