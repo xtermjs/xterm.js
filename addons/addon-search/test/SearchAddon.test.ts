@@ -501,7 +501,7 @@ test.describe('Search Tests', () => {
         window.search.onDidChangeResults(e => window.calls.push(e));
       `);
       // Move cursor forward 1 time to create a null character, as opposed to regular whitespace
-      await ctx.proxy.write('\\x1b[CHi Hi');
+      await ctx.proxy.write('\x1b[CHi Hi');
       strictEqual(await ctx.page.evaluate(`window.search.findPrevious('h', { decorations: { activeMatchColorOverviewRuler: '#ff0000' } })`), true);
       deepStrictEqual(await ctx.page.evaluate('window.calls'), [
         { resultCount: 2, resultIndex: 1 }
