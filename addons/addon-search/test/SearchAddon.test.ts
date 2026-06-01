@@ -417,7 +417,7 @@ test.describe('Search Tests', () => {
     test.describe('#2444 wrapped line content not being found', () => {
       let fixture: string;
       test.beforeAll(async () => {
-        fixture = (await new Promise<Buffer>(r => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => r(data)))).toString();
+        fixture = (await new Promise<Buffer>((res, rej) => readFile(resolve(__dirname, '../fixtures/issue-2444'), (err, data) => err ? rej(err) : res(data)))).toString();
         if (process.platform !== 'win32') {
           fixture = fixture.replace(/\n/g, '\n\r');
         }
