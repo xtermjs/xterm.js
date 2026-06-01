@@ -177,9 +177,9 @@ export namespace css {
     // Formats: rgb() or rgba()
     const rgbaMatch = css.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(,\s*(0|1|\d?\.(\d+))\s*)?\)/);
     if (rgbaMatch) {
-      $r = parseInt(rgbaMatch[1]);
-      $g = parseInt(rgbaMatch[2]);
-      $b = parseInt(rgbaMatch[3]);
+      $r = parseInt(rgbaMatch[1], 10);
+      $g = parseInt(rgbaMatch[2], 10);
+      $b = parseInt(rgbaMatch[3], 10);
       $a = Math.round((rgbaMatch[5] === undefined ? 1 : parseFloat(rgbaMatch[5])) * 0xFF);
       return channels.toColor($r, $g, $b, $a);
     }
