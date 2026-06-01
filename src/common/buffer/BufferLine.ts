@@ -219,12 +219,12 @@ export class BufferLine implements IBufferLine {
     this._invalidateStringCache();
     if (cell.content & Content.IS_COMBINED_MASK) {
       this._combined[index] = cell.combinedData;
-    } else {
+    } else if (index in this._combined) {
       delete this._combined[index];
     }
     if (cell.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = cell.extended;
-    } else {
+    } else if (index in this._extendedAttrs) {
       delete this._extendedAttrs[index];
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = cell.content;
@@ -239,10 +239,12 @@ export class BufferLine implements IBufferLine {
    */
   public setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void {
     this._invalidateStringCache();
-    delete this._combined[index];
+    if (index in this._combined) {
+      delete this._combined[index];
+    }
     if (attrs.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = attrs.extended;
-    } else {
+    } else if (index in this._extendedAttrs) {
       delete this._extendedAttrs[index];
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
@@ -520,7 +522,7 @@ export class BufferLine implements IBufferLine {
         }
         if (srcData[(srcCol + cell) * Constants.CELL_INDICIES + Cell.BG] & BgFlags.HAS_EXTENDED) {
           this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
-        } else {
+        } else if ((destCol + cell) in this._extendedAttrs) {
           delete this._extendedAttrs[destCol + cell];
         }
       }
@@ -531,7 +533,7 @@ export class BufferLine implements IBufferLine {
         }
         if (srcData[(srcCol + cell) * Constants.CELL_INDICIES + Cell.BG] & BgFlags.HAS_EXTENDED) {
           this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
-        } else {
+        } else if ((destCol + cell) in this._extendedAttrs) {
           delete this._extendedAttrs[destCol + cell];
         }
       }
