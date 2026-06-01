@@ -13,7 +13,7 @@ export interface INewLayoutResult {
 }
 
 /**
- * Evaluates and returns indexes to be removed after a reflow larger occurs. Lines will be removed
+ * Evaluates and returns indexes to be removed after reflowLarger occurs. Lines will be removed
  * when a wrapped line unwraps.
  * @param lines The buffer lines.
  * @param oldCols The columns before resize
@@ -109,7 +109,7 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
 }
 
 /**
- * Creates and return the new layout for lines given an array of indexes to be removed.
+ * Creates and returns the new layout for lines given an array of indexes to be removed.
  * @param lines The buffer lines.
  * @param toRemove The indexes to remove.
  */

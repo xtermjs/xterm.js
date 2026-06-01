@@ -236,7 +236,7 @@ export interface ICoreMouseProtocol {
  * The tracking encoding can be registered and activated at the MouseStateService.
  * If a ICoreMouseEvent passes all protocol restrictions it will be encoded
  * with the active encoding and sent out.
- * Note: Returning an empty string will supress sending a mouse report,
+ * Note: Returning an empty string will suppress sending a mouse report,
  * which can be used to skip creating falsey reports in limited encodings
  * (DEFAULT only supports up to 223 1-based as coord value).
  */
