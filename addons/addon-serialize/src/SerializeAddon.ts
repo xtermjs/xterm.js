@@ -173,7 +173,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _thisRowLastSecondChar: IBufferCell = this._buffer.getNullCell();
   private _nextRowFirstChar: IBufferCell = this._buffer.getNullCell();
   protected _rowEnd(row: number, isLastRow: boolean): void {
-    // if there is colorful empty cell at line end, whe must pad it back, or the the color block
+    // if there is colorful empty cell at line end, we must pad it back, or the color block
     // will missing
     if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
       // use clear right to set background.

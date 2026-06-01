@@ -204,7 +204,7 @@ export class ExtendedAttrs implements IExtendedAttrs {
 
   /**
    * Convenient method to indicate whether the object holds no additional information,
-   * that needs to be persistant in the buffer.
+   * that needs to be persistent in the buffer.
    */
   public isEmpty(): boolean {
     return this.underlineStyle === UnderlineStyle.NONE && this._urlId === 0;

@@ -1125,7 +1125,7 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThreshol
   // were covered (fg=#8ae234, bg=#c4a000).
   const threshold = Math.floor((Math.abs(r - fgR) + Math.abs(g - fgG) + Math.abs(b - fgB)) / 12);
 
-  // Set alpha channel of relevent pixels to 0
+  // Set alpha channel of relevant pixels to 0
   let isEmpty = true;
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     // Check exact match

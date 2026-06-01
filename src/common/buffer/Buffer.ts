@@ -578,7 +578,7 @@ export class Buffer extends Disposable implements IBuffer {
    * @param i The index to start setting up tab stops from.
    */
   public setupTabStops(i?: number): void {
-    if (i !== null && i !== undefined) {
+    if (i !== undefined) {
       if (!this.tabs[i]) {
         i = this.prevStop(i);
       }
