@@ -31,9 +31,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
 
   public addRefreshCallback(callback: FrameRequestCallback): number {
     this._refreshCallbacks.push(callback);
-    if (this._animationFrame === undefined) {
-      this._animationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._innerRefresh());
-    }
+    this._animationFrame ??= this._coreBrowserService.window.requestAnimationFrame(() => this._innerRefresh());
     return this._animationFrame;
   }
 
