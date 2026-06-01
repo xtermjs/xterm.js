@@ -243,7 +243,7 @@ export const VT500_TRANSITION_TABLE = (function (): TransitionTable {
  *
  * This parser is currently hardcoded to operate in ZDM (Zero Default Mode)
  * as suggested by the original parser, thus empty parameters are set to 0.
- * This this is not in line with the latest ECMA-48 specification
+ * This is not in line with the latest ECMA-48 specification
  * (ZDM was part of the early specs and got completely removed later on).
  *
  * Other than the original parser from vt100.net this parser supports
