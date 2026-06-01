@@ -694,7 +694,7 @@ class CursorBlinkStateManager {
   }
 
   private _clearIdleTimer(): void {
-    if (this._idleTimeout) {
+    if (this._idleTimeout !== undefined) {
       this._coreBrowserService.window.clearTimeout(this._idleTimeout);
       this._idleTimeout = undefined;
     }
