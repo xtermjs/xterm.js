@@ -102,7 +102,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _keyDownHandled: boolean = false;
 
   /**
-   * Records whether a keydown event has occured since the last keyup event, i.e. whether a key
+   * Records whether a keydown event has occurred since the last keyup event, i.e. whether a key
    * is currently "pressed".
    */
   private _keyDownSeen: boolean = false;

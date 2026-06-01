@@ -44,7 +44,7 @@ export function getSafariVersion(): number {
   return parseInt(majorVersion[1], 10);
 }
 
-// Find the users platform. We use this to interpret the meta key
+// Find the user's platform. We use this to interpret the meta key
 // and ISO third level shifts.
 // http://stackoverflow.com/q/19877924/577598
 export const isMac = ['Macintosh', 'MacIntel', 'MacPPC', 'Mac68K'].includes(platform);

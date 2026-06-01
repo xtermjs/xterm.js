@@ -46,7 +46,7 @@ export function evaluateKeyboardEvent(
     // Whether to cancel event propagation (NOTE: this may not be needed since the event is
     // canceled at the end of keyDown
     cancel: false,
-    // The new key even to emit
+    // The new key event to emit
     key: undefined
   };
   const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);

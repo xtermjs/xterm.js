@@ -1241,7 +1241,7 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[e');
       assert.deepEqual(getCursor(bufferService), [8, 5]);
     });
-    describe('should clamp cursor into addressible range', () => {
+    describe('should clamp cursor into addressable range', () => {
       it('CUF', async () => {
         bufferService.buffer.x = 10000;
         bufferService.buffer.y = 10000;
