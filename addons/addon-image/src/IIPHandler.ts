@@ -222,8 +222,8 @@ export class IIPHandler implements IOscHandler, IResetHandler {
 
   private _dim(s: string, total: number, cdim: number): number {
     if (s === 'auto') return 0;
-    if (s.endsWith('%')) return parseInt(s.slice(0, -1)) * total / 100;
-    if (s.endsWith('px')) return parseInt(s.slice(0, -2));
-    return parseInt(s) * cdim;
+    if (s.endsWith('%')) return parseInt(s.slice(0, -1), 10) * total / 100;
+    if (s.endsWith('px')) return parseInt(s.slice(0, -2), 10);
+    return parseInt(s, 10) * cdim;
   }
 }
