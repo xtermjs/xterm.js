@@ -267,7 +267,7 @@ export class WriteBuffer extends Disposable {
          * this condition here, also the renderer has no way to spot nonsense updates either.
          * FIXME: A proper fix for this would track the FPS at the renderer entry level separately.
          *
-         * If favoring of FPS shows bad throughtput impact, use the following instead. It favors
+         * If favoring of FPS shows bad throughput impact, use the following instead. It favors
          * throughput by eval'ing `startTime` upfront pulling at least one more chunk into the
          * current microtask queue (executed before setTimeout).
          */
