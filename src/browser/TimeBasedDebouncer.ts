@@ -31,7 +31,9 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
   public dispose(): void {
     if (this._refreshTimeoutID) {
       clearTimeout(this._refreshTimeoutID);
+      this._refreshTimeoutID = undefined;
     }
+    this._additionalRefreshRequested = false;
   }
 
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
