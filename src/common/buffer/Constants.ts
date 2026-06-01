@@ -24,7 +24,7 @@ export const NULL_CELL_CODE = 0;
 /**
  * Whitespace cell.
  * This is meant as a replacement for empty cells when needed
- * during rendering lines to preserve correct aligment.
+ * during rendering lines to preserve correct alignment.
  */
 export const WHITESPACE_CELL_CHAR = ' ';
 export const WHITESPACE_CELL_WIDTH = 1;
