@@ -12,7 +12,7 @@ let argv = process.argv.slice(2);
 let suiteFilter = undefined;
 while (argv.some(e => e.startsWith('--suite='))) {
   const i = argv.findIndex(e => e.startsWith('--suite='));
-  const match = argv[i].match(/--suite=(?<suitename>.+)/)
+  const match = argv[i].match(/--suite=(?<suitename>.+)/);
   suiteFilter = match?.groups?.suitename ?? undefined;
   argv.splice(i, 1);
 }
