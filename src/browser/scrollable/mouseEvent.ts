@@ -217,7 +217,7 @@ export class StandardWheelEvent {
     let shouldFactorDPR: boolean = false;
     if (platform.isChrome) {
       const chromeVersionMatch = navigator.userAgent.match(/Chrome\/(\d+)/);
-      const chromeMajorVersion = chromeVersionMatch ? parseInt(chromeVersionMatch[1]) : 123;
+      const chromeMajorVersion = chromeVersionMatch ? parseInt(chromeVersionMatch[1], 10) : 123;
       shouldFactorDPR = chromeMajorVersion <= 122;
     }
 

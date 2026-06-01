@@ -74,14 +74,14 @@ export class FitAddon implements ITerminalAddon, IFitApi {
       : (this._terminal.options.scrollbar?.width ?? ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH));
 
     const parentElementStyle = _getComputedStyle(this._terminal.element.parentElement);
-    const parentElementHeight = parseInt(parentElementStyle.getPropertyValue('height'));
-    const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width')));
+    const parentElementHeight = Math.max(0, parseInt(parentElementStyle.getPropertyValue('height'), 10) || 0);
+    const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width'), 10) || 0);
     const elementStyle = _getComputedStyle(this._terminal.element);
     const elementPadding = {
-      top: parseInt(elementStyle.getPropertyValue('padding-top')),
-      bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
-      right: parseInt(elementStyle.getPropertyValue('padding-right')),
-      left: parseInt(elementStyle.getPropertyValue('padding-left'))
+      top: parseInt(elementStyle.getPropertyValue('padding-top'), 10) || 0,
+      bottom: parseInt(elementStyle.getPropertyValue('padding-bottom'), 10) || 0,
+      right: parseInt(elementStyle.getPropertyValue('padding-right'), 10) || 0,
+      left: parseInt(elementStyle.getPropertyValue('padding-left'), 10) || 0
     };
     const elementPaddingVer = elementPadding.top + elementPadding.bottom;
     const elementPaddingHor = elementPadding.right + elementPadding.left;

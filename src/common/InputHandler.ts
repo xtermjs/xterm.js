@@ -3065,7 +3065,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const idx = slots.shift() as string;
       const spec = slots.shift() as string;
       if (/^\d+$/.exec(idx)) {
-        const index = parseInt(idx);
+        const index = parseInt(idx, 10);
         if (isValidColorIndex(index)) {
           if (spec === '?') {
             event.push({ type: ColorRequestType.REPORT, index });
@@ -3228,7 +3228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const slots = data.split(';');
     for (let i = 0; i < slots.length; ++i) {
       if (/^\d+$/.exec(slots[i])) {
-        const index = parseInt(slots[i]);
+        const index = parseInt(slots[i], 10);
         if (isValidColorIndex(index)) {
           event.push({ type: ColorRequestType.RESTORE, index });
         }
