@@ -41,7 +41,7 @@ export function getSafariVersion(): number {
   if (majorVersion === null || majorVersion.length < 2) {
     return 0;
   }
-  return parseInt(majorVersion[1]);
+  return parseInt(majorVersion[1], 10);
 }
 
 // Find the users platform. We use this to interpret the meta key
