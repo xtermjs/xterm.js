@@ -243,7 +243,7 @@ describe('EscapeSequenceParser', () => {
       p = new TestEscapeSequenceParser(tansitions);
       assert.deepEqual(p.transitions, tansitions);
     });
-    it('inital states', () => {
+    it('initial states', () => {
       assert.equal(parser.initialState, ParserState.GROUND);
       assert.equal(parser.currentState, ParserState.GROUND);
       assert.equal(parser.osc, '');
