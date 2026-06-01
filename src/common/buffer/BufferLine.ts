@@ -530,7 +530,7 @@ export class BufferLine implements IBufferLine {
     const srcCombinedKeys = Object.keys(src._combined);
     for (let i = 0; i < srcCombinedKeys.length; i++) {
       const key = parseInt(srcCombinedKeys[i], 10);
-      if (key >= srcCol) {
+      if (key >= srcCol && key < srcCol + length) {
         this._combined[key - srcCol + destCol] = src._combined[key];
       }
     }
