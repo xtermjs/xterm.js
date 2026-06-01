@@ -342,7 +342,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         throw new Error('only one byte as prefix supported');
       }
       res = id.prefix.charCodeAt(0);
-      if (res && 0x3c > res || res > 0x3f) {
+      if (res < 0x3c || res > 0x3f) {
         throw new Error('prefix must be in range 0x3c .. 0x3f');
       }
     }
