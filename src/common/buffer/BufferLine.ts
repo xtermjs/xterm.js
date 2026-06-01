@@ -219,6 +219,8 @@ export class BufferLine implements IBufferLine {
     this._invalidateStringCache();
     if (cell.content & Content.IS_COMBINED_MASK) {
       this._combined[index] = cell.combinedData;
+    } else {
+      delete this._combined[index];
     }
     if (cell.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = cell.extended;
