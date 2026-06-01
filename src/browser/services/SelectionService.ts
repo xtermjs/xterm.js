@@ -927,7 +927,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     // Incremenet the end index so it is at the start of the next character
     endIndex++;
 
-    // Calculate the start _column_, converting the the string indexes back to
+    // Calculate the start _column_, converting the string indexes back to
     // column coordinates.
     let start =
       startIndex // The index of the selection's start char in the line string
@@ -935,7 +935,7 @@ export class SelectionService extends Disposable implements ISelectionService {
       - leftWideCharCount // The number of wide chars left of the initial char
       + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
 
-    // Calculate the length in _columns_, converting the the string indexes back
+    // Calculate the length in _columns_, converting the string indexes back
     // to column coordinates.
     let length = Math.min(this._bufferService.cols, // Disallow lengths larger than the terminal cols
       endIndex // The index of the selection's end char in the line string

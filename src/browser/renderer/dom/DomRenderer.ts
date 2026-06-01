@@ -33,7 +33,7 @@ let nextTerminalId = 1;
 
 /**
  * The standard renderer and fallback for when the webgl addon is slow. This is not meant to be
- * particularly fast and will even lack some features such as custom glyphs, hoever this is more
+ * particularly fast and will even lack some features such as custom glyphs, however this is more
  * reliable as webgl may not work on some machines.
  */
 export class DomRenderer extends Disposable implements IRenderer {

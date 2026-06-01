@@ -273,7 +273,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._parser.setExecuteHandler(C0.HT, () => this.tab());
     this._parser.setExecuteHandler(C0.SO, () => this.shiftOut());
     this._parser.setExecuteHandler(C0.SI, () => this.shiftIn());
-    // FIXME:   What do to with missing? Old code just added those to print.
+    // FIXME:   What to do with missing? Old code just added those to print.
 
     this._parser.setExecuteHandler(C1.IND, () => this.index());
     this._parser.setExecuteHandler(C1.NEL, () => this.nextLine());

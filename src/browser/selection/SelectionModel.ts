@@ -88,7 +88,7 @@ export class SelectionModel {
       return [startPlusLength, this.selectionStart[1]];
     }
 
-    // Ensure the the word/line is selected after a double/triple click
+    // Ensure the word/line is selected after a double/triple click
     if (this.selectionStartLength) {
       // Select the larger of the two when start and end are on the same line
       if (this.selectionEnd[1] === this.selectionStart[1]) {
