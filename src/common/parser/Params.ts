@@ -172,7 +172,7 @@ export class Params implements IParams {
    * Add a sub parameter value.
    * The sub parameter is automatically associated with the last parameter value.
    * Thus it is not possible to add a subparameter without any parameter added yet.
-   * `Params` only stores up to `subParamsLength` sub parameters, any later
+   * `Params` only stores up to `maxSubParamsLength` sub parameters, any later
    * sub parameter will be ignored.
    */
   public addSubParam(value: number): void {
