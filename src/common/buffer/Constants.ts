@@ -44,7 +44,7 @@ export const enum Content {
   CODEPOINT_MASK = 0x1FFFFF,
 
   /**
-   * bit 22       flag indication whether a cell contains combined content
+   * bit 22       flag indicating whether a cell contains combined content
    *              read:   `isCombined = content & Content.isCombined;`
    *              set:    `content |= Content.isCombined;`
    *              clear:  `content &= ~Content.isCombined;`

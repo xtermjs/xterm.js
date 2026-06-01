@@ -430,7 +430,7 @@ export class DomRenderer extends Disposable implements IRenderer {
         documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._bufferService.cols, middleRowsCount));
         // Draw final row
         if (viewportCappedStartRow !== viewportCappedEndRow) {
-          // Only draw viewportEndRow if it's not the same as viewporttartRow
+          // Only draw viewportEndRow if it's not the same as viewportStartRow
           const finalEndCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
           documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, finalEndCol));
         }

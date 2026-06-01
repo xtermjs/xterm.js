@@ -221,7 +221,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
             // you can't use control sequence to move cursor to (x === row)
             (thisRowLastChar.getChars() || thisRowLastChar.getWidth() === 0) &&
             // change background of the first wrapped cell also affects BCE
-            // so we mark it as invalid to simply the process to determine line separator
+            // so we mark it as invalid to simplify the process to determine line separator
             equalBg(thisRowLastChar, nextRowFirstChar)
           ) {
             isValid = true;
@@ -233,7 +233,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
             isNextRowFirstCharDoubleWidth &&
             (thisRowLastSecondChar.getChars() || thisRowLastSecondChar.getWidth() === 0) &&
             // change background of the first wrapped cell also affects BCE
-            // so we mark it as invalid to simply the process to determine line separator
+            // so we mark it as invalid to simplify the process to determine line separator
             equalBg(thisRowLastChar, nextRowFirstChar) &&
             equalBg(thisRowLastSecondChar, nextRowFirstChar)
           ) {
