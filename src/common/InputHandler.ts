@@ -550,7 +550,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
       // get charset replacement character
       // charset is only defined for ASCII, therefore we only
-      // search for an replacement char if code < 127
+      // search for a replacement char if code < 127
       if (code < 127 && charset) {
         const ch = charset[String.fromCharCode(code)];
         if (ch) {
