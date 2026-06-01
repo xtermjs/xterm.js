@@ -241,6 +241,8 @@ export class BufferLine implements IBufferLine {
     this._invalidateStringCache();
     if (attrs.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = attrs.extended;
+    } else {
+      delete this._extendedAttrs[index];
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
     this._data[index * Constants.CELL_INDICIES + Cell.FG] = attrs.fg;
