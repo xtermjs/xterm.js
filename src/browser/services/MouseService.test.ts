@@ -176,7 +176,7 @@ describe('MouseService _triggerMouseEvent', () => {
       for (let i = 0; i < bufferService.cols; ++i) {
         assert.equal(trigger({ col: i, row: 0, x: 0, y: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), true);
         if (i > 222) {
-          // supress mouse reports if we are out of addressible range (max. 222)
+          // suppress mouse reports if we are out of addressable range (max. 222)
           assert.deepEqual(toBytes(reports.pop()), []);
         } else {
           assert.deepEqual(toBytes(reports.pop()), [0x1b, 0x5b, 0x4d, 0x20, i + 33, 0x21]);

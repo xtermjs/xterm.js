@@ -126,7 +126,7 @@ const DEFAULT_ENCODINGS: { [key: string]: CoreMouseEncoding } = {
    */
   DEFAULT: (e: ICoreMouseEvent) => {
     const params = [eventCode(e, false) + 32, e.col + 32, e.row + 32];
-    // supress mouse report if we exceed addressible range
+    // suppress mouse report if we exceed addressable range
     // Note this is handled differently by emulators
     // - xterm:         sends 0;0 coords instead
     // - vte, konsole:  no report
