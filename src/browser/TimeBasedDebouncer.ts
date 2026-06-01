@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-const RENDER_DEBOUNCE_THRESHOLD_MS = 1000; // 1 Second
-
 import { IRenderDebouncer } from './Types';
+
+const RENDER_DEBOUNCE_THRESHOLD_MS = 1000; // 1 Second
 
 /**
  * Debounces calls to update screen readers to update at most once configurable interval of time.
