@@ -162,7 +162,7 @@ export class Params implements IParams {
       return;
     }
     if (value < -1) {
-      throw new Error('values lesser than -1 are not allowed');
+      throw new Error('values less than -1 are not allowed');
     }
     this._subParamsIdx[this.length] = this._subParamsLength << 8 | this._subParamsLength;
     this.params[this.length++] = value > Constants.MAX_VALUE ? Constants.MAX_VALUE : value;
@@ -185,7 +185,7 @@ export class Params implements IParams {
       return;
     }
     if (value < -1) {
-      throw new Error('values lesser than -1 are not allowed');
+      throw new Error('values less than -1 are not allowed');
     }
     this._subParams[this._subParamsLength++] = value > Constants.MAX_VALUE ? Constants.MAX_VALUE : value;
     this._subParamsIdx[this.length - 1]++;
