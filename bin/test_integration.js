@@ -53,6 +53,7 @@ function npmBinScript(script) {
 }
 
 async function run() {
+  let exitCode = 0;
   for (const config of configs) {
     const command = npmBinScript('playwright');
     const args = ['test', '-c', config.path, ...argv];
@@ -67,10 +68,13 @@ async function run() {
 
     if (run.error) {
       console.error(run.error);
-      process.exit(run.status ?? -1);
+      process.exit(run.status ?? 1);
     }
 
-    process.exit(run.status);
+    if (run.status) {
+      exitCode = run.status;
+    }
   }
+  process.exit(exitCode);
 }
 run();
