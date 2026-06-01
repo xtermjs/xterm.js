@@ -505,7 +505,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.textarea,
       parent.ownerDocument.defaultView ?? window,
       // Force unsafe null in node.js environment for tests
-      this._document ?? (typeof window !== 'undefined') ? window.document : null as any
+      this._document ?? ((typeof window !== 'undefined') ? window.document : null as any)
     ));
     this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
 
