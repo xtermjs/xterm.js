@@ -344,13 +344,13 @@ export type UnicodeCharWidth = 0 | 1 | 2;
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
   serviceBrand: undefined;
-  /** Register an Unicode version provider. */
+  /** Register a Unicode version provider. */
   register(provider: IUnicodeVersionProvider): void;
   /** Registered Unicode versions. */
   readonly versions: string[];
   /** Currently active version. */
   activeVersion: string;
-  /** Event triggered, when activate version changed. */
+  /** Event triggered when the active version changes. */
   readonly onChange: IEvent<string>;
 
   /**
