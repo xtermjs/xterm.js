@@ -78,10 +78,10 @@ export class FitAddon implements ITerminalAddon, IFitApi {
     const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width'), 10) || 0);
     const elementStyle = _getComputedStyle(this._terminal.element);
     const elementPadding = {
-      top: parseInt(elementStyle.getPropertyValue('padding-top')),
-      bottom: parseInt(elementStyle.getPropertyValue('padding-bottom')),
-      right: parseInt(elementStyle.getPropertyValue('padding-right')),
-      left: parseInt(elementStyle.getPropertyValue('padding-left'))
+      top: parseInt(elementStyle.getPropertyValue('padding-top'), 10) || 0,
+      bottom: parseInt(elementStyle.getPropertyValue('padding-bottom'), 10) || 0,
+      right: parseInt(elementStyle.getPropertyValue('padding-right'), 10) || 0,
+      left: parseInt(elementStyle.getPropertyValue('padding-left'), 10) || 0
     };
     const elementPaddingVer = elementPadding.top + elementPadding.bottom;
     const elementPaddingHor = elementPadding.right + elementPadding.left;
