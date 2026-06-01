@@ -37,10 +37,6 @@ export function getCoords(window: Pick<Window, 'getComputedStyle'>, event: Pick<
   }
 
   const coords = getCoordsRelativeToElement(window, event, element);
-  if (!coords) {
-    return undefined;
-  }
-
   coords[0] = Math.ceil((coords[0] + (isSelection ? cssCellWidth / 2 : 0)) / cssCellWidth);
   coords[1] = Math.ceil(coords[1] / cssCellHeight);
 
