@@ -664,7 +664,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.dimensions.device.canvas.height = this._terminal.rows * this.dimensions.device.cell.height;
     this.dimensions.device.canvas.width = this._terminal.cols * this.dimensions.device.cell.width;
 
-    // The the size of the canvas on the page. It's important that this rounds to nearest integer
+    // The size of the canvas on the page. It's important that this rounds to nearest integer
     // and not ceils as browsers often have floating point precision issues where
     // `window.devicePixelRatio` ends up being something like `1.100000023841858` for example, when
     // it's actually 1.1. Ceiling may cause blurriness as the backing canvas image is 1 pixel too
