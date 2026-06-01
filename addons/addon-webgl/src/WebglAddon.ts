@@ -40,7 +40,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon, IWebglApi 
       };
       const gl = document.createElement('canvas').getContext('webgl2', contextAttributes) as IWebGL2RenderingContext;
       if (!gl) {
-        throw new Error('Webgl2 is only supported on Safari 16 and above');
+        throw new Error('WebGL2 is only supported on Safari 16 and above');
       }
     }
     super();
