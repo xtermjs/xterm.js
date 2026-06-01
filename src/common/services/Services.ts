@@ -350,7 +350,7 @@ export interface IUnicodeService {
   readonly versions: string[];
   /** Currently active version. */
   activeVersion: string;
-  /** Event triggered, when activate version changed. */
+  /** Event triggered when the active version changes. */
   readonly onChange: IEvent<string>;
 
   /**
