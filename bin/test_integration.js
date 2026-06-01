@@ -42,6 +42,11 @@ if (suiteFilter) {
   configs = configs.filter(e => e.name === suiteFilter);
 }
 
+if (suiteFilter && configs.length === 0) {
+  console.error(`Unknown suite: ${suiteFilter}`);
+  process.exit(1);
+}
+
 function npmBinScript(script) {
   return path.resolve(__dirname, `../node_modules/.bin/` + (process.platform === 'win32' ?
     `${script}.cmd` : script));
