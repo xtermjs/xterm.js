@@ -49,7 +49,7 @@ if (checkCoverage) {
       stdio: 'inherit'
     }
   );
-  process.exit(run.status);
+  process.exit(run.status ?? -1);
 }
 
 const run = cp.spawnSync(
