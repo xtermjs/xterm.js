@@ -13,7 +13,7 @@ import { ILinkProviderOptions, WebLinkProvider } from './WebLinkProvider';
 // resembling the old (...)*([^:"\'\\s]) final path clause
 // additionally exclude early + final:
 // - unsafe from rfc3986: !*'()
-// - unsafe chars from rfc1738: {}|\^~[]` (minus [] as we need them for ipv6 addresses, also allow ~)
+// - unsafe chars from rfc1738: {}|\^~[]` (minus [] for ipv6 addresses, also allow ~)
 // also exclude as finals:
 // - final interpunction like ,.!?
 // - any sort of brackets <>()[]{} (not spec conform, but often used to enclose urls)
