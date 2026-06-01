@@ -239,6 +239,7 @@ export class BufferLine implements IBufferLine {
    */
   public setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void {
     this._invalidateStringCache();
+    delete this._combined[index];
     if (attrs.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = attrs.extended;
     } else {
