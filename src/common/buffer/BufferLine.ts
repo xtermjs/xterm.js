@@ -517,6 +517,8 @@ export class BufferLine implements IBufferLine {
         }
         if (srcData[(srcCol + cell) * Constants.CELL_INDICIES + Cell.BG] & BgFlags.HAS_EXTENDED) {
           this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
+        } else {
+          delete this._extendedAttrs[destCol + cell];
         }
       }
     } else {
@@ -526,11 +528,13 @@ export class BufferLine implements IBufferLine {
         }
         if (srcData[(srcCol + cell) * Constants.CELL_INDICIES + Cell.BG] & BgFlags.HAS_EXTENDED) {
           this._extendedAttrs[destCol + cell] = src._extendedAttrs[srcCol + cell];
+        } else {
+          delete this._extendedAttrs[destCol + cell];
         }
       }
     }
 
-    // Move any combined data over as needed, FIXME: repeat for extended attrs
+    // Move any combined data over as needed
     const srcCombinedKeys = Object.keys(src._combined);
     for (let i = 0; i < srcCombinedKeys.length; i++) {
       const key = parseInt(srcCombinedKeys[i], 10);
