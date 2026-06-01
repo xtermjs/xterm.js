@@ -18,7 +18,7 @@ import { ApcParser } from './ApcParser';
 // @vt: #Y   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
 // @vt: #Y   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
 // @vt: #Y   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
-// @vt: #Y   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
+// @vt: #Y   ESC   ST    "String Terminator"             "ESC \\"   "Terminator used for string type sequences."
 // @vt: #Y   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
 // @vt: #Y   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
 // @vt: #Y   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."

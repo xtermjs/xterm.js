@@ -142,7 +142,7 @@ export class Buffer extends Disposable implements IBuffer {
   }
 
   /**
-   * Clears the buffer to it's initial state, discarding all previous data.
+   * Clears the buffer to its initial state, discarding all previous data.
    */
   public clear(): void {
     this._stringCache.clear();
