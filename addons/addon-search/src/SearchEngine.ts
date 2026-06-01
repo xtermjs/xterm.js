@@ -60,7 +60,7 @@ export class SearchEngine {
       this._terminal.clearSelection();
       return undefined;
     }
-    if (startCol > this._terminal.cols) {
+    if (startCol >= this._terminal.cols) {
       throw new Error(`Invalid col: ${startCol} to search in terminal of ${this._terminal.cols} cols`);
     }
 
