@@ -39,8 +39,6 @@ if (checkCoverage) {
     ...testFiles,
     ...flagArgs
   ];
-  console.info('executable', executable);
-  console.info('args', args);
   const run = cp.spawnSync(
     executable,
     args,
