@@ -980,7 +980,7 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
   });
 
   test.describe('selectionInactiveBackground', async () => {
-    test('should render the the inactive selection when not focused', async () => {
+    test('should render the inactive selection when not focused', async () => {
       const theme: ITheme = {
         selectionBackground: '#FF000080',
         selectionInactiveBackground: '#0000FF80'

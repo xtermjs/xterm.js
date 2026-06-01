@@ -15,7 +15,7 @@ test.beforeAll(async ({ browser }) => {
 });
 test.afterAll(async () => await ctx.page.close());
 
-test.describe('Search Tests', () => {
+test.describe('AttachAddon', () => {
 
   test.beforeEach(async () => {
     await ctx.proxy.reset();
