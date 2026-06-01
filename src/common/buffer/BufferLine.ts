@@ -224,6 +224,8 @@ export class BufferLine implements IBufferLine {
     }
     if (cell.bg & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[index] = cell.extended;
+    } else {
+      delete this._extendedAttrs[index];
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = cell.content;
     this._data[index * Constants.CELL_INDICIES + Cell.FG] = cell.fg;
