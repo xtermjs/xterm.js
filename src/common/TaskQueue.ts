@@ -8,7 +8,7 @@ import type { ILogService } from './services/Services';
 interface ITaskQueue {
   /**
    * Adds a task to the queue which will run in a future idle callback.
-   * To avoid perceivable stalls on the mainthread, tasks with heavy workload
+   * To avoid perceivable stalls on the main thread, tasks with heavy workload
    * should split their work into smaller pieces and return `true` to get
    * called again until the work is done (on falsy return value).
    */

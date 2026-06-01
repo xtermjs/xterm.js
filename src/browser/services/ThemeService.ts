@@ -132,7 +132,7 @@ export class ThemeService extends Disposable implements IThemeService {
         colors.ansi[i + 16] = parseColor(theme.extendedAnsi[i], DEFAULT_ANSI_COLORS[i + 16]);
       }
     }
-    // Clear our the cache
+    // Clear the cache
     this._contrastCache.clear();
     this._halfContrastCache.clear();
     this._updateRestoreColors();
