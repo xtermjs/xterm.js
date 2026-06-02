@@ -142,12 +142,14 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
       }
       prevResult = result;
       results.push(prevResult);
-      result = this._engine.find(
-        term,
-        prevResult.col + prevResult.term.length >= this._terminal.cols ? prevResult.row + 1 : prevResult.row,
-        prevResult.col + prevResult.term.length >= this._terminal.cols ? 0 : prevResult.col + 1,
-        searchOptions
-      );
+      const cols = this._terminal.cols;
+      let nextCol = prevResult.col + prevResult.size;
+      let nextRow = prevResult.row;
+      if (nextCol >= cols) {
+        nextRow += Math.floor(nextCol / cols);
+        nextCol = nextCol % cols;
+      }
+      result = this._engine.find(term, nextRow, nextCol, searchOptions);
     }
 
     this._resultTracker.updateResults(results, this._highlightLimit);
