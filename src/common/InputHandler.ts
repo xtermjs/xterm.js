@@ -1324,6 +1324,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 1:
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, respectProtect);
+        if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
+          const nextLine = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y + 1);
+          if (nextLine) {
+            nextLine.isWrapped = false;
+          }
+        }
         break;
       case 2:
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, respectProtect);
