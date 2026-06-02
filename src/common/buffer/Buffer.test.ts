@@ -233,6 +233,27 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.length, INIT_ROWS + 10);
         });
       });
+
+      describe('Windows ConPTY', () => {
+        beforeEach(() => {
+          optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 19000 };
+        });
+
+        it('should not adjust ybase or ydisp when growing rows', () => {
+          buffer.fillViewportRows();
+          for (let i = 0; i < 10; i++) {
+            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR_DATA));
+          }
+          buffer.y = INIT_ROWS - 1;
+          buffer.ybase = 10;
+          buffer.ydisp = 10;
+          const linesBefore = buffer.lines.length;
+          buffer.resize(INIT_COLS, INIT_ROWS + 5);
+          assert.equal(buffer.ybase, 10);
+          assert.equal(buffer.ydisp, 10);
+          assert.equal(buffer.lines.length, linesBefore + 5);
+        });
+      });
     });
 
     describe('row and column increased', () => {
