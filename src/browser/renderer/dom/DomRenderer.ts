@@ -536,9 +536,13 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (let y = start; y <= end; y++) {
       const row = y + buffer.ydisp;
       const rowElement = this._rowElements[y];
+      if (!rowElement) {
+        continue;
+      }
       const lineData = buffer.lines.get(row);
-      if (!rowElement || !lineData) {
-        break;
+      if (!lineData) {
+        rowElement.replaceChildren();
+        continue;
       }
       rowElement.replaceChildren(
         ...this._rowFactory.createRow(
@@ -610,9 +614,13 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (let i = y; i <= y2; ++i) {
       const row = i + buffer.ydisp;
       const rowElement = this._rowElements[i];
+      if (!rowElement) {
+        continue;
+      }
       const bufferline = buffer.lines.get(row);
-      if (!rowElement || !bufferline) {
-        break;
+      if (!bufferline) {
+        rowElement.replaceChildren();
+        continue;
       }
       rowElement.replaceChildren(
         ...this._rowFactory.createRow(
