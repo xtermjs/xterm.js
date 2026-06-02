@@ -6,7 +6,7 @@
 import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from './Types';
 import { AttributeData } from './AttributeData';
 import { CellData } from './CellData';
-import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, UnderlineStyle, WHITESPACE_CELL_CHAR } from './Constants';
+import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from './Constants';
 import { stringFromCodePoint } from '../input/TextDecoder';
 import { StringBuilder } from '../StringBuilder';
 
@@ -213,7 +213,9 @@ export class BufferLine implements IBufferLine {
     if (cell.bg & BgFlags.HAS_EXTENDED) {
       cell.extended = this._extendedAttrs[index]!;
     } else {
-      cell.extended.underlineStyle = UnderlineStyle.NONE;
+      // Do not mutate cell.extended in place: it may still reference this line's map entry from a
+      // prior loadCell into a reused CellData (e.g. $workCell during insert/delete).
+      cell.extended = DEFAULT_ATTR_DATA.extended.clone();
     }
     return cell;
   }
