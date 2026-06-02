@@ -1246,7 +1246,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, respectProtect);
         if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
-          const nextLine = this._activeBuffer.lines.get(j + 1);
+          const nextLine = this._activeBuffer.lines.get(this._activeBuffer.ybase + j + 1);
           if (nextLine) {
             nextLine.isWrapped = false;
           }
