@@ -542,6 +542,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       const lineData = buffer.lines.get(row);
       if (!lineData) {
         rowElement.replaceChildren();
+        this._setRowBlinkState(y, false);
         continue;
       }
       rowElement.replaceChildren(
@@ -620,6 +621,7 @@ export class DomRenderer extends Disposable implements IRenderer {
       const bufferline = buffer.lines.get(row);
       if (!bufferline) {
         rowElement.replaceChildren();
+        this._setRowBlinkState(i, false);
         continue;
       }
       rowElement.replaceChildren(
