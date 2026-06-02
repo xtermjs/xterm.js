@@ -6,8 +6,8 @@
 import { perfContext, before, ThroughputRuntimeCase } from 'xterm-benchmark';
 
 import { spawn } from 'node-pty';
-import { Utf8ToUtf32, stringFromCodePoint } from '../../src/common/input/TextDecoder';
-import { CoreBrowserTerminal } from '../../src/browser/CoreBrowserTerminal';
+import { Utf8ToUtf32, stringFromCodePoint } from 'common/input/TextDecoder';
+import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
 
 perfContext('Terminal: ls -lR /usr/lib', () => {
   let content = '';
