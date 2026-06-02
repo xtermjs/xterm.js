@@ -531,7 +531,7 @@ export class ImageStorage implements IDisposable {
         }
         // expand only if right side is empty (nothing got wrapped from below)
         let hasData = false;
-        for (let rightCol = oldCol + 1; rightCol > metrics.cols; ++rightCol) {
+        for (let rightCol = oldCol + 1; rightCol < metrics.cols; ++rightCol) {
           if (line._data[rightCol * Cell.SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK) {
             hasData = true;
             break;
