@@ -664,6 +664,16 @@ describe('InputHandler', () => {
       assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'e\u0301e\u0301e\u0301');
       assert.strictEqual(bufferService.buffer.x, 3);
     });
+    it('should not repeat when REP has no preceding join state', async () => {
+      await inputHandler.parseP('\x1b[2b');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), '');
+      assert.strictEqual(bufferService.buffer.x, 0);
+    });
+    it('should not repeat after an intervening escape sequence', async () => {
+      await inputHandler.parseP('a\x1b[0m\x1b[2b');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'a');
+      assert.strictEqual(bufferService.buffer.x, 1);
+    });
     it('should clear cells to the right on early wrap-around', async () => {
       bufferService.resize(5, 5);
       optionsService.options.scrollback = 1;
