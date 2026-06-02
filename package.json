@@ -11,6 +11,9 @@
   "workspaces": [
     "addons/*"
   ],
+  "overrides": {
+    "serialize-javascript": "^7.0.3"
+  },
   "keywords": [
     "cli",
     "command-line",
