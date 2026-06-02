@@ -470,4 +470,30 @@ describe('DcsParser - async tests', () => {
       });
     });
   });
+  describe('reset', () => {
+    it('should abort active handlers with unhook(false) when reset during payload', () => {
+      const ident = identifier({ intermediates: '+', final: 'p' });
+      const params = Params.fromArray([1, 2, 3]);
+      parser.registerHandler(ident, new TestHandler(reports, 'th'));
+      parser.hook(ident, params);
+      let data = toUtf32('partial');
+      parser.put(data, 0, data.length);
+      parser.reset();
+      assert.deepEqual(reports, [
+        ['th', 'HOOK', [1, 2, 3]],
+        ['th', 'PUT', 'partial'],
+        ['th', 'UNHOOK', false]
+      ]);
+      reports.length = 0;
+      parser.hook(ident, params);
+      data = toUtf32('complete');
+      parser.put(data, 0, data.length);
+      parser.unhook(true);
+      assert.deepEqual(reports, [
+        ['th', 'HOOK', [1, 2, 3]],
+        ['th', 'PUT', 'complete'],
+        ['th', 'UNHOOK', true]
+      ]);
+    });
+  });
 });
