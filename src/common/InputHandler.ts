@@ -1203,6 +1203,21 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * Scroll-margin column operations clear isWrapped on lines inside the margins.
+   * Also clear the line below the bottom margin when it still continues a wrap chain.
+   */
+  private _clearWrapBelowScrollMargins(): void {
+    const rowBelowMargin = this._activeBuffer.scrollBottom + 1;
+    if (rowBelowMargin >= this._bufferService.rows) {
+      return;
+    }
+    const lineBelow = this._activeBuffer.lines.get(this._activeBuffer.ybase + rowBelowMargin);
+    if (lineBelow) {
+      lineBelow.isWrapped = false;
+    }
+  }
+
+  /**
    * CSI Ps J  Erase in Display (ED).
    *     Ps = 0  -> Erase Below (default).
    *     Ps = 1  -> Erase Above.
@@ -1521,6 +1536,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
+    this._clearWrapBelowScrollMargins();
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
@@ -1554,6 +1570,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
+    this._clearWrapBelowScrollMargins();
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
@@ -1577,6 +1594,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
+    this._clearWrapBelowScrollMargins();
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
@@ -1600,6 +1618,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
+    this._clearWrapBelowScrollMargins();
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
