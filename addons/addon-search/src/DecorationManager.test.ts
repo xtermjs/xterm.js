@@ -52,4 +52,27 @@ describe('DecorationManager', () => {
     assert.strictEqual(decorationOptions[1].x, 0);
     assert.strictEqual(decorationOptions[1].width, 3);
   });
+
+  it('should only add one overview ruler marker per buffer line', async () => {
+    await writeP(terminal, 'abcdefghij');
+    const decorationOptions: IDecorationOptions[] = [];
+    const registerDecoration = terminal.registerDecoration.bind(terminal);
+    terminal.registerDecoration = (options: IDecorationOptions) => {
+      decorationOptions.push(options);
+      return registerDecoration(options);
+    };
+
+    const options: ISearchDecorationOptions = {
+      matchOverviewRuler: '#ff0000',
+      activeMatchColorOverviewRuler: '#00ff00'
+    };
+    decorationManager.createHighlightDecorations([
+      { term: 'a', col: 0, row: 0, size: 1 },
+      { term: 'f', col: 5, row: 0, size: 1 }
+    ], options);
+
+    const withOverviewRuler = decorationOptions.filter(o => o.overviewRulerOptions !== undefined);
+    assert.strictEqual(withOverviewRuler.length, 1);
+    assert.strictEqual(withOverviewRuler[0].x, 0);
+  });
 });
