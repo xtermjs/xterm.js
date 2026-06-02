@@ -191,7 +191,7 @@ export class TextureAtlas implements ITextureAtlas {
         return newPage;
       }
 
-      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
+      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a - b);
       const mergedPageIndex = this.pages.length - mergingPages.length;
 
       // Merge into the new page
