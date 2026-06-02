@@ -641,19 +641,23 @@ describe('InputHandler', () => {
   });
   describe('print', () => {
     it('should not cause an infinite loop (regression test)', () => {
-      const inputHandler = new TestInputHandler(
-        new MockBufferService(80, 30),
-        new MockCharsetService(),
-        new MockCoreService(),
-        new MockLogService(),
-        new MockOptionsService(),
-        new MockOscLinkService(),
-        new MockMouseStateService(),
-        new MockUnicodeService()
-      );
       const container = new Uint32Array(10);
       container[0] = 0x200B;
+      const lineCountBefore = bufferService.buffer.lines.length;
       inputHandler.print(container, 0, 1);
+      assert.strictEqual(bufferService.buffer.y, 0);
+      assert.strictEqual(bufferService.buffer.lines.length, lineCountBefore);
+    });
+    it('should join combining characters in a single print', async () => {
+      await inputHandler.parseP('e\u0301');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'e\u0301');
+      assert.strictEqual(bufferService.buffer.x, 1);
+    });
+    it('should join combining characters split across parse calls', async () => {
+      await inputHandler.parseP('e');
+      await inputHandler.parseP('\u0301');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'e\u0301');
+      assert.strictEqual(bufferService.buffer.x, 1);
     });
     it('should clear cells to the right on early wrap-around', async () => {
       bufferService.resize(5, 5);
