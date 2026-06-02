@@ -659,6 +659,11 @@ describe('InputHandler', () => {
       assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'e\u0301');
       assert.strictEqual(bufferService.buffer.x, 1);
     });
+    it('should repeat preceding grapheme cluster via REP', async () => {
+      await inputHandler.parseP('e\u0301\x1b[2b');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'e\u0301e\u0301e\u0301');
+      assert.strictEqual(bufferService.buffer.x, 3);
+    });
     it('should clear cells to the right on early wrap-around', async () => {
       bufferService.resize(5, 5);
       optionsService.options.scrollback = 1;
