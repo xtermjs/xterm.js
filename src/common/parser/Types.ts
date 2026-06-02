@@ -234,8 +234,8 @@ export interface IApcParser extends ISubParser<IApcHandler, ApcFallbackHandlerTy
 
 /**
  * Interface to denote a specific ESC, CSI or DCS handler slot.
- * The values are used to create an integer respresentation during handler
- * regristation before passed to the subparsers as `ident`.
+ * The values are used to create an integer representation during handler
+ * registration before passed to the subparsers as `ident`.
  * The integer translation is made to allow a faster handler access
  * in `EscapeSequenceParser.parse`.
  */

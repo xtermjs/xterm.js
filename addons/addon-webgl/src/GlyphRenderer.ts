@@ -220,7 +220,7 @@ export class GlyphRenderer extends Disposable {
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
     // Since this function is called for every cell (`rows*cols`), it must be very optimized. It
     // should not instantiate any variables unless a new glyph is drawn to the cache where the
-    // slight slowdown is acceptable for the developer ergonomics provided as it's a once of for
+    // slight slowdown is acceptable for the developer ergonomics provided as it's a one-off for
     // each glyph.
     this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, width, lastBg);
   }

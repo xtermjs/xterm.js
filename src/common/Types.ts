@@ -181,7 +181,7 @@ export interface ICoreMouseEvent {
   x: number;
   y: number;
   /**
-   * Button the action occured. Due to restrictions of the tracking protocols
+   * Button the action occurred. Due to restrictions of the tracking protocols
    * it is not possible to report multiple buttons at once.
    * Wheel is treated as a button.
    * There are invalid combinations of buttons and actions possible

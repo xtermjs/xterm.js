@@ -69,7 +69,7 @@ export class TextureAtlas implements ITextureAtlas {
   private _overflowSizePage: AtlasPage | undefined;
 
   private _tmpCanvas: HTMLCanvasElement;
-  // A temporary context that glyphs are drawn to before being transfered to the atlas.
+  // A temporary context that glyphs are drawn to before being transferred to the atlas.
   private _tmpCtx: CanvasRenderingContext2D;
 
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
@@ -152,7 +152,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _createNewPage(): AtlasPage {
-    // Try merge the set of the 4 most used pages of the largest size. This is is deferred to a
+    // Try merge the set of the 4 most used pages of the largest size. This is deferred to a
     // microtask to ensure it does not interrupt textures that will be rendered in the current
     // animation frame which would result in blank rendered areas. This is actually not that
     // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
@@ -191,7 +191,7 @@ export class TextureAtlas implements ITextureAtlas {
         return newPage;
       }
 
-      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
+      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a - b);
       const mergedPageIndex = this.pages.length - mergingPages.length;
 
       // Merge into the new page
@@ -1125,7 +1125,7 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThreshol
   // were covered (fg=#8ae234, bg=#c4a000).
   const threshold = Math.floor((Math.abs(r - fgR) + Math.abs(g - fgG) + Math.abs(b - fgB)) / 12);
 
-  // Set alpha channel of relevent pixels to 0
+  // Set alpha channel of relevant pixels to 0
   let isEmpty = true;
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     // Check exact match

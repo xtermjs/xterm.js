@@ -192,7 +192,7 @@ test.describe('SerializeAddon', () => {
     const cols = 10;
     const line = '+'.repeat(cols);
     const lines: string[] = [
-      sgr(FG_P16_GREEN) + line,  // Workaround: If we clear all flags a the end, serialize will use \x1b[0m to clear instead of the sepcific disable sequence
+      sgr(FG_P16_GREEN) + line,  // Workaround: If we clear all flags at the end, serialize will use \x1b[0m to clear instead of the specific disable sequence
       sgr(INVERSE) + line,
       sgr(BOLD) + line,
       sgr(UNDERLINED) + line,

@@ -21,7 +21,7 @@ if (process.argv.length > 2) {
   flagArgs = args.filter(e => e.startsWith('--'));
   // ability to inject particular test files via
   // npm run test [testFileA testFileB ...]
-  files = args.filter(e => !e.startsWith('--'));
+  const files = args.filter(e => !e.startsWith('--'));
   if (files.length) {
     testFiles = files;
   }
@@ -39,8 +39,6 @@ if (checkCoverage) {
     ...testFiles,
     ...flagArgs
   ];
-  console.info('executable', executable);
-  console.info('args', args);
   const run = cp.spawnSync(
     executable,
     args,
@@ -51,7 +49,7 @@ if (checkCoverage) {
       stdio: 'inherit'
     }
   );
-  process.exit(run.status);
+  process.exit(run.status ?? -1);
 }
 
 const run = cp.spawnSync(
