@@ -305,6 +305,33 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(8)!.translateToString(), '     ');
         assert.equal(buffer.lines.get(9)!.translateToString(), '     ');
       });
+      it('should reflow wrapped lines containing the cursor when reflowCursorLine is enabled', () => {
+        optionsService.options.reflowCursorLine = true;
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        const firstLine = buffer.lines.get(0)!;
+        for (let i = 0; i < 5; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+        }
+        buffer.resize(1, 10);
+        buffer.y = 2;
+        buffer.resize(5, 10);
+        assert.equal(buffer.lines.get(0)!.translateToString(), 'abcde');
+      });
+      it('should not reflow wrapped lines containing the cursor by default', () => {
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        const firstLine = buffer.lines.get(0)!;
+        for (let i = 0; i < 5; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+        }
+        buffer.resize(1, 10);
+        buffer.y = 2;
+        buffer.resize(5, 10);
+        assert.notEqual(buffer.lines.get(0)!.translateToString(), 'abcde');
+      });
       it('should discard parts of wrapped lines that go out of the scrollback', () => {
         buffer.fillViewportRows();
         optionsService.options.scrollback = 1;
