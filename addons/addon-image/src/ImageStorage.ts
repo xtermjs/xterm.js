@@ -514,6 +514,9 @@ export class ImageStorage implements IDisposable {
     const oldCol = this._viewportMetrics.cols - 1;
     for (let row = 0; row < rows; ++row) {
       const line = buffer.lines.get(row) as IBufferLineExt;
+      if (!line) {
+        continue;
+      }
       if (line.getBg(oldCol) & BgFlags.HAS_EXTENDED) {
         const e: IExtendedAttrsImage = line._extendedAttrs[oldCol] ?? EMPTY_ATTRS;
         const imageId = e.imageId;
