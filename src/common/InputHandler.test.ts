@@ -1227,6 +1227,19 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[100;100H');
       assert.deepEqual(getCursor(bufferService), [9, 9]);
     });
+    it('cursor position (CUP) with DECOM and scroll margins', async () => {
+      await inputHandler.parseP('\x1b[?6h\x1b[2;3r\x1b[1;1H');
+      assert.deepEqual(getCursor(bufferService), [0, 1]);
+      await inputHandler.parseP('X');
+      assert.strictEqual(getLines(bufferService, 3)[1], 'X');
+      await inputHandler.parseP('\x1b[2;1H');
+      assert.deepEqual(getCursor(bufferService), [0, 2]);
+      await inputHandler.parseP('\x1b[10;10H');
+      assert.deepEqual(getCursor(bufferService), [9, 2]);
+      await inputHandler.parseP('\x1b[?6l');
+      await inputHandler.parseP('\x1b[2;1H');
+      assert.deepEqual(getCursor(bufferService), [0, 1]);
+    });
     it('horizontal position absolute (HPA)', async () => {
       await inputHandler.parseP('\x1b[`');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
