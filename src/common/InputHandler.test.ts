@@ -16,8 +16,10 @@ import { MockCoreService, MockBufferService, MockOptionsService, MockLogService,
 import { IBufferService, ICoreService, type IOscLinkService } from './services/Services';
 import { DEFAULT_OPTIONS } from './services/OptionsService';
 import { BufferService } from './services/BufferService';
+import { CharsetService } from './services/CharsetService';
 import { CoreService } from './services/CoreService';
 import { OscLinkService } from './services/OscLinkService';
+import { CHARSETS } from './data/Charsets';
 
 
 function getCursor(bufferService: IBufferService): number[] {
@@ -665,6 +667,49 @@ describe('InputHandler', () => {
       await inputHandler.parseP('Soft\xadhy\xadphen');
       assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'Softhyphen');
       assert.strictEqual(bufferService.buffer.x, 10);
+    });
+  });
+
+  describe('ISO-2022 character sets', () => {
+    let charsetService: CharsetService;
+
+    beforeEach(() => {
+      charsetService = new CharsetService();
+      inputHandler = new TestInputHandler(
+        bufferService,
+        charsetService,
+        coreService,
+        new MockLogService(),
+        optionsService,
+        oscLinkService,
+        new MockMouseStateService(),
+        new MockUnicodeService()
+      );
+    });
+
+    it('should map G0 line drawing via ESC ( 0', async () => {
+      await inputHandler.parseP('\x1b(0q\x1b(Bq');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), '\u2500q');
+    });
+
+    it('should map G1 line drawing after ESC ) 0 and SO', async () => {
+      await inputHandler.parseP('\x1b)0\x0eq\x0f\x1b(Bq');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), '\u2500q');
+    });
+
+    it('should restore charset and glevel on ESC 7 / ESC 8', async () => {
+      await inputHandler.parseP('\x1b)0\x0e');
+      assert.strictEqual(charsetService.glevel, 1);
+      assert.strictEqual(charsetService.charset, CHARSETS['0']);
+      await inputHandler.parseP('\x1b7');
+      await inputHandler.parseP('\x0f\x1b(B');
+      assert.strictEqual(charsetService.glevel, 0);
+      assert.ok(charsetService.charset === undefined);
+      await inputHandler.parseP('\x1b8');
+      assert.strictEqual(charsetService.glevel, 1);
+      assert.strictEqual(charsetService.charset, CHARSETS['0']);
+      await inputHandler.parseP('q');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), '\u2500');
     });
   });
 
