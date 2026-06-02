@@ -88,4 +88,50 @@ describe('BufferService', () => {
       assert.strictEqual(buffer.lines.get(buffer.ybase + 4)!.translateToString().trim(), 'E');
     });
   });
+
+  describe('scrollLines', () => {
+    it('should move ydisp and set isUserScrolling when scrolling up', () => {
+      const optionsService = new OptionsService({ rows: 10, cols: 80, scrollback: 10 });
+      const bufferService = new BufferService(optionsService, new MockLogService());
+      const buffer = bufferService.buffer;
+      buffer.ybase = 5;
+      buffer.ydisp = 5;
+
+      let scrollEvent: number | undefined;
+      bufferService.onScroll(e => { scrollEvent = e; });
+
+      bufferService.scrollLines(-2);
+
+      assert.strictEqual(buffer.ydisp, 3);
+      assert.strictEqual(bufferService.isUserScrolling, true);
+      assert.strictEqual(scrollEvent, 3);
+    });
+
+    it('should not scroll above the top of the buffer', () => {
+      const optionsService = new OptionsService({ rows: 10, cols: 80, scrollback: 10 });
+      const bufferService = new BufferService(optionsService, new MockLogService());
+      const buffer = bufferService.buffer;
+      buffer.ybase = 5;
+      buffer.ydisp = 0;
+
+      bufferService.scrollLines(-1);
+
+      assert.strictEqual(buffer.ydisp, 0);
+      assert.strictEqual(bufferService.isUserScrolling, false);
+    });
+
+    it('should clear isUserScrolling when scrolling to the bottom', () => {
+      const optionsService = new OptionsService({ rows: 10, cols: 80, scrollback: 10 });
+      const bufferService = new BufferService(optionsService, new MockLogService());
+      const buffer = bufferService.buffer;
+      buffer.ybase = 5;
+      buffer.ydisp = 2;
+      bufferService.isUserScrolling = true;
+
+      bufferService.scrollLines(10);
+
+      assert.strictEqual(buffer.ydisp, 5);
+      assert.strictEqual(bufferService.isUserScrolling, false);
+    });
+  });
 });
