@@ -115,5 +115,8 @@
     "webpack-cli": "^7.0.2",
     "ws": "^8.20.0",
     "xterm-benchmark": "^0.3.2"
+  },
+  "overrides": {
+    "serialize-javascript": "^7.0.5"
   }
 }
