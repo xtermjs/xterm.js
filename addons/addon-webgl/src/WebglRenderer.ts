@@ -456,7 +456,22 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
-      line = terminal.buffer.lines.get(row)!;
+      const bufferLine = terminal.buffer.lines.get(row);
+      if (!bufferLine) {
+        this._model.lineLengths[y] = 0;
+        for (x = 0; x < terminal.cols; x++) {
+          j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
+          modelUpdated = true;
+          this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
+          this._model.cells[j] = NULL_CELL_CODE;
+          this._model.cells[j + RenderModelConstants.BG_OFFSET] = 0;
+          this._model.cells[j + RenderModelConstants.FG_OFFSET] = 0;
+          this._model.cells[j + RenderModelConstants.EXT_OFFSET] = 0;
+        }
+        this._setRowBlinkState(y, false);
+        continue;
+      }
+      line = bufferLine;
       let rowHasBlinkingCells = false;
       this._model.lineLengths[y] = 0;
       isCursorRow = cursorY === row;
