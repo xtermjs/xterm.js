@@ -459,4 +459,29 @@ describe('ApcParser - async tests', () => {
       });
     });
   });
+  describe('reset', () => {
+    it('should abort active handlers with end(false) when reset during payload', () => {
+      const ident = identifier({ intermediates: '+', final: 'p' });
+      parser.registerHandler(ident, new TestHandler(reports, 'th'));
+      parser.start(ident);
+      let data = toUtf32('partial');
+      parser.put(data, 0, data.length);
+      parser.reset();
+      assert.deepEqual(reports, [
+        ['th', 'START'],
+        ['th', 'PUT', 'partial'],
+        ['th', 'END', false]
+      ]);
+      reports.length = 0;
+      parser.start(ident);
+      data = toUtf32('complete');
+      parser.put(data, 0, data.length);
+      parser.end(true);
+      assert.deepEqual(reports, [
+        ['th', 'START'],
+        ['th', 'PUT', 'complete'],
+        ['th', 'END', true]
+      ]);
+    });
+  });
 });

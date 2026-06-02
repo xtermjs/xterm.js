@@ -233,6 +233,27 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.length, INIT_ROWS + 10);
         });
       });
+
+      describe('Windows ConPTY', () => {
+        beforeEach(() => {
+          optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 19000 };
+        });
+
+        it('should not adjust ybase or ydisp when growing rows', () => {
+          buffer.fillViewportRows();
+          for (let i = 0; i < 10; i++) {
+            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR_DATA));
+          }
+          buffer.y = INIT_ROWS - 1;
+          buffer.ybase = 10;
+          buffer.ydisp = 10;
+          const linesBefore = buffer.lines.length;
+          buffer.resize(INIT_COLS, INIT_ROWS + 5);
+          assert.equal(buffer.ybase, 10);
+          assert.equal(buffer.ydisp, 10);
+          assert.equal(buffer.lines.length, linesBefore + 5);
+        });
+      });
     });
 
     describe('row and column increased', () => {
@@ -304,6 +325,71 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(7)!.translateToString(), '     ');
         assert.equal(buffer.lines.get(8)!.translateToString(), '     ');
         assert.equal(buffer.lines.get(9)!.translateToString(), '     ');
+      });
+      it('should gate reflow on ConPTY buildNumber 21376', () => {
+        const prepareWrappedShrink = () => {
+          buffer.fillViewportRows();
+          buffer.resize(5, 10);
+          const firstLine = buffer.lines.get(0)!;
+          for (let i = 0; i < 5; i++) {
+            const code = 'a'.charCodeAt(0) + i;
+            firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+          }
+          buffer.y = 1;
+          buffer.resize(1, 10);
+        };
+
+        optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 21375 };
+        prepareWrappedShrink();
+        assert.equal(buffer.lines.get(1)!.translateToString().trim(), '');
+
+        buffer = new TestBuffer(true, optionsService, bufferService, new MockLogService());
+        optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 21376 };
+        prepareWrappedShrink();
+        assert.equal(buffer.lines.get(1)!.translateToString().trim(), 'b');
+        assert.ok(buffer.lines.get(1)!.isWrapped);
+      });
+      it('should unwrap lines on ConPTY builds with reflow support', () => {
+        optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 21376 };
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        const firstLine = buffer.lines.get(0)!;
+        for (let i = 0; i < 5; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+        }
+        buffer.y = 1;
+        buffer.resize(1, 10);
+        buffer.resize(5, 10);
+        assert.equal(buffer.lines.get(0)!.translateToString(), 'abcde');
+        assert.equal(buffer.lines.get(1)!.translateToString(), '     ');
+      });
+      it('should reflow wrapped lines containing the cursor when reflowCursorLine is enabled', () => {
+        optionsService.options.reflowCursorLine = true;
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        const firstLine = buffer.lines.get(0)!;
+        for (let i = 0; i < 5; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+        }
+        buffer.resize(1, 10);
+        buffer.y = 2;
+        buffer.resize(5, 10);
+        assert.equal(buffer.lines.get(0)!.translateToString(), 'abcde');
+      });
+      it('should not reflow wrapped lines containing the cursor by default', () => {
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        const firstLine = buffer.lines.get(0)!;
+        for (let i = 0; i < 5; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+        }
+        buffer.resize(1, 10);
+        buffer.y = 2;
+        buffer.resize(5, 10);
+        assert.notEqual(buffer.lines.get(0)!.translateToString(), 'abcde');
       });
       it('should discard parts of wrapped lines that go out of the scrollback', () => {
         buffer.fillViewportRows();

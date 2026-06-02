@@ -16,8 +16,10 @@ import { MockCoreService, MockBufferService, MockOptionsService, MockLogService,
 import { IBufferService, ICoreService, type IOscLinkService } from './services/Services';
 import { DEFAULT_OPTIONS } from './services/OptionsService';
 import { BufferService } from './services/BufferService';
+import { CharsetService } from './services/CharsetService';
 import { CoreService } from './services/CoreService';
 import { OscLinkService } from './services/OscLinkService';
+import { CHARSETS } from './data/Charsets';
 
 
 function getCursor(bufferService: IBufferService): number[] {
@@ -639,19 +641,38 @@ describe('InputHandler', () => {
   });
   describe('print', () => {
     it('should not cause an infinite loop (regression test)', () => {
-      const inputHandler = new TestInputHandler(
-        new MockBufferService(80, 30),
-        new MockCharsetService(),
-        new MockCoreService(),
-        new MockLogService(),
-        new MockOptionsService(),
-        new MockOscLinkService(),
-        new MockMouseStateService(),
-        new MockUnicodeService()
-      );
       const container = new Uint32Array(10);
       container[0] = 0x200B;
+      const lineCountBefore = bufferService.buffer.lines.length;
       inputHandler.print(container, 0, 1);
+      assert.strictEqual(bufferService.buffer.y, 0);
+      assert.strictEqual(bufferService.buffer.lines.length, lineCountBefore);
+    });
+    it('should join combining characters in a single print', async () => {
+      await inputHandler.parseP('e\u0301');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'e\u0301');
+      assert.strictEqual(bufferService.buffer.x, 1);
+    });
+    it('should join combining characters split across parse calls', async () => {
+      await inputHandler.parseP('e');
+      await inputHandler.parseP('\u0301');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'e\u0301');
+      assert.strictEqual(bufferService.buffer.x, 1);
+    });
+    it('should repeat preceding grapheme cluster via REP', async () => {
+      await inputHandler.parseP('e\u0301\x1b[2b');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'e\u0301e\u0301e\u0301');
+      assert.strictEqual(bufferService.buffer.x, 3);
+    });
+    it('should not repeat when REP has no preceding join state', async () => {
+      await inputHandler.parseP('\x1b[2b');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), '');
+      assert.strictEqual(bufferService.buffer.x, 0);
+    });
+    it('should not repeat after an intervening escape sequence', async () => {
+      await inputHandler.parseP('a\x1b[0m\x1b[2b');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'a');
+      assert.strictEqual(bufferService.buffer.x, 1);
     });
     it('should clear cells to the right on early wrap-around', async () => {
       bufferService.resize(5, 5);
@@ -665,6 +686,49 @@ describe('InputHandler', () => {
       await inputHandler.parseP('Soft\xadhy\xadphen');
       assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), 'Softhyphen');
       assert.strictEqual(bufferService.buffer.x, 10);
+    });
+  });
+
+  describe('ISO-2022 character sets', () => {
+    let charsetService: CharsetService;
+
+    beforeEach(() => {
+      charsetService = new CharsetService();
+      inputHandler = new TestInputHandler(
+        bufferService,
+        charsetService,
+        coreService,
+        new MockLogService(),
+        optionsService,
+        oscLinkService,
+        new MockMouseStateService(),
+        new MockUnicodeService()
+      );
+    });
+
+    it('should map G0 line drawing via ESC ( 0', async () => {
+      await inputHandler.parseP('\x1b(0q\x1b(Bq');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), '\u2500q');
+    });
+
+    it('should map G1 line drawing after ESC ) 0 and SO', async () => {
+      await inputHandler.parseP('\x1b)0\x0eq\x0f\x1b(Bq');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), '\u2500q');
+    });
+
+    it('should restore charset and glevel on ESC 7 / ESC 8', async () => {
+      await inputHandler.parseP('\x1b)0\x0e');
+      assert.strictEqual(charsetService.glevel, 1);
+      assert.strictEqual(charsetService.charset, CHARSETS['0']);
+      await inputHandler.parseP('\x1b7');
+      await inputHandler.parseP('\x0f\x1b(B');
+      assert.strictEqual(charsetService.glevel, 0);
+      assert.ok(charsetService.charset === undefined);
+      await inputHandler.parseP('\x1b8');
+      assert.strictEqual(charsetService.glevel, 1);
+      assert.strictEqual(charsetService.charset, CHARSETS['0']);
+      await inputHandler.parseP('q');
+      assert.strictEqual(bufferService.buffer.translateBufferLineToString(0, true), '\u2500');
     });
   });
 
@@ -1181,6 +1245,19 @@ describe('InputHandler', () => {
       bufferService.buffer.y = 5;
       await inputHandler.parseP('\x1b[100;100H');
       assert.deepEqual(getCursor(bufferService), [9, 9]);
+    });
+    it('cursor position (CUP) with DECOM and scroll margins', async () => {
+      await inputHandler.parseP('\x1b[?6h\x1b[2;3r\x1b[1;1H');
+      assert.deepEqual(getCursor(bufferService), [0, 1]);
+      await inputHandler.parseP('X');
+      assert.strictEqual(getLines(bufferService, 3)[1], 'X');
+      await inputHandler.parseP('\x1b[2;1H');
+      assert.deepEqual(getCursor(bufferService), [0, 2]);
+      await inputHandler.parseP('\x1b[10;10H');
+      assert.deepEqual(getCursor(bufferService), [9, 2]);
+      await inputHandler.parseP('\x1b[?6l');
+      await inputHandler.parseP('\x1b[2;1H');
+      assert.deepEqual(getCursor(bufferService), [0, 1]);
     });
     it('horizontal position absolute (HPA)', async () => {
       await inputHandler.parseP('\x1b[`');
