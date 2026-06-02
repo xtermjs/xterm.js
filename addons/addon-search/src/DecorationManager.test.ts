@@ -51,6 +51,9 @@ describe('DecorationManager', () => {
     assert.strictEqual(decorationOptions[0].width, 1);
     assert.strictEqual(decorationOptions[1].x, 0);
     assert.strictEqual(decorationOptions[1].width, 3);
+
+    const withOverviewRuler = decorationOptions.filter(o => o.overviewRulerOptions !== undefined);
+    assert.strictEqual(withOverviewRuler.length, 2);
   });
 
   it('should only add one overview ruler marker per buffer line', async () => {
