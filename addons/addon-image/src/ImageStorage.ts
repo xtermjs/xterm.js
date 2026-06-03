@@ -432,7 +432,7 @@ export class ImageStorage implements IDisposable {
     // This lets top-layer images survive text overwrites (kitty C=1 behavior).
     for (let row = start; row <= end; ++row) {
       const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
-      if (!line) return;
+      if (!line) continue;
       for (let col = 0; col < cols; ++col) {
         let e: IExtendedAttrsImage;
         if (line.getBg(col) & BgFlags.HAS_EXTENDED) {
