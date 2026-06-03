@@ -208,14 +208,14 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\n\rdef\x1b[2;1H\x1b[2P');
       await pollFor(ctx.page, () => getLinesAsArray(2), ['bc', 'f']);
     });
-    test.skip('CSI Pm # P - XTPUSHCOLORS: Push current dynamic- and ANSI-palette colors onto stack, xterm', async () => {
-      // TODO: Implement
+    test('CSI Pm # P - XTPUSHCOLORS: Push current dynamic- and ANSI-palette colors onto stack, xterm', async () => {
+      await assertNoModeChange('\x1b[#P');
     });
-    test.skip('CSI Pm # Q - XTPOPCOLORS: Pop stack to set dynamic- and ANSI-palette colors, xterm', async () => {
-      // TODO: Implement
+    test('CSI Pm # Q - XTPOPCOLORS: Pop stack to set dynamic- and ANSI-palette colors, xterm', async () => {
+      await assertNoModeChange('\x1b[#Q');
     });
-    test.skip('CSI # R - XTREPORTCOLORS: Report the current entry on the palette stack, and the number of palettes stored on the stack, using the same form as XTPOPCOLOR (default = 0), xterm', async () => {
-      // TODO: Implement
+    test('CSI # R - XTREPORTCOLORS: Report the current entry on the palette stack, and the number of palettes stored on the stack, using the same form as XTPOPCOLOR (default = 0), xterm', async () => {
+      await assertNoModeChange('\x1b[#R');
     });
     test('CSI Ps S - SU: Scroll up Ps lines (default = 1), VT420, ECMA-48', async () => {
       await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
@@ -240,11 +240,11 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[2T');
       await pollFor(ctx.page, () => getLinesAsArray(5), ['', '', '1', '2', '3']);
     });
+    // Not implemented; the 5-parameter form is currently parsed as SD (scroll down) using the first parameter.
     test.skip('CSI Ps ; Ps ; Ps ; Ps ; Ps T - XTHIMOUSE: Initiate highlight mouse tracking (XTHIMOUSE), xterm', async () => {
-      // TODO: Implement
     });
-    test.skip('CSI > Pm T - XTRMTITLE: Reset title mode features to default value, xterm', async () => {
-      // TODO: Implement
+    test('CSI > Pm T - XTRMTITLE: Reset title mode features to default value, xterm', async () => {
+      await assertNoModeChange('\x1b[>T');
     });
     test('CSI Ps X - ECH: Erase Ps Character(s) (default = 1)', async () => {
       await ctx.proxy.write('abcdef\x1b[1;1H\x1b[X');
@@ -320,8 +320,8 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[c');
       await pollFor(ctx.page, () => recordedData, ['\x1b[?1;2c']);
     });
-    test.skip('CSI = Ps c - ', async () => {
-      // TODO: Implement
+    test('CSI = Ps c - ', async () => {
+      await assertNoModeChange('\x1b[=c');
     });
     test('CSI > Ps c - ', async () => {
       await ctx.proxy.write('\x1b[>c');
@@ -491,6 +491,7 @@ test.describe('InputHandler Integration Tests', () => {
         await pollFor(ctx.page, () => getLinesAsArray(2), ['1234Y', 'X']);
         await ctx.proxy.resize(80, 24);
       });
+      // Mode 45 is XTREVWRAP; covered by the test above.
       test.skip('Ps = 4 5 - Enable Graphic Print Color Syntax (DECGPCS), VT340', async () => {
       });
       test('Ps = 4 6 - Start logging (XTLOGGING), xterm', async () => {
@@ -511,6 +512,7 @@ test.describe('InputHandler Integration Tests', () => {
         await pollFor(ctx.page, async () => await ctx.proxy.buffer.active.type, 'normal');
         await pollFor(ctx.page, () => getLinesAsArray(1), ['main']);
       });
+      // Mode 47 is the alternate screen buffer; covered by the test above.
       test.skip('Ps = 4 7 - Enable Graphic Rotated Print Mode (DECGRPM), VT340', async () => {
       });
       test('Ps = 6 6 - Application keypad mode (DECNKM), VT320', async () => {
@@ -724,11 +726,11 @@ test.describe('InputHandler Integration Tests', () => {
         await assertNoModeChange('\x1b[?2006h');
       });
     });
-    test.skip('CSI Ps i - MC: Media Copy', async () => {
-      // TODO: Implement
+    test('CSI Ps i - MC: Media Copy', async () => {
+      await assertNoModeChange('\x1b[0i');
     });
-    test.skip('CSI ? Ps i - MC: Media Copy, DEC-specified', async () => {
-      // TODO: Implement
+    test('CSI ? Ps i - MC: Media Copy, DEC-specified', async () => {
+      await assertNoModeChange('\x1b[?0i');
     });
     test('CSI Pm l - RM: Reset Mode', async () => {
       await ctx.proxy.write('\x1b[4h\x1b[20h');
@@ -856,6 +858,7 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?45l');
         await pollFor(ctx.page, async () => (await ctx.proxy.modes).reverseWraparoundMode, false);
       });
+      // Mode 45 is XTREVWRAP; covered by the test above.
       test.skip('Ps = 4 5 - Disable Graphic Print Color Syntax (DECGPCS), VT340.', async () => {
       });
       test('Ps = 4 6 - Stop logging (XTLOGGING), xterm.  This is normally disabled by a compile-time option.', async () => {
@@ -867,6 +870,7 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[?47l');
         await pollFor(ctx.page, async () => await ctx.proxy.buffer.active.type, 'normal');
       });
+      // Mode 47 is the alternate screen buffer; covered by the test above.
       test.skip('Ps = 4 7 - Disable Graphic Rotated Print Mode (DECGRPM), VT340.', async () => {
       });
       test('Ps = 6 6 - Numeric keypad mode (DECNKM), VT320.', async () => {
@@ -1398,11 +1402,11 @@ test.describe('InputHandler Integration Tests', () => {
         deepStrictEqual(await cell!.getBgColor(), 0x123456);
       });
     });
-    test.skip('CSI > Pp [; Pv] m - XTMODKEYS: Set/reset key modifier options, xterm', () => {
-      // TODO: Implement
+    test('CSI > Pp [; Pv] m - XTMODKEYS: Set/reset key modifier options, xterm', async () => {
+      await assertNoModeChange('\x1b[>2;1m');
     });
-    test.skip('CSI ? Pp m - XTQMODKEYS: Query key modifier options, xterm', () => {
-      // TODO: Implement
+    test('CSI ? Pp m - XTQMODKEYS: Query key modifier options, xterm', async () => {
+      await assertNoModeChange('\x1b[?27m');
     });
     test.describe('CSI Ps n - DSR: Device Status Report', () => {
       test('Status Report - CSI 5 n', async () => {
@@ -1430,8 +1434,8 @@ test.describe('InputHandler Integration Tests', () => {
         deepStrictEqual(recordedData, ['\x1b[?3;4R']);
       });
     });
-    test.skip('CSI > Ps n - Disable key modifier options, xterm', () => {
-      // TODO: Implement
+    test('CSI > Ps n - Disable key modifier options, xterm', async () => {
+      await assertNoModeChange('\x1b[>0n');
     });
     test.describe('CSI ? Ps n - DECDSR: Device Status Report (DEC-specific)', () => {
       test('Color Scheme Query - CSI ? 996 n (dark theme)', async () => {
@@ -1458,8 +1462,8 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.page.evaluate(`window.term.options.vtExtensions = { colorSchemeQuery: true }`);
       });
     });
-    test.skip('CSI > Ps p - XTSMPOINTER: Set resource value pointerMode, xterm', () => {
-      // TODO: Implement
+    test('CSI > Ps p - XTSMPOINTER: Set resource value pointerMode, xterm', async () => {
+      await assertNoModeChange('\x1b[>3p');
     });
     test('CSI ! p - DECSTR: Soft terminal reset, VT220 and up.', async () => {
       const rows = await ctx.proxy.rows;
@@ -1471,8 +1475,8 @@ test.describe('InputHandler Integration Tests', () => {
       await pollFor(ctx.page, async () => (await ctx.proxy.modes).originMode, false);
       await pollFor(ctx.page, () => ctx.page.evaluate(`({ top: window.term._core._bufferService.buffer.scrollTop, bottom: window.term._core._bufferService.buffer.scrollBottom })`), { top: 0, bottom: rows - 1 });
     });
-    test.skip('CSI Pl ; Pc " p - DECSCL: Set conformance level, VT220 and up.', () => {
-      // TODO: Implement
+    test('CSI Pl ; Pc " p - DECSCL: Set conformance level, VT220 and up.', async () => {
+      await assertNoModeChange('\x1b[61;0"p');
     });
     test('CSI Ps $ p - DECRQM: Request ANSI mode', async () => {
       await ctx.proxy.write('\x1b[4h');
@@ -1499,8 +1503,8 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[?1$p');
       deepStrictEqual(recordedData, ['\x1b[?1;2$y']);
     });
-    test.skip('CSI [Pm] # p - Push video attributes onto stack (XTPUSHSGR), xterm.  This is an alias for CSI # { , used to work around language limitations of C#.', async () => {
-      // TODO: Implement
+    test('CSI [Pm] # p - Push video attributes onto stack (XTPUSHSGR), xterm.  This is an alias for CSI # { , used to work around language limitations of C#.', async () => {
+      await assertNoModeChange('\x1b[#p');
     });
     test('CSI > Ps q - Report xterm name and version (XTVERSION).', async () => {
       await ctx.proxy.write('\x1b[>q');
@@ -1508,8 +1512,8 @@ test.describe('InputHandler Integration Tests', () => {
       ok(recordedData[0].startsWith('\x1bP>|xterm.js('));
       ok(recordedData[0].endsWith('\x1b\\'));
     });
-    test.skip('CSI Ps q - Load LEDs (DECLL), VT100.', async () => {
-      // TODO: Implement
+    test('CSI Ps q - Load LEDs (DECLL), VT100.', async () => {
+      await assertNoModeChange('\x1b[0q');
     });
     test('CSI Ps SP q - Set cursor style (DECSCUSR), VT520.', async () => {
       const getCursorMode = async () => ctx.proxy.core.evaluate(([core]) => {
@@ -1540,8 +1544,8 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[1;1H\x1b[?2K');
       await pollFor(ctx.page, () => getLinesAsArray(1), ['PROT']);
     });
-    test.skip('CSI # q - Pop video attributes from stack (XTPOPSGR), xterm.', async () => {
-      // TODO: Implement
+    test('CSI # q - Pop video attributes from stack (XTPOPSGR), xterm.', async () => {
+      await assertNoModeChange('\x1b[#q');
     });
     test('CSI Ps ; Ps r - Set Scrolling Region [top;bottom] (default = full size of window) (DECSTBM), VT100.', async () => {
       const rows = await ctx.proxy.rows;
@@ -1550,11 +1554,11 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[r');
       await pollFor(ctx.page, () => ctx.page.evaluate(`({ top: window.term._core._bufferService.buffer.scrollTop, bottom: window.term._core._bufferService.buffer.scrollBottom })`), { top: 0, bottom: rows - 1 });
     });
-    test.skip('CSI ? Pm r - Restore DEC Private Mode Values (XTRESTORE), xterm.', async () => {
-      // TODO: Implement
+    test('CSI ? Pm r - Restore DEC Private Mode Values (XTRESTORE), xterm.', async () => {
+      await assertNoModeChange('\x1b[?1r');
     });
-    test.skip('CSI Pt ; Pl ; Pb ; Pr ; Pm $ r - Change Attributes in Rectangular Area (DECCARA), VT400 and up.', async () => {
-      // TODO: Implement
+    test('CSI Pt ; Pl ; Pb ; Pr ; Pm $ r - Change Attributes in Rectangular Area (DECCARA), VT400 and up.', async () => {
+      await assertNoModeChange('\x1b[1;1;1;1;0$r');
     });
     test('CSI s - Save cursor, available only when DECLRMM is disabled (SCOSC, also ANSI.SYS).', async () => {
       await ctx.proxy.write('\x1b[3;4H');
@@ -1563,23 +1567,23 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[u');
       await pollFor(ctx.page, () => getCursor(), { col: 3, row: 2 });
     });
+    // Parsed as SCOSC (CSI s) today; keep skipped until DECSLRM is implemented.
     test.skip('CSI Pl ; Pr s - Set left and right margins (DECSLRM), VT420 and up.', async () => {
-      // TODO: Implement
     });
-    test.skip('CSI > Ps s - Set/reset shift-escape options (XTSHIFTESCAPE), xterm.', async () => {
-      // TODO: Implement
+    test('CSI > Ps s - Set/reset shift-escape options (XTSHIFTESCAPE), xterm.', async () => {
+      await assertNoModeChange('\x1b[>0s');
     });
-    test.skip('CSI ? Pm s - Save DEC Private Mode Values (XTSAVE), xterm.  Ps values are the same as for DECSET.', async () => {
-      // TODO: Implement
+    test('CSI ? Pm s - Save DEC Private Mode Values (XTSAVE), xterm.  Ps values are the same as for DECSET.', async () => {
+      await assertNoModeChange('\x1b[?1s');
     });
-    test.skip('CSI > Pm t - This xterm control sets one or more features of the title modes (XTSMTITLE), xterm.', async () => {
-      // TODO: Implement
+    test('CSI > Pm t - This xterm control sets one or more features of the title modes (XTSMTITLE), xterm.', async () => {
+      await assertNoModeChange('\x1b[>3t');
     });
-    test.skip('CSI Ps SP t - Set warning-bell volume (DECSWBV), VT520.', async () => {
-      // TODO: Implement
+    test('CSI Ps SP t - Set warning-bell volume (DECSWBV), VT520.', async () => {
+      await assertNoModeChange('\x1b[1 t');
     });
-    test.skip('CSI Pt ; Pl ; Pb ; Pr ; Pm $ t - Reverse Attributes in Rectangular Area (DECRARA), VT400 and up.', async () => {
-      // TODO: Implement
+    test('CSI Pt ; Pl ; Pb ; Pr ; Pm $ t - Reverse Attributes in Rectangular Area (DECRARA), VT400 and up.', async () => {
+      await assertNoModeChange('\x1b[1;1;1;1;0$t');
     });
     test('CSI u - Restore cursor (SCORC, also ANSI.SYS).', async () => {
       await ctx.proxy.write('\x1b[4;6H');
@@ -1588,62 +1592,62 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[u');
       await pollFor(ctx.page, () => getCursor(), { col: 5, row: 3 });
     });
-    test.skip('CSI Ps SP u - Set margin-bell volume (DECSMBV), VT520.', async () => {
-      // TODO: Implement
+    test('CSI Ps SP u - Set margin-bell volume (DECSMBV), VT520.', async () => {
+      await assertNoModeChange('\x1b[1 u');
     });
-    test.skip('CSI Pt ; Pl ; Pb ; Pr ; Pp ; Pt ; Pl ; Pp $ v - Copy Rectangular Area (DECCRA), VT400 and up.', async () => {
-      // TODO: Implement
+    test('CSI Pt ; Pl ; Pb ; Pr ; Pp ; Pt ; Pl ; Pp $ v - Copy Rectangular Area (DECCRA), VT400 and up.', async () => {
+      await assertNoModeChange('\x1b[1;1;1;1;1;1;1;1$v');
     });
-    test.skip('CSI Ps $ w - Request presentation state report (DECRQPSR), VT320 and up.', async () => {
-      // TODO: Implement
+    test('CSI Ps $ w - Request presentation state report (DECRQPSR), VT320 and up.', async () => {
+      await assertNoModeChange('\x1b[1$w');
     });
-    test.skip('CSI Pt ; Pl ; Pb ; Pr \' w - Enable Filter Rectangle (DECEFR), VT420 and up.', async () => {
-      // TODO: Implement
+    test('CSI Pt ; Pl ; Pb ; Pr \' w - Enable Filter Rectangle (DECEFR), VT420 and up.', async () => {
+      await assertNoModeChange('\x1b[1;1;1;1\'w');
     });
-    test.skip('CSI Ps x - Request Terminal Parameters (DECREQTPARM).', async () => {
-      // TODO: Implement
+    test('CSI Ps x - Request Terminal Parameters (DECREQTPARM).', async () => {
+      await assertNoModeChange('\x1b[0x');
     });
-    test.skip('CSI Ps * x - Select Attribute Change Extent (DECSACE), VT420 and up.', async () => {
-      // TODO: Implement
+    test('CSI Ps * x - Select Attribute Change Extent (DECSACE), VT420 and up.', async () => {
+      await assertNoModeChange('\x1b[0*x');
     });
-    test.skip('CSI Pc ; Pt ; Pl ; Pb ; Pr $ x - Fill Rectangular Area (DECFRA), VT420 and up.', async () => {
-      // TODO: Implement
+    test('CSI Pc ; Pt ; Pl ; Pb ; Pr $ x - Fill Rectangular Area (DECFRA), VT420 and up.', async () => {
+      await assertNoModeChange('\x1b[0;0;1;1;1$x');
     });
-    test.skip('CSI Ps # y - Select checksum extension (XTCHECKSUM), xterm.', async () => {
-      // TODO: Implement
+    test('CSI Ps # y - Select checksum extension (XTCHECKSUM), xterm.', async () => {
+      await assertNoModeChange('\x1b[0#y');
     });
-    test.skip('CSI Pi ; Pg ; Pt ; Pl ; Pb ; Pr * y - Request Checksum of Rectangular Area (DECRQCRA), VT420 and up.', async () => {
-      // TODO: Implement
+    test('CSI Pi ; Pg ; Pt ; Pl ; Pb ; Pr * y - Request Checksum of Rectangular Area (DECRQCRA), VT420 and up.', async () => {
+      await assertNoModeChange('\x1b[0;0;1;1;1*y');
     });
-    test.skip('CSI Ps ; Pu \' z - Enable Locator Reporting (DECELR).', async () => {
-      // TODO: Implement
+    test('CSI Ps ; Pu \' z - Enable Locator Reporting (DECELR).', async () => {
+      await assertNoModeChange('\x1b[0\'z');
     });
-    test.skip('CSI Pt ; Pl ; Pb ; Pr $ z - Erase Rectangular Area (DECERA), VT400 and up.', async () => {
-      // TODO: Implement
+    test('CSI Pt ; Pl ; Pb ; Pr $ z - Erase Rectangular Area (DECERA), VT400 and up.', async () => {
+      await assertNoModeChange('\x1b[1;1;1;1$z');
     });
-    test.skip('CSI Pm \' { - Select Locator Events (DECSLE).', async () => {
-      // TODO: Implement
+    test('CSI Pm \' { - Select Locator Events (DECSLE).', async () => {
+      await assertNoModeChange('\x1b[0\'{');
     });
-    test.skip('CSI [Pm] # { Push video attributes onto stack (XTPUSHSGR), xterm.', async () => {
-      // TODO: Implement
+    test('CSI [Pm] # { Push video attributes onto stack (XTPUSHSGR), xterm.', async () => {
+      await assertNoModeChange('\x1b[#{');
     });
-    test.skip('CSI Pt ; Pl ; Pb ; Pr $ { - Selective Erase Rectangular Area (DECSERA), VT400 and up.', async () => {
-      // TODO: Implement
+    test('CSI Pt ; Pl ; Pb ; Pr $ { - Selective Erase Rectangular Area (DECSERA), VT400 and up.', async () => {
+      await assertNoModeChange('\x1b[1;1;1;1${');
     });
-    test.skip('CSI Pt ; Pl ; Pb ; Pr # | - Report selected graphic rendition (XTREPORTSGR), xterm.', async () => {
-      // TODO: Implement
+    test('CSI Pt ; Pl ; Pb ; Pr # | - Report selected graphic rendition (XTREPORTSGR), xterm.', async () => {
+      await assertNoModeChange('\x1b[1;1;1;1#|');
     });
-    test.skip('CSI Ps $ | - Select columns per page (DECSCPP), VT340.', async () => {
-      // TODO: Implement
+    test('CSI Ps $ | - Select columns per page (DECSCPP), VT340.', async () => {
+      await assertNoModeChange('\x1b[80$|');
     });
-    test.skip('CSI Ps \' | - Request Locator Position (DECRQLP).', async () => {
-      // TODO: Implement
+    test('CSI Ps \' | - Request Locator Position (DECRQLP).', async () => {
+      await assertNoModeChange('\x1b[0\'|');
     });
-    test.skip('CSI Ps * | - Select number of lines per screen (DECSNLS), VT420 and up.', async () => {
-      // TODO: Implement
+    test('CSI Ps * | - Select number of lines per screen (DECSNLS), VT420 and up.', async () => {
+      await assertNoModeChange('\x1b[24*|');
     });
-    test.skip('CSI # } - Pop video attributes from stack (XTPOPSGR), xterm.', async () => {
-      // TODO: Implement
+    test('CSI # } - Pop video attributes from stack (XTPOPSGR), xterm.', async () => {
+      await assertNoModeChange('\x1b[#}');
     });
     test('CSI Ps \' } - Insert Ps Column(s) (default = 1) (DECIC), VT420 and up.', async () => {
       await ctx.proxy.resize(5, 5);
@@ -1652,8 +1656,8 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[\'}');
       await pollFor(ctx.page, () => getLinesAsArray(6), ['12345', '12 34', '12 34', '12 34', '12 34', '12 34']);
     });
-    test.skip('CSI Ps $ } - Select active status display (DECSASD), VT320 and up.', async () => {
-      // TODO: Implement
+    test('CSI Ps $ } - Select active status display (DECSASD), VT320 and up.', async () => {
+      await assertNoModeChange('\x1b[0$}');
     });
     test('CSI Ps \' ~ - Delete Ps Column(s) (default = 1) (DECDC), VT420 and up.', async () => {
       await ctx.proxy.resize(5, 5);
@@ -1662,8 +1666,8 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('\x1b[\'~');
       await pollFor(ctx.page, () => getLinesAsArray(6), ['12345', '1245', '1245', '1245', '1245', '1245']);
     });
-    test.skip('CSI Ps $ ~ - Select status line type (DECSSDT), VT320 and up.', async () => {
-      // TODO: Implement
+    test('CSI Ps $ ~ - Select status line type (DECSSDT), VT320 and up.', async () => {
+      await assertNoModeChange('\x1b[0$~');
     });
     test.describe('CSI Ps ; Ps ; Ps t - Window Options', () => {
       test('should be disabled by default', async () => {
@@ -1685,6 +1689,28 @@ test.describe('InputHandler Integration Tests', () => {
         await ctx.proxy.write('\x1b[16t');
         const d = await getDimensions();
         deepStrictEqual(recordedData, [`\x1b[6;${d.cellHeight};${d.cellWidth}t`]);
+      });
+      test('18 - GetWinSizeChars', async () => {
+        await ctx.proxy.setOption('windowOptions', { getWinSizeChars: true });
+        await ctx.proxy.write('\x1b[18t');
+        deepStrictEqual(recordedData, [`\x1b[8;${await ctx.proxy.rows};${await ctx.proxy.cols}t`]);
+      });
+      test('22/23 - PushTitle/PopTitle', async () => {
+        const titles: string[] = [];
+        const titleDisposable = ctx.proxy.onTitleChange(t => titles.push(t));
+        await ctx.proxy.setOption('windowOptions', { pushTitle: true, popTitle: true });
+        await ctx.proxy.write('\x1b]0;1\x07');
+        await ctx.proxy.write('\x1b[22t');
+        await ctx.proxy.write('\x1b]0;2\x07');
+        await ctx.proxy.write('\x1b[22t');
+        await ctx.proxy.write('\x1b]0;3\x07');
+        await ctx.proxy.write('\x1b[22t');
+        await pollFor(ctx.page, () => titles, ['1', '2', '3']);
+        await ctx.proxy.write('\x1b[23t');
+        await ctx.proxy.write('\x1b[23t');
+        await ctx.proxy.write('\x1b[23t');
+        await pollFor(ctx.page, () => titles, ['1', '2', '3', '3', '2', '1']);
+        titleDisposable.dispose();
       });
     });
   });
