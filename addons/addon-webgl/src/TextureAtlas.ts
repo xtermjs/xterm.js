@@ -1086,8 +1086,26 @@ class AtlasPage {
     // set.
     this.ctx = throwIfFalsy(this.canvas.getContext('2d', { alpha: true }));
     if (sourcePages) {
-      this._glyphs = this._glyphs.concat(...sourcePages.map(p => p.glyphs));
-      this._usedPixels = sourcePages.reduce((accu, p) => accu + p._usedPixels, 0);
+      if (sourcePages.length === 4) {
+        // optimized for quadmerge
+        this._glyphs = this._glyphs.concat(
+          sourcePages[0].glyphs,
+          sourcePages[1].glyphs,
+          sourcePages[2].glyphs,
+          sourcePages[3].glyphs
+        );
+        this._usedPixels = sourcePages[0]._usedPixels +
+          sourcePages[1]._usedPixels +
+          sourcePages[2]._usedPixels +
+          sourcePages[3]._usedPixels;
+      } else {
+        // fallback for non quadmerges (should never be used)
+        for (let i = 0; i < sourcePages.length; ++i) {
+          this._glyphs = this._glyphs.concat(sourcePages[i].glyphs);
+          this._usedPixels += sourcePages[i]._usedPixels;
+        }
+
+      }
     }
   }
 
