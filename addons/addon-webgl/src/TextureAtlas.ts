@@ -1080,17 +1080,15 @@ class AtlasPage {
     size: number,
     sourcePages?: AtlasPage[]
   ) {
-    if (sourcePages) {
-      for (const p of sourcePages) {
-        this._glyphs.push(...p.glyphs);
-        this._usedPixels += p._usedPixels;
-      }
-    }
     this.canvas = createCanvas(document, size, size);
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
     // set.
     this.ctx = throwIfFalsy(this.canvas.getContext('2d', { alpha: true }));
+    if (sourcePages) {
+      this._glyphs = this._glyphs.concat(...sourcePages.map(p => p.glyphs));
+      this._usedPixels = sourcePages.reduce((accu, p) => accu + p._usedPixels, 0);
+    }
   }
 
   public clear(): void {
