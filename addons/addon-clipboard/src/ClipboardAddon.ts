@@ -82,16 +82,16 @@ export class BrowserClipboardProvider implements IClipboardProvider {
  * TODO: Once the base64 handling on Uint8Arrays is more common,
  * remove the btoa/atob fallbacks below.
  */
-interface Uint8ArrayB64 extends Uint8Array {
+interface IUint8ArrayB64 extends Uint8Array {
   toBase64(): string;
 }
-interface Uint8ArrayB64Ctor extends Uint8ArrayConstructor {
-  fromBase64(s: string): Uint8ArrayB64;
+interface IUint8ArrayB64Ctor extends Uint8ArrayConstructor {
+  fromBase64(s: string): IUint8ArrayB64;
 }
 
 export class Base64 implements IBase64 {
   public encodeText(data: string): string {
-    const bytes = new TextEncoder().encode(data) as Uint8ArrayB64;
+    const bytes = new TextEncoder().encode(data) as IUint8ArrayB64;
     if (bytes.toBase64 !== undefined) {
       return bytes.toBase64();
     }
@@ -102,9 +102,9 @@ export class Base64 implements IBase64 {
     return btoa(bin);
   }
   public decodeText(data: string): string {
-    if ((Uint8Array as Uint8ArrayB64Ctor).fromBase64 !== undefined) {
+    if ((Uint8Array as IUint8ArrayB64Ctor).fromBase64 !== undefined) {
       try {
-        return new TextDecoder().decode((Uint8Array as Uint8ArrayB64Ctor).fromBase64(data));
+        return new TextDecoder().decode((Uint8Array as IUint8ArrayB64Ctor).fromBase64(data));
       } catch {}
       return '';
     }
