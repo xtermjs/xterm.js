@@ -23,15 +23,6 @@ const enum Constants {
   CLEANUP_THRESHOLD = 2
 }
 
-function hasSparseMapEntries(map: object): boolean {
-  for (const key in map) {
-    if (Object.prototype.hasOwnProperty.call(map, key)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 /**
  * Cell member indices.
  *
@@ -80,12 +71,16 @@ export interface IBufferLineStringCache {
  * (if only one particular value is needed) or `loadCell`. For `loadCell` in a loop
  * memory allocs / GC pressure can be greatly reduced by reusing the CellData object.
  */
+/** Shared empty sparse maps for lines with no combining/extended data. */
+const EMPTY_SPARSE_MAP: {[index: number]: string} = Object.create(null);
+const EMPTY_SPARSE_EXTENDED: {[index: number]: IExtendedAttrs | undefined} = Object.create(null);
+
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   /** Sparse cache; only read when `IS_COMBINED_MASK` is set in `_data`. */
-  protected _combined: {[index: number]: string} = {};
+  protected _combined: {[index: number]: string} = EMPTY_SPARSE_MAP;
   /** Sparse cache; only read when `HAS_EXTENDED` is set in `_data`. */
-  protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
+  protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = EMPTY_SPARSE_EXTENDED;
   protected _stringCacheEntryRef: WeakRef<IBufferLineStringCacheEntry> | undefined;
   public length: number;
 
@@ -130,6 +125,7 @@ export class BufferLine implements IBufferLine {
     this._invalidateStringCache();
     this._data[index * Constants.CELL_INDICIES + Cell.FG] = value[CHAR_DATA_ATTR_INDEX];
     if (value[CHAR_DATA_CHAR_INDEX].length > 1) {
+      this._ensureCombinedMap();
       this._combined[index] = value[1];
       this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = index | Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     } else {
@@ -235,9 +231,11 @@ export class BufferLine implements IBufferLine {
   public setCell(index: number, cell: ICellData): void {
     this._invalidateStringCache();
     if (cell.content & Content.IS_COMBINED_MASK) {
+      this._ensureCombinedMap();
       this._combined[index] = cell.combinedData;
     }
     if (cell.bg & BgFlags.HAS_EXTENDED) {
+      this._ensureExtendedAttrsMap();
       this._extendedAttrs[index] = cell.extended;
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = cell.content;
@@ -253,6 +251,7 @@ export class BufferLine implements IBufferLine {
   public setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void {
     this._invalidateStringCache();
     if (attrs.bg & BgFlags.HAS_EXTENDED) {
+      this._ensureExtendedAttrsMap();
       this._extendedAttrs[index] = attrs.extended;
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
@@ -271,12 +270,14 @@ export class BufferLine implements IBufferLine {
     let content = this._data[index * Constants.CELL_INDICIES + Cell.CONTENT];
     if (content & Content.IS_COMBINED_MASK) {
       // we already have a combined string, simply add
+      this._ensureCombinedMap();
       this._combined[index] += stringFromCodePoint(codePoint);
     } else {
       if (content & Content.CODEPOINT_MASK) {
         // normal case for combining chars:
         //  - move current leading char + new one into combined string
         //  - set combined flag
+        this._ensureCombinedMap();
         this._combined[index] = stringFromCodePoint(content & Content.CODEPOINT_MASK) + stringFromCodePoint(codePoint);
         content &= ~Content.CODEPOINT_MASK; // set codepoint in buffer to 0
         content |= Content.IS_COMBINED_MASK;
@@ -459,8 +460,8 @@ export class BufferLine implements IBufferLine {
       }
       return;
     }
-    this._combined = {};
-    this._extendedAttrs = {};
+    this._combined = EMPTY_SPARSE_MAP;
+    this._extendedAttrs = EMPTY_SPARSE_EXTENDED;
     for (let i = 0; i < this.length; ++i) {
       this.setCell(i, fillCellData);
     }
@@ -617,9 +618,11 @@ export class BufferLine implements IBufferLine {
   private _copyCellMapsFrom(src: BufferLine, srcCol: number, destCol: number): void {
     const srcStart = srcCol * Constants.CELL_INDICIES;
     if (src._data[srcStart + Cell.CONTENT] & Content.IS_COMBINED_MASK) {
+      this._ensureCombinedMap();
       this._combined[destCol] = src._combined[srcCol];
     }
     if (src._data[srcStart + Cell.BG] & BgFlags.HAS_EXTENDED) {
+      this._ensureExtendedAttrsMap();
       this._extendedAttrs[destCol] = src._extendedAttrs[srcCol];
     }
   }
@@ -629,21 +632,46 @@ export class BufferLine implements IBufferLine {
     const srcCombined = line._combined;
     const srcExtended = line._extendedAttrs;
 
-    if (!hasSparseMapEntries(srcCombined) && !hasSparseMapEntries(srcExtended)) {
-      this._combined = {};
-      this._extendedAttrs = {};
+    // Fast path: blank / scroll-recycle source (shared empty sentinel or plain empty object).
+    if (srcCombined === EMPTY_SPARSE_MAP && srcExtended === EMPTY_SPARSE_EXTENDED) {
+      this._combined = EMPTY_SPARSE_MAP;
+      this._extendedAttrs = EMPTY_SPARSE_EXTENDED;
       return;
     }
+    this._copySparseMapsFromDense(line);
+  }
 
-    const combined: {[index: number]: string} = {};
-    for (const key in srcCombined) {
-      combined[+key] = srcCombined[+key];
+  /** Copy sparse maps by scanning `_data` flags (inlined, no per-cell function calls). */
+  private _copySparseMapsFromDense(line: BufferLine): void {
+    this._combined = {};
+    this._extendedAttrs = {};
+    const srcData = line._data;
+    const srcCombined = line._combined;
+    const srcExtended = line._extendedAttrs;
+    const len = line.length;
+    const indices = Constants.CELL_INDICIES;
+    const combined = this._combined;
+    const extendedAttrs = this._extendedAttrs;
+    for (let i = 0; i < len; i++) {
+      const start = i * indices;
+      if (srcData[start + Cell.CONTENT] & Content.IS_COMBINED_MASK) {
+        combined[i] = srcCombined[i];
+      }
+      if (srcData[start + Cell.BG] & BgFlags.HAS_EXTENDED) {
+        extendedAttrs[i] = srcExtended[i];
+      }
     }
-    const extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
-    for (const key in srcExtended) {
-      extendedAttrs[+key] = srcExtended[+key];
+  }
+
+  private _ensureCombinedMap(): void {
+    if (this._combined === EMPTY_SPARSE_MAP) {
+      this._combined = {};
     }
-    this._combined = combined;
-    this._extendedAttrs = extendedAttrs;
+  }
+
+  private _ensureExtendedAttrsMap(): void {
+    if (this._extendedAttrs === EMPTY_SPARSE_EXTENDED) {
+      this._extendedAttrs = {};
+    }
   }
 }
