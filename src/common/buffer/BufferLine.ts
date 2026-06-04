@@ -23,6 +23,15 @@ const enum Constants {
   CLEANUP_THRESHOLD = 2
 }
 
+function hasSparseMapEntries(map: object): boolean {
+  for (const key in map) {
+    if (Object.prototype.hasOwnProperty.call(map, key)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 /**
  * Cell member indices.
  *
@@ -617,10 +626,24 @@ export class BufferLine implements IBufferLine {
 
   /** Rebuild sparse maps from another line, keyed only by `_data` flags. */
   private _copySparseMapsFrom(line: BufferLine): void {
-    this._combined = {};
-    this._extendedAttrs = {};
-    for (let i = 0; i < line.length; i++) {
-      this._copyCellMapsFrom(line, i, i);
+    const srcCombined = line._combined;
+    const srcExtended = line._extendedAttrs;
+
+    if (!hasSparseMapEntries(srcCombined) && !hasSparseMapEntries(srcExtended)) {
+      this._combined = {};
+      this._extendedAttrs = {};
+      return;
     }
+
+    const combined: {[index: number]: string} = {};
+    for (const key in srcCombined) {
+      combined[+key] = srcCombined[+key];
+    }
+    const extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
+    for (const key in srcExtended) {
+      extendedAttrs[+key] = srcExtended[+key];
+    }
+    this._combined = combined;
+    this._extendedAttrs = extendedAttrs;
   }
 }
