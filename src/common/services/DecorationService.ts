@@ -9,7 +9,7 @@ import { css } from '../primitives/Color';
 import { Disposable, DisposableStore, MutableDisposable, toDisposable } from '../primitives/Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, ILogService } from './Services';
 import { SortedList } from '../primitives/SortedList';
-import { IColor } from '../Types';
+import { IColor } from '../primitives/Types';
 import { IDecoration, IDecorationOptions, IMarker } from '@xterm/xterm';
 import { Emitter } from '../primitives/Event';
 

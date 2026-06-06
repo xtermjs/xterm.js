@@ -11,7 +11,7 @@ import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 
 import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from './Services';
 import { Disposable, MutableDisposable, toDisposable } from '../../common/primitives/Lifecycle';
 import * as Browser from '../../common/primitives/Platform';
-import { IDisposable } from '../../common/Types';
+import { IDisposable } from '../../common/primitives/Types';
 import { IBuffer, IBufferLine, ICellData } from '../../common/primitives/buffer/Types';
 import { getRangeLength } from '../../common/primitives/buffer/BufferRange';
 import { CellData } from '../../common/primitives/buffer/CellData';

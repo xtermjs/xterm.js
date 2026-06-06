@@ -7,7 +7,7 @@ import { ICoreBrowserService, IRenderService, IThemeService } from './services/S
 import { ViewportConstants } from './shared/Constants';
 import { Disposable, toDisposable } from '../common/primitives/Lifecycle';
 import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from '../common/services/Services';
-import { CoreMouseEventType } from '../common/Types';
+import { CoreMouseEventType } from '../common/primitives/Types';
 import { scheduleAtNextAnimationFrame } from './Dom';
 import { SmoothScrollableElement } from './scrollable/scrollableElement';
 import type { IScrollableElementChangeOptions } from './scrollable/scrollableElementOptions';

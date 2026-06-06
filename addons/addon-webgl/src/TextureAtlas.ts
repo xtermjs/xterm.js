@@ -11,7 +11,7 @@ import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from 
 import { NULL_COLOR, channels, color, rgba } from 'common/primitives/Color';
 import { FourKeyMap } from 'common/primitives/MultiKeyMap';
 import { IdleTaskQueue } from 'common/primitives/TaskQueue';
-import { IColor } from 'common/Types';
+import { IColor } from 'common/primitives/Types';
 import { AttributeData } from 'common/primitives/buffer/AttributeData';
 import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/primitives/buffer/Constants';
 import { ILogService, IUnicodeService } from 'common/services/Services';

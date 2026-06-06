@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { InputHandler } from './InputHandler';
-import { IColorEvent, ColorRequestType, SpecialColorIndex } from './Types';
+import { IColorEvent, ColorRequestType, SpecialColorIndex } from './primitives/Types';
 import { IAttributeData, IBufferLine } from './primitives/buffer/Types';
 import { DEFAULT_ATTR_DATA } from './primitives/buffer/BufferLine';
 import { CellData } from './primitives/buffer/CellData';

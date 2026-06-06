@@ -6,7 +6,7 @@
 import { FontWeight } from '@xterm/xterm';
 import { IColorSet } from 'browser/Types';
 import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { CursorInactiveStyle, CursorStyle, type IDisposable } from 'common/Types';
+import { CursorInactiveStyle, CursorStyle, type IDisposable } from 'common/primitives/Types';
 import type { IEvent } from 'common/primitives/Event';
 
 export interface IRenderModel {

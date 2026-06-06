@@ -5,7 +5,7 @@
 
 import { IBufferCellPosition, ILink, ILinkDecorations, ILinkWithState, ILinkifier2, ILinkifierEvent } from './Types';
 import { Disposable, dispose, toDisposable } from '../common/primitives/Lifecycle';
-import { IDisposable } from '../common/Types';
+import { IDisposable } from '../common/primitives/Types';
 import { IBufferService } from '../common/services/Services';
 import { ILinkProviderService, IMouseCoordsService, IRenderService } from './services/Services';
 import { Emitter } from '../common/primitives/Event';

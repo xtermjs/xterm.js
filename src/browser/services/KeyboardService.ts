@@ -9,7 +9,7 @@ import { KittyKeyboard, KittyKeyboardEventType, KittyKeyboardFlags } from '../..
 import { Win32InputMode } from '../../common/primitives/input/Win32InputMode';
 import { isMac } from '../../common/primitives/Platform';
 import { ICoreService, IOptionsService } from '../../common/services/Services';
-import { IKeyboardResult } from '../../common/Types';
+import { IKeyboardResult } from '../../common/primitives/Types';
 
 export class KeyboardService implements IKeyboardService {
   public serviceBrand: undefined;

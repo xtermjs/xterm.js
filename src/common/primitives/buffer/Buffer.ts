@@ -6,7 +6,7 @@
 import { CircularList, IInsertEvent } from '../CircularList';
 import { Disposable, toDisposable } from '../Lifecycle';
 import { IdleTaskQueue } from '../TaskQueue';
-import { ICharset } from '../../Types';
+import { ICharset } from '../Types';
 import { IAttributeData, IBuffer, IBufferLine, ICellData } from './Types';
 import { ExtendedAttrs } from './AttributeData';
 import { BufferLine, DEFAULT_ATTR_DATA } from './BufferLine';

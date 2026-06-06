@@ -5,7 +5,7 @@
 
 import { addDisposableListener } from '../Dom';
 import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptionsService } from '../../common/services/Services';
-import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent, IDisposable } from '../../common/Types';
+import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent, IDisposable } from '../../common/primitives/Types';
 import { C0 } from '../../common/primitives/data/EscapeSequences';
 import { DisposableStore, MutableDisposable, toDisposable } from '../../common/primitives/Lifecycle';
 import { ICoreBrowserService, IMouseCoordsService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';

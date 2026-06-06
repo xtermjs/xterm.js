@@ -7,7 +7,7 @@ import { Browser, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
 import type { IRenderDimensions as IRenderDimensionsInternal } from '../../src/browser/renderer/shared/Types';
 import type { IRenderService } from '../../src/browser/services/Services';
-import type { IDisposable } from '../../src/common/Types';
+import type { IDisposable } from '../../src/common/primitives/Types';
 import type { IMarker } from '../../src/common/primitives/buffer/Types';
 import type { ICoreTerminal } from '../../src/common/CoreTerminal';
 import * as playwright from '@playwright/test';

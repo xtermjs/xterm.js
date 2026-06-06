@@ -6,7 +6,7 @@
 import { IParsingState, IDcsHandler, IEscapeSequenceParser, IParams, IOscHandler, IHandlerCollection, CsiHandlerType, OscFallbackHandlerType, IOscParser, EscHandlerType, IDcsParser, DcsFallbackHandlerType, IFunctionIdentifier, ExecuteFallbackHandlerType, CsiFallbackHandlerType, EscFallbackHandlerType, PrintHandlerType, PrintFallbackHandlerType, ExecuteHandlerType, IParserStackState, ParserStackType, ResumableHandlersType, IApcHandler, IApcParser, ApcFallbackHandlerType } from './Types';
 import { ParserState, ParserAction } from './Constants';
 import { Disposable, toDisposable } from '../Lifecycle';
-import { IDisposable } from '../../Types';
+import { IDisposable } from '../Types';
 import { Params } from './Params';
 import { OscParser } from './OscParser';
 import { DcsParser } from './DcsParser';

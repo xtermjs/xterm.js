@@ -4,7 +4,7 @@
  */
 import { MouseStateService } from './MouseStateService';
 import { assert } from 'chai';
-import { ICoreMouseEvent, CoreMouseEventType } from '../Types';
+import { ICoreMouseEvent, CoreMouseEventType } from '../primitives/Types';
 
 function toBytes(s: string | undefined): number[] {
   if (!s) {

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColor } from '../../../common/Types';
+import { IColor } from '../../../common/primitives/Types';
 import { IBufferLine, ICellData } from '../../../common/primitives/buffer/Types';
 import { INVERTED_DEFAULT_COLOR } from '../shared/Constants';
 import { WHITESPACE_CELL_CHAR, Attributes } from '../../../common/primitives/buffer/Constants';

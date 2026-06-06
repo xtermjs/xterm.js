@@ -4,7 +4,8 @@
  * @license MIT
  */
 
-import { IInputHandler, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
+import { IDisposable, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from './primitives/Types';
+import { IInputHandler, IWindowOptions, IParseStack } from './Types';
 import { IAttributeData, IBuffer } from './primitives/buffer/Types';
 import { C0, C1 } from './primitives/data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './primitives/data/Charsets';

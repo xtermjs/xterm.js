@@ -6,9 +6,9 @@
  * Simplified from VS Code's lifecycle.ts - no tracking/leak detection.
  */
 
-export interface IDisposable {
-  dispose(): void;
-}
+import type { IDisposable } from './Types';
+
+export type { IDisposable };
 
 export function toDisposable(fn: () => void): IDisposable {
   return { dispose: fn };

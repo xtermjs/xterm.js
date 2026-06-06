@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IColor, ITerminalOptions } from '../common/Types';
+import { IColor } from '../common/primitives/Types';
+import { ITerminalOptions } from '../common/Types';
 import { CharData, IBuffer } from '../common/primitives/buffer/Types';
 import { ICoreTerminal } from '../common/CoreTerminal';
 import { IDisposable, IRenderDimensions as IRenderDimensionsApi, Terminal as ITerminalApi } from '@xterm/xterm';

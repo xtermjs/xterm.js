@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { IMouseStateService } from './Services';
-import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from '../Types';
+import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from '../primitives/Types';
 import { Disposable } from '../primitives/Lifecycle';
 import { Emitter } from '../primitives/Event';
 

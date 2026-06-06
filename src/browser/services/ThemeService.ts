@@ -9,7 +9,7 @@ import { DEFAULT_ANSI_COLORS, IColorContrastCache, IColorSet, ReadonlyColorSet }
 import { color, css, NULL_COLOR } from '../../common/primitives/Color';
 import { Disposable } from '../../common/primitives/Lifecycle';
 import { IOptionsService, ITheme } from '../../common/services/Services';
-import { AllColorIndex, IColor, SpecialColorIndex } from '../../common/Types';
+import { AllColorIndex, IColor, SpecialColorIndex } from '../../common/primitives/Types';
 import { Emitter } from '../../common/primitives/Event';
 
 interface IRestoreColorSet {

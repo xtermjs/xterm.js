@@ -9,7 +9,8 @@ import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from './renderer/sh
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from './Types';
 import { IAttributeData, IBuffer, IBufferLine, IBufferSet, ICellData } from '../common/primitives/buffer/Types';
 import { ICircularList } from '../common/primitives/CircularList';
-import { XtermListener, ICharset, ITerminalOptions, ColorIndex } from '../common/Types';
+import { XtermListener, ICharset, ColorIndex } from '../common/primitives/Types';
+import { ITerminalOptions } from '../common/Types';
 import { Buffer } from '../common/primitives/buffer/Buffer';
 import * as Browser from '../common/primitives/Platform';
 import { CoreBrowserTerminal } from './CoreBrowserTerminal';
