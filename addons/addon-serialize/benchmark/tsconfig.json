@@ -12,8 +12,7 @@
     "target": "es2021",
     "module": "nodenext",
     "paths": {
-      "common/*": ["../../../src/common/primitives/*",
-        "../../../src/common/*"],
+      "common/*": ["../../../src/common/*"],
       "browser/*": ["../../../src/browser/*"],
       "SerializeAddon": ["../src/SerializeAddon"],
       "@xterm/addon-serialize": [

@@ -10,19 +10,10 @@
     "outDir": "../../out",
     "types": [
       "../../node_modules/@types/mocha"
-    ],
-    "paths": {
-      "common/*": [
-        "./primitives/*",
-        "./*"
-      ]
-    }
+    ]
   },
   "include": [
-    "./primitives/**/*",
-    "./services/**/*",
-    "./public/**/*",
-    "./*.ts",
+    "./**/*",
     "../../typings/xterm.d.ts"
   ]
 }

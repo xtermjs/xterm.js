@@ -9,8 +9,7 @@
     "target": "es2015",
     "module": "nodenext",
     "paths": {
-      "common/*": ["../../../src/common/primitives/*",
-        "../../../src/common/*"],
+      "common/*": ["../../../src/common/*"],
       "browser/*": ["../../../src/browser/*"],
       "UnicodeGraphemeProvider": ["../src/UnicodeGraphemeProvider"],
       "@xterm/addon-unicode-graphemes": [

@@ -13,7 +13,6 @@
     "strict": true,
     "paths": {
       "common/*": [
-        "../../../src/common/primitives/*",
         "../../../src/common/*"
       ],
       "@xterm/addon-unicode11": [

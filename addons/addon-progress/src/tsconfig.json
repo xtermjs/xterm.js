@@ -16,7 +16,6 @@
     ],
     "paths": {
       "common/*": [
-        "../../../src/common/primitives/*",
         "../../../src/common/*"
       ],
       "browser/*": [
