@@ -11,9 +11,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: Use Node.js 22.x
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v5
       with:
         node-version: 22.x
         cache: 'npm'
@@ -69,7 +69,7 @@ jobs:
           ./addons/addon-webgl/out/* \
           ./addons/addon-webgl/out-*st/*
     - name: Upload artifacts
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@v6
       with:
         name: build-artifacts
         path: compressed-build.zip
@@ -79,9 +79,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: Use Node.js 22.x
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v5
       with:
         node-version: 22.x
         cache: 'npm'
@@ -100,16 +100,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: Use Node.js 22.x
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v5
       with:
         node-version: 22.x
         cache: 'npm'
     - name: Install dependencies
       run: |
         npm ci
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v7
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -129,6 +129,7 @@ jobs:
         exit $EXIT_CODE
 
   test-unit:
+    needs: build
     timeout-minutes: 20
     strategy:
       matrix:
@@ -136,21 +137,16 @@ jobs:
         runs-on: [ubuntu, macos, windows]
     runs-on: ${{ matrix.runs-on }}-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ matrix.node-version }}.x
         cache: 'npm'
     - name: Install dependencies
       run: |
         npm ci
-    - name: Wait for build job
-      uses: NathanFirmo/wait-for-other-job@v1.1.1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        job: build
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v7
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -166,6 +162,7 @@ jobs:
       run: npm run test-unit --forbid-only
 
   test-integration:
+    needs: build
     timeout-minutes: 20
     strategy:
       matrix:
@@ -174,9 +171,9 @@ jobs:
         browser: [chromium, firefox, webkit]
     runs-on: ${{ matrix.runs-on }}
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ matrix.node-version }}.x
         cache: 'npm'
@@ -185,12 +182,7 @@ jobs:
         npm ci
     - name: Install playwright
       run: npx playwright install --with-deps ${{ matrix.browser }}
-    - name: Wait for build job
-      uses: NathanFirmo/wait-for-other-job@v1.1.1
-      with:
-        token: ${{ secrets.GITHUB_TOKEN }}
-        job: build
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v7
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -240,9 +232,9 @@ jobs:
       matrix:
         node-version: [22]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v5
     - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v3
+      uses: actions/setup-node@v5
       with:
         node-version: ${{ matrix.node-version }}.x
         cache: 'npm'
@@ -251,7 +243,7 @@ jobs:
         npm ci
     - name: Install playwright
       run: npx playwright install
-    - uses: actions/download-artifact@v4
+    - uses: actions/download-artifact@v7
       with:
         name: build-artifacts
     - name: Unzip artifacts
