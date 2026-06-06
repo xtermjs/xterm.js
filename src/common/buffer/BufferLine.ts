@@ -71,7 +71,12 @@ export interface IBufferLineStringCache {
  * (if only one particular value is needed) or `loadCell`. For `loadCell` in a loop
  * memory allocs / GC pressure can be greatly reduced by reusing the CellData object.
  */
-/** Shared empty sparse maps for lines with no combining/extended data. */
+/**
+ * Shared empty sparse maps for lines with no combining/extended data.
+ * Uses a sentinel + copy-on-write (not `undefined`) so `copyFrom` can detect empty maps
+ * with reference equality. `undefined` was explored but regressed sparse `copyFrom`;
+ * `Object.freeze` on these sentinels is safe with COW but did not improve perf.
+ */
 const EMPTY_SPARSE_MAP: {[index: number]: string} = Object.create(null);
 const EMPTY_SPARSE_EXTENDED: {[index: number]: IExtendedAttrs | undefined} = Object.create(null);
 
