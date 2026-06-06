@@ -704,7 +704,7 @@ export class SelectionService extends Disposable implements ISelectionService {
         if (this._activeSelectionMode !== SelectionMode.COLUMN) {
           this._model.selectionEnd[0] = this._bufferService.cols;
         }
-        this._model.selectionEnd[1] = Math.min(buffer.ydisp + this._bufferService.rows, buffer.lines.length - 1);
+        this._model.selectionEnd[1] = Math.min(buffer.ydisp + this._bufferService.rows - 1, buffer.lines.length - 1);
       } else {
         if (this._activeSelectionMode !== SelectionMode.COLUMN) {
           this._model.selectionEnd[0] = 0;
