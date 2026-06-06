@@ -13,9 +13,7 @@
     "target": "es2021",
     "module": "nodenext",
     "paths": {
-      "common/*": [
-        "../../src/common/*"
-      ],
+      "common/*": ["../../src/common/*"],
       "browser/*": ["../../src/browser/*"]
     }
   },
