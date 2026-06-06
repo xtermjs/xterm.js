@@ -29,7 +29,7 @@ test.describe('ClipboardAddon', () => {
       await ctx.page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     }
     await ctx.page.evaluate(`
-      window.term.reset()
+      window.term.reset();
       window.clipboard?.dispose();
       window.clipboard = new ClipboardAddon();
       window.term.loadAddon(window.clipboard);
@@ -90,6 +90,24 @@ test.describe('ClipboardAddon', () => {
       await ctx.proxy.write(`\x1b]52;c;!\x07`);
       await ctx.proxy.write(`\x1b]52;c;?\x07`);
       deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), '');
+    });
+  });
+
+  test.describe('non-ASCII', () => {
+    const testDataEncoded = '4oKsbWzDpMO8dMOf';
+    const testDataDecoded = '€mläütß';
+    test('write simple string', async () => {
+      await ctx.proxy.write(`\x1b]52;c;${testDataEncoded}\x07`);
+      deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), testDataDecoded);
+    });
+    test('read simple string', async () => {
+      await ctx.page.evaluate(`
+        window.data2 = [];
+        window.term.onData(e => data2.push(e));
+      `);
+      await ctx.page.evaluate((d) => window.navigator.clipboard.writeText(d), testDataDecoded);
+      await ctx.proxy.write(`\x1b]52;c;?\x07`);
+      deepEqual(await ctx.page.evaluate('window.data2'), [`\x1b]52;c;${testDataEncoded}\x07`]);
     });
   });
 });
