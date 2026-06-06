@@ -414,6 +414,20 @@ test.describe('Search Tests', () => {
   });
 
   test.describe('Regression tests', () => {
+    test('should advance highlight-all scan by buffer match size for wide characters', async () => {
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.search.onDidChangeResults(e => window.calls.push(e));
+      `);
+      await ctx.proxy.resize(3, 5);
+      await ctx.proxy.write('𝄞𝄞𝄞');
+      strictEqual(await ctx.page.evaluate(`window.search.findNext('𝄞', { decorations: { activeMatchColorOverviewRuler: '#ff0000', matchOverviewRuler: '#ffff00' } })`), true);
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), [
+        { resultCount: 3, resultIndex: 0 }
+      ]);
+      await ctx.proxy.resize(80, 24);
+    });
+
     test.describe('#2444 wrapped line content not being found', () => {
       let fixture: string;
       test.beforeAll(async () => {
