@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDisposable, IParams, ParamsArray } from '../Types';
+import { IDisposable, IParams, ParamsArray } from '../../Types';
 import { ParserState } from './Constants';
 
 export type { IParams, ParamsArray };

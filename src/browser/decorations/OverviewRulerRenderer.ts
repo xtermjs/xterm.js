@@ -5,7 +5,7 @@
 
 import { ColorZoneStore, IColorZone, IColorZoneStore } from './ColorZoneStore';
 import { ICoreBrowserService, IRenderService, IThemeService } from '../services/Services';
-import { Disposable, toDisposable } from '../../common/Lifecycle';
+import { Disposable, toDisposable } from '../../common/primitives/Lifecycle';
 import { IBufferService, IDecorationService, IOptionsService } from '../../common/services/Services';
 
 const enum Constants {

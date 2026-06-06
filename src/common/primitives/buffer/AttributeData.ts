@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColorRGB } from '../Types';
+import { IColorRGB } from '../../Types';
 import { IAttributeData, IExtendedAttrs } from './Types';
 import { Attributes, FgFlags, BgFlags, UnderlineStyle, ExtFlags } from './Constants';
 

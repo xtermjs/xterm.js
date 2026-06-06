@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { Disposable } from '../Lifecycle';
-import { IAttributeData, IBuffer, IBufferLine, IBufferSet } from '../buffer/Types';
-import { BufferSet } from '../buffer/BufferSet';
+import { Disposable } from '../primitives/Lifecycle';
+import { IAttributeData, IBuffer, IBufferLine, IBufferSet } from '../primitives/buffer/Types';
+import { BufferSet } from '../primitives/buffer/BufferSet';
 import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from './Services';
-import { Emitter } from '../Event';
+import { Emitter } from '../primitives/Event';
 
 export const enum BufferServiceConstants {
   MINIMUM_COLS = 2, // Less than 2 can mess with wide chars

@@ -1,35 +1,41 @@
 /**
- * Copyright (c) 2019 The xterm.js authors. All rights reserved.
+ * Copyright (c) 2025 The xterm.js authors. All rights reserved.
  * @license MIT
  */
 
-import { IDisposable } from '../Types';
-import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from './Types';
-import { utf32ToString } from '../input/TextDecoder';
-import { Params } from './Params';
+import { IApcHandler, IHandlerCollection, ApcFallbackHandlerType, IApcParser, ISubParserStackState } from './Types';
 import { ParserConstants } from './Constants';
+import { utf32ToString } from '../input/TextDecoder';
+import { IDisposable } from '../../Types';
 import { LimitedStringBuilder } from '../StringBuilder';
 
-const EMPTY_HANDLERS: IDcsHandler[] = [];
+const EMPTY_HANDLERS: IApcHandler[] = [];
 
-export class DcsParser implements IDcsParser {
-  private _handlers: IHandlerCollection<IDcsHandler> = Object.create(null);
-  private _active: IDcsHandler[] = EMPTY_HANDLERS;
+/**
+ * APC Parser for handling Application Program Command sequences.
+ * APC sequences use the format: ESC _ <identifier><data> ESC \
+ *
+ * Unlike OSC which uses numeric identifiers (e.g., OSC 1337),
+ * APC uses the first character as the identifier (e.g., 'G' for Kitty graphics).
+ * The identifier is the character code of the first byte after ESC _.
+ */
+export class ApcParser implements IApcParser {
+  private _handlers: IHandlerCollection<IApcHandler> = Object.create(null);
+  private _active = EMPTY_HANDLERS;
   private _ident: number = 0;
-  private _handlerFb: DcsFallbackHandlerType = () => { };
+  private _handlerFb: ApcFallbackHandlerType = () => { };
   private _stack: ISubParserStackState = {
     paused: false,
     loopPosition: 0,
     fallThrough: false
   };
 
-  public dispose(): void {
-    this._handlers = Object.create(null);
-    this._handlerFb = () => { };
-    this._active = EMPTY_HANDLERS;
-  }
-
-  public registerHandler(ident: number, handler: IDcsHandler): IDisposable {
+  /**
+   * Register an APC handler for a specific identifier.
+   * @param ident The character code of the first byte (e.g., 0x47 for 'G')
+   * @param handler The handler to register
+   */
+  public registerHandler(ident: number, handler: IApcHandler): IDisposable {
     this._handlers[ident] ??= [];
     const handlerList = this._handlers[ident];
     handlerList.push(handler);
@@ -47,15 +53,21 @@ export class DcsParser implements IDcsParser {
     if (this._handlers[ident]) delete this._handlers[ident];
   }
 
-  public setHandlerFallback(handler: DcsFallbackHandlerType): void {
+  public setHandlerFallback(handler: ApcFallbackHandlerType): void {
     this._handlerFb = handler;
   }
 
+  public dispose(): void {
+    this._handlers = Object.create(null);
+    this._handlerFb = () => { };
+    this._active = EMPTY_HANDLERS;
+  }
+
   public reset(): void {
-    // force cleanup leftover handlers
+    // force cleanup handlers
     if (this._active.length) {
       for (let j = this._stack.paused ? this._stack.loopPosition - 1 : this._active.length - 1; j >= 0; --j) {
-        this._active[j].unhook(false);
+        this._active[j].end(false);
       }
     }
     this._stack.paused = false;
@@ -63,16 +75,16 @@ export class DcsParser implements IDcsParser {
     this._ident = 0;
   }
 
-  public hook(ident: number, params: IParams): void {
+  public start(ident: number): void {
     // always reset leftover handlers
     this.reset();
     this._ident = ident;
     this._active = this._handlers[ident] || EMPTY_HANDLERS;
     if (!this._active.length) {
-      this._handlerFb(this._ident, 'HOOK', params);
+      this._handlerFb(this._ident, 'START');
     } else {
       for (let j = this._active.length - 1; j >= 0; j--) {
-        this._active[j].hook(params);
+        this._active[j].start();
       }
     }
   }
@@ -87,9 +99,14 @@ export class DcsParser implements IDcsParser {
     }
   }
 
-  public unhook(success: boolean, promiseResult: boolean = true): void | Promise<boolean> {
+  /**
+   * Indicates end of an APC command.
+   * Whether the APC got aborted or finished normally
+   * is indicated by `success`.
+   */
+  public end(success: boolean, promiseResult: boolean = true): void | Promise<boolean> {
     if (!this._active.length) {
-      this._handlerFb(this._ident, 'UNHOOK', success);
+      this._handlerFb(this._ident, 'END', success);
     } else {
       let handlerResult: boolean | Promise<boolean> = false;
       let j = this._active.length - 1;
@@ -102,7 +119,7 @@ export class DcsParser implements IDcsParser {
       }
       if (!fallThrough && handlerResult === false) {
         for (; j >= 0; j--) {
-          handlerResult = this._active[j].unhook(success);
+          handlerResult = this._active[j].end(success);
           if (handlerResult === true) {
             break;
           } else if (handlerResult instanceof Promise) {
@@ -116,7 +133,7 @@ export class DcsParser implements IDcsParser {
       }
       // cleanup left over handlers (fallThrough for async)
       for (; j >= 0; j--) {
-        handlerResult = this._active[j].unhook(false);
+        handlerResult = this._active[j].end(false);
         if (handlerResult instanceof Promise) {
           this._stack.paused = true;
           this._stack.loopPosition = j;
@@ -130,29 +147,19 @@ export class DcsParser implements IDcsParser {
   }
 }
 
-// predefine empty params as [0] (ZDM)
-const EMPTY_PARAMS = new Params();
-EMPTY_PARAMS.addParam(0);
-
 /**
- * Convenient class to create a DCS handler from a single callback function.
- * Note: The payload is currently limited to 50 MB (hardcoded).
+ * Convenient class to allow attaching string based handler functions
+ * as APC handlers.
  */
-export class DcsHandler implements IDcsHandler {
+export class ApcHandler implements IApcHandler {
   private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
 
-  private _data = new LimitedStringBuilder(DcsHandler._payloadLimit);
-  private _params: IParams = EMPTY_PARAMS;
+  private _data = new LimitedStringBuilder(ApcHandler._payloadLimit);
   private _hitLimit: boolean = false;
 
-  constructor(private _handler: (data: string, params: IParams) => boolean | Promise<boolean>) { }
+  constructor(private _handler: (data: string) => boolean | Promise<boolean>) { }
 
-  public hook(params: IParams): void {
-    // since we need to preserve params until `unhook`, we have to clone it
-    // (only borrowed from parser and spans multiple parser states)
-    // perf optimization:
-    // clone only, if we have non empty params, otherwise stick with default
-    this._params = (params.length > 1 || params.params[0]) ? params.clone() : EMPTY_PARAMS;
+  public start(): void {
     this._data.reset();
     this._hitLimit = false;
   }
@@ -166,24 +173,22 @@ export class DcsHandler implements IDcsHandler {
     }
   }
 
-  public unhook(success: boolean): boolean | Promise<boolean> {
+  public end(success: boolean): boolean | Promise<boolean> {
     let ret: boolean | Promise<boolean> = false;
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      ret = this._handler(this._data.toString(), this._params);
+      ret = this._handler(this._data.toString());
       if (ret instanceof Promise) {
-        // need to hold data and params until `ret` got resolved
+        // need to hold data until `ret` got resolved
         // dont care for errors, data will be freed anyway on next start
         return ret.then(res => {
-          this._params = EMPTY_PARAMS;
           this._data.reset();
           this._hitLimit = false;
           return res;
         });
       }
     }
-    this._params = EMPTY_PARAMS;
     this._data.reset();
     this._hitLimit = false;
     return ret;

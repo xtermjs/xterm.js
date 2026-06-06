@@ -6,7 +6,7 @@
 import { Terminal } from '@xterm/xterm';
 import { ITerminal } from '../../Types';
 import { IDisposable } from '../../../common/Types';
-import type { IEvent } from '../../../common/Event';
+import type { IEvent } from '../../../common/primitives/Event';
 
 export interface IDimensions {
   width: number;

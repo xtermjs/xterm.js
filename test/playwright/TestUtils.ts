@@ -8,7 +8,7 @@ import { deepStrictEqual, strictEqual } from 'assert';
 import type { IRenderDimensions as IRenderDimensionsInternal } from '../../src/browser/renderer/shared/Types';
 import type { IRenderService } from '../../src/browser/services/Services';
 import type { IDisposable } from '../../src/common/Types';
-import type { IMarker } from '../../src/common/buffer/Types';
+import type { IMarker } from '../../src/common/primitives/buffer/Types';
 import type { ICoreTerminal } from '../../src/common/CoreTerminal';
 import * as playwright from '@playwright/test';
 import { IBuffer, IBufferCell, IBufferLine, IBufferNamespace, IBufferRange, IDecoration, IDecorationOptions, IModes, IRenderDimensions, ITerminalInitOnlyOptions, ITerminalOptions, Terminal } from '@xterm/xterm';

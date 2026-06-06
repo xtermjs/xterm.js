@@ -4,11 +4,11 @@
  */
 
 import { IColor, ITerminalOptions } from '../common/Types';
-import { CharData, IBuffer } from '../common/buffer/Types';
+import { CharData, IBuffer } from '../common/primitives/buffer/Types';
 import { ICoreTerminal } from '../common/CoreTerminal';
 import { IDisposable, IRenderDimensions as IRenderDimensionsApi, Terminal as ITerminalApi } from '@xterm/xterm';
-import { channels, css } from '../common/Color';
-import type { IEvent } from '../common/Event';
+import { channels, css } from '../common/primitives/Color';
+import type { IEvent } from '../common/primitives/Event';
 
 /**
  * A portion of the public API that are implemented identially internally and simply passed through.

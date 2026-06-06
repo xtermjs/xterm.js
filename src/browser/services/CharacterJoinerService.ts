@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { CharData, IBufferLine, ICellData } from '../../common/buffer/Types';
+import { CharData, IBufferLine, ICellData } from '../../common/primitives/buffer/Types';
 import { ICharacterJoiner } from '../Types';
-import { AttributeData } from '../../common/buffer/AttributeData';
-import { WHITESPACE_CELL_CHAR, Content } from '../../common/buffer/Constants';
-import { CellData } from '../../common/buffer/CellData';
+import { AttributeData } from '../../common/primitives/buffer/AttributeData';
+import { WHITESPACE_CELL_CHAR, Content } from '../../common/primitives/buffer/Constants';
+import { CellData } from '../../common/primitives/buffer/CellData';
 import { IBufferService } from '../../common/services/Services';
 import { ICharacterJoinerService } from './Services';
 

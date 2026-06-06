@@ -8,9 +8,9 @@
 import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
 import { IColor } from 'common/Types';
-import { IAttributeData } from 'common/buffer/Types';
+import { IAttributeData } from 'common/primitives/buffer/Types';
 import { DEFAULT_ANSI_COLORS } from 'browser/Types';
-import { UnderlineStyle } from 'common/buffer/Constants';
+import { UnderlineStyle } from 'common/primitives/buffer/Constants';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));

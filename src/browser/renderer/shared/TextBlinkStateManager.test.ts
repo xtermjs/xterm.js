@@ -7,7 +7,7 @@ import { assert } from 'chai';
 import { TextBlinkStateManager } from './TextBlinkStateManager';
 import { MockOptionsService } from '../../../common/TestUtils.test';
 import type { ICoreBrowserService } from '../../services/Services';
-import { Emitter } from '../../../common/Event';
+import { Emitter } from '../../../common/primitives/Event';
 
 class FakeWindow {
   public nextId = 1;

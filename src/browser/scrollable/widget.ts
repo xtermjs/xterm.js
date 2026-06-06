@@ -5,7 +5,7 @@
 
 import * as dom from '../Dom';
 import { IMouseEvent, StandardMouseEvent } from './mouseEvent';
-import { Disposable } from '../../common/Lifecycle';
+import { Disposable } from '../../common/primitives/Lifecycle';
 
 export abstract class Widget extends Disposable {
 

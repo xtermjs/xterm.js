@@ -1,5 +1,5 @@
 import { ILinkProvider, ILinkProviderService } from './Services';
-import { Disposable, toDisposable } from '../../common/Lifecycle';
+import { Disposable, toDisposable } from '../../common/primitives/Lifecycle';
 import { IDisposable } from '../../common/Types';
 
 export class LinkProviderService extends Disposable implements ILinkProviderService {

@@ -9,14 +9,14 @@ import { moveToCellSequence } from '../input/MoveToCell';
 import { SelectionModel } from '../selection/SelectionModel';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from '../selection/Types';
 import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from './Services';
-import { Disposable, MutableDisposable, toDisposable } from '../../common/Lifecycle';
-import * as Browser from '../../common/Platform';
+import { Disposable, MutableDisposable, toDisposable } from '../../common/primitives/Lifecycle';
+import * as Browser from '../../common/primitives/Platform';
 import { IDisposable } from '../../common/Types';
-import { IBuffer, IBufferLine, ICellData } from '../../common/buffer/Types';
-import { getRangeLength } from '../../common/buffer/BufferRange';
-import { CellData } from '../../common/buffer/CellData';
+import { IBuffer, IBufferLine, ICellData } from '../../common/primitives/buffer/Types';
+import { getRangeLength } from '../../common/primitives/buffer/BufferRange';
+import { CellData } from '../../common/primitives/buffer/CellData';
 import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from '../../common/services/Services';
-import { Emitter } from '../../common/Event';
+import { Emitter } from '../../common/primitives/Event';
 
 const enum Constants {
   /**

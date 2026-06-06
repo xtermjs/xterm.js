@@ -9,7 +9,7 @@ import { CellData } from './CellData';
 import { CharData, IBufferLine, ICellData } from './Types';
 import { assert } from 'chai';
 import { AttributeData } from './AttributeData';
-import { createCellData, NULL_CELL_DATA, extendedAttributes } from '../TestUtils.test';
+import { createCellData, NULL_CELL_DATA, extendedAttributes } from '../../TestUtils.test';
 
 const TEST_STRING_CACHE = new BufferLineStringCache();
 

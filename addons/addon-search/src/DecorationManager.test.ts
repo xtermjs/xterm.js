@@ -10,7 +10,7 @@ import { SearchLineCache } from './SearchLineCache';
 import { Terminal } from 'browser/public/Terminal';
 import type { ISearchDecorationOptions } from '@xterm/addon-search';
 import type { IDecorationOptions } from '@xterm/xterm';
-import { DisposableStore } from 'common/Lifecycle';
+import { DisposableStore } from 'common/primitives/Lifecycle';
 
 function writeP(terminal: Terminal, data: string): Promise<void> {
   return new Promise(r => terminal.write(data, r));

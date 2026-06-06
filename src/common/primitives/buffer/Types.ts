@@ -5,7 +5,7 @@
 
 import type { IEvent } from '../Event';
 import type { ICircularList } from '../CircularList';
-import type { ICharset } from '../Types';
+import type { ICharset } from '../../Types';
 import type { IDisposable } from '../Lifecycle';
 import type { UnderlineStyle } from './Constants';
 

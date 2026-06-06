@@ -6,11 +6,11 @@
 import { ColorContrastCache } from '../ColorContrastCache';
 import { IThemeService } from './Services';
 import { DEFAULT_ANSI_COLORS, IColorContrastCache, IColorSet, ReadonlyColorSet } from '../Types';
-import { color, css, NULL_COLOR } from '../../common/Color';
-import { Disposable } from '../../common/Lifecycle';
+import { color, css, NULL_COLOR } from '../../common/primitives/Color';
+import { Disposable } from '../../common/primitives/Lifecycle';
 import { IOptionsService, ITheme } from '../../common/services/Services';
 import { AllColorIndex, IColor, SpecialColorIndex } from '../../common/Types';
-import { Emitter } from '../../common/Event';
+import { Emitter } from '../../common/primitives/Event';
 
 interface IRestoreColorSet {
   foreground: IColor;

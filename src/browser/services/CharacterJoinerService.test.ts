@@ -6,10 +6,10 @@
 import { assert } from 'chai';
 import { ICharacterJoinerService } from './Services';
 import { CharacterJoinerService } from './CharacterJoinerService';
-import { BufferLine } from '../../common/buffer/BufferLine';
-import { BufferLineStringCache } from '../../common/buffer/BufferLineStringCache';
-import { IBufferLine } from '../../common/buffer/Types';
-import { CellData } from '../../common/buffer/CellData';
+import { BufferLine } from '../../common/primitives/buffer/BufferLine';
+import { BufferLineStringCache } from '../../common/primitives/buffer/BufferLineStringCache';
+import { IBufferLine } from '../../common/primitives/buffer/Types';
+import { CellData } from '../../common/primitives/buffer/CellData';
 import { MockBufferService, createCellData } from '../../common/TestUtils.test';
 
 const TEST_STRING_CACHE = new BufferLineStringCache();

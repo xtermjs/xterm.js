@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColor, IColorRGB } from './Types';
+import { IColor, IColorRGB } from '../Types';
 
 let $r = 0;
 let $g = 0;

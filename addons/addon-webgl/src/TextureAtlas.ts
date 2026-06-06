@@ -8,14 +8,14 @@ import { DIM_OPACITY, TEXT_BASELINE } from './Constants';
 import { tryDrawCustomGlyph } from './customGlyphs/CustomGlyphRasterizer';
 import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { IBoundingBox, ICharAtlasConfig, IRasterizedGlyph, ITextureAtlas } from './Types';
-import { NULL_COLOR, channels, color, rgba } from 'common/Color';
-import { FourKeyMap } from 'common/MultiKeyMap';
-import { IdleTaskQueue } from 'common/TaskQueue';
+import { NULL_COLOR, channels, color, rgba } from 'common/primitives/Color';
+import { FourKeyMap } from 'common/primitives/MultiKeyMap';
+import { IdleTaskQueue } from 'common/primitives/TaskQueue';
 import { IColor } from 'common/Types';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/buffer/Constants';
+import { AttributeData } from 'common/primitives/buffer/AttributeData';
+import { Attributes, DEFAULT_COLOR, DEFAULT_EXT, UnderlineStyle } from 'common/primitives/buffer/Constants';
 import { ILogService, IUnicodeService } from 'common/services/Services';
-import { Emitter } from 'common/Event';
+import { Emitter } from 'common/primitives/Event';
 
 /**
  * A shared object which is used to draw nothing for a particular cell.

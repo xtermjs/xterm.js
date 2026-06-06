@@ -5,7 +5,7 @@
 
 import { IRenderService } from '../services/Services';
 import { IBufferService, ICoreService, IOptionsService } from '../../common/services/Services';
-import { C0 } from '../../common/data/EscapeSequences';
+import { C0 } from '../../common/primitives/data/EscapeSequences';
 
 interface IPosition {
   start: number;

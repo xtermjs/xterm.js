@@ -6,7 +6,7 @@
 import { assert } from 'chai';
 import { configEquals } from './CharAtlasUtils';
 import { ICharAtlasConfig } from './Types';
-import { NULL_COLOR } from 'common/Color';
+import { NULL_COLOR } from 'common/primitives/Color';
 import { IColor } from 'common/Types';
 
 function createTestConfig(overrides: Partial<ICharAtlasConfig> = {}): ICharAtlasConfig {

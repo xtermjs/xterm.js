@@ -4,9 +4,9 @@
  */
 
 import { IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from '@xterm/xterm';
-import { IBuffer } from '../buffer/Types';
+import { IBuffer } from '../primitives/buffer/Types';
 import { BufferLineApiView } from './BufferLineApiView';
-import { CellData } from '../buffer/CellData';
+import { CellData } from '../primitives/buffer/CellData';
 
 export class BufferApiView implements IBufferApi {
   constructor(

@@ -14,7 +14,7 @@
  *   Rc: Repeat count (usually 1)
  */
 
-import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from '../Types';
+import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from '../../Types';
 import { C0 } from '../data/EscapeSequences';
 
 /**

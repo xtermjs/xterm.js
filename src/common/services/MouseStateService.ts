@@ -4,8 +4,8 @@
  */
 import { IMouseStateService } from './Services';
 import { ICoreMouseProtocol, ICoreMouseEvent, CoreMouseEncoding, CoreMouseEventType, CoreMouseButton, CoreMouseAction } from '../Types';
-import { Disposable } from '../Lifecycle';
-import { Emitter } from '../Event';
+import { Disposable } from '../primitives/Lifecycle';
+import { Emitter } from '../primitives/Event';
 
 /**
  * Supported default protocols.

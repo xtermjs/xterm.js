@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import type { ILogService } from './services/Services';
+import type { ILogService } from '../services/Services';
 
 interface ITaskQueue {
   /**

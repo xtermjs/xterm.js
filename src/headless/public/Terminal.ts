@@ -10,8 +10,8 @@ import { IBufferNamespace as IBufferNamespaceApi, IMarker, IModes, IParser, ITer
 import { Terminal as TerminalCore } from '../Terminal';
 import { AddonManager } from '../../common/public/AddonManager';
 import { ITerminalOptions } from '../../common/Types';
-import { Disposable } from '../../common/Lifecycle';
-import type { IEvent } from '../../common/Event';
+import { Disposable } from '../../common/primitives/Lifecycle';
+import type { IEvent } from '../../common/primitives/Event';
 /**
  * The set of options that only have an effect when set in the Terminal constructor.
  */

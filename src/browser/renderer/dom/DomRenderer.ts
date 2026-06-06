@@ -12,10 +12,10 @@ import { TextBlinkStateManager } from '../shared/TextBlinkStateManager';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from '../shared/Types';
 import { ICharSizeService, ICoreBrowserService, IThemeService } from '../../services/Services';
 import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from '../../Types';
-import { color } from '../../../common/Color';
-import { Disposable, toDisposable } from '../../../common/Lifecycle';
+import { color } from '../../../common/primitives/Color';
+import { Disposable, toDisposable } from '../../../common/primitives/Lifecycle';
 import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from '../../../common/services/Services';
-import { Emitter } from '../../../common/Event';
+import { Emitter } from '../../../common/primitives/Event';
 import { addDisposableListener } from '../../Dom';
 
 

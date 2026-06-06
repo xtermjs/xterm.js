@@ -11,6 +11,7 @@
     "removeComments": true,
     "paths": {
       "common/*": [
+        "../../../src/common/primitives/*",
         "../../../src/common/*"
       ],
       "browser/*": [

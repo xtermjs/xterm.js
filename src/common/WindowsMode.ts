@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CODE } from './buffer/Constants';
+import { CHAR_DATA_CODE_INDEX, NULL_CELL_CODE, WHITESPACE_CELL_CODE } from './primitives/buffer/Constants';
 import { IBufferService } from './services/Services';
 
 export function updateWindowsModeWrappedState(bufferService: IBufferService): void {

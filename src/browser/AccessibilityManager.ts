@@ -6,9 +6,9 @@
 import * as Strings from './LocalizableStrings';
 import { ITerminal, IRenderDebouncer } from './Types';
 import { TimeBasedDebouncer } from './TimeBasedDebouncer';
-import { Disposable, toDisposable } from '../common/Lifecycle';
+import { Disposable, toDisposable } from '../common/primitives/Lifecycle';
 import { ICoreBrowserService, IRenderService } from './services/Services';
-import { IBuffer } from '../common/buffer/Types';
+import { IBuffer } from '../common/primitives/buffer/Types';
 import { IInstantiationService } from '../common/services/Services';
 import { addDisposableListener } from './Dom';
 

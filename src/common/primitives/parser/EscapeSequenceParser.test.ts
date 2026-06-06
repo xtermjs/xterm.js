@@ -10,7 +10,7 @@ import { StringToUtf32, stringFromCodePoint, utf32ToString } from '../input/Text
 import { ParserState } from './Constants';
 import { Params } from './Params';
 import { OscHandler } from './OscParser';
-import { IDisposable } from '../Types';
+import { IDisposable } from '../../Types';
 import { DcsHandler } from './DcsParser';
 import { ApcHandler } from './ApcParser';
 

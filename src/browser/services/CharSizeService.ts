@@ -5,8 +5,8 @@
 
 import { IOptionsService } from '../../common/services/Services';
 import { ICharSizeService } from './Services';
-import { Disposable } from '../../common/Lifecycle';
-import { Emitter } from '../../common/Event';
+import { Disposable } from '../../common/primitives/Lifecycle';
+import { Emitter } from '../../common/primitives/Event';
 
 export class CharSizeService extends Disposable implements ICharSizeService {
   public serviceBrand: undefined;

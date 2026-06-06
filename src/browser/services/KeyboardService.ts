@@ -4,10 +4,10 @@
  */
 
 import { IKeyboardService } from './Services';
-import { evaluateKeyboardEvent } from '../../common/input/Keyboard';
-import { KittyKeyboard, KittyKeyboardEventType, KittyKeyboardFlags } from '../../common/input/KittyKeyboard';
-import { Win32InputMode } from '../../common/input/Win32InputMode';
-import { isMac } from '../../common/Platform';
+import { evaluateKeyboardEvent } from '../../common/primitives/input/Keyboard';
+import { KittyKeyboard, KittyKeyboardEventType, KittyKeyboardFlags } from '../../common/primitives/input/KittyKeyboard';
+import { Win32InputMode } from '../../common/primitives/input/Win32InputMode';
+import { isMac } from '../../common/primitives/Platform';
 import { ICoreService, IOptionsService } from '../../common/services/Services';
 import { IKeyboardResult } from '../../common/Types';
 

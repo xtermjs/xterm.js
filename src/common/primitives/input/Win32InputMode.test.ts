@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { Win32InputMode, Win32ControlKeyState } from './Win32InputMode';
-import { IKeyboardEvent, KeyboardResultType } from '../Types';
+import { IKeyboardEvent, KeyboardResultType } from '../../Types';
 
 type EventOpts = Partial<IKeyboardEvent>;
 const ev = (opts: EventOpts): IKeyboardEvent => ({

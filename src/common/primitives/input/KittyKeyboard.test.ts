@@ -1,7 +1,7 @@
 
 import { assert } from 'chai';
 import { KittyKeyboard, KittyKeyboardEventType, KittyKeyboardFlags } from './KittyKeyboard';
-import { IKeyboardEvent } from '../Types';
+import { IKeyboardEvent } from '../../Types';
 
 function createEvent(partialEvent: Partial<IKeyboardEvent> = {}): IKeyboardEvent {
   return {

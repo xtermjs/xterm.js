@@ -4,7 +4,7 @@
  */
 
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
-import type { IEvent } from './Event';
+import type { IEvent } from './primitives/Event';
 
 /** sequence params serialized to js arrays */
 export type ParamsArray = (number | number[])[];

@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { Disposable } from '../Lifecycle';
+import { Disposable } from '../primitives/Lifecycle';
 import { IDecPrivateModes, IKittyKeyboardState, IModes } from '../Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from './Services';
-import { Emitter } from '../Event';
+import { Emitter } from '../primitives/Event';
 
 const DEFAULT_MODES: IModes = Object.freeze({
   insertMode: false

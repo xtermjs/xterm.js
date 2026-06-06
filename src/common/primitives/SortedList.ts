@@ -4,7 +4,7 @@
  */
 
 import { IdleTaskQueue } from './TaskQueue';
-import type { ILogService } from './services/Services';
+import type { ILogService } from '../services/Services';
 
 // Work variables to avoid garbage collection.
 let i = 0;

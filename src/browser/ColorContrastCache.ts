@@ -5,7 +5,7 @@
 
 import { IColorContrastCache } from './Types';
 import { IColor } from '../common/Types';
-import { TwoKeyMap } from '../common/MultiKeyMap';
+import { TwoKeyMap } from '../common/primitives/MultiKeyMap';
 
 export class ColorContrastCache implements IColorContrastCache {
   private _color: TwoKeyMap</* bg */number, /* fg */number, IColor | null> = new TwoKeyMap();

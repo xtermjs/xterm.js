@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { UnicodeV6 } from '../input/UnicodeV6';
+import { UnicodeV6 } from '../primitives/input/UnicodeV6';
 import { UnicodeService } from './UnicodeService';
 import { IUnicodeVersionProvider } from './Services';
 
