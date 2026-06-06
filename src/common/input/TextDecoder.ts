@@ -158,9 +158,9 @@ export class Utf8ToUtf32 {
       cp &= ((((cp & 0xE0) === 0xC0)) ? 0x1F : (((cp & 0xF0) === 0xE0)) ? 0x0F : 0x07);
       let pos = 0;
       let tmp: number;
-      while ((tmp = this.interim[++pos] & 0x3F) && pos < 4) {
+      while ((tmp = this.interim[++pos]) && pos < 4) {
         cp <<= 6;
-        cp |= tmp;
+        cp |= tmp & 0x3F;
       }
       // missing bytes - read ahead from input
       const type = (((this.interim[0] & 0xE0) === 0xC0)) ? 2 : (((this.interim[0] & 0xF0) === 0xE0)) ? 3 : 4;

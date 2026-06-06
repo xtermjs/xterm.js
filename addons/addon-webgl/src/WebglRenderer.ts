@@ -456,7 +456,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
-      line = terminal.buffer.lines.get(row)!;
+      const bufferLine = terminal.buffer.lines.get(row);
+      if (!bufferLine) {
+        this._model.lineLengths[y] = 0;
+        for (x = 0; x < terminal.cols; x++) {
+          j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
+          modelUpdated = true;
+          this._nullModelCell(x, y, j, 0, 0, 0);
+        }
+        this._setRowBlinkState(y, false);
+        continue;
+      }
+      line = bufferLine;
       let rowHasBlinkingCells = false;
       this._model.lineLengths[y] = 0;
       isCursorRow = cursorY === row;
@@ -587,13 +598,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x <= lastCharX; x++) {
             j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
-            this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
-            this._model.cells[j] = NULL_CELL_CODE;
             // Don't re-resolve the cell color since multi-colored ligature backgrounds are not
             // supported
-            this._model.cells[j + RenderModelConstants.BG_OFFSET] = this._cellColorResolver.result.bg;
-            this._model.cells[j + RenderModelConstants.FG_OFFSET] = this._cellColorResolver.result.fg;
-            this._model.cells[j + RenderModelConstants.EXT_OFFSET] = this._cellColorResolver.result.ext;
+            this._nullModelCell(x, y, j, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
           }
           x--; // Go back to the previous update cell for next iteration
         }
@@ -605,6 +612,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
     this._rectangleRenderer.value!.updateCursor(this._model);
     this._updateTextBlinkState();
+  }
+
+  private _nullModelCell(x: number, y: number, cellIndex: number, bg: number, fg: number, ext: number): void {
+    this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, bg, fg, ext, NULL_CELL_CHAR, 0, 0);
+    this._model.cells[cellIndex] = NULL_CELL_CODE;
+    this._model.cells[cellIndex + RenderModelConstants.BG_OFFSET] = bg;
+    this._model.cells[cellIndex + RenderModelConstants.FG_OFFSET] = fg;
+    this._model.cells[cellIndex + RenderModelConstants.EXT_OFFSET] = ext;
   }
 
   private _resetBlinkingRowState(): void {
