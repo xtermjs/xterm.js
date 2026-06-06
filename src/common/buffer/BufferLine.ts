@@ -72,20 +72,19 @@ export interface IBufferLineStringCache {
  * memory allocs / GC pressure can be greatly reduced by reusing the CellData object.
  */
 /**
- * Shared empty sparse maps for lines with no combining/extended data.
- * Uses a sentinel + copy-on-write (not `undefined`) so `copyFrom` can detect empty maps
- * with reference equality. `undefined` was explored but regressed sparse `copyFrom`;
- * `Object.freeze` on these sentinels is safe with COW but did not improve perf.
+ * Shared empty sparse map for lines with no combining data.
+ * Uses a sentinel + copy-on-write so `copyFrom` can detect empty `_combined` with
+ * reference equality. `_extendedAttrs` uses `undefined` instead (addon-image writes
+ * the map directly without BufferLine APIs).
  */
 const EMPTY_SPARSE_MAP: {[index: number]: string} = Object.create(null);
-const EMPTY_SPARSE_EXTENDED: {[index: number]: IExtendedAttrs | undefined} = Object.create(null);
 
 export class BufferLine implements IBufferLine {
   protected _data: Uint32Array;
   /** Sparse cache; only read when `IS_COMBINED_MASK` is set in `_data`. */
   protected _combined: {[index: number]: string} = EMPTY_SPARSE_MAP;
   /** Sparse cache; only read when `HAS_EXTENDED` is set in `_data`. */
-  protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = EMPTY_SPARSE_EXTENDED;
+  protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} | undefined;
   protected _stringCacheEntryRef: WeakRef<IBufferLineStringCacheEntry> | undefined;
   public length: number;
 
@@ -221,7 +220,7 @@ export class BufferLine implements IBufferLine {
       cell.combinedData = '';
     }
     if (cell.bg & BgFlags.HAS_EXTENDED) {
-      cell.extended = this._extendedAttrs[index]!;
+      cell.extended = this._extendedAttrs![index]!;
     } else {
       // Do not mutate cell.extended in place: it may still reference this line's map entry from a
       // prior loadCell into a reused CellData (e.g. $workCell during insert/delete).
@@ -240,8 +239,7 @@ export class BufferLine implements IBufferLine {
       this._combined[index] = cell.combinedData;
     }
     if (cell.bg & BgFlags.HAS_EXTENDED) {
-      this._ensureExtendedAttrsMap();
-      this._extendedAttrs[index] = cell.extended;
+      this._ensureExtendedAttrsMap()[index] = cell.extended;
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = cell.content;
     this._data[index * Constants.CELL_INDICIES + Cell.FG] = cell.fg;
@@ -256,8 +254,7 @@ export class BufferLine implements IBufferLine {
   public setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void {
     this._invalidateStringCache();
     if (attrs.bg & BgFlags.HAS_EXTENDED) {
-      this._ensureExtendedAttrsMap();
-      this._extendedAttrs[index] = attrs.extended;
+      this._ensureExtendedAttrsMap()[index] = attrs.extended;
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
     this._data[index * Constants.CELL_INDICIES + Cell.FG] = attrs.fg;
@@ -425,11 +422,13 @@ export class BufferLine implements IBufferLine {
         }
       }
       // remove any cut off extended attributes
-      const extKeys = Object.keys(this._extendedAttrs);
-      for (let i = 0; i < extKeys.length; i++) {
-        const key = parseInt(extKeys[i], 10);
-        if (key >= cols) {
-          delete this._extendedAttrs[key];
+      if (this._extendedAttrs) {
+        const extKeys = Object.keys(this._extendedAttrs);
+        for (let i = 0; i < extKeys.length; i++) {
+          const key = parseInt(extKeys[i], 10);
+          if (key >= cols) {
+            delete this._extendedAttrs[key];
+          }
         }
       }
     }
@@ -466,7 +465,7 @@ export class BufferLine implements IBufferLine {
       return;
     }
     this._combined = EMPTY_SPARSE_MAP;
-    this._extendedAttrs = EMPTY_SPARSE_EXTENDED;
+    this._extendedAttrs = undefined;
     for (let i = 0; i < this.length; ++i) {
       this.setCell(i, fillCellData);
     }
@@ -627,8 +626,7 @@ export class BufferLine implements IBufferLine {
       this._combined[destCol] = src._combined[srcCol];
     }
     if (src._data[srcStart + Cell.BG] & BgFlags.HAS_EXTENDED) {
-      this._ensureExtendedAttrsMap();
-      this._extendedAttrs[destCol] = src._extendedAttrs[srcCol];
+      this._ensureExtendedAttrsMap()[destCol] = src._extendedAttrs![srcCol]!;
     }
   }
 
@@ -637,10 +635,10 @@ export class BufferLine implements IBufferLine {
     const srcCombined = line._combined;
     const srcExtended = line._extendedAttrs;
 
-    // Fast path: blank / scroll-recycle source (shared empty sentinel or plain empty object).
-    if (srcCombined === EMPTY_SPARSE_MAP && srcExtended === EMPTY_SPARSE_EXTENDED) {
+    // Fast path: blank / scroll-recycle source (empty `_combined` sentinel, no extended map).
+    if (srcCombined === EMPTY_SPARSE_MAP && !srcExtended) {
       this._combined = EMPTY_SPARSE_MAP;
-      this._extendedAttrs = EMPTY_SPARSE_EXTENDED;
+      this._extendedAttrs = undefined;
       return;
     }
     this._copySparseMapsFromDense(line);
@@ -663,7 +661,7 @@ export class BufferLine implements IBufferLine {
         combined[i] = srcCombined[i];
       }
       if (srcData[start + Cell.BG] & BgFlags.HAS_EXTENDED) {
-        extendedAttrs[i] = srcExtended[i];
+        extendedAttrs[i] = srcExtended![i];
       }
     }
   }
@@ -674,9 +672,7 @@ export class BufferLine implements IBufferLine {
     }
   }
 
-  private _ensureExtendedAttrsMap(): void {
-    if (this._extendedAttrs === EMPTY_SPARSE_EXTENDED) {
-      this._extendedAttrs = {};
-    }
+  private _ensureExtendedAttrsMap(): {[index: number]: IExtendedAttrs | undefined} {
+    return this._extendedAttrs ??= {};
   }
 }
