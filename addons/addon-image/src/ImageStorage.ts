@@ -431,7 +431,7 @@ export class ImageStorage implements IDisposable {
     // because text writes clear the BG flag but leave image tile data intact.
     // This lets top-layer images survive text overwrites (kitty C=1 behavior).
     for (let row = start; row <= end; ++row) {
-      const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
+      const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt | undefined;
       if (!line) continue;
       for (let col = 0; col < cols; ++col) {
         let e: IExtendedAttrsImage;
@@ -513,7 +513,7 @@ export class ImageStorage implements IDisposable {
     const rows = buffer.lines.length;
     const oldCol = this._viewportMetrics.cols - 1;
     for (let row = 0; row < rows; ++row) {
-      const line = buffer.lines.get(row) as IBufferLineExt;
+      const line = buffer.lines.get(row) as IBufferLineExt | undefined;
       if (!line) {
         continue;
       }
