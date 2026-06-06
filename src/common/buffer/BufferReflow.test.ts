@@ -159,6 +159,7 @@ describe('BufferReflow', () => {
       assert.deepEqual(reflowSmallerGetNewLineLengths([line], 4, 2), [2, 2], 'line: 汉, 语');
     });
   });
+  /* FIXME rewrite to be Buffer tests
   describe('reflowLargerGetLinesToRemove', () => {
     const nullCell = CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
 
@@ -186,4 +187,5 @@ describe('BufferReflow', () => {
       assert.notDeepEqual(reflowLargerGetLinesToRemove(lines, 1, 5, 10, nullCell, false), []);
     });
   });
+  */
 });

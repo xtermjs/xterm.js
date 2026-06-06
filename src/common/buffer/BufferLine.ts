@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CharData, IAttributeData, IBufferLine, ILogicalLine, ICellData, IExtendedAttrs, IMarker } from './Types';
+import { CharData, IAttributeData, IBuffer, IBufferLine, ILogicalLine, ICellData, IExtendedAttrs, IMarker } from './Types';
 import { AttributeData } from './AttributeData';
 import { CellData } from './CellData';
 import { Marker } from './Marker';
@@ -547,7 +547,19 @@ export class BufferLine implements IBufferLine {
    * to GC as it significantly reduced the amount of new objects/references needed.
    */
   public loadCell(index: number, cell: ICellData): ICellData {
-    return lline.loadCell(lcolumn, cell);
+ const lline = this._logicalLine;
+    const lcolumn = index + this.startColumn;
+    const lend = this.validEnd;
+    if (lcolumn >= lend) {
+      cell.content = NULL_CELL_CODE | (NULL_CELL_WIDTH << Content.WIDTH_SHIFT);
+      cell.fg = 0;
+      if (this.nextBufferLine) {
+        cell.bg = 0; // FIXME
+      } else {
+        cell.bg = lline.backgroundColor;
+      }
+      return cell;
+    }   return lline.loadCell(lcolumn, cell);
   }
 
   /**
@@ -1033,26 +1045,6 @@ export class BufferLine implements IBufferLine {
     if (cacheEntry) {
       cacheEntry.value = undefined;
       cacheEntry.isTrimmed = false;
-    }
-  }
-
-  /** Copy sparse map entries for a single cell when `_data` flags require them. */
-  private _copyCellMapsFrom(src: BufferLine, srcCol: number, destCol: number): void {
-    const srcStart = srcCol * Constants.CELL_INDICIES;
-    if (src._data[srcStart + Cell.CONTENT] & Content.IS_COMBINED_MASK) {
-      this._combined[destCol] = src._combined[srcCol];
-    }
-    if (src._data[srcStart + Cell.BG] & BgFlags.HAS_EXTENDED) {
-      this._extendedAttrs[destCol] = src._extendedAttrs[srcCol];
-    }
-  }
-
-  /** Rebuild sparse maps from another line, keyed only by `_data` flags. */
-  private _copySparseMapsFrom(line: BufferLine): void {
-    this._combined = {};
-    this._extendedAttrs = {};
-    for (let i = 0; i < line.length; i++) {
-      this._copyCellMapsFrom(line, i, i);
     }
   }
 }

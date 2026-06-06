@@ -6,7 +6,7 @@
 import { IDisposable } from '@xterm/xterm';
 import { ImageRenderer } from './ImageRenderer';
 import type { ITerminalExt, IImageAddonOptions, IImageSpec, ICellSize, IAddImageOpts } from './Types';
-import type { IBufferLine } from 'common/Types';
+import type { IBufferLine } from 'common/buffer/Types';
 import { CellData } from 'common/buffer/CellData';
 
 // fallback default cell size
