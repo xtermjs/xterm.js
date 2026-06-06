@@ -5,7 +5,7 @@
 
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
 import type { IEvent } from './primitives/Event';
-import type { CursorStyle, IColorEvent, ColorIndex, ColorRequestType, IDisposable, IParams, SpecialColorIndex } from './primitives/Types';
+import type { CursorStyle, IDisposable, IParams } from './primitives/Types';
 
 // TODO: The options that are not in the public API should be reviewed
 export interface ITerminalOptions extends IPublicTerminalOptions {
