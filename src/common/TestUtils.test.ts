@@ -6,9 +6,9 @@
 import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IMouseStateService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from './services/Services';
 import { UnicodeService } from './services/UnicodeService';
 import { DEFAULT_OPTIONS } from './services/OptionsService';
-import { IBufferSet, IBuffer } from './buffer/Types';
+import { IAttributeData, IBuffer, IBufferLine, IBufferSet, IExtendedAttrs } from './buffer/Types';
 import { BufferSet } from './buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IAttributeData, IOscLinkData, IDisposable, IBufferLine, IExtendedAttrs } from './Types';
+import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IOscLinkData, IDisposable } from './Types';
 import { UnicodeV6 } from './input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
 import { Emitter, type IEvent } from './Event';

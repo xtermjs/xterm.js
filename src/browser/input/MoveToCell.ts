@@ -156,7 +156,7 @@ function wrappedRowsForRow(currentRow: number, bufferService: IBufferService): n
  */
 function horizontalDirection(startX: number, startY: number, targetX: number, targetY: number, bufferService: IBufferService, applicationCursor: boolean): Direction {
   let startRow;
-  if (moveToRequestedRow(targetX, targetY, bufferService, applicationCursor).length > 0) {
+  if (moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length > 0) {
     startRow = targetY - wrappedRowsForRow(targetY, bufferService);
   } else {
     startRow = startY;

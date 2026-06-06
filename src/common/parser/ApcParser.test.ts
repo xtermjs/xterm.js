@@ -21,7 +21,7 @@ function identifier(id: IFunctionIdentifier): number {
       throw new Error('only one byte as prefix supported');
     }
     res = id.prefix.charCodeAt(0);
-    if (res && 0x3c > res || res > 0x3f) {
+    if (res < 0x3c || res > 0x3f) {
       throw new Error('prefix must be in range 0x3c .. 0x3f');
     }
   }
@@ -457,6 +457,31 @@ describe('ApcParser - async tests', () => {
         await unhookP(parser, true);
         assert.deepEqual(reports, [['two', 'Here comes the mouse!'], ['one', 'Here comes the mouse!']]);
       });
+    });
+  });
+  describe('reset', () => {
+    it('should abort active handlers with end(false) when reset during payload', () => {
+      const ident = identifier({ intermediates: '+', final: 'p' });
+      parser.registerHandler(ident, new TestHandler(reports, 'th'));
+      parser.start(ident);
+      let data = toUtf32('partial');
+      parser.put(data, 0, data.length);
+      parser.reset();
+      assert.deepEqual(reports, [
+        ['th', 'START'],
+        ['th', 'PUT', 'partial'],
+        ['th', 'END', false]
+      ]);
+      reports.length = 0;
+      parser.start(ident);
+      data = toUtf32('complete');
+      parser.put(data, 0, data.length);
+      parser.end(true);
+      assert.deepEqual(reports, [
+        ['th', 'START'],
+        ['th', 'PUT', 'complete'],
+        ['th', 'END', true]
+      ]);
     });
   });
 });

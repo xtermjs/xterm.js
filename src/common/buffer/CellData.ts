@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CharData, ICellData, IExtendedAttrs } from '../Types';
+import { CharData, ICellData, IExtendedAttrs } from './Types';
 import { stringFromCodePoint } from '../input/TextDecoder';
 import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from './Constants';
 import { AttributeData, ExtendedAttrs } from './AttributeData';

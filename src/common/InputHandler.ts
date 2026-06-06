@@ -4,7 +4,8 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
+import { IInputHandler, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
+import { IAttributeData, IBuffer } from './buffer/Types';
 import { C0, C1 } from './data/EscapeSequences';
 import { CHARSETS, DEFAULT_CHARSET } from './data/Charsets';
 import { EscapeSequenceParser } from './parser/EscapeSequenceParser';
@@ -20,7 +21,6 @@ import { UnicodeService } from './services/UnicodeService';
 import { OscHandler } from './parser/OscParser';
 import { DcsHandler } from './parser/DcsParser';
 import { ApcHandler } from './parser/ApcParser';
-import { IBuffer } from './buffer/Types';
 import { parseColor } from './input/XParseColor';
 import { Emitter } from './Event';
 import { XTERM_VERSION } from './Version';
@@ -3065,7 +3065,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const idx = slots.shift() as string;
       const spec = slots.shift() as string;
       if (/^\d+$/.exec(idx)) {
-        const index = parseInt(idx);
+        const index = parseInt(idx, 10);
         if (isValidColorIndex(index)) {
           if (spec === '?') {
             event.push({ type: ColorRequestType.REPORT, index });
@@ -3228,7 +3228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const slots = data.split(';');
     for (let i = 0; i < slots.length; ++i) {
       if (/^\d+$/.exec(slots[i])) {
-        const index = parseInt(slots[i]);
+        const index = parseInt(slots[i], 10);
         if (isValidColorIndex(index)) {
           event.push({ type: ColorRequestType.RESTORE, index });
         }

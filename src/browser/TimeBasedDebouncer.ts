@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-const RENDER_DEBOUNCE_THRESHOLD_MS = 1000; // 1 Second
-
 import { IRenderDebouncer } from './Types';
+
+const RENDER_DEBOUNCE_THRESHOLD_MS = 1000; // 1 Second
 
 /**
  * Debounces calls to update screen readers to update at most once configurable interval of time.
@@ -31,7 +31,9 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
   public dispose(): void {
     if (this._refreshTimeoutID) {
       clearTimeout(this._refreshTimeoutID);
+      this._refreshTimeoutID = undefined;
     }
+    this._additionalRefreshRequested = false;
   }
 
   public refresh(rowStart: number | undefined, rowEnd: number | undefined, rowCount: number): void {
@@ -47,7 +49,12 @@ export class TimeBasedDebouncer implements IRenderDebouncer {
     // enough time to pass before refreshing again.
     const refreshRequestTime: number = performance.now();
     if (refreshRequestTime - this._lastRefreshMs >= this._debounceThresholdMS) {
-      // Enough time has lapsed since the last refresh; refresh immediately
+      // Enough time has elapsed since the last refresh; refresh immediately
+      if (this._refreshTimeoutID !== undefined) {
+        clearTimeout(this._refreshTimeoutID);
+        this._refreshTimeoutID = undefined;
+        this._additionalRefreshRequested = false;
+      }
       this._lastRefreshMs = refreshRequestTime;
       this._innerRefresh();
     } else if (!this._additionalRefreshRequested) {

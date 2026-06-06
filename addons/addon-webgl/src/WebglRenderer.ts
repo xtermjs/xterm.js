@@ -10,7 +10,7 @@ import { CursorBlinkStateManager } from './CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from './DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { CharData, IBufferLine, ICellData } from 'common/Types';
+import { CharData, IBufferLine, ICellData } from 'common/buffer/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
@@ -664,10 +664,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.dimensions.device.canvas.height = this._terminal.rows * this.dimensions.device.cell.height;
     this.dimensions.device.canvas.width = this._terminal.cols * this.dimensions.device.cell.width;
 
-    // The the size of the canvas on the page. It's important that this rounds to nearest integer
+    // The size of the canvas on the page. It's important that this rounds to nearest integer
     // and not ceils as browsers often have floating point precision issues where
     // `window.devicePixelRatio` ends up being something like `1.100000023841858` for example, when
-    // it's actually 1.1. Ceiling may causes blurriness as the backing canvas image is 1 pixel too
+    // it's actually 1.1. Ceiling may cause blurriness as the backing canvas image is 1 pixel too
     // large for the canvas element size.
     this.dimensions.css.canvas.height = Math.round(this.dimensions.device.canvas.height / this._devicePixelRatio);
     this.dimensions.css.canvas.width = Math.round(this.dimensions.device.canvas.width / this._devicePixelRatio);

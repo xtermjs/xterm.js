@@ -11,6 +11,9 @@
   "workspaces": [
     "addons/*"
   ],
+  "overrides": {
+    "serialize-javascript": "^7.0.3"
+  },
   "keywords": [
     "cli",
     "command-line",
@@ -61,9 +64,9 @@
     "test-integration-firefox": "node ./bin/test_integration.js --workers=75% \"--project=FirefoxStable\"",
     "test-integration-webkit": "node ./bin/test_integration.js --workers=75% \"--project=WebKit\"",
     "test-integration-debug": "node ./bin/test_integration.js  --workers=1 --headed --timeout=30000",
-    "benchmark": "xterm-benchmark -r 5 -c test/benchmark/benchmark.json",
-    "benchmark-baseline": "xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-test/benchmark/*benchmark.js",
-    "benchmark-eval": "xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/*benchmark.js",
+    "benchmark": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json",
+    "benchmark-baseline": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --baseline out-test/benchmark/*benchmark.js",
+    "benchmark-eval": "NODE_PATH=./out xterm-benchmark -r 5 -c test/benchmark/benchmark.json --eval out-test/benchmark/*benchmark.js",
     "clean": "rm -rf lib out addons/*/lib addons/*/out",
     "vtfeatures": "node bin/extract_vtfeatures.js src/*/*.ts src/*/*/*.ts src/*.ts addons/**/src/*.ts",
     "prepackage": "npm run build",

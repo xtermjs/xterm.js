@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { IAttributeData, IColorRGB, IExtendedAttrs } from '../Types';
+import { IColorRGB } from '../Types';
+import { IAttributeData, IExtendedAttrs } from './Types';
 import { Attributes, FgFlags, BgFlags, UnderlineStyle, ExtFlags } from './Constants';
 
 export class AttributeData implements IAttributeData {

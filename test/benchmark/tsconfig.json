@@ -11,7 +11,11 @@
     "moduleResolution": "nodenext",
     "strict": false,
     "target": "es2021",
-    "module": "nodenext"
+    "module": "nodenext",
+    "paths": {
+      "common/*": ["../../src/common/*"],
+      "browser/*": ["../../src/browser/*"]
+    }
   },
   "include": [
     "./**/*",

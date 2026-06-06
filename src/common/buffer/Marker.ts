@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker } from '../Types';
+import { dispose, IDisposable } from '../Lifecycle';
+import { IMarker } from './Types';
 import { Emitter } from '../Event';
 import { Buffer } from './Buffer';
 import { BufferLine, LogicalColumn } from './BufferLine';
-import { dispose } from '../Lifecycle';
 
 export class Marker implements IMarker {
   public payload?: IDisposable;

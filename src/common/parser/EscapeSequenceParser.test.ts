@@ -243,7 +243,7 @@ describe('EscapeSequenceParser', () => {
       p = new TestEscapeSequenceParser(tansitions);
       assert.deepEqual(p.transitions, tansitions);
     });
-    it('inital states', () => {
+    it('initial states', () => {
       assert.equal(parser.initialState, ParserState.GROUND);
       assert.equal(parser.currentState, ParserState.GROUND);
       assert.equal(parser.osc, '');
@@ -2176,6 +2176,38 @@ describe('EscapeSequenceParser - async', () => {
       // reset should lift the error condition
       parser.reset();
       await parseP(parser, INPUT); // does not throw anymore
+    });
+    it('reset during async pause continues at next codepoint in chunk', async () => {
+      const localParser = new TestEscapeSequenceParser();
+      const localStack: any[] = [];
+      localParser.setPrintHandler((data, start, end) => {
+        let result = '';
+        for (let i = start; i < end; ++i) {
+          result += stringFromCodePoint(data[i]);
+        }
+        localStack.push(['PRINT', result]);
+      });
+      localParser.registerCsiHandler({ final: 'm' }, async params => {
+        localStack.push(['SGR', params.toArray()]);
+        return new Promise<boolean>(resolve => setTimeout(() => resolve(true), 0));
+      });
+      const data = '\x1b[1mXY';
+      const container = new Uint32Array(data.length);
+      const decoder = new StringToUtf32();
+      const len = decoder.decode(data, container);
+
+      assert.ok(localParser.parse(container, len) instanceof Promise);
+      localParser.reset();
+      assert.equal(localParser.parseStack.state, ParserStackType.RESET);
+
+      let prev: boolean | undefined = true;
+      let result: void | Promise<boolean> | undefined;
+      while (result = localParser.parse(container, len, prev)) {
+        prev = await result;
+      }
+
+      assert.deepEqual(localStack, [['SGR', [1]], ['PRINT', 'XY']]);
+      assert.equal(localParser.parseStack.state, ParserStackType.NONE);
     });
     it('correct result on awaited parse call', async () => {
       await parseP(parser, INPUT);

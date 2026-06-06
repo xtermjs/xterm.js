@@ -3,6 +3,8 @@
  * @license MIT
  */
 
+import type { IDeleteEvent, IInsertEvent } from '../CircularList';
+import { MicrotaskTimer } from '../Async';
 import { css } from '../Color';
 import { Disposable, DisposableStore, toDisposable } from '../Lifecycle';
 import { IBufferService, IDecorationService, IInternalDecoration, ILogService } from './Services';

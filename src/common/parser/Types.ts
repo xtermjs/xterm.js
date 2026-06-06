@@ -3,12 +3,10 @@
  * @license MIT
  */
 
-import { IDisposable } from '../Types';
+import { IDisposable, IParams, ParamsArray } from '../Types';
 import { ParserState } from './Constants';
 
-
-/** sequence params serialized to js arrays */
-export type ParamsArray = (number | number[])[];
+export type { IParams, ParamsArray };
 
 /** Params constructor type. */
 export interface IParamsConstructor {
@@ -16,28 +14,6 @@ export interface IParamsConstructor {
 
   /** create params from ParamsArray */
   fromArray(values: ParamsArray): IParams;
-}
-
-/** Interface of Params storage class. */
-export interface IParams {
-  /** from ctor */
-  maxLength: number;
-  maxSubParamsLength: number;
-
-  /** param values and its length */
-  params: Int32Array;
-  length: number;
-
-  /** methods */
-  clone(): IParams;
-  toArray(): ParamsArray;
-  reset(): void;
-  resetZdm(): void;
-  addParam(value: number): void;
-  addSubParam(value: number): void;
-  hasSubParams(idx: number): boolean;
-  getSubParams(idx: number): Int32Array | null;
-  getSubParamsAll(): {[idx: number]: Int32Array};
 }
 
 /**
@@ -258,8 +234,8 @@ export interface IApcParser extends ISubParser<IApcHandler, ApcFallbackHandlerTy
 
 /**
  * Interface to denote a specific ESC, CSI or DCS handler slot.
- * The values are used to create an integer respresentation during handler
- * regristation before passed to the subparsers as `ident`.
+ * The values are used to create an integer representation during handler
+ * registration before passed to the subparsers as `ident`.
  * The integer translation is made to allow a faster handler access
  * in `EscapeSequenceParser.parse`.
  */

@@ -221,8 +221,8 @@ function drawPathDefinitionCharacter(
       const rx = parseFloat(args[0]) * deviceCellWidth;
       const ry = parseFloat(args[1]) * deviceCellHeight;
       const xAxisRotation = parseFloat(args[2]) * Math.PI / 180;
-      const largeArcFlag = parseInt(args[3]);
-      const sweepFlag = parseInt(args[4]);
+      const largeArcFlag = parseInt(args[3], 10);
+      const sweepFlag = parseInt(args[4], 10);
       const x = xOffset + parseFloat(args[5]) * deviceCellWidth;
       const y = yOffset + parseFloat(args[6]) * deviceCellHeight;
       drawSvgArc(ctx, currentX, currentY, rx, ry, xAxisRotation, largeArcFlag, sweepFlag, x, y);

@@ -464,4 +464,28 @@ describe('OscParser - async tests', () => {
       });
     });
   });
+  describe('reset', () => {
+    it('should abort active handlers with end(false) when reset during payload', () => {
+      parser.registerHandler(1234, new TestHandler(1234, reports, 'th'));
+      parser.start();
+      let data = toUtf32('1234;partial');
+      parser.put(data, 0, data.length);
+      parser.reset();
+      assert.deepEqual(reports, [
+        ['th', 1234, 'START'],
+        ['th', 1234, 'PUT', 'partial'],
+        ['th', 1234, 'END', false]
+      ]);
+      reports.length = 0;
+      parser.start();
+      data = toUtf32('1234;complete');
+      parser.put(data, 0, data.length);
+      parser.end(true);
+      assert.deepEqual(reports, [
+        ['th', 1234, 'START'],
+        ['th', 1234, 'PUT', 'complete'],
+        ['th', 1234, 'END', true]
+      ]);
+    });
+  });
 });

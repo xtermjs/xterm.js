@@ -4,9 +4,8 @@
  */
 
 import { Disposable } from '../Lifecycle';
-import { IAttributeData, IBufferLine } from '../Types';
+import { IAttributeData, IBuffer, IBufferLine, IBufferSet } from '../buffer/Types';
 import { BufferSet } from '../buffer/BufferSet';
-import { IBuffer, IBufferSet } from '../buffer/Types';
 import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from './Services';
 import { Emitter } from '../Event';
 import { BufferLine, LogicalLine } from '../buffer/BufferLine';

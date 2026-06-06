@@ -132,6 +132,7 @@ export class UnicodeV6 implements IUnicodeVersionProvider {
   public charProperties(codepoint: number, preceding: UnicodeCharProperties): UnicodeCharProperties {
     let width = this.wcwidth(codepoint);
     let shouldJoin = width === 0 && preceding !== 0;
+    // HACK: Ideally this file would not depend on the service which uses it
     if (shouldJoin) {
       const oldWidth = UnicodeService.extractWidth(preceding);
       if (oldWidth === 0) {

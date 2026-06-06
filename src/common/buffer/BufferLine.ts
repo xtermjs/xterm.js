@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { CharData, IAttributeData, IBufferLine, ILogicalLine, ICellData, IExtendedAttrs, IMarker } from '../Types';
+import { CharData, IAttributeData, IBufferLine, ILogicalLine, ICellData, IExtendedAttrs, IMarker } from './Types';
 import { AttributeData } from './AttributeData';
 import { CellData } from './CellData';
 import { Marker } from './Marker';
@@ -76,9 +76,7 @@ export class LogicalLine implements ILogicalLine {
    * @internal
    */
   public _data: Uint32Array;
-  /**
-   * @internal
-   */
+  /** Sparse cache; only rea`d when `IS_COMBINED_MASK` is set in `_data`. */
   public _combined: {[index: LogicalColumn]: string} = {};
   /**
    * @internal
@@ -178,9 +176,15 @@ export class LogicalLine implements ILogicalLine {
     cell.bg = this._data[startIndex + Cell.BG];
     if (cell.content & Content.IS_COMBINED_MASK) {
       cell.combinedData = this._combined[index];
+    } else {
+      cell.combinedData = '';
     }
     if (cell.bg & BgFlags.HAS_EXTENDED) {
       cell.extended = this._extendedAttrs[index]!;
+    } else {
+      // Do not mutate cell.extended in place: it may still reference this line's map entry from a
+      // prior loadCell into a reused CellData (e.g. $workCell during insert/delete).
+      cell.extended = DEFAULT_ATTR_DATA.extended.clone();
     }
     return cell;
   }
@@ -543,19 +547,6 @@ export class BufferLine implements IBufferLine {
    * to GC as it significantly reduced the amount of new objects/references needed.
    */
   public loadCell(index: number, cell: ICellData): ICellData {
-    const lline = this._logicalLine;
-    const lcolumn = index + this.startColumn;
-    const lend = this.validEnd;
-    if (lcolumn >= lend) {
-      cell.content = NULL_CELL_CODE | (NULL_CELL_WIDTH << Content.WIDTH_SHIFT);
-      cell.fg = 0;
-      if (this.nextBufferLine) {
-        cell.bg = 0; // FIXME
-      } else {
-        cell.bg = lline.backgroundColor;
-      }
-      return cell;
-    }
     return lline.loadCell(lcolumn, cell);
   }
 
@@ -1042,6 +1033,26 @@ export class BufferLine implements IBufferLine {
     if (cacheEntry) {
       cacheEntry.value = undefined;
       cacheEntry.isTrimmed = false;
+    }
+  }
+
+  /** Copy sparse map entries for a single cell when `_data` flags require them. */
+  private _copyCellMapsFrom(src: BufferLine, srcCol: number, destCol: number): void {
+    const srcStart = srcCol * Constants.CELL_INDICIES;
+    if (src._data[srcStart + Cell.CONTENT] & Content.IS_COMBINED_MASK) {
+      this._combined[destCol] = src._combined[srcCol];
+    }
+    if (src._data[srcStart + Cell.BG] & BgFlags.HAS_EXTENDED) {
+      this._extendedAttrs[destCol] = src._extendedAttrs[srcCol];
+    }
+  }
+
+  /** Rebuild sparse maps from another line, keyed only by `_data` flags. */
+  private _copySparseMapsFrom(line: BufferLine): void {
+    this._combined = {};
+    this._extendedAttrs = {};
+    for (let i = 0; i < line.length; i++) {
+      this._copyCellMapsFrom(line, i, i);
     }
   }
 }
