@@ -364,12 +364,14 @@ export class Buffer extends Disposable implements IBuffer {
       if (!nextLine || !nextLine.isWrapped && nextLine.getTrimmedLength() <= newCols) {
         continue;
       }
+
       // Gather wrapped lines and adjust y to be the starting line
       const wrappedLines: BufferLine[] = [nextLine];
       while (nextLine.isWrapped && y > 0) {
         nextLine = this.lines.get(--y) as BufferLine;
         wrappedLines.unshift(nextLine);
       }
+
       if (!reflowCursorLine) {
         // If these lines contain the cursor don't touch them, the program will handle fixing up
         // wrapped lines with the cursor
