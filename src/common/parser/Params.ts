@@ -2,7 +2,7 @@
  * Copyright (c) 2019 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IParams, ParamsArray } from 'common/parser/Types';
+import { IParams, ParamsArray } from './Types';
 
 const enum Constants {
   /**
@@ -162,7 +162,7 @@ export class Params implements IParams {
       return;
     }
     if (value < -1) {
-      throw new Error('values lesser than -1 are not allowed');
+      throw new Error('values less than -1 are not allowed');
     }
     this._subParamsIdx[this.length] = this._subParamsLength << 8 | this._subParamsLength;
     this.params[this.length++] = value > Constants.MAX_VALUE ? Constants.MAX_VALUE : value;
@@ -172,7 +172,7 @@ export class Params implements IParams {
    * Add a sub parameter value.
    * The sub parameter is automatically associated with the last parameter value.
    * Thus it is not possible to add a subparameter without any parameter added yet.
-   * `Params` only stores up to `subParamsLength` sub parameters, any later
+   * `Params` only stores up to `maxSubParamsLength` sub parameters, any later
    * sub parameter will be ignored.
    */
   public addSubParam(value: number): void {
@@ -185,7 +185,7 @@ export class Params implements IParams {
       return;
     }
     if (value < -1) {
-      throw new Error('values lesser than -1 are not allowed');
+      throw new Error('values less than -1 are not allowed');
     }
     this._subParams[this._subParamsLength++] = value > Constants.MAX_VALUE ? Constants.MAX_VALUE : value;
     this._subParamsIdx[this.length - 1]++;

@@ -10,12 +10,12 @@ import { CursorBlinkStateManager } from './CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from './DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { CharData, IBufferLine, ICellData } from 'common/Types';
+import { CharData, IBufferLine, ICellData } from 'common/buffer/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
 import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
-import { ICoreService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
 import { GlyphRenderer } from './GlyphRenderer';
 import { RectangleRenderer } from './RectangleRenderer';
@@ -77,6 +77,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
     private readonly _coreBrowserService: ICoreBrowserService,
     private readonly _coreService: ICoreService,
     private readonly _decorationService: IDecorationService,
+    private readonly _logService: ILogService,
     private readonly _optionsService: IOptionsService,
     private readonly _themeService: IThemeService,
     private readonly _customGlyphs: boolean = true,
@@ -122,19 +123,19 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._deviceMaxTextureSize = this._gl.getParameter(this._gl.MAX_TEXTURE_SIZE);
 
     this._register(addDisposableListener(this._canvas, 'webglcontextlost', (e) => {
-      console.log('webglcontextlost event received');
+      this._logService.debug('webglcontextlost event received');
       // Prevent the default behavior in order to enable WebGL context restoration.
       e.preventDefault();
       // Wait a few seconds to see if the 'webglcontextrestored' event is fired.
       // If not, dispatch the onContextLoss notification to observers.
       this._contextRestorationTimeout = setTimeout(() => {
         this._contextRestorationTimeout = undefined;
-        console.warn('webgl context not restored; firing onContextLoss');
+        this._logService.warn('webgl context not restored; firing onContextLoss');
         this._onContextLoss.fire(e);
       }, 3000 /* ms */);
     }));
     this._register(addDisposableListener(this._canvas, 'webglcontextrestored', (e) => {
-      console.warn('webglcontextrestored event received');
+      this._logService.warn('webglcontextrestored event received');
       clearTimeout(this._contextRestorationTimeout);
       this._contextRestorationTimeout = undefined;
       // The texture atlas and glyph renderer must be fully reinitialized
@@ -158,6 +159,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this._isAttached = this._core.screenElement!.isConnected;
 
     this._register(toDisposable(() => {
+      clearTimeout(this._contextRestorationTimeout);
+      this._contextRestorationTimeout = undefined;
       for (const l of this._renderLayers) {
         l.dispose();
       }
@@ -274,8 +277,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
    * Initializes members dependent on WebGL context state.
    */
   private _initializeWebGLState(): [RectangleRenderer, GlyphRenderer] {
-    this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService);
-    this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._gl, this.dimensions, this._optionsService);
+    this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._gl, this.dimensions, this._themeService, this._logService);
+    this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._gl, this.dimensions, this._optionsService, this._logService);
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
@@ -424,8 +427,8 @@ export class WebglRenderer extends Disposable implements IRenderer {
     let line: IBufferLine;
     let joinedRanges: [number, number][];
     let isJoined: boolean;
-    let skipJoinedCheckUntilX: number = 0;
-    let isValidJoinRange: boolean = true;
+    let skipJoinedCheckUntilX: number;
+    let isValidJoinRange: boolean;
     let lastCharX: number;
     let range: [number, number];
     let isCursorRow: boolean;
@@ -453,7 +456,18 @@ export class WebglRenderer extends Disposable implements IRenderer {
 
     for (y = start; y <= end; y++) {
       row = y + terminal.buffer.ydisp;
-      line = terminal.buffer.lines.get(row)!;
+      const bufferLine = terminal.buffer.lines.get(row);
+      if (!bufferLine) {
+        this._model.lineLengths[y] = 0;
+        for (x = 0; x < terminal.cols; x++) {
+          j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
+          modelUpdated = true;
+          this._nullModelCell(x, y, j, 0, 0, 0);
+        }
+        this._setRowBlinkState(y, false);
+        continue;
+      }
+      line = bufferLine;
       let rowHasBlinkingCells = false;
       this._model.lineLengths[y] = 0;
       isCursorRow = cursorY === row;
@@ -584,13 +598,9 @@ export class WebglRenderer extends Disposable implements IRenderer {
           // Null out non-first cells
           for (x++; x <= lastCharX; x++) {
             j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
-            this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, 0, 0, 0, NULL_CELL_CHAR, 0, 0);
-            this._model.cells[j] = NULL_CELL_CODE;
             // Don't re-resolve the cell color since multi-colored ligature backgrounds are not
             // supported
-            this._model.cells[j + RenderModelConstants.BG_OFFSET] = this._cellColorResolver.result.bg;
-            this._model.cells[j + RenderModelConstants.FG_OFFSET] = this._cellColorResolver.result.fg;
-            this._model.cells[j + RenderModelConstants.EXT_OFFSET] = this._cellColorResolver.result.ext;
+            this._nullModelCell(x, y, j, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
           }
           x--; // Go back to the previous update cell for next iteration
         }
@@ -602,6 +612,14 @@ export class WebglRenderer extends Disposable implements IRenderer {
     }
     this._rectangleRenderer.value!.updateCursor(this._model);
     this._updateTextBlinkState();
+  }
+
+  private _nullModelCell(x: number, y: number, cellIndex: number, bg: number, fg: number, ext: number): void {
+    this._glyphRenderer.value!.updateCell(x, y, NULL_CELL_CODE, bg, fg, ext, NULL_CELL_CHAR, 0, 0);
+    this._model.cells[cellIndex] = NULL_CELL_CODE;
+    this._model.cells[cellIndex + RenderModelConstants.BG_OFFSET] = bg;
+    this._model.cells[cellIndex + RenderModelConstants.FG_OFFSET] = fg;
+    this._model.cells[cellIndex + RenderModelConstants.EXT_OFFSET] = ext;
   }
 
   private _resetBlinkingRowState(): void {
@@ -661,10 +679,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
     this.dimensions.device.canvas.height = this._terminal.rows * this.dimensions.device.cell.height;
     this.dimensions.device.canvas.width = this._terminal.cols * this.dimensions.device.cell.width;
 
-    // The the size of the canvas on the page. It's important that this rounds to nearest integer
+    // The size of the canvas on the page. It's important that this rounds to nearest integer
     // and not ceils as browsers often have floating point precision issues where
     // `window.devicePixelRatio` ends up being something like `1.100000023841858` for example, when
-    // it's actually 1.1. Ceiling may causes blurriness as the backing canvas image is 1 pixel too
+    // it's actually 1.1. Ceiling may cause blurriness as the backing canvas image is 1 pixel too
     // large for the canvas element size.
     this.dimensions.css.canvas.height = Math.round(this.dimensions.device.canvas.height / this._devicePixelRatio);
     this.dimensions.css.canvas.width = Math.round(this.dimensions.device.canvas.width / this._devicePixelRatio);

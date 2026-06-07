@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { ColorContrastCache } from 'browser/ColorContrastCache';
+import { ColorContrastCache } from './ColorContrastCache';
 
 describe('ColorContrastCache', () => {
   let cache: ColorContrastCache;

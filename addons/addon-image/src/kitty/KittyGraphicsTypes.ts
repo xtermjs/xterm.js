@@ -168,7 +168,7 @@ export function parseKittyCommand(data: string): IKittyCommand {
       cmd.deleteSelector = value;
       continue;
     }
-    const numValue = parseInt(value);
+    const numValue = parseInt(value, 10);
     switch (key) {
       case KittyKey.FORMAT: cmd.format = numValue; break;
       case KittyKey.ID: cmd.id = numValue; break;

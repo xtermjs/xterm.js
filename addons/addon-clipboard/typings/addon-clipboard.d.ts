@@ -82,7 +82,7 @@ declare module '@xterm/addon-clipboard' {
   /**
    * The clipboard provider interface that enables xterm.js to access the browser clipboard.
    *
-   * Note this this clipboard provider does not implement own cut buffers as xterm does,
+   * Note that this clipboard provider does not implement own cut buffers as xterm does,
    * but redirect the selection parameter always to navigator.clipboard.
    */
   export class BrowserClipboardProvider implements IClipboardProvider{

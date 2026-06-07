@@ -69,7 +69,7 @@ export class TextureAtlas implements ITextureAtlas {
   private _overflowSizePage: AtlasPage | undefined;
 
   private _tmpCanvas: HTMLCanvasElement;
-  // A temporary context that glyphs are drawn to before being transfered to the atlas.
+  // A temporary context that glyphs are drawn to before being transferred to the atlas.
   private _tmpCtx: CanvasRenderingContext2D;
 
   private _workBoundingBox: IBoundingBox = { top: 0, left: 0, bottom: 0, right: 0 };
@@ -109,6 +109,7 @@ export class TextureAtlas implements ITextureAtlas {
       page.canvas.remove();
     }
     this._onAddTextureAtlasCanvas.dispose();
+    this._onRemoveTextureAtlasCanvas.dispose();
   }
 
   public warmUp(): void {
@@ -151,7 +152,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _createNewPage(): AtlasPage {
-    // Try merge the set of the 4 most used pages of the largest size. This is is deferred to a
+    // Try merge the set of the 4 most used pages of the largest size. This is deferred to a
     // microtask to ensure it does not interrupt textures that will be rendered in the current
     // animation frame which would result in blank rendered areas. This is actually not that
     // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
@@ -190,7 +191,7 @@ export class TextureAtlas implements ITextureAtlas {
         return newPage;
       }
 
-      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a > b ? 1 : -1);
+      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a - b);
       const mergedPageIndex = this.pages.length - mergingPages.length;
 
       // Merge into the new page
@@ -529,7 +530,7 @@ export class TextureAtlas implements ITextureAtlas {
     let customGlyph = false;
     if (this._config.customGlyphs !== false) {
       const variantOffset = this._workAttributeData.getUnderlineVariantOffset();
-      customGlyph = tryDrawCustomGlyph(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.deviceCharWidth, this._config.deviceCharHeight, this._config.fontSize, this._config.devicePixelRatio, backgroundColor.css, variantOffset);
+      customGlyph = tryDrawCustomGlyph(this._tmpCtx, chars, padding, padding, this._config.deviceCellWidth, this._config.deviceCellHeight, this._config.deviceCharWidth, this._config.deviceCharHeight, this._config.fontSize, this._config.devicePixelRatio, this._logService, backgroundColor.css, variantOffset);
     }
 
     // Whether to clear pixels based on a threshold difference between the glyph color and the
@@ -1079,17 +1080,33 @@ class AtlasPage {
     size: number,
     sourcePages?: AtlasPage[]
   ) {
-    if (sourcePages) {
-      for (const p of sourcePages) {
-        this._glyphs.push(...p.glyphs);
-        this._usedPixels += p._usedPixels;
-      }
-    }
     this.canvas = createCanvas(document, size, size);
     // The canvas needs alpha because we use clearColor to convert the background color to alpha.
     // It might also contain some characters with transparent backgrounds if allowTransparency is
     // set.
     this.ctx = throwIfFalsy(this.canvas.getContext('2d', { alpha: true }));
+    if (sourcePages) {
+      if (sourcePages.length === 4) {
+        // optimized for quadmerge
+        this._glyphs = this._glyphs.concat(
+          sourcePages[0].glyphs,
+          sourcePages[1].glyphs,
+          sourcePages[2].glyphs,
+          sourcePages[3].glyphs
+        );
+        this._usedPixels = sourcePages[0]._usedPixels +
+          sourcePages[1]._usedPixels +
+          sourcePages[2]._usedPixels +
+          sourcePages[3]._usedPixels;
+      } else {
+        // fallback for non quadmerges (should never be used)
+        for (let i = 0; i < sourcePages.length; ++i) {
+          this._glyphs = this._glyphs.concat(sourcePages[i].glyphs);
+          this._usedPixels += sourcePages[i]._usedPixels;
+        }
+
+      }
+    }
   }
 
   public clear(): void {
@@ -1124,7 +1141,7 @@ function clearColor(imageData: ImageData, bg: IColor, fg: IColor, enableThreshol
   // were covered (fg=#8ae234, bg=#c4a000).
   const threshold = Math.floor((Math.abs(r - fgR) + Math.abs(g - fgG) + Math.abs(b - fgB)) / 12);
 
-  // Set alpha channel of relevent pixels to 0
+  // Set alpha channel of relevant pixels to 0
   let isEmpty = true;
   for (let offset = 0; offset < imageData.data.length; offset += 4) {
     // Check exact match

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IColor, IColorRGB } from 'common/Types';
+import { IColor, IColorRGB } from './Types';
 
 let $r = 0;
 let $g = 0;
@@ -177,9 +177,9 @@ export namespace css {
     // Formats: rgb() or rgba()
     const rgbaMatch = css.match(/rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*(,\s*(0|1|\d?\.(\d+))\s*)?\)/);
     if (rgbaMatch) {
-      $r = parseInt(rgbaMatch[1]);
-      $g = parseInt(rgbaMatch[2]);
-      $b = parseInt(rgbaMatch[3]);
+      $r = parseInt(rgbaMatch[1], 10);
+      $g = parseInt(rgbaMatch[2], 10);
+      $b = parseInt(rgbaMatch[3], 10);
       $a = Math.round((rgbaMatch[5] === undefined ? 1 : parseFloat(rgbaMatch[5])) * 0xFF);
       return channels.toColor($r, $g, $b, $a);
     }
@@ -373,7 +373,7 @@ export function toPaddedHex(c: number): string {
 /**
  * Gets the contrast ratio between two relative luminance values.
  * @param l1 The first relative luminance.
- * @param l2 The first relative luminance.
+ * @param l2 The second relative luminance.
  * @see https://www.w3.org/TR/WCAG20/#contrast-ratiodef
  */
 export function contrastRatio(l1: number, l2: number): number {

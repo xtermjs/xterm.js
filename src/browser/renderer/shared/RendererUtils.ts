@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IDimensions, IRenderDimensions } from 'browser/renderer/shared/Types';
+import { IDimensions, IRenderDimensions } from './Types';
 
 export function throwIfFalsy<T>(value: T | undefined | null): T {
   if (!value) {

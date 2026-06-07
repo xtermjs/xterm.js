@@ -2,7 +2,7 @@
  * Copyright (c) 2023 The xterm.js authors. All rights reserved.
  * @license MIT
  *
- * UnicodeVersionProvider for V15 with grapeme cluster handleing.
+ * UnicodeVersionProvider for V15 with grapheme cluster handling.
  */
 
 import type { Terminal, ITerminalAddon, IUnicodeHandling } from '@xterm/xterm';

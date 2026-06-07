@@ -3,20 +3,20 @@
  * @license MIT
  */
 
-import { DomRendererRowFactory, RowCss } from 'browser/renderer/dom/DomRendererRowFactory';
-import { WidthCache } from 'browser/renderer/dom/WidthCache';
-import { INVERTED_DEFAULT_COLOR, RendererConstants } from 'browser/renderer/shared/Constants';
-import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
-import { createSelectionRenderModel } from 'browser/renderer/shared/SelectionRenderModel';
-import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
-import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from 'browser/renderer/shared/Types';
-import { ICharSizeService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from 'browser/Types';
-import { color } from 'common/Color';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'common/Event';
-import { addDisposableListener } from 'browser/Dom';
+import { DomRendererRowFactory, RowCss } from './DomRendererRowFactory';
+import { WidthCache } from './WidthCache';
+import { INVERTED_DEFAULT_COLOR, RendererConstants } from '../shared/Constants';
+import { createRenderDimensions } from '../shared/RendererUtils';
+import { createSelectionRenderModel } from '../shared/SelectionRenderModel';
+import { TextBlinkStateManager } from '../shared/TextBlinkStateManager';
+import { IRenderDimensions, IRenderer, IRequestRedrawEvent, ISelectionRenderModel } from '../shared/Types';
+import { ICharSizeService, ICoreBrowserService, IThemeService } from '../../services/Services';
+import { ILinkifier2, ILinkifierEvent, ITerminal, ReadonlyColorSet } from '../../Types';
+import { color } from '../../../common/Color';
+import { Disposable, toDisposable } from '../../../common/Lifecycle';
+import { IBufferService, ICoreService, IInstantiationService, IOptionsService } from '../../../common/services/Services';
+import { Emitter } from '../../../common/Event';
+import { addDisposableListener } from '../../Dom';
 
 
 const enum Constants {
@@ -536,9 +536,14 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (let y = start; y <= end; y++) {
       const row = y + buffer.ydisp;
       const rowElement = this._rowElements[y];
+      if (!rowElement) {
+        continue;
+      }
       const lineData = buffer.lines.get(row);
-      if (!rowElement || !lineData) {
-        break;
+      if (!lineData) {
+        rowElement.replaceChildren();
+        this._setRowBlinkState(y, false);
+        continue;
       }
       rowElement.replaceChildren(
         ...this._rowFactory.createRow(
@@ -610,9 +615,14 @@ export class DomRenderer extends Disposable implements IRenderer {
     for (let i = y; i <= y2; ++i) {
       const row = i + buffer.ydisp;
       const rowElement = this._rowElements[i];
+      if (!rowElement) {
+        continue;
+      }
       const bufferline = buffer.lines.get(row);
-      if (!rowElement || !bufferline) {
-        break;
+      if (!bufferline) {
+        rowElement.replaceChildren();
+        this._setRowBlinkState(i, false);
+        continue;
       }
       rowElement.replaceChildren(
         ...this._rowFactory.createRow(
@@ -694,7 +704,7 @@ class CursorBlinkStateManager {
   }
 
   private _clearIdleTimer(): void {
-    if (this._idleTimeout) {
+    if (this._idleTimeout !== undefined) {
       this._coreBrowserService.window.clearTimeout(this._idleTimeout);
       this._idleTimeout = undefined;
     }

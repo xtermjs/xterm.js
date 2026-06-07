@@ -539,7 +539,6 @@ test.describe('Kitty Graphics Protocol', () => {
 
   test.describe('Query support (a=q)', () => {
     test('responds with OK for capability query without payload', async () => {
-      let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
         (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
@@ -548,12 +547,11 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write('\x1b_Gi=31,a=q;\x1b\\');
       await timeout(100);
 
-      response = await ctx.page.evaluate('window.kittyResponse');
+      const response = await ctx.page.evaluate('window.kittyResponse');
       strictEqual(response, '\x1b_Gi=31;OK\x1b\\');
     });
 
     test('responds with OK for valid PNG query', async () => {
-      let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
         (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
@@ -562,7 +560,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(`\x1b_Gi=42,a=q,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      response = await ctx.page.evaluate('window.kittyResponse');
+      const response = await ctx.page.evaluate('window.kittyResponse');
       strictEqual(response, '\x1b_Gi=42;OK\x1b\\');
     });
 
@@ -578,7 +576,6 @@ test.describe('Kitty Graphics Protocol', () => {
     });
 
     test('responds with error for invalid base64', async () => {
-      let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
         (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
@@ -587,12 +584,11 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write('\x1b_Gi=60,a=q,f=100;!!!invalid!!!\x1b\\');
       await timeout(100);
 
-      response = await ctx.page.evaluate('window.kittyResponse');
+      const response: string = await ctx.page.evaluate('window.kittyResponse');
       strictEqual(response.startsWith('\x1b_Gi=60;EINVAL:'), true);
     });
 
     test('responds with error for RGB data without dimensions', async () => {
-      let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
         (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
@@ -601,7 +597,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write('\x1b_Gi=70,a=q,f=24;AAAA\x1b\\');
       await timeout(100);
 
-      response = await ctx.page.evaluate('window.kittyResponse');
+      const response = await ctx.page.evaluate('window.kittyResponse');
       strictEqual(response, '\x1b_Gi=70;EINVAL:width and height required for raw pixel data\x1b\\');
     });
 
@@ -642,7 +638,6 @@ test.describe('Kitty Graphics Protocol', () => {
     });
 
     test('responds with EINVAL when both i and I keys are specified', async () => {
-      let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
         (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
@@ -652,12 +647,11 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(`\x1b_Gi=100,I=200,a=q,f=100;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await timeout(100);
 
-      response = await ctx.page.evaluate('window.kittyResponse');
+      const response = await ctx.page.evaluate('window.kittyResponse');
       strictEqual(response, '\x1b_Gi=100;EINVAL:cannot specify both i and I keys\x1b\\');
     });
 
     test('responds with EINVAL for i+I conflict even without payload', async () => {
-      let response = '';
       await ctx.page.evaluate(() => {
         (window as any).kittyResponse = '';
         (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
@@ -667,7 +661,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write('\x1b_Gi=101,I=201,a=d\x1b\\');
       await timeout(100);
 
-      response = await ctx.page.evaluate('window.kittyResponse');
+      const response = await ctx.page.evaluate('window.kittyResponse');
       strictEqual(response, '\x1b_Gi=101;EINVAL:cannot specify both i and I keys\x1b\\');
     });
   });

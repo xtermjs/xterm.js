@@ -60,7 +60,7 @@ export class SearchEngine {
       this._terminal.clearSelection();
       return undefined;
     }
-    if (startCol > this._terminal.cols) {
+    if (startCol >= this._terminal.cols) {
       throw new Error(`Invalid col: ${startCol} to search in terminal of ${this._terminal.cols} cols`);
     }
 
@@ -174,7 +174,7 @@ export class SearchEngine {
     this._terminal.clearSelection();
 
     let startRow = this._terminal.buffer.active.baseY + this._terminal.rows - 1;
-    let startCol = this._terminal.cols;
+    const startCol = this._terminal.cols;
     const isReverseSearch = true;
 
     this._lineCache.initLinesCache();
@@ -186,14 +186,14 @@ export class SearchEngine {
     let result: ISearchResult | undefined;
     if (prevSelectedPos) {
       searchPosition.startRow = startRow = prevSelectedPos.start.y;
-      searchPosition.startCol = startCol = prevSelectedPos.start.x;
+      searchPosition.startCol = prevSelectedPos.start.x;
       if (cachedSearchTerm !== term) {
         // Try to expand selection to right first.
         result = this._findInLine(term, searchPosition, searchOptions, false);
         if (!result) {
           // If selection was not able to be expanded to the right, then try reverse search
           searchPosition.startRow = startRow = prevSelectedPos.end.y;
-          searchPosition.startCol = startCol = prevSelectedPos.end.x;
+          searchPosition.startCol = prevSelectedPos.end.x;
         }
       }
     }

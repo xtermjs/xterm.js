@@ -4,26 +4,26 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
-import { C0, C1 } from 'common/data/EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { Disposable } from 'common/Lifecycle';
-import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
-import { CellData } from 'common/buffer/CellData';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { OscHandler } from 'common/parser/OscParser';
-import { DcsHandler } from 'common/parser/DcsParser';
-import { ApcHandler } from 'common/parser/ApcParser';
-import { IBuffer } from 'common/buffer/Types';
-import { parseColor } from 'common/input/XParseColor';
-import { Emitter } from 'common/Event';
-import { XTERM_VERSION } from 'common/Version';
+import { IInputHandler, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
+import { IAttributeData, IBuffer } from './buffer/Types';
+import { C0, C1 } from './data/EscapeSequences';
+import { CHARSETS, DEFAULT_CHARSET } from './data/Charsets';
+import { EscapeSequenceParser } from './parser/EscapeSequenceParser';
+import { Disposable } from './Lifecycle';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from './input/TextDecoder';
+import { BufferLine, DEFAULT_ATTR_DATA } from './buffer/BufferLine';
+import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from './parser/Types';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from './buffer/Constants';
+import { CellData } from './buffer/CellData';
+import { AttributeData } from './buffer/AttributeData';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from './services/Services';
+import { UnicodeService } from './services/UnicodeService';
+import { OscHandler } from './parser/OscParser';
+import { DcsHandler } from './parser/DcsParser';
+import { ApcHandler } from './parser/ApcParser';
+import { parseColor } from './input/XParseColor';
+import { Emitter } from './Event';
+import { XTERM_VERSION } from './Version';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -567,8 +567,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
-      if (this._getCurrentLinkId()) {
-        this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
+      const linkId = this._getCurrentLinkId();
+      if (linkId) {
+        this._oscLinkService.addLineToLink(linkId, this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // goto next line if ch would overflow
@@ -2590,10 +2591,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 3      | CMY color.                                                    | #N      |
    * | 4      | CMYK color.                                                   | #N      |
    * | 5      | Indexed (256 colors) as `Ps ; 5 ; INDEX` or `Ps : 5 : INDEX`. | #Y      |
-   *
-   *
-   * FIXME: blinking is implemented in attrs, but not working in renderers?
-   * FIXME: remove dead branch for p=100
    */
   public charAttributes(params: IParams): boolean {
     // Optimize a single SGR0.
@@ -3068,7 +3065,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const idx = slots.shift() as string;
       const spec = slots.shift() as string;
       if (/^\d+$/.exec(idx)) {
-        const index = parseInt(idx);
+        const index = parseInt(idx, 10);
         if (isValidColorIndex(index)) {
           if (spec === '?') {
             event.push({ type: ColorRequestType.REPORT, index });
@@ -3231,7 +3228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const slots = data.split(';');
     for (let i = 0; i < slots.length; ++i) {
       if (/^\d+$/.exec(slots[i])) {
-        const index = parseInt(slots[i]);
+        const index = parseInt(slots[i], 10);
         if (isValidColorIndex(index)) {
           event.push({ type: ColorRequestType.RESTORE, index });
         }
