@@ -4,8 +4,7 @@
  */
 
 import type { IDisposable, ITerminalAddon, Terminal } from '@xterm/xterm';
-import { type IClipboardProvider, ClipboardSelectionType, type IBase64 } from '@xterm/addon-clipboard';
-import { Base64 as JSBase64 } from 'js-base64';
+import { type IClipboardProvider, type IBase64 } from '@xterm/addon-clipboard';
 
 export class ClipboardAddon implements ITerminalAddon {
   private _terminal?: Terminal;
@@ -25,7 +24,7 @@ export class ClipboardAddon implements ITerminalAddon {
     return this._disposable?.dispose();
   }
 
-  private _readText(sel: ClipboardSelectionType, data: string): void {
+  private _readText(sel: string, data: string): void {
     const b64 = this._base64.encodeText(data);
     this._terminal?.input(`\x1b]52;${sel};${b64}\x07`, false);
   }
@@ -36,7 +35,7 @@ export class ClipboardAddon implements ITerminalAddon {
       return true;
     }
 
-    const pc = args[0] as ClipboardSelectionType;
+    const pc = args[0];
     const pd = args[1];
     if (pd === '?') {
       const text = this._provider.readText(pc);
@@ -70,30 +69,53 @@ export class ClipboardAddon implements ITerminalAddon {
 }
 
 export class BrowserClipboardProvider implements IClipboardProvider {
-  public async readText(selection: ClipboardSelectionType): Promise<string> {
-    if (selection !== 'c') {
-      return Promise.resolve('');
-    }
+  public readText(selection: string): Promise<string> {
     return navigator.clipboard.readText();
   }
 
-  public async writeText(selection: ClipboardSelectionType, text: string): Promise<void> {
-    if (selection !== 'c') {
-      return Promise.resolve();
-    }
+  public writeText(selection: string, text: string): Promise<void> {
     return navigator.clipboard.writeText(text);
   }
 }
 
+/**
+ * TODO: Once the base64 handling on Uint8Arrays is more common,
+ * remove the btoa/atob fallbacks below.
+ */
+interface IUint8ArrayB64 extends Uint8Array {
+  toBase64(): string;
+}
+interface IUint8ArrayB64Ctor extends Uint8ArrayConstructor {
+  fromBase64(s: string): IUint8ArrayB64;
+}
+
 export class Base64 implements IBase64 {
   public encodeText(data: string): string {
-    return JSBase64.encode(data);
+    const bytes = new TextEncoder().encode(data) as IUint8ArrayB64;
+    if (bytes.toBase64 !== undefined) {
+      return bytes.toBase64();
+    }
+    let bin = '';
+    for (let i = 0; i < bytes.length; i++) {
+      bin += String.fromCharCode(bytes[i]);
+    }
+    return btoa(bin);
   }
   public decodeText(data: string): string {
-    const text = JSBase64.decode(data);
-    if (!JSBase64.isValid(data) || JSBase64.encode(text) !== data) {
+    if ((Uint8Array as IUint8ArrayB64Ctor).fromBase64 !== undefined) {
+      try {
+        return new TextDecoder().decode((Uint8Array as IUint8ArrayB64Ctor).fromBase64(data));
+      } catch {}
       return '';
     }
-    return text;
+    try {
+      const bin = atob(data);
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; ++i) {
+        bytes[i] = bin.charCodeAt(i);
+      }
+      return new TextDecoder().decode(bytes);
+    } catch {}
+    return '';
   }
 }

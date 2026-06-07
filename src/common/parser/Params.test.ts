@@ -3,8 +3,8 @@
  * @license MIT
  */
 import { assert } from 'chai';
-import { Params } from 'common/parser/Params';
-import { ParamsArray } from 'common/parser/Types';
+import { Params } from './Params';
+import { ParamsArray } from './Types';
 
 class TestParams extends Params {
   public get subParams(): Int32Array {
@@ -199,13 +199,13 @@ describe('Params', () => {
     it('reject params lesser -1', () => {
       const params = new Params();
       params.addParam(-1);
-      assert.throws(() => params.addParam(-2), 'values lesser than -1 are not allowed');
+      assert.throws(() => params.addParam(-2), 'values less than -1 are not allowed');
     });
     it('reject subparams lesser -1', () => {
       const params = new Params();
       params.addParam(-1);
       params.addSubParam(-1);
-      assert.throws(() => params.addSubParam(-2), 'values lesser than -1 are not allowed');
+      assert.throws(() => params.addSubParam(-2), 'values less than -1 are not allowed');
       assert.deepEqual(params.toArray(), [-1, [-1]]);
     });
     it('clamp parsed params', () => {

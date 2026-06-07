@@ -3,26 +3,32 @@
  * @license MIT
  */
 
-import { IDeleteEvent, IInsertEvent } from 'common/CircularList';
-import { UnderlineStyle } from 'common/buffer/Constants';
-import { IBufferSet } from 'common/buffer/Types';
-import { IParams } from 'common/parser/Types';
-import { IMouseStateService, ICoreService, IOptionsService, IUnicodeService } from 'common/services/Services';
 import { IFunctionIdentifier, ITerminalOptions as IPublicTerminalOptions } from '@xterm/xterm';
-import type { Emitter, IEvent } from 'common/Event';
+import type { IEvent } from './Event';
 
-export interface ICoreTerminal {
-  mouseStateService: IMouseStateService;
-  coreService: ICoreService;
-  optionsService: IOptionsService;
-  unicodeService: IUnicodeService;
-  buffers: IBufferSet;
-  options: Required<ITerminalOptions>;
-  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
-  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
-  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
-  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
-  registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+/** sequence params serialized to js arrays */
+export type ParamsArray = (number | number[])[];
+
+/** Interface of Params storage class. */
+export interface IParams {
+  /** from ctor */
+  maxLength: number;
+  maxSubParamsLength: number;
+
+  /** param values and its length */
+  params: Int32Array;
+  length: number;
+
+  /** methods */
+  clone(): IParams;
+  toArray(): ParamsArray;
+  reset(): void;
+  resetZdm(): void;
+  addParam(value: number): void;
+  addSubParam(value: number): void;
+  hasSubParams(idx: number): boolean;
+  getSubParams(idx: number): Int32Array | null;
+  getSubParamsAll(): {[idx: number]: Int32Array};
 }
 
 export interface IDisposable {
@@ -62,27 +68,6 @@ export interface IScrollEvent {
   position: number;
 }
 
-export interface ICircularList<T> {
-  length: number;
-  maxLength: number;
-  isFull: boolean;
-
-  onDeleteEmitter: Emitter<IDeleteEvent>;
-  onDelete: IEvent<IDeleteEvent>;
-  onInsertEmitter: Emitter<IInsertEvent>;
-  onInsert: IEvent<IInsertEvent>;
-  onTrimEmitter: Emitter<number>;
-  onTrim: IEvent<number>;
-
-  get(index: number): T | undefined;
-  set(index: number, value: T): void;
-  push(value: T): void;
-  pop(): T | undefined;
-  splice(start: number, deleteCount: number, ...items: T[]): void;
-  trimStart(count: number): void;
-  shiftElements(start: number, count: number, offset: number): void;
-}
-
 export const enum KeyboardResultType {
   SEND_KEY,
   SELECT_ALL,
@@ -100,23 +85,11 @@ export interface ICharset {
   [key: string]: string | undefined;
 }
 
-export type CharData = [attr: number, char: string, width: number, code: number];
-
 export interface IColor {
   readonly css: string;
   readonly rgba: number; // 32-bit int with rgba in each byte
 }
 export type IColorRGB = [red: number, green: number, blue: number];
-
-export interface IExtendedAttrs {
-  ext: number;
-  underlineStyle: UnderlineStyle;
-  underlineColor: number;
-  underlineVariantOffset: number;
-  urlId: number;
-  clone(): IExtendedAttrs;
-  isEmpty(): boolean;
-}
 
 /**
  * Tracks the current hyperlink. Since these are treated as extended attirbutes, these get passed on
@@ -129,138 +102,6 @@ export interface IOscLinkData {
   uri: string;
 }
 
-/**
- * An object that represents all attributes of a cell.
- */
-export interface IAttributeData {
-  /**
-   * "fg" is a 32-bit unsigned integer that stores the foreground color of the cell in the 24 least
-   * significant bits and additional flags in the remaining 8 bits.
-   */
-  fg: number;
-  /**
-   * "bg" is a 32-bit unsigned integer that stores the background color of the cell in the 24 least
-   * significant bits and additional flags in the remaining 8 bits.
-   */
-  bg: number;
-  /**
-   * "extended", aka "ext", stores extended attributes beyond those available in fg and bg. This
-   * data is optional on a cell and encodes less common data.
-   */
-  extended: IExtendedAttrs;
-
-  clone(): IAttributeData;
-
-  // flags
-  isInverse(): number;
-  isBold(): number;
-  isUnderline(): number;
-  isBlink(): number;
-  isInvisible(): number;
-  isItalic(): number;
-  isDim(): number;
-  isStrikethrough(): number;
-  isProtected(): number;
-  isOverline(): number;
-
-  /**
-   * The color mode of the foreground color which determines how to decode {@link getFgColor},
-   * possible values include {@link Attributes.CM_DEFAULT}, {@link Attributes.CM_P16},
-   * {@link Attributes.CM_P256} and {@link Attributes.CM_RGB}.
-   */
-  getFgColorMode(): number;
-  /**
-   * The color mode of the background color which determines how to decode {@link getBgColor},
-   * possible values include {@link Attributes.CM_DEFAULT}, {@link Attributes.CM_P16},
-   * {@link Attributes.CM_P256} and {@link Attributes.CM_RGB}.
-   */
-  getBgColorMode(): number;
-  isFgRGB(): boolean;
-  isBgRGB(): boolean;
-  isFgPalette(): boolean;
-  isBgPalette(): boolean;
-  isFgDefault(): boolean;
-  isBgDefault(): boolean;
-  isAttributeDefault(): boolean;
-
-  /**
-   * Gets an integer representation of the foreground color, how to decode the color depends on the
-   * color mode {@link getFgColorMode}.
-   */
-  getFgColor(): number;
-  /**
-   * Gets an integer representation of the background color, how to decode the color depends on the
-   * color mode {@link getBgColorMode}.
-   */
-  getBgColor(): number;
-
-  // extended attrs
-  hasExtendedAttrs(): number;
-  updateExtended(): void;
-  getUnderlineColor(): number;
-  getUnderlineColorMode(): number;
-  isUnderlineColorRGB(): boolean;
-  isUnderlineColorPalette(): boolean;
-  isUnderlineColorDefault(): boolean;
-  getUnderlineStyle(): number;
-  getUnderlineVariantOffset(): number;
-}
-
-/** Cell data */
-export interface ICellData extends IAttributeData {
-  content: number;
-  combinedData: string;
-  isCombined(): number;
-  getWidth(): number;
-  getChars(): string;
-  getCode(): number;
-  setFromCharData(value: CharData): void;
-  getAsCharData(): CharData;
-}
-
-export interface ILogicalLine {
-}
-
-/**
- * Interface for a line in the terminal buffer.
- */
-export interface IBufferLine {
-  length: number;
-  get isWrapped(): boolean;
-  get(index: number): CharData;
-  set(index: number, value: CharData): void;
-  loadCell(index: number, cell: ICellData): ICellData;
-  setCell(index: number, cell: ICellData): void;
-  setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
-  addCodepointToCell(index: number, codePoint: number, width: number): void;
-  insertCells(pos: number, n: number, ch: ICellData): void;
-  deleteCells(pos: number, n: number, fill: ICellData): void;
-  replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
-  resize(cols: number, fill: ICellData): boolean;
-  cleanupMemory(): number;
-  fill(fillCellData: ICellData, respectProtect?: boolean): void;
-  copyFrom(line: IBufferLine): void;
-  getTrimmedLength(): number;
-  getNoBgTrimmedLength(): number;
-  translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
-
-  /* direct access to cell attrs */
-  getWidth(index: number): number;
-  hasWidth(index: number): number;
-  getFg(index: number): number;
-  getBg(index: number): number;
-  hasContent(index: number): number;
-  getCodePoint(index: number): number;
-  isCombined(index: number): number;
-  getString(index: number): string;
-}
-
-export interface IMarker extends IDisposable {
-  readonly id: number;
-  readonly isDisposed: boolean;
-  readonly line: number;
-  onDispose: IEvent<void>;
-}
 export interface IModes {
   insertMode: boolean;
 }
@@ -340,7 +181,7 @@ export interface ICoreMouseEvent {
   x: number;
   y: number;
   /**
-   * Button the action occured. Due to restrictions of the tracking protocols
+   * Button the action occurred. Due to restrictions of the tracking protocols
    * it is not possible to report multiple buttons at once.
    * Wheel is treated as a button.
    * There are invalid combinations of buttons and actions possible
@@ -529,8 +370,8 @@ export interface IInputHandler {
   /** CSI ' } */ insertColumns(params: IParams): boolean;
   /** CSI ' ~ */ deleteColumns(params: IParams): boolean;
 
-  /** OSC 0
-      OSC 2 */ setTitle(data: string): boolean;
+  /** OSC 0 */
+  /** OSC 2 */ setTitle(data: string): boolean;
   /** OSC 4 */ setOrReportIndexedColor(data: string): boolean;
   /** OSC 10 */ setOrReportFgColor(data: string): boolean;
   /** OSC 11 */ setOrReportBgColor(data: string): boolean;
@@ -543,24 +384,24 @@ export interface IInputHandler {
   /** ESC E */ nextLine(): boolean;
   /** ESC = */ keypadApplicationMode(): boolean;
   /** ESC > */ keypadNumericMode(): boolean;
-  /** ESC % G
-      ESC % @ */ selectDefaultCharset(): boolean;
-  /** ESC ( C
-      ESC ) C
-      ESC * C
-      ESC + C
-      ESC - C
-      ESC . C
-      ESC / C */ selectCharset(collectAndFlag: string): boolean;
+  /** ESC % G */
+  /** ESC % @ */ selectDefaultCharset(): boolean;
+  /** ESC ( C */
+  /** ESC ) C */
+  /** ESC * C */
+  /** ESC + C */
+  /** ESC - C */
+  /** ESC . C */
+  /** ESC / C */ selectCharset(collectAndFlag: string): boolean;
   /** ESC D */ index(): boolean;
   /** ESC H */ tabSet(): boolean;
   /** ESC M */ reverseIndex(): boolean;
   /** ESC c */ fullReset(): boolean;
-  /** ESC n
-      ESC o
-      ESC |
-      ESC }
-      ESC ~ */ setgLevel(level: number): boolean;
+  /** ESC n */
+  /** ESC o */
+  /** ESC | */
+  /** ESC } */
+  /** ESC ~ */ setgLevel(level: number): boolean;
   /** ESC # 8 */ screenAlignmentPattern(): boolean;
 }
 

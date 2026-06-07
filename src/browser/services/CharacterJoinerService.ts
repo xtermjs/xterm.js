@@ -3,13 +3,13 @@
  * @license MIT
  */
 
-import { IBufferLine, ICellData, CharData } from 'common/Types';
-import { ICharacterJoiner } from 'browser/Types';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { WHITESPACE_CELL_CHAR, Content } from 'common/buffer/Constants';
-import { CellData } from 'common/buffer/CellData';
-import { IBufferService } from 'common/services/Services';
-import { ICharacterJoinerService } from 'browser/services/Services';
+import { CharData, IBufferLine, ICellData } from '../../common/buffer/Types';
+import { ICharacterJoiner } from '../Types';
+import { AttributeData } from '../../common/buffer/AttributeData';
+import { WHITESPACE_CELL_CHAR, Content } from '../../common/buffer/Constants';
+import { CellData } from '../../common/buffer/CellData';
+import { IBufferService } from '../../common/services/Services';
+import { ICharacterJoinerService } from './Services';
 
 export class JoinedCellData extends AttributeData implements ICellData {
   private _width: number;
@@ -100,6 +100,7 @@ export class CharacterJoinerService implements ICharacterJoinerService {
 
     const ranges: [number, number][] = [];
     const lineStr = line.translateToString(true);
+    const trimmedLength = line.getTrimmedLength();
 
     // Because some cells can be represented by multiple javascript characters,
     // we track the cell and the string indexes separately. This allows us to
@@ -111,7 +112,7 @@ export class CharacterJoinerService implements ICharacterJoinerService {
     let rangeAttrFG = line.getFg(0);
     let rangeAttrBG = line.getBg(0);
 
-    for (let x = 0; x < line.getTrimmedLength(); x++) {
+    for (let x = 0; x < trimmedLength; x++) {
       line.loadCell(x, this._workCell);
 
       if (this._workCell.getWidth() === 0) {
@@ -147,7 +148,7 @@ export class CharacterJoinerService implements ICharacterJoinerService {
     }
 
     // Process any trailing ranges.
-    if (this._bufferService.cols - rangeStartColumn > 1) {
+    if (trimmedLength - rangeStartColumn > 1) {
       const joinedRanges = this._getJoinedRanges(
         lineStr,
         rangeStartStringIndex,
@@ -216,7 +217,8 @@ export class CharacterJoinerService implements ICharacterJoinerService {
       return;
     }
 
-    for (let x = startCol; x < this._bufferService.cols; x++) {
+    const trimmedLength = line.getTrimmedLength();
+    for (let x = startCol; x < trimmedLength; x++) {
       const width = line.getWidth(x);
       const length = line.getString(x).length || WHITESPACE_CELL_CHAR.length;
 
@@ -264,7 +266,7 @@ export class CharacterJoinerService implements ICharacterJoinerService {
     // If there is still a range left at the end, it must extend all the way to
     // the end of the line.
     if (currentRange) {
-      currentRange[1] = this._bufferService.cols;
+      currentRange[1] = trimmedLength;
     }
   }
 

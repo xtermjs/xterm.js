@@ -25,7 +25,7 @@ export const NULL_CELL_CODE = 0;
 /**
  * Whitespace cell.
  * This is meant as a replacement for empty cells when needed
- * during rendering lines to preserve correct aligment.
+ * during rendering lines to preserve correct alignment.
  */
 export const WHITESPACE_CELL_CHAR = ' ';
 export const WHITESPACE_CELL_WIDTH = 1;
@@ -37,18 +37,18 @@ export const WHITESPACE_CELL_CODE = 32;
 export const enum Content {
   /**
    * bit 1..21    codepoint, max allowed in UTF32 is 0x10FFFF (21 bits taken)
-   *              read:   `codepoint = content & Content.codepointMask;`
-   *              write:  `content |= codepoint & Content.codepointMask;`
+   *              read:   `codepoint = content & Content.CODEPOINT_MASK;`
+   *              write:  `content |= codepoint & Content.CODEPOINT_MASK;`
    *                      shortcut if precondition `codepoint <= 0x10FFFF` is met:
    *                      `content |= codepoint;`
    */
   CODEPOINT_MASK = 0x1FFFFF,
 
   /**
-   * bit 22       flag indication whether a cell contains combined content
-   *              read:   `isCombined = content & Content.isCombined;`
-   *              set:    `content |= Content.isCombined;`
-   *              clear:  `content &= ~Content.isCombined;`
+   * bit 22       flag indicating whether a cell contains combined content
+   *              read:   `isCombined = content & Content.IS_COMBINED_MASK;`
+   *              set:    `content |= Content.IS_COMBINED_MASK;`
+   *              clear:  `content &= ~Content.IS_COMBINED_MASK;`
    */
   IS_COMBINED_MASK = 0x200000,  // 1 << 21
 
@@ -56,19 +56,19 @@ export const enum Content {
    * bit 1..22    mask to check whether a cell contains any string data
    *              we need to check for codepoint and isCombined bits to see
    *              whether a cell contains anything
-   *              read:   `isEmpty = !(content & Content.hasContent)`
+   *              read:   `isEmpty = !(content & Content.HAS_CONTENT_MASK)`
    */
   HAS_CONTENT_MASK = 0x3FFFFF,
 
   /**
    * bit 23..24   wcwidth value of cell, takes 2 bits (ranges from 0..2)
-   *              read:   `width = (content & Content.widthMask) >> Content.widthShift;`
-   *                      `hasWidth = content & Content.widthMask;`
+   *              read:   `width = (content & Content.WIDTH_MASK) >> Content.WIDTH_SHIFT;`
+   *                      `hasWidth = content & Content.WIDTH_MASK;`
    *                      as long as wcwidth is highest value in `content`:
-   *                      `width = content >> Content.widthShift;`
-   *              write:  `content |= (width << Content.widthShift) & Content.widthMask;`
+   *                      `width = content >> Content.WIDTH_SHIFT;`
+   *              write:  `content |= (width << Content.WIDTH_SHIFT) & Content.WIDTH_MASK;`
    *                      shortcut if precondition `0 <= width <= 3` is met:
-   *                      `content |= width << Content.widthShift;`
+   *                      `content |= width << Content.WIDTH_SHIFT;`
    */
   WIDTH_MASK = 0xC00000,   // 3 << 22
   WIDTH_SHIFT = 22

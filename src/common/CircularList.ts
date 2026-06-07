@@ -3,9 +3,8 @@
  * @license MIT
  */
 
-import { ICircularList } from 'common/Types';
-import { Disposable } from 'common/Lifecycle';
-import { Emitter } from 'common/Event';
+import { Disposable } from './Lifecycle';
+import { Emitter, type IEvent } from './Event';
 
 export interface IInsertEvent {
   index: number;
@@ -15,6 +14,27 @@ export interface IInsertEvent {
 export interface IDeleteEvent {
   index: number;
   amount: number;
+}
+
+export interface ICircularList<T> {
+  length: number;
+  maxLength: number;
+  isFull: boolean;
+
+  onDeleteEmitter: Emitter<IDeleteEvent>;
+  onDelete: IEvent<IDeleteEvent>;
+  onInsertEmitter: Emitter<IInsertEvent>;
+  onInsert: IEvent<IInsertEvent>;
+  onTrimEmitter: Emitter<number>;
+  onTrim: IEvent<number>;
+
+  get(index: number): T | undefined;
+  set(index: number, value: T): void;
+  push(value: T): void;
+  pop(): T | undefined;
+  splice(start: number, deleteCount: number, ...items: T[]): void;
+  trimStart(count: number): void;
+  shiftElements(start: number, count: number, offset: number): void;
 }
 
 /**

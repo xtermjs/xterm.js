@@ -3,16 +3,16 @@
  * @license MIT
  */
 
-import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier, IParserStackState, ParserStackType } from 'common/parser/Types';
-import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from 'common/parser/EscapeSequenceParser';
+import { IParsingState, IParams, ParamsArray, IOscParser, IOscHandler, OscFallbackHandlerType, IFunctionIdentifier, IParserStackState, ParserStackType } from './Types';
+import { EscapeSequenceParser, TransitionTable, VT500_TRANSITION_TABLE } from './EscapeSequenceParser';
 import { assert } from 'chai';
-import { StringToUtf32, stringFromCodePoint, utf32ToString } from 'common/input/TextDecoder';
-import { ParserState } from 'common/parser/Constants';
-import { Params } from 'common/parser/Params';
-import { OscHandler } from 'common/parser/OscParser';
-import { IDisposable } from 'common/Types';
-import { DcsHandler } from 'common/parser/DcsParser';
-import { ApcHandler } from 'common/parser/ApcParser';
+import { StringToUtf32, stringFromCodePoint, utf32ToString } from '../input/TextDecoder';
+import { ParserState } from './Constants';
+import { Params } from './Params';
+import { OscHandler } from './OscParser';
+import { IDisposable } from '../Types';
+import { DcsHandler } from './DcsParser';
+import { ApcHandler } from './ApcParser';
 
 
 function r(a: number, b: number): string[] {
@@ -243,7 +243,7 @@ describe('EscapeSequenceParser', () => {
       p = new TestEscapeSequenceParser(tansitions);
       assert.deepEqual(p.transitions, tansitions);
     });
-    it('inital states', () => {
+    it('initial states', () => {
       assert.equal(parser.initialState, ParserState.GROUND);
       assert.equal(parser.currentState, ParserState.GROUND);
       assert.equal(parser.osc, '');
@@ -2176,6 +2176,38 @@ describe('EscapeSequenceParser - async', () => {
       // reset should lift the error condition
       parser.reset();
       await parseP(parser, INPUT); // does not throw anymore
+    });
+    it('reset during async pause continues at next codepoint in chunk', async () => {
+      const localParser = new TestEscapeSequenceParser();
+      const localStack: any[] = [];
+      localParser.setPrintHandler((data, start, end) => {
+        let result = '';
+        for (let i = start; i < end; ++i) {
+          result += stringFromCodePoint(data[i]);
+        }
+        localStack.push(['PRINT', result]);
+      });
+      localParser.registerCsiHandler({ final: 'm' }, async params => {
+        localStack.push(['SGR', params.toArray()]);
+        return new Promise<boolean>(resolve => setTimeout(() => resolve(true), 0));
+      });
+      const data = '\x1b[1mXY';
+      const container = new Uint32Array(data.length);
+      const decoder = new StringToUtf32();
+      const len = decoder.decode(data, container);
+
+      assert.ok(localParser.parse(container, len) instanceof Promise);
+      localParser.reset();
+      assert.equal(localParser.parseStack.state, ParserStackType.RESET);
+
+      let prev: boolean | undefined = true;
+      let result: void | Promise<boolean> | undefined;
+      while (result = localParser.parse(container, len, prev)) {
+        prev = await result;
+      }
+
+      assert.deepEqual(localStack, [['SGR', [1]], ['PRINT', 'XY']]);
+      assert.equal(localParser.parseStack.state, ParserStackType.NONE);
     });
     it('correct result on awaited parse call', async () => {
       await parseP(parser, INPUT);

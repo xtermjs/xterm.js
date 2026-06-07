@@ -2,8 +2,8 @@
  * Copyright (c) 2026 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { Attributes, BgFlags, FgFlags, UnderlineStyle } from 'common/buffer/Constants';
-import { CellData } from 'common/buffer/CellData';
+import { Attributes, BgFlags, FgFlags, UnderlineStyle } from './Constants';
+import { CellData } from './CellData';
 import { assert } from 'chai';
 
 function createStyledCell(char: string, underlineStyle: UnderlineStyle, underlineColor: number): CellData {

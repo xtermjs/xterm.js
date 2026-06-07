@@ -26,6 +26,7 @@ npm run build && npm run esbuild # Build all TypeScript and bundle
 - Integration tests: `npm run test-integration` (Playwright across Chrome/Firefox/WebKit)
 - Integration tests by file: `npm run test-integration -- test/playwright/InputHandler.test.ts`. Never use grep to filter tests, it doesn't work
 - Integration tests by addon: `npm run test-integration -- --suite=addon-search`. Suites always follow the format `addon-<something>`
+- Lint: `npm run lint` (oxlint with type-aware rules, then ESLint for `naming-convention` only), `npm run lint-api` for `typings/`, `npm run lint-fix` for oxlint auto-fix
 - Lint changes: `npm run lint-changes` to lint only changed files, `npm run lint-changes-fix` to fix them
 
 ## Addon Development Pattern
@@ -98,3 +99,15 @@ const cell = line?.getCell(0);
 ## Writing unit tests
 
 - Unit tests live alongside the source code file of the thing it's testing with a .test.ts suffix.
+
+## Cursor Cloud specific instructions
+
+**Demo server**: Start with `npm start` (port 3000). The demo server uses node-pty to spawn real shell sessions over WebSocket. Integration tests auto-start it via Playwright's `webServer` config, so you don't need to start it manually for `npm run test-integration`.
+
+**Build before testing**: Always run `npm run build && npm run esbuild` before `npm run test-unit`. Integration tests also need `npm run esbuild-demo-client` and `npm run esbuild-demo-server`. The update script handles this automatically on session start.
+
+**No external services**: This project has zero external dependencies (no databases, Docker, or APIs). Everything runs locally with Node.js.
+
+**TypeScript compiler**: The project uses `tsgo` (native TypeScript compiler preview) rather than standard `tsc`. It's installed via the `@typescript/native-preview` package.
+
+**Lint only changed files**: Prefer `npm run lint-changes` over `npm run lint` when iterating on code changes — it's significantly faster.

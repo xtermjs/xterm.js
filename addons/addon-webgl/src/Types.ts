@@ -28,6 +28,7 @@ export interface ICursorRenderModel {
 export interface IWebGL2RenderingContext extends WebGLRenderingContext {
   vertexAttribDivisor(index: number, divisor: number): void;
   createVertexArray(): IWebGLVertexArrayObject;
+  deleteVertexArray(vao: IWebGLVertexArrayObject): void;
   bindVertexArray(vao: IWebGLVertexArrayObject): void;
   drawElementsInstanced(mode: number, count: number, type: number, offset: number, instanceCount: number): void;
 }

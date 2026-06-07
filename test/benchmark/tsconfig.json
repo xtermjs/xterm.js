@@ -8,15 +8,14 @@
     "types": [
       "../../node_modules/@types/node"
     ],
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "strict": false,
     "target": "es2021",
-    "module": "commonjs",
+    "module": "nodenext",
     "paths": {
-      "common/*": [ "../../src/common/*" ],
-      "browser/*": [ "../../src/browser/*" ],
-      "Terminal": ["../../src/Terminal"]
-    },
+      "common/*": ["../../src/common/*"],
+      "browser/*": ["../../src/browser/*"]
+    }
   },
   "include": [
     "./**/*",

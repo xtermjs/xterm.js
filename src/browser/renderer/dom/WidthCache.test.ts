@@ -4,7 +4,7 @@
  */
 
 import * as assert from 'assert';
-import { IWidthCacheFontVariantCanvas, WidthCache, WidthCacheSettings } from 'browser/renderer/dom/WidthCache';
+import { IWidthCacheFontVariantCanvas, WidthCache, WidthCacheSettings } from './WidthCache';
 
 
 class MockWidthCacheFontVariantCanvas implements IWidthCacheFontVariantCanvas {

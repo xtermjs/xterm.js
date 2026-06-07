@@ -59,6 +59,7 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
     }
   }
   return a.devicePixelRatio === b.devicePixelRatio &&
+      a.deviceMaxTextureSize === b.deviceMaxTextureSize &&
       a.customGlyphs === b.customGlyphs &&
       a.lineHeight === b.lineHeight &&
       a.letterSpacing === b.letterSpacing &&
@@ -67,6 +68,8 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
       a.fontWeight === b.fontWeight &&
       a.fontWeightBold === b.fontWeightBold &&
       a.allowTransparency === b.allowTransparency &&
+      a.deviceCellWidth === b.deviceCellWidth &&
+      a.deviceCellHeight === b.deviceCellHeight &&
       a.deviceCharWidth === b.deviceCharWidth &&
       a.deviceCharHeight === b.deviceCharHeight &&
       a.drawBoldTextInBrightColors === b.drawBoldTextInBrightColors &&

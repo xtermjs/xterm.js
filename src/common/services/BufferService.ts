@@ -3,13 +3,12 @@
  * @license MIT
  */
 
-import { Disposable } from 'common/Lifecycle';
-import { IAttributeData, IBufferLine } from 'common/Types';
-import { BufferSet } from 'common/buffer/BufferSet';
-import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from 'common/services/Services';
-import { Emitter } from 'common/Event';
-import { BufferLine, LogicalLine } from 'common/buffer/BufferLine';
+import { Disposable } from '../Lifecycle';
+import { IAttributeData, IBuffer, IBufferLine, IBufferSet } from '../buffer/Types';
+import { BufferSet } from '../buffer/BufferSet';
+import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from './Services';
+import { Emitter } from '../Event';
+import { BufferLine, LogicalLine } from '../buffer/BufferLine';
 
 export const enum BufferServiceConstants {
   MINIMUM_COLS = 2, // Less than 2 can mess with wide chars
@@ -74,7 +73,7 @@ export class BufferService extends Disposable implements IBufferService {
     const oldLine = buffer.lines.get(bottomRow) as BufferLine;
     let lline: LogicalLine;
     if (isWrapped) {
-      lline = oldLine.logicalLine;
+      lline = oldLine.logical();
     } else {
       lline = new LogicalLine(0);
     }

@@ -4,8 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from 'common/input/TextDecoder';
-import { encode } from 'utf8';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32, utf32ToString } from './TextDecoder';
 
 
 // convert UTF32 codepoints to string
@@ -27,6 +26,35 @@ function fromByteString(s: string): Uint8Array {
     result[i] = s.charCodeAt(i);
   }
   return result;
+}
+
+function stringToUtf8Bytes(s: string): Uint8Array {
+  const bytes: number[] = [];
+  for (let i = 0; i < s.length; i++) {
+    let cp = s.charCodeAt(i);
+    if (cp >= 0xD800 && cp <= 0xDBFF && i + 1 < s.length) {
+      const next = s.charCodeAt(i + 1);
+      if (next >= 0xDC00 && next <= 0xDFFF) {
+        cp = 0x10000 + ((cp - 0xD800) << 10) + (next - 0xDC00);
+        i++;
+      }
+    }
+    if (cp < 0x80) {
+      bytes.push(cp);
+    } else if (cp < 0x800) {
+      bytes.push(0xC0 | (cp >> 6), 0x80 | (cp & 0x3F));
+    } else if (cp < 0x10000) {
+      bytes.push(0xE0 | (cp >> 12), 0x80 | ((cp >> 6) & 0x3F), 0x80 | (cp & 0x3F));
+    } else {
+      bytes.push(
+        0xF0 | (cp >> 18),
+        0x80 | ((cp >> 12) & 0x3F),
+        0x80 | ((cp >> 6) & 0x3F),
+        0x80 | (cp & 0x3F)
+      );
+    }
+  }
+  return new Uint8Array(bytes);
 }
 
 function assertDecodedRange(
@@ -51,7 +79,7 @@ function assertDecodedRange(
   }
   const target = new Uint32Array(count);
   const length = decode(input, target);
-  assert.equal(length, count);
+  assert.strictEqual(length, count);
   let mismatchIndex = -1;
   let index = 0;
   for (let i = min; i < max; ++i) {
@@ -64,8 +92,8 @@ function assertDecodedRange(
     }
     index++;
   }
-  assert.equal(mismatchIndex, -1);
-  assert.equal(outputToString(target, length), input);
+  assert.strictEqual(mismatchIndex, -1);
+  assert.strictEqual(outputToString(target, length), input);
 }
 
 const BATCH_SIZE = 8192;
@@ -88,9 +116,9 @@ describe('text encodings', () => {
     const data = new Uint32Array(s.length);
     for (let i = 0; i < s.length; ++i) {
       data[i] = s.charCodeAt(i);
-      assert.equal(stringFromCodePoint(data[i]), s[i]);
+      assert.strictEqual(stringFromCodePoint(data[i]), s[i]);
     }
-    assert.equal(utf32ToString(data), s);
+    assert.strictEqual(utf32ToString(data), s);
   });
 
   describe('StringToUtf32 decoder', () => {
@@ -131,7 +159,7 @@ describe('text encodings', () => {
         const decoder = new StringToUtf32();
         const target = new Uint32Array(5);
         const length = decoder.decode(String.fromCharCode(0xFEFF), target);
-        assert.equal(length, 0);
+        assert.strictEqual(length, 0);
         decoder.clear();
       });
     });
@@ -141,7 +169,7 @@ describe('text encodings', () => {
       const target = new Uint32Array(500);
       for (let i = 0; i < TEST_STRINGS.length; ++i) {
         const length = decoder.decode(TEST_STRINGS[i], target);
-        assert.equal(toString(target, length), TEST_STRINGS[i]);
+        assert.strictEqual(toString(target, length), TEST_STRINGS[i]);
         decoder.clear();
       }
     });
@@ -156,7 +184,7 @@ describe('text encodings', () => {
           const written = decoder.decode(input[i], target);
           decoded += toString(target, written);
         }
-        assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+        assert.strictEqual(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
       });
     });
   });
@@ -172,7 +200,7 @@ describe('text encodings', () => {
             max,
             (i) => (i >= 0xD800 && i <= 0xDFFF) || i === 0xFEFF,
             (i) => String.fromCharCode(i),
-            (input, target) => decoder.decode(fromByteString(encode(input)), target),
+            (input, target) => decoder.decode(stringToUtf8Bytes(input), target),
             (data, length) => toString(data, length)
           );
         });
@@ -187,7 +215,7 @@ describe('text encodings', () => {
             max,
             () => false,
             (i) => stringFromCodePoint(i),
-            (input, target) => decoder.decode(fromByteString(encode(input)), target),
+            (input, target) => decoder.decode(stringToUtf8Bytes(input), target),
             (data, length) => toString(data, length)
           );
         });
@@ -196,9 +224,9 @@ describe('text encodings', () => {
       it('0xFEFF(BOM)', () => {
         const decoder = new Utf8ToUtf32();
         const target = new Uint32Array(5);
-        const utf8Data = fromByteString(encode(String.fromCharCode(0xFEFF)));
+        const utf8Data = stringToUtf8Bytes(String.fromCharCode(0xFEFF));
         const length = decoder.decode(utf8Data, target);
-        assert.equal(length, 0);
+        assert.strictEqual(length, 0);
         decoder.clear();
       });
     });
@@ -207,9 +235,9 @@ describe('text encodings', () => {
       const decoder = new Utf8ToUtf32();
       const target = new Uint32Array(500);
       for (let i = 0; i < TEST_STRINGS.length; ++i) {
-        const utf8Data = fromByteString(encode(TEST_STRINGS[i]));
+        const utf8Data = stringToUtf8Bytes(TEST_STRINGS[i]);
         const length = decoder.decode(utf8Data, target);
-        assert.equal(toString(target, length), TEST_STRINGS[i]);
+        assert.strictEqual(toString(target, length), TEST_STRINGS[i]);
         decoder.clear();
       }
     });
@@ -224,7 +252,7 @@ describe('text encodings', () => {
           const written = decoder.decode(utf8Data.slice(i, i + 1), target);
           decoded += toString(target, written);
         }
-        assert(decoded, 'ÄÖÜßöäü');
+        assert.strictEqual(decoded, 'ÄÖÜßöäü');
       });
 
       it('2/3 byte sequences - advance by 1', () => {
@@ -236,7 +264,7 @@ describe('text encodings', () => {
           const written = decoder.decode(utf8Data.slice(i, i + 1), target);
           decoded += toString(target, written);
         }
-        assert(decoded, 'Ä€Ö€Ü€ß€ö€ä€ü');
+        assert.strictEqual(decoded, 'Ä€Ö€Ü€ß€ö€ä€ü');
       });
 
       it('2/3/4 byte sequences - advance by 1', () => {
@@ -248,7 +276,7 @@ describe('text encodings', () => {
           const written = decoder.decode(utf8Data.slice(i, i + 1), target);
           decoded += toString(target, written);
         }
-        assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+        assert.strictEqual(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
       });
 
       it('2/3/4 byte sequences - advance by 2', () => {
@@ -260,7 +288,7 @@ describe('text encodings', () => {
           const written = decoder.decode(utf8Data.slice(i, i + 2), target);
           decoded += toString(target, written);
         }
-        assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+        assert.strictEqual(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
       });
 
       it('2/3/4 byte sequences - advance by 3', () => {
@@ -272,7 +300,7 @@ describe('text encodings', () => {
           const written = decoder.decode(utf8Data.slice(i, i + 3), target);
           decoded += toString(target, written);
         }
-        assert(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
+        assert.strictEqual(decoded, 'Ä€𝄞Ö𝄞€Ü𝄞€');
       });
 
       it('BOMs (3 byte sequences) - advance by 2', () => {
@@ -284,7 +312,7 @@ describe('text encodings', () => {
           const written = decoder.decode(utf8Data.slice(i, i + 2), target);
           decoded += toString(target, written);
         }
-        assert.equal(decoded, '');
+        assert.strictEqual(decoded, '');
       });
 
       it('test break after 3 bytes - issue #2495', () => {
@@ -292,11 +320,37 @@ describe('text encodings', () => {
         const target = new Uint32Array(5);
         const utf8Data = fromByteString('\xf0\xa0\x9c\x8e');
         let written = decoder.decode(utf8Data.slice(0, 3), target);
-        assert.equal(written, 0);
+        assert.strictEqual(written, 0);
         written = decoder.decode(utf8Data.slice(3), target);
-        assert.equal(written, 1);
-        assert(toString(target, written), '𠜎');
+        assert.strictEqual(written, 1);
+        assert.strictEqual(toString(target, written), '𠜎');
       });
+
+      describe('0x80 not swallowed in continuation', () => {
+        it('A—B', () => {
+          const decoder = new Utf8ToUtf32();
+          const target = new Uint32Array(5);
+          const utf8Data = new TextEncoder().encode('A—BA—BA—BA—BA—B');
+          let decoded = '';
+          for (let i = 0; i < utf8Data.length; i += 2) {
+            const written = decoder.decode(utf8Data.slice(i, i + 2), target);
+            decoded += toString(target, written);
+          }
+          assert.strictEqual(decoded, 'A—BA—BA—BA—BA—B');
+        });
+        it('A𐀀B', () => {
+          const decoder = new Utf8ToUtf32();
+          const target = new Uint32Array(5);
+          const utf8Data = new TextEncoder().encode('A𐀀BA𐀀BA𐀀BA𐀀BA𐀀B');
+          let decoded = '';
+          for (let i = 0; i < utf8Data.length; i += 2) {
+            const written = decoder.decode(utf8Data.slice(i, i + 2), target);
+            decoded += toString(target, written);
+          }
+          assert.strictEqual(decoded, 'A𐀀BA𐀀BA𐀀BA𐀀BA𐀀B');
+        });
+      });
+
     });
   });
 });

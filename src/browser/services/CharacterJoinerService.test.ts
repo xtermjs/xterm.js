@@ -4,13 +4,13 @@
  */
 
 import { assert } from 'chai';
-import { ICharacterJoinerService } from 'browser/services/Services';
-import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
-import { BufferLine } from 'common/buffer/BufferLine';
-import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
-import { IBufferLine } from 'common/Types';
-import { CellData } from 'common/buffer/CellData';
-import { MockBufferService, createCellData } from 'common/TestUtils.test';
+import { ICharacterJoinerService } from './Services';
+import { CharacterJoinerService } from './CharacterJoinerService';
+import { BufferLine } from '../../common/buffer/BufferLine';
+import { BufferLineStringCache } from '../../common/buffer/BufferLineStringCache';
+import { IBufferLine } from '../../common/buffer/Types';
+import { CellData } from '../../common/buffer/CellData';
+import { MockBufferService, createCellData } from '../../common/TestUtils.test';
 
 const TEST_STRING_CACHE = new BufferLineStringCache();
 
@@ -285,7 +285,7 @@ function substringJoiner(substring: string): (sequence: string) => [number, numb
   return (sequence: string): [number, number][] => {
     const ranges: [number, number][] = [];
     let searchIndex = 0;
-    let matchIndex = -1;
+    let matchIndex;
 
     while ((matchIndex = sequence.indexOf(substring, searchIndex)) !== -1) {
       const matchEndIndex = matchIndex + substring.length;

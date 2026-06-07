@@ -30,7 +30,8 @@ const TEST_IMAGES: [string, IMetrics][] = [
   ['iphone_hdr_YES.jpg', { mime: 'image/jpeg', width: 3264, height: 2448 }],
   ['nikon-e950.jpg', { mime: 'image/jpeg', width: 800, height: 600 }],
   ['agfa-makernotes.jpg', { mime: 'image/jpeg', width: 8, height: 8 }],
-  ['sony-alpha-6000.jpg', { mime: 'image/jpeg', width: 6000, height: 4000 }]
+  ['sony-alpha-6000.jpg', { mime: 'image/jpeg', width: 6000, height: 4000 }],
+  ['dice.qoi', { mime: 'image/qoi', width: 800, height: 600 }],
 ];
 
 

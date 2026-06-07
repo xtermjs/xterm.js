@@ -22,43 +22,43 @@
  */
 
 import { IDecoration, IDecorationOptions, IDisposable, ILinkProvider, IMarker, IRenderDimensions as IRenderDimensionsApi } from '@xterm/xterm';
-import { copyHandler, handlePasteEvent, moveTextAreaUnderMouseCursor, paste, rightClickHandler } from 'browser/Clipboard';
-import * as Strings from 'browser/LocalizableStrings';
-import { OscLinkProvider } from 'browser/OscLinkProvider';
-import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal } from 'browser/Types';
-import { Viewport } from 'browser/Viewport';
-import { BufferDecorationRenderer } from 'browser/decorations/BufferDecorationRenderer';
-import { OverviewRulerRenderer } from 'browser/decorations/OverviewRulerRenderer';
-import { CompositionHelper } from 'browser/input/CompositionHelper';
-import { DomRenderer } from 'browser/renderer/dom/DomRenderer';
-import { IRenderer } from 'browser/renderer/shared/Types';
-import { CharSizeService } from 'browser/services/CharSizeService';
-import { CharacterJoinerService } from 'browser/services/CharacterJoinerService';
-import { CoreBrowserService } from 'browser/services/CoreBrowserService';
-import { LinkProviderService } from 'browser/services/LinkProviderService';
-import { MouseCoordsService } from 'browser/services/MouseCoordsService';
-import { MouseService } from 'browser/services/MouseService';
-import { RenderService } from 'browser/services/RenderService';
-import { SelectionService } from 'browser/services/SelectionService';
-import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseCoordsService, IMouseService, IRenderService, ISelectionService, IThemeService } from 'browser/services/Services';
-import { ThemeService } from 'browser/services/ThemeService';
-import { KeyboardService } from 'browser/services/KeyboardService';
-import { channels, color, rgb } from 'common/Color';
-import { CoreTerminal } from 'common/CoreTerminal';
-import * as Browser from 'common/Platform';
-import { ColorRequestType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from 'common/Types';
-import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { IBuffer } from 'common/buffer/Types';
-import { C0, C1ESCAPED } from 'common/data/EscapeSequences';
-import { toRgbString } from 'common/input/XParseColor';
-import { DecorationService } from 'common/services/DecorationService';
-import { IDecorationService } from 'common/services/Services';
+import { copyHandler, handlePasteEvent, moveTextAreaUnderMouseCursor, paste, rightClickHandler } from './Clipboard';
+import * as Strings from './LocalizableStrings';
+import { OscLinkProvider } from './OscLinkProvider';
+import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal } from './Types';
+import { Viewport } from './Viewport';
+import { BufferDecorationRenderer } from './decorations/BufferDecorationRenderer';
+import { OverviewRulerRenderer } from './decorations/OverviewRulerRenderer';
+import { CompositionHelper } from './input/CompositionHelper';
+import { DomRenderer } from './renderer/dom/DomRenderer';
+import { IRenderer } from './renderer/shared/Types';
+import { CharSizeService } from './services/CharSizeService';
+import { CharacterJoinerService } from './services/CharacterJoinerService';
+import { CoreBrowserService } from './services/CoreBrowserService';
+import { LinkProviderService } from './services/LinkProviderService';
+import { MouseCoordsService } from './services/MouseCoordsService';
+import { MouseEventCssClasses, MouseService } from './services/MouseService';
+import { RenderService } from './services/RenderService';
+import { SelectionService } from './services/SelectionService';
+import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseCoordsService, IMouseService, IRenderService, ISelectionService, IThemeService } from './services/Services';
+import { ThemeService } from './services/ThemeService';
+import { KeyboardService } from './services/KeyboardService';
+import { channels, color, rgb } from '../common/Color';
+import { CoreTerminal } from '../common/CoreTerminal';
+import * as Browser from '../common/Platform';
+import { ColorRequestType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from '../common/Types';
+import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
+import { IBuffer } from '../common/buffer/Types';
+import { C0, C1ESCAPED } from '../common/data/EscapeSequences';
+import { toRgbString } from '../common/input/XParseColor';
+import { DecorationService } from '../common/services/DecorationService';
+import { IDecorationService } from '../common/services/Services';
 import { WindowsOptionsReportType } from '../common/InputHandler';
 import { AccessibilityManager } from './AccessibilityManager';
 import { Linkifier } from './Linkifier';
-import { Emitter, EventUtils, type IEvent } from 'common/Event';
-import { addDisposableListener } from 'browser/Dom';
-import { MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { Emitter, EventUtils, type IEvent } from '../common/Event';
+import { addDisposableListener } from './Dom';
+import { MutableDisposable, toDisposable } from '../common/Lifecycle';
 
 export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   public textarea: HTMLTextAreaElement | undefined;
@@ -102,7 +102,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _keyDownHandled: boolean = false;
 
   /**
-   * Records whether a keydown event has occured since the last keyup event, i.e. whether a key
+   * Records whether a keydown event has occurred since the last keyup event, i.e. whether a key
    * is currently "pressed".
    */
   private _keyDownSeen: boolean = false;
@@ -212,7 +212,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     if (!this._themeService) return;
     for (const req of event) {
       let acc: 'foreground' | 'background' | 'cursor' | 'ansi';
-      let ident = '';
+      let ident: string;
       switch (req.index) {
         case SpecialColorIndex.FOREGROUND: // OSC 10 | 110
           acc = 'foreground';
@@ -505,7 +505,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.textarea,
       parent.ownerDocument.defaultView ?? window,
       // Force unsafe null in node.js environment for tests
-      this._document ?? (typeof window !== 'undefined') ? window.document : null as any
+      this._document ?? ((typeof window !== 'undefined') ? window.document : null as any)
     ));
     this._instantiationService.setService(ICoreBrowserService, this._coreBrowserService);
 
@@ -563,8 +563,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     try {
       this._onWillOpen.fire(this.element);
+    } catch (e) {
+      this._logService.error('onWillOpen handler threw an exception', e);
     }
-    catch { /* fails to load addon for some reason */ }
     if (!this._renderService.hasRenderer()) {
       this._renderService.setRenderer(this._createRenderer());
     }
@@ -617,11 +618,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.element, 'mousedown', (e: MouseEvent) => this._selectionService!.handleMouseDown(e)));
 
     // apply mouse event classes set by escape codes before terminal was attached
-    if (this.mouseStateService.areMouseEventsActive) {
+    if (this.mouseStateService.areMouseEventsActive && !this.options.mouseEventsRequireAlt) {
       this._selectionService.disable();
-      this.element.classList.add('enable-mouse-events');
+      this.element.classList.add(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
     } else {
       this._selectionService.enable();
+      this.element.classList.remove(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
     }
 
     if (this.options.screenReaderMode) {
@@ -1070,10 +1072,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * Clear the entire buffer, making the prompt line the new first line.
    */
   public clear(): void {
-    if (this.buffer.ybase === 0 && this.buffer.y === 0) {
-      // Don't clear if it's already clear
-      return;
-    }
     this.buffer.clearAllMarkers();
     this.buffer.lines.set(0, this.buffer.lines.get(this.buffer.ybase + this.buffer.y)!);
     this.buffer.lines.length = 1;

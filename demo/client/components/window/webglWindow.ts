@@ -11,8 +11,33 @@ export class WebglWindow extends BaseWindow implements IControlWindow {
   public readonly label = 'webgl';
 
   private _textureAtlasContainer!: HTMLElement;
+  private _stressRunning = false;
+  private _stressScrolling: HTMLInputElement | undefined;
 
   public build(container: HTMLElement): void {
+    const stressDiv = document.createElement('div');
+    const stressStart = document.createElement('button');
+    stressStart.id = 'stress-start';
+    stressStart.textContent = 'atlas stress start';
+    stressStart.addEventListener('click', () => this._stress());
+    stressDiv.appendChild(stressStart);
+
+    const stressStop = document.createElement('button');
+    stressStop.id = 'stress-stop';
+    stressStop.textContent = 'atlas stress stop';
+    stressStop.addEventListener('click', () => this._stressRunning = false);
+    stressDiv.appendChild(stressStop);
+
+    this._stressScrolling = document.createElement('input');
+    this._stressScrolling.type = 'checkbox';
+    this._stressScrolling.id = 'stress-scrolling';
+    stressDiv.appendChild(this._stressScrolling);
+    const stressScrollingLabel = document.createElement('label');
+    stressScrollingLabel.htmlFor = 'stress-scrolling';
+    stressScrollingLabel.textContent = 'stress scrolling';
+    stressDiv.appendChild(stressScrollingLabel);
+    container.appendChild(stressDiv);
+
     const zoomCheckbox = document.createElement('input');
     zoomCheckbox.type = 'checkbox';
     zoomCheckbox.id = 'texture-atlas-zoom';
@@ -43,9 +68,38 @@ export class WebglWindow extends BaseWindow implements IControlWindow {
   }
 
   private _styleAtlasPage(canvas: HTMLCanvasElement): void {
-    // eslint-disable-next-line no-restricted-syntax
+    // oxlint-disable-next-line eslint-js/no-restricted-syntax
     const dpr = window.devicePixelRatio;
     canvas.style.width = `${canvas.width / dpr}px`;
     canvas.style.height = `${canvas.height / dpr}px`;
+  }
+
+  private async _stress(): Promise<void> {
+    const TEXT = '!"#$%&\'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~';
+    if (this._stressRunning) {
+      return;
+    }
+    this._stressRunning = true;
+    const scrolling = !!(this._stressScrolling?.checked);
+    for (let r = 0; r < 256; r += 2) {
+      for (let g = 0; g < 256; g += 2) {
+        let s: string[] = [];
+        for (let b = 0; b < 256; b += 2) {
+          if (!this._stressRunning) {
+            return;
+          }
+          const rbg = `RGB: ${[r, g, b]}`;
+          s.push(`\r\x1b[38;2;${r};${g};${b}m${rbg.padEnd(18, ' ')}${TEXT}`);
+          if (s.length >= 16) {
+            if (scrolling) {
+              await new Promise<void>(r => this._terminal.write(s.join('\r\n') + '\r\n', r));
+            } else {
+              await new Promise<void>(r => this._terminal.write('\x1b[H' + s.join('\r\n'), r));
+            }
+            s = [];
+          }
+        }
+      }
+    }
   }
 }
