@@ -854,6 +854,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
+      // Reset _keyDownSeen when composition handles the keydown (e.g. keyCode 229 on
+      // Android). The keydown did not produce any data, so the subsequent input event
+      // must be allowed through to _inputEvent() to forward the IME text.
+      this._keyDownSeen = false;
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
         this.scrollToBottom(true);
       }
@@ -1037,6 +1041,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
       // keys could be ignored
       this._unprocessedDeadKey = false;
+      // Cancel any pending composition send when the input event handles the committed text.
+      // This prevents double-sending when _finalizeComposition's setTimeout fires.
+      this._compositionHelper?.cancelPendingComposition();
 
       const text = ev.data;
       this.coreService.triggerDataEvent(text, true);
