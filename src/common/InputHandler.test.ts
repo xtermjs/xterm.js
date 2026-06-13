@@ -475,6 +475,13 @@ describe('InputHandler', () => {
       inputHandler.eraseInLine(Params.fromArray([1]));
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
 
+      // params[1] - full line erase at last column clears wrap on next line
+      await resetToBaseState();
+      bufferService.buffer.y = 1;
+      bufferService.buffer.x = bufferService.cols - 1;
+      inputHandler.eraseInLine(Params.fromArray([1]));
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
+
       // params[2] - erase complete line
       await resetToBaseState();
       bufferService.buffer.y = 2;
