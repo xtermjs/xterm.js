@@ -4,26 +4,27 @@
  * @license MIT
  */
 
-import { IInputHandler, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
-import { IAttributeData, IBuffer } from './buffer/Types';
-import { C0, C1 } from './data/EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from './data/Charsets';
-import { EscapeSequenceParser } from './parser/EscapeSequenceParser';
-import { Disposable } from './Lifecycle';
-import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from './input/TextDecoder';
-import { BufferLine, DEFAULT_ATTR_DATA } from './buffer/BufferLine';
-import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from './parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from './buffer/Constants';
-import { CellData } from './buffer/CellData';
-import { AttributeData } from './buffer/AttributeData';
+import { IDisposable, IColorEvent, ColorIndex, ColorRequestType, SpecialColorIndex } from './primitives/Types';
+import { IInputHandler, IWindowOptions, IParseStack } from './Types';
+import { IAttributeData, IBuffer } from './primitives/buffer/Types';
+import { C0, C1 } from './primitives/data/EscapeSequences';
+import { CHARSETS, DEFAULT_CHARSET } from './primitives/data/Charsets';
+import { EscapeSequenceParser } from './primitives/parser/EscapeSequenceParser';
+import { Disposable } from './primitives/Lifecycle';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from './primitives/input/TextDecoder';
+import { BufferLine, DEFAULT_ATTR_DATA } from './primitives/buffer/BufferLine';
+import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from './primitives/parser/Types';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from './primitives/buffer/Constants';
+import { CellData } from './primitives/buffer/CellData';
+import { AttributeData } from './primitives/buffer/AttributeData';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from './services/Services';
 import { UnicodeService } from './services/UnicodeService';
-import { OscHandler } from './parser/OscParser';
-import { DcsHandler } from './parser/DcsParser';
-import { ApcHandler } from './parser/ApcParser';
-import { parseColor } from './input/XParseColor';
-import { Emitter } from './Event';
-import { XTERM_VERSION } from './Version';
+import { OscHandler } from './primitives/parser/OscParser';
+import { DcsHandler } from './primitives/parser/DcsParser';
+import { ApcHandler } from './primitives/parser/ApcParser';
+import { parseColor } from './primitives/input/XParseColor';
+import { Emitter } from './primitives/Event';
+import { XTERM_VERSION } from './primitives/Version';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.

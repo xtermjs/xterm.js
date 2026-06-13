@@ -5,12 +5,12 @@
 
 import { assert } from 'chai';
 import { DecorationLineCache, DecorationService } from './DecorationService';
-import { IMarker } from '../buffer/Types';
-import { Disposable } from '../Lifecycle';
-import { Emitter } from '../Event';
+import { IMarker } from '../primitives/buffer/Types';
+import { Disposable } from '../primitives/Lifecycle';
+import { Emitter } from '../primitives/Event';
 import { MockLogService, MockBufferService, MockOptionsService } from '../TestUtils.test';
-import { Buffer } from '../buffer/Buffer';
-import { DEFAULT_ATTR_DATA } from '../buffer/BufferLine';
+import { Buffer } from '../primitives/buffer/Buffer';
+import { DEFAULT_ATTR_DATA } from '../primitives/buffer/BufferLine';
 
 describe('DecorationService', () => {
   let bufferService: MockBufferService;

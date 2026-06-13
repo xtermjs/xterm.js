@@ -6,14 +6,15 @@
 import { IBufferService, ICoreService, ILogService, IOptionsService, ITerminalOptions, IMouseStateService, ICharsetService, UnicodeCharProperties, UnicodeCharWidth, IUnicodeService, IUnicodeVersionProvider, LogLevelEnum, IDecorationService, IInternalDecoration, IOscLinkService, type IBufferResizeEvent } from './services/Services';
 import { UnicodeService } from './services/UnicodeService';
 import { DEFAULT_OPTIONS } from './services/OptionsService';
-import { IAttributeData, IBuffer, IBufferLine, IBufferSet, IExtendedAttrs } from './buffer/Types';
-import { BufferSet } from './buffer/BufferSet';
-import { IDecPrivateModes, ICoreMouseEvent, CoreMouseEventType, ICharset, IModes, IOscLinkData, IDisposable } from './Types';
-import { UnicodeV6 } from './input/UnicodeV6';
+import { IAttributeData, IBuffer, IBufferLine, IBufferSet, IExtendedAttrs } from './primitives/buffer/Types';
+import { BufferSet } from './primitives/buffer/BufferSet';
+import { ICoreMouseEvent, CoreMouseEventType, ICharset, IOscLinkData, IDisposable } from './primitives/Types';
+import { IDecPrivateModes, IModes } from './Types';
+import { UnicodeV6 } from './primitives/input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
-import { Emitter, type IEvent } from './Event';
-import { CellData } from './buffer/CellData';
-import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from './buffer/Constants';
+import { Emitter, type IEvent } from './primitives/Event';
+import { CellData } from './primitives/buffer/CellData';
+import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from './primitives/buffer/Constants';
 
 export function createCellData(attr: number, char: string, width: number): CellData {
   return CellData.fromCharData([attr, char, width, char.length === 0 ? 0 : char.charCodeAt(0)]);

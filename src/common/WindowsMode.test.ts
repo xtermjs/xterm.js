@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { DEFAULT_ATTR_DATA } from './buffer/BufferLine';
+import { DEFAULT_ATTR_DATA } from './primitives/buffer/BufferLine';
 import { updateWindowsModeWrappedState } from './WindowsMode';
 import { BufferService } from './services/BufferService';
 import { OptionsService } from './services/OptionsService';

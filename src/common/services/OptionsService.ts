@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { Disposable, toDisposable } from '../Lifecycle';
-import { isMac } from '../Platform';
-import { CursorStyle, IDisposable } from '../Types';
+import { Disposable, toDisposable } from '../primitives/Lifecycle';
+import { isMac } from '../primitives/Platform';
+import { CursorStyle, IDisposable } from '../primitives/Types';
 import { FontWeight, IOptionsService, ITerminalOptions } from './Services';
-import { Emitter } from '../Event';
+import { Emitter } from '../primitives/Event';
 
 export const DEFAULT_OPTIONS: Readonly<Required<ITerminalOptions>> = {
   cols: 80,

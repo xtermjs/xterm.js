@@ -5,7 +5,7 @@
 import { assert } from 'chai';
 import { AltMouseCursorController, MouseEventCssClasses, MouseService } from './MouseService';
 import { MouseStateService } from '../../common/services/MouseStateService';
-import { CoreMouseAction, CoreMouseButton } from '../../common/Types';
+import { CoreMouseAction, CoreMouseButton } from '../../common/primitives/Types';
 import { IBufferService, ICoreService, ILogService, IOptionsService } from '../../common/services/Services';
 import { OptionsService } from '../../common/services/OptionsService';
 import { MockCoreBrowserService, MockRenderService, MockSelectionService } from '../TestUtils.test';

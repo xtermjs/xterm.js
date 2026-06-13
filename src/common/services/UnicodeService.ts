@@ -4,7 +4,7 @@
  */
 
 import { IUnicodeService, IUnicodeVersionProvider, UnicodeCharProperties, UnicodeCharWidth } from './Services';
-import { Emitter } from '../Event';
+import { Emitter } from '../primitives/Event';
 
 export class UnicodeService implements IUnicodeService {
   public serviceBrand: any;

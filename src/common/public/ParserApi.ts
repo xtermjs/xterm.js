@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IParams } from '../parser/Types';
+import { IParams } from '../primitives/parser/Types';
 import { IDisposable, IFunctionIdentifier, IParser } from '@xterm/xterm';
 import { ICoreTerminal } from '../CoreTerminal';
 

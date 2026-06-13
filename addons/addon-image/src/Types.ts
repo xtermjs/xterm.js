@@ -6,11 +6,11 @@
 import { IDisposable, IMarker, Terminal } from '@xterm/xterm';
 
 // private imports from base repo we build against
-import { Attributes, BgFlags, Content, ExtFlags, UnderlineStyle } from 'common/buffer/Constants';
-import type { AttributeData } from 'common/buffer/AttributeData';
-import type { IParams, IDcsHandler, IOscHandler, IApcHandler, IEscapeSequenceParser } from 'common/parser/Types';
+import { Attributes, BgFlags, Content, ExtFlags, UnderlineStyle } from 'common/primitives/buffer/Constants';
+import type { AttributeData } from 'common/primitives/buffer/AttributeData';
+import type { IParams, IDcsHandler, IOscHandler, IApcHandler, IEscapeSequenceParser } from 'common/primitives/parser/Types';
 import type { IInputHandler } from 'common/Types';
-import type { IBufferLine, IExtendedAttrs } from 'common/buffer/Types';
+import type { IBufferLine, IExtendedAttrs } from 'common/primitives/buffer/Types';
 import type { ITerminal, ReadonlyColorSet } from 'browser/Types';
 import type { IRenderDimensions } from 'browser/renderer/shared/Types';
 import type { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';

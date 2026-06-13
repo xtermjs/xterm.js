@@ -5,7 +5,7 @@
 
 import { assert } from 'chai';
 import { SortedList } from './SortedList';
-import { MockLogService } from './TestUtils.test';
+import { MockLogService } from '../TestUtils.test';
 
 const deepStrictEqual = assert.deepStrictEqual;
 

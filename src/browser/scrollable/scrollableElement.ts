@@ -11,10 +11,10 @@ import { HorizontalScrollbar } from './horizontalScrollbar';
 import { IScrollableElementChangeOptions, IScrollableElementCreationOptions, IScrollableElementResolvedOptions } from './scrollableElementOptions';
 import { VerticalScrollbar } from './verticalScrollbar';
 import { Widget } from './widget';
-import { TimeoutTimer } from '../../common/Async';
-import { Emitter, IEvent } from '../../common/Event';
-import { IDisposable, dispose } from '../../common/Lifecycle';
-import * as platform from '../../common/Platform';
+import { TimeoutTimer } from '../../common/primitives/Async';
+import { Emitter, IEvent } from '../../common/primitives/Event';
+import { IDisposable, dispose } from '../../common/primitives/Lifecycle';
+import * as platform from '../../common/primitives/Platform';
 import { INewScrollDimensions, INewScrollPosition, IScrollDimensions, IScrollPosition, IScrollEvent, Scrollable, ScrollbarVisibility } from './scrollable';
 // import 'vs/css!./media/scrollbars';
 

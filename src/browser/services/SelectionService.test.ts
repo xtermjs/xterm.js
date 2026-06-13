@@ -6,13 +6,13 @@
 import { assert } from 'chai';
 import { SelectionService, SelectionMode } from './SelectionService';
 import { SelectionModel } from '../selection/SelectionModel';
-import { IBuffer, IBufferLine } from '../../common/buffer/Types';
+import { IBuffer, IBufferLine } from '../../common/primitives/buffer/Types';
 import { MockBufferService, MockOptionsService, MockCoreService, MockMouseStateService, createCellData } from '../../common/TestUtils.test';
-import { BufferLine } from '../../common/buffer/BufferLine';
-import { BufferLineStringCache } from '../../common/buffer/BufferLineStringCache';
+import { BufferLine } from '../../common/primitives/buffer/BufferLine';
+import { BufferLineStringCache } from '../../common/primitives/buffer/BufferLineStringCache';
 import { IBufferService, IOptionsService } from '../../common/services/Services';
 import { MockCoreBrowserService, MockMouseService, MockRenderService } from '../TestUtils.test';
-import { CellData } from '../../common/buffer/CellData';
+import { CellData } from '../../common/primitives/buffer/CellData';
 import { IRenderService } from './Services';
 
 const TEST_STRING_CACHE = new BufferLineStringCache();

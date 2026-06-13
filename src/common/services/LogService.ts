@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Disposable } from '../Lifecycle';
+import { Disposable } from '../primitives/Lifecycle';
 import { ILogService, IOptionsService, LogLevelEnum } from './Services';
 
 type LogType = (message?: any, ...optionalParams: any[]) => void;

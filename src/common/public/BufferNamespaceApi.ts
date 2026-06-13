@@ -6,8 +6,8 @@
 import { IBuffer as IBufferApi, IBufferNamespace as IBufferNamespaceApi } from '@xterm/xterm';
 import { BufferApiView } from './BufferApiView';
 import { ICoreTerminal } from '../CoreTerminal';
-import { Disposable } from '../Lifecycle';
-import { Emitter } from '../Event';
+import { Disposable } from '../primitives/Lifecycle';
+import { Emitter } from '../primitives/Event';
 
 export class BufferNamespaceApi extends Disposable implements IBufferNamespaceApi {
   private _normal: BufferApiView;

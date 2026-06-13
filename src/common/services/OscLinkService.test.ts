@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { AttributeData } from '../buffer/AttributeData';
+import { AttributeData } from '../primitives/buffer/AttributeData';
 import { BufferService } from './BufferService';
 import { OptionsService } from './OptionsService';
 import { OscLinkService } from './OscLinkService';

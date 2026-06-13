@@ -7,8 +7,8 @@ import { IRenderDimensions, IRenderer } from '../renderer/shared/Types';
 import { IColorSet, ILink, ReadonlyColorSet } from '../Types';
 import { ISelectionRedrawRequestEvent as ISelectionRequestRedrawEvent, ISelectionRequestScrollLinesEvent } from '../selection/Types';
 import { createDecorator } from '../../common/services/ServiceRegistry';
-import { AllColorIndex, IDisposable, IKeyboardResult } from '../../common/Types';
-import type { IEvent } from '../../common/Event';
+import { AllColorIndex, IDisposable, IKeyboardResult } from '../../common/primitives/Types';
+import type { IEvent } from '../../common/primitives/Event';
 
 export const ICharSizeService = createDecorator<ICharSizeService>('CharSizeService');
 export interface ICharSizeService {

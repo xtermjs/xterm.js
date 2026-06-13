@@ -5,13 +5,13 @@
 
 import { assert } from 'chai';
 import { InputHandler } from './InputHandler';
-import { IColorEvent, ColorRequestType, SpecialColorIndex } from './Types';
-import { IAttributeData, IBufferLine } from './buffer/Types';
-import { DEFAULT_ATTR_DATA } from './buffer/BufferLine';
-import { CellData } from './buffer/CellData';
-import { Attributes, BgFlags, UnderlineStyle } from './buffer/Constants';
-import { AttributeData, ExtendedAttrs } from './buffer/AttributeData';
-import { Params } from './parser/Params';
+import { IColorEvent, ColorRequestType, SpecialColorIndex } from './primitives/Types';
+import { IAttributeData, IBufferLine } from './primitives/buffer/Types';
+import { DEFAULT_ATTR_DATA } from './primitives/buffer/BufferLine';
+import { CellData } from './primitives/buffer/CellData';
+import { Attributes, BgFlags, UnderlineStyle } from './primitives/buffer/Constants';
+import { AttributeData, ExtendedAttrs } from './primitives/buffer/AttributeData';
+import { Params } from './primitives/parser/Params';
 import { MockCoreService, MockBufferService, MockOptionsService, MockLogService, MockMouseStateService, MockCharsetService, MockUnicodeService, MockOscLinkService, extendedAttributes } from './TestUtils.test';
 import { IBufferService, ICoreService, type IOscLinkService } from './services/Services';
 import { DEFAULT_OPTIONS } from './services/OptionsService';
@@ -19,7 +19,7 @@ import { BufferService } from './services/BufferService';
 import { CharsetService } from './services/CharsetService';
 import { CoreService } from './services/CoreService';
 import { OscLinkService } from './services/OscLinkService';
-import { CHARSETS } from './data/Charsets';
+import { CHARSETS } from './primitives/data/Charsets';
 
 
 function getCursor(bufferService: IBufferService): number[] {

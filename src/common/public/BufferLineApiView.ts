@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { CellData } from '../buffer/CellData';
-import { IBufferLine, ICellData } from '../buffer/Types';
+import { CellData } from '../primitives/buffer/CellData';
+import { IBufferLine, ICellData } from '../primitives/buffer/Types';
 import { IBufferCell as IBufferCellApi, IBufferLine as IBufferLineApi } from '@xterm/xterm';
 
 export class BufferLineApiView implements IBufferLineApi {

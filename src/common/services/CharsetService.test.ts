@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { CHARSETS } from '../data/Charsets';
+import { CHARSETS } from '../primitives/data/Charsets';
 import { CharsetService } from './CharsetService';
 
 describe('CharsetService', () => {

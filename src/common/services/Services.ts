@@ -4,10 +4,11 @@
  */
 
 import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
-import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from '../Types';
-import { IAttributeData, IBuffer, IBufferSet } from '../buffer/Types';
+import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDisposable, IOscLinkData } from '../primitives/Types';
+import { IDecPrivateModes, IKittyKeyboardState, IModes, IWindowOptions } from '../Types';
+import { IAttributeData, IBuffer, IBufferSet } from '../primitives/buffer/Types';
 import { createDecorator, IServiceIdentifier } from './ServiceRegistry';
-import type { Emitter, IEvent } from '../Event';
+import type { Emitter, IEvent } from '../primitives/Event';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {

@@ -7,7 +7,7 @@ import { BaseWindow } from './baseWindow';
 import type { IControlWindow } from '../controlBar';
 import type { IBufferCell } from '@xterm/xterm';
 
-// Underline style values from common/buffer/Constants.ts
+// Underline style values from common/primitives/buffer/Constants.ts
 const enum UnderlineStyle {
   NONE = 0,
   SINGLE = 1,

@@ -26,20 +26,21 @@ import { InstantiationService } from './services/InstantiationService';
 import { LogService } from './services/LogService';
 import { BufferService, BufferServiceConstants } from './services/BufferService';
 import { OptionsService } from './services/OptionsService';
-import { IDisposable, IScrollEvent, ITerminalOptions, IParams } from './Types';
-import { IAttributeData, IBufferSet } from './buffer/Types';
+import { IDisposable, IParams } from './primitives/Types';
+import { IScrollEvent, ITerminalOptions } from './Types';
+import { IAttributeData, IBufferSet } from './primitives/buffer/Types';
 import { CoreService } from './services/CoreService';
 import { MouseStateService } from './services/MouseStateService';
-import { UnicodeV6 } from './input/UnicodeV6';
+import { UnicodeV6 } from './primitives/input/UnicodeV6';
 import { UnicodeService } from './services/UnicodeService';
 import { CharsetService } from './services/CharsetService';
 import { updateWindowsModeWrappedState } from './WindowsMode';
-import { IFunctionIdentifier } from './parser/Types';
+import { IFunctionIdentifier } from './primitives/parser/Types';
 import { InputHandler } from './InputHandler';
-import { WriteBuffer } from './input/WriteBuffer';
+import { WriteBuffer } from './primitives/input/WriteBuffer';
 import { OscLinkService } from './services/OscLinkService';
-import { Emitter, EventUtils, type IEvent } from './Event';
-import { Disposable, MutableDisposable, toDisposable } from './Lifecycle';
+import { Emitter, EventUtils, type IEvent } from './primitives/Event';
+import { Disposable, MutableDisposable, toDisposable } from './primitives/Lifecycle';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;

@@ -6,9 +6,9 @@
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { IThemeService } from 'browser/services/Services';
 import { ReadonlyColorSet } from 'browser/Types';
-import { Attributes, FgFlags } from 'common/buffer/Constants';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IColor } from 'common/Types';
+import { Attributes, FgFlags } from 'common/primitives/buffer/Constants';
+import { Disposable, toDisposable } from 'common/primitives/Lifecycle';
+import { IColor } from 'common/primitives/Types';
 import { Terminal } from '@xterm/xterm';
 import { RenderModelConstants } from './RenderModel';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';

@@ -7,19 +7,20 @@ import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration, I
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from './services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from './renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from './Types';
-import { IAttributeData, IBuffer, IBufferLine, IBufferSet, ICellData } from '../common/buffer/Types';
-import { ICircularList } from '../common/CircularList';
-import { XtermListener, ICharset, ITerminalOptions, ColorIndex } from '../common/Types';
-import { Buffer } from '../common/buffer/Buffer';
-import * as Browser from '../common/Platform';
+import { IAttributeData, IBuffer, IBufferLine, IBufferSet, ICellData } from '../common/primitives/buffer/Types';
+import { ICircularList } from '../common/primitives/CircularList';
+import { XtermListener, ICharset, ColorIndex } from '../common/primitives/Types';
+import { ITerminalOptions } from '../common/Types';
+import { Buffer } from '../common/primitives/buffer/Buffer';
+import * as Browser from '../common/primitives/Platform';
 import { CoreBrowserTerminal } from './CoreBrowserTerminal';
 import { IUnicodeService, IOptionsService, ICoreService, IMouseStateService } from '../common/services/Services';
-import { IFunctionIdentifier, IParams } from '../common/parser/Types';
-import { AttributeData } from '../common/buffer/AttributeData';
+import { IFunctionIdentifier, IParams } from '../common/primitives/parser/Types';
+import { AttributeData } from '../common/primitives/buffer/AttributeData';
 import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from './selection/Types';
-import { css } from '../common/Color';
+import { css } from '../common/primitives/Color';
 import { createRenderDimensions } from './renderer/shared/RendererUtils';
-import { Emitter, type IEvent } from '../common/Event';
+import { Emitter, type IEvent } from '../common/primitives/Event';
 
 export class TestTerminal extends CoreBrowserTerminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }

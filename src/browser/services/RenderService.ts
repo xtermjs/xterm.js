@@ -7,10 +7,10 @@ import { RenderDebouncer } from '../RenderDebouncer';
 import { IRenderDebouncerWithCallback } from '../Types';
 import { IRenderDimensions, IRenderer } from '../renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from './Services';
-import { Disposable, MutableDisposable, toDisposable } from '../../common/Lifecycle';
-import { DebouncedIdleTask } from '../../common/TaskQueue';
+import { Disposable, MutableDisposable, toDisposable } from '../../common/primitives/Lifecycle';
+import { DebouncedIdleTask } from '../../common/primitives/TaskQueue';
 import { IBufferService, ICoreService, IDecorationService, ILogService, IOptionsService } from '../../common/services/Services';
-import { Emitter } from '../../common/Event';
+import { Emitter } from '../../common/primitives/Event';
 
 interface ISelectionState {
   start: [number, number] | undefined;

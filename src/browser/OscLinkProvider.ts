@@ -5,8 +5,8 @@
 
 import { IBufferRange, ILink } from './Types';
 import { ILinkProvider } from './services/Services';
-import { CellData } from '../common/buffer/CellData';
-import { IBufferLine } from '../common/buffer/Types';
+import { CellData } from '../common/primitives/buffer/CellData';
+import { IBufferLine } from '../common/primitives/buffer/Types';
 import { IBufferService, IOptionsService, IOscLinkService } from '../common/services/Services';
 
 export class OscLinkProvider implements ILinkProvider {

@@ -10,10 +10,10 @@ import { CursorBlinkStateManager } from './CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from './DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { CharData, IBufferLine, ICellData } from 'common/buffer/Types';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { CharData, IBufferLine, ICellData } from 'common/primitives/buffer/Types';
+import { AttributeData } from 'common/primitives/buffer/AttributeData';
+import { CellData } from 'common/primitives/buffer/CellData';
+import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/primitives/buffer/Constants';
 import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
@@ -23,9 +23,9 @@ import { COMBINED_CHAR_BIT_MASK, RenderModel, RenderModelConstants } from './Ren
 import { IWebGL2RenderingContext, type ITextureAtlas } from './Types';
 import { LinkRenderLayer } from './renderLayer/LinkRenderLayer';
 import { IRenderLayer } from './renderLayer/Types';
-import { Emitter, EventUtils } from 'common/Event';
+import { Emitter, EventUtils } from 'common/primitives/Event';
 import { addDisposableListener } from 'browser/Dom';
-import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/primitives/Lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 
 const enum Constants {

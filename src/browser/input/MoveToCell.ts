@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { C0 } from '../../common/data/EscapeSequences';
+import { C0 } from '../../common/primitives/data/EscapeSequences';
 import { IBufferService } from '../../common/services/Services';
 
 const enum Direction {
