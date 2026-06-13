@@ -64,7 +64,7 @@ export interface IExtendedAttrsImage extends IExtendedAttrs {
 
 /* eslint-disable */
 export interface IBufferLineExt extends IBufferLine {
-  _extendedAttrs: {[index: number]: IExtendedAttrsImage | undefined};
+  _extendedAttrs: {[index: number]: IExtendedAttrsImage | undefined} | undefined;
   _data: Uint32Array;
 }
 
