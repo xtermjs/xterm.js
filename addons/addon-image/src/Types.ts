@@ -9,7 +9,8 @@ import { IDisposable, IMarker, Terminal } from '@xterm/xterm';
 import { Attributes, BgFlags, Content, ExtFlags, UnderlineStyle } from 'common/buffer/Constants';
 import type { AttributeData } from 'common/buffer/AttributeData';
 import type { IParams, IDcsHandler, IOscHandler, IApcHandler, IEscapeSequenceParser } from 'common/parser/Types';
-import type { IBufferLine, IExtendedAttrs, IInputHandler } from 'common/Types';
+import type { IInputHandler } from 'common/Types';
+import type { IBufferLine, IExtendedAttrs } from 'common/buffer/Types';
 import type { ITerminal, ReadonlyColorSet } from 'browser/Types';
 import type { IRenderDimensions } from 'browser/renderer/shared/Types';
 import type { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
@@ -100,6 +101,14 @@ export interface ICellSize {
 }
 
 export type ImageLayer = 'top' | 'bottom';
+export type CursorPos = 'vt340' | 'iip';
+
+export interface IAddImageOpts {
+  scrolling: boolean;
+  layer: ImageLayer;
+  zIndex: number;
+  cursorPos: CursorPos;
+}
 
 export interface IImageSpec {
   orig: HTMLCanvasElement | ImageBitmap | undefined;

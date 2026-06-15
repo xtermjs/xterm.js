@@ -3,10 +3,10 @@
  * @license MIT
  */
 
-import { CharData, ICellData, IExtendedAttrs } from 'common/Types';
-import { stringFromCodePoint } from 'common/input/TextDecoder';
-import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from 'common/buffer/Constants';
-import { AttributeData, ExtendedAttrs } from 'common/buffer/AttributeData';
+import { CharData, ICellData, IExtendedAttrs } from './Types';
+import { stringFromCodePoint } from '../input/TextDecoder';
+import { CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, CHAR_DATA_ATTR_INDEX, Content } from './Constants';
+import { AttributeData, ExtendedAttrs } from './AttributeData';
 import type { IBufferCell as IBufferCellApi } from '@xterm/xterm';
 
 /**

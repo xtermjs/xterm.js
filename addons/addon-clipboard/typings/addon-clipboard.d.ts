@@ -30,18 +30,6 @@ declare module '@xterm/addon-clipboard' {
     public dispose(): void
   }
 
-  /**
-   * Clipboard selection type. This is used to specify which selection buffer to
-   * read or write to.
-   * - SYSTEM `c`: The system clipboard.
-   * - PRIMARY `p`: The primary clipboard. This is provided for compatibility
-   *  with Linux X11.
-   */
-  export const enum ClipboardSelectionType {
-    SYSTEM = 'c',
-    PRIMARY = 'p',
-  }
-
   export interface IBase64 {
     /**
     * Converts a utf-8 string to a base64 string.
@@ -78,36 +66,39 @@ declare module '@xterm/addon-clipboard' {
   export interface IClipboardProvider {
     /**
      * Gets the clipboard content.
-     * @param selection The clipboard selection to read.
+     * @param selection The clipboard selection to read (see OSC 52 spec of xterm).
      * @returns A promise that resolves with clipboard selection data.
      */
-    readText(selection: ClipboardSelectionType): string | Promise<string>;
+    readText(selection: string): string | Promise<string>;
 
     /**
      * Sets the clipboard content.
-     * @param selection The clipboard selection to set.
+     * @param selection The clipboard selection to set (see OSC 52 spec of xterm).
      * @param data The clipboard text to write.
      */
-    writeText(selection: ClipboardSelectionType, text: string): void | Promise<void>;
+    writeText(selection: string, text: string): void | Promise<void>;
   }
 
   /**
-   * The clipboard provider interface that enables xterm.js to access the system clipboard.
+   * The clipboard provider interface that enables xterm.js to access the browser clipboard.
+   *
+   * Note that this clipboard provider does not implement own cut buffers as xterm does,
+   * but redirect the selection parameter always to navigator.clipboard.
    */
   export class BrowserClipboardProvider implements IClipboardProvider{
     /**
      * Reads text from the clipboard.
-     * @param selection The selection type to read from.
+     * @param selection The selection type to read from (always refers to navigator.clipboard).
      * @returns A promise that resolves with the text from the clipboard.
      */
-    public readText(selection: ClipboardSelectionType): Promise<string>;
+    public readText(selection: string): Promise<string>;
 
     /**
      * Writes text to the clipboard.
-     * @param selection The selection type to write to.
+     * @param selection The selection type to write to (always refers to navigator.clipboard).
      * @param data The text to write to the clipboard.
      * @returns A promise that resolves when the text has been written to the clipboard.
      */
-    public writeText(selection: ClipboardSelectionType, data: string): Promise<void>;
+    public writeText(selection: string, data: string): Promise<void>;
   }
 }

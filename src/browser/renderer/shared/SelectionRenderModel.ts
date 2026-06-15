@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ITerminal } from 'browser/Types';
-import { ISelectionRenderModel } from 'browser/renderer/shared/Types';
+import { ITerminal } from '../../Types';
+import { ISelectionRenderModel } from './Types';
 import { Terminal } from '@xterm/xterm';
 
 class SelectionRenderModel implements ISelectionRenderModel {

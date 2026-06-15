@@ -12,7 +12,7 @@ let argv = process.argv.slice(2);
 let suiteFilter = undefined;
 while (argv.some(e => e.startsWith('--suite='))) {
   const i = argv.findIndex(e => e.startsWith('--suite='));
-  const match = argv[i].match(/--suite=(?<suitename>.+)/)
+  const match = argv[i].match(/--suite=(?<suitename>.+)/);
   suiteFilter = match?.groups?.suitename ?? undefined;
   argv.splice(i, 1);
 }
@@ -42,12 +42,18 @@ if (suiteFilter) {
   configs = configs.filter(e => e.name === suiteFilter);
 }
 
+if (suiteFilter && configs.length === 0) {
+  console.error(`Unknown suite: ${suiteFilter}`);
+  process.exit(1);
+}
+
 function npmBinScript(script) {
   return path.resolve(__dirname, `../node_modules/.bin/` + (process.platform === 'win32' ?
     `${script}.cmd` : script));
 }
 
 async function run() {
+  let exitCode = 0;
   for (const config of configs) {
     const command = npmBinScript('playwright');
     const args = ['test', '-c', config.path, ...argv];
@@ -62,10 +68,13 @@ async function run() {
 
     if (run.error) {
       console.error(run.error);
-      process.exit(run.status ?? -1);
+      process.exit(run.status ?? 1);
     }
 
-    process.exit(run.status);
+    if (run.status) {
+      exitCode = run.status;
+    }
   }
+  process.exit(exitCode);
 }
 run();

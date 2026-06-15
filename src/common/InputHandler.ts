@@ -4,26 +4,26 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
-import { C0, C1 } from 'common/data/EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { Disposable } from 'common/Lifecycle';
-import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
-import { CellData } from 'common/buffer/CellData';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { OscHandler } from 'common/parser/OscParser';
-import { DcsHandler } from 'common/parser/DcsParser';
-import { ApcHandler } from 'common/parser/ApcParser';
-import { IBuffer } from 'common/buffer/Types';
-import { parseColor } from 'common/input/XParseColor';
-import { Emitter } from 'common/Event';
-import { XTERM_VERSION } from 'common/Version';
+import { IInputHandler, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
+import { IAttributeData, IBuffer } from './buffer/Types';
+import { C0, C1 } from './data/EscapeSequences';
+import { CHARSETS, DEFAULT_CHARSET } from './data/Charsets';
+import { EscapeSequenceParser } from './parser/EscapeSequenceParser';
+import { Disposable } from './Lifecycle';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from './input/TextDecoder';
+import { BufferLine, DEFAULT_ATTR_DATA } from './buffer/BufferLine';
+import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from './parser/Types';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from './buffer/Constants';
+import { CellData } from './buffer/CellData';
+import { AttributeData } from './buffer/AttributeData';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from './services/Services';
+import { UnicodeService } from './services/UnicodeService';
+import { OscHandler } from './parser/OscParser';
+import { DcsHandler } from './parser/DcsParser';
+import { ApcHandler } from './parser/ApcParser';
+import { parseColor } from './input/XParseColor';
+import { Emitter } from './Event';
+import { XTERM_VERSION } from './Version';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -31,27 +31,8 @@ import { XTERM_VERSION } from 'common/Version';
 const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-': 1, '.': 2 };
 
 /**
- * VT commands done by the parser - FIXME: move this to the parser?
- */
-// @vt: #Y   ESC   CSI   "Control Sequence Introducer"   "ESC ["   "Start of a CSI sequence."
-// @vt: #Y   ESC   OSC   "Operating System Command"      "ESC ]"   "Start of an OSC sequence."
-// @vt: #Y   ESC   DCS   "Device Control String"         "ESC P"   "Start of a DCS sequence."
-// @vt: #Y   ESC   ST    "String Terminator"             "ESC \"   "Terminator used for string type sequences."
-// @vt: #Y   ESC   PM    "Privacy Message"               "ESC ^"   "Start of a privacy message."
-// @vt: #Y   ESC   APC   "Application Program Command"   "ESC _"   "Start of an APC sequence."
-// @vt: #Y   C1    CSI   "Control Sequence Introducer"   "\x9B"    "Start of a CSI sequence."
-// @vt: #Y   C1    OSC   "Operating System Command"      "\x9D"    "Start of an OSC sequence."
-// @vt: #Y   C1    DCS   "Device Control String"         "\x90"    "Start of a DCS sequence."
-// @vt: #Y   C1    ST    "String Terminator"             "\x9C"    "Terminator used for string type sequences."
-// @vt: #Y   C1    PM    "Privacy Message"               "\x9E"    "Start of a privacy message."
-// @vt: #Y   C1    APC   "Application Program Command"   "\x9F"    "Start of an APC sequence."
-// @vt: #Y   C0    NUL   "Null"                          "\0, \x00"  "NUL is ignored."
-// @vt: #Y   C0    ESC   "Escape"                        "\e, \x1B"  "Start of a sequence. Cancels any other sequence."
-
-/**
  * Document xterm VT features here that are currently unsupported
  */
-// @vt: #E[Supported via @xterm/addon-image.]  DCS   SIXEL       "SIXEL Graphics"          "DCS Ps ; Ps ; Ps ; q 	Pt ST"  "Draw SIXEL image."
 // @vt: #N  DCS   DECUDK      "User Defined Keys"       "DCS Ps ; Ps \| Pt ST"           "Definitions for user-defined keys."
 // @vt: #N  DCS   XTGETTCAP   "Request Terminfo String" "DCS + q Pt ST"                 "Request Terminfo String."
 // @vt: #N  DCS   XTSETTCAP   "Set Terminfo Data"       "DCS + p Pt ST"                 "Set Terminfo Data."
@@ -60,12 +41,13 @@ const GLEVEL: { [key: string]: number } = { '(': 0, ')': 1, '*': 2, '+': 3, '-':
 /**
  * Max length of the UTF32 input buffer. Real memory consumption is 4 times higher.
  */
-const MAX_PARSEBUFFER_LENGTH = 131072;
-
-/**
- * Limit length of title and icon name stacks.
- */
-const STACK_LIMIT = 10;
+const enum Constants {
+  MAX_PARSEBUFFER_LENGTH = 131072,
+  /** Limit length of title and icon name stacks. */
+  STACK_LIMIT = 10,
+  // create a warning log if an async handler takes longer than the limit (in ms)
+  SLOW_ASYNC_LIMIT = 5000
+}
 
 // map params to window option
 function paramToWindowOption(n: number, opts: IWindowOptions): boolean {
@@ -103,9 +85,6 @@ export enum WindowsOptionsReportType {
   GET_WIN_SIZE_PIXELS = 0,
   GET_CELL_SIZE_PIXELS = 1
 }
-
-// create a warning log if an async handler takes longer than the limit (in ms)
-const SLOW_ASYNC_LIMIT = 5000;
 
 // Work variables to avoid garbage collection
 let $temp = 0;
@@ -210,6 +189,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         payload = payload.toArray();
       }
       this._logService.debug('Unknown DCS code: ', { identifier: this._parser.identToString(ident), action, payload });
+    });
+    this._parser.setApcHandlerFallback((ident, action, payload) => {
+      this._logService.debug('Unknown APC code: ', { identifier: this._parser.identToString(ident), action, payload });
     });
 
     /**
@@ -409,7 +391,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._logService.logLevel <= LogLevelEnum.WARN) {
       let slowTimeout: ReturnType<typeof setTimeout> | undefined;
       const slowPromise = new Promise<never>((_res, rej) => {
-        slowTimeout = setTimeout(() => rej('#SLOW_TIMEOUT'), SLOW_ASYNC_LIMIT);
+        slowTimeout = setTimeout(() => rej('#SLOW_TIMEOUT'), Constants.SLOW_ASYNC_LIMIT);
       });
       Promise.race([p, slowPromise])
         .then(() => {
@@ -423,7 +405,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           if (err !== '#SLOW_TIMEOUT') {
             throw err;
           }
-          console.warn(`async parser handler taking longer than ${SLOW_ASYNC_LIMIT} ms`);
+          console.warn(`async parser handler taking longer than ${Constants.SLOW_ASYNC_LIMIT} ms`);
         });
     }
   }
@@ -461,8 +443,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       cursorStartX = this._parseStack.cursorStartX;
       cursorStartY = this._parseStack.cursorStartY;
       this._parseStack.paused = false;
-      if (data.length > MAX_PARSEBUFFER_LENGTH) {
-        start = this._parseStack.position + MAX_PARSEBUFFER_LENGTH;
+      if (data.length > Constants.MAX_PARSEBUFFER_LENGTH) {
+        start = this._parseStack.position + Constants.MAX_PARSEBUFFER_LENGTH;
       }
     }
 
@@ -479,8 +461,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // resize input buffer if needed
     if (this._parseBuffer.length < data.length) {
-      if (this._parseBuffer.length < MAX_PARSEBUFFER_LENGTH) {
-        this._parseBuffer = new Uint32Array(Math.min(data.length, MAX_PARSEBUFFER_LENGTH));
+      if (this._parseBuffer.length < Constants.MAX_PARSEBUFFER_LENGTH) {
+        this._parseBuffer = new Uint32Array(Math.min(data.length, Constants.MAX_PARSEBUFFER_LENGTH));
       }
     }
 
@@ -491,9 +473,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
 
     // process big data in smaller chunks
-    if (data.length > MAX_PARSEBUFFER_LENGTH) {
-      for (let i = start; i < data.length; i += MAX_PARSEBUFFER_LENGTH) {
-        const end = i + MAX_PARSEBUFFER_LENGTH < data.length ? i + MAX_PARSEBUFFER_LENGTH : data.length;
+    if (data.length > Constants.MAX_PARSEBUFFER_LENGTH) {
+      for (let i = start; i < data.length; i += Constants.MAX_PARSEBUFFER_LENGTH) {
+        const end = i + Constants.MAX_PARSEBUFFER_LENGTH < data.length ? i + Constants.MAX_PARSEBUFFER_LENGTH : data.length;
         const len = (typeof data === 'string')
           ? this._stringDecoder.decode(data.substring(i, end), this._parseBuffer)
           : this._utf8Decoder.decode(data.subarray(i, end), this._parseBuffer);
@@ -585,8 +567,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
-      if (this._getCurrentLinkId()) {
-        this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
+      const linkId = this._getCurrentLinkId();
+      if (linkId) {
+        this._oscLinkService.addLineToLink(linkId, this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // goto next line if ch would overflow
@@ -729,8 +712,8 @@ export class InputHandler extends Disposable implements IInputHandler {
   /**
    * Forward registerApcHandler from parser.
    */
-  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
-    return this._parser.registerApcHandler(ident, new ApcHandler(callback));
+  public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._parser.registerApcHandler(id, new ApcHandler(callback));
   }
 
   /**
@@ -2415,7 +2398,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       color &= ~Attributes.RGB_MASK;
       color |= AttributeData.fromColorRGB([c1, c2, c3]);
     } else if (mode === 5) {
-      color &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+      color &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
       color |= Attributes.CM_P256 | (c1 & 0xff);
     }
     return color;
@@ -2608,10 +2591,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 3      | CMY color.                                                    | #N      |
    * | 4      | CMYK color.                                                   | #N      |
    * | 5      | Indexed (256 colors) as `Ps ; 5 ; INDEX` or `Ps : 5 : INDEX`. | #Y      |
-   *
-   *
-   * FIXME: blinking is implemented in attrs, but not working in renderers?
-   * FIXME: remove dead branch for p=100
    */
   public charAttributes(params: IParams): boolean {
     // Optimize a single SGR0.
@@ -2628,19 +2607,19 @@ export class InputHandler extends Disposable implements IInputHandler {
       p = params.params[i];
       if (p >= 30 && p <= 37) {
         // fg color 8
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.fg |= Attributes.CM_P16 | (p - 30);
       } else if (p >= 40 && p <= 47) {
         // bg color 8
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= Attributes.CM_P16 | (p - 40);
       } else if (p >= 90 && p <= 97) {
         // fg color 16
-        attr.fg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.fg |= Attributes.CM_P16 | (p - 90) | 8;
       } else if (p >= 100 && p <= 107) {
         // bg color 16
-        attr.bg &= ~(Attributes.CM_MASK | Attributes.PCOLOR_MASK);
+        attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
         attr.bg |= Attributes.CM_P16 | (p - 100) | 8;
       } else if (p === 0) {
         // default
@@ -2700,11 +2679,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       } else if (p === 39) {
         // reset fg
         attr.fg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.fg |= DEFAULT_ATTR_DATA.fg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
+        attr.fg |= DEFAULT_ATTR_DATA.fg & Attributes.RGB_MASK;
       } else if (p === 49) {
         // reset bg
         attr.bg &= ~(Attributes.CM_MASK | Attributes.RGB_MASK);
-        attr.bg |= DEFAULT_ATTR_DATA.bg & (Attributes.PCOLOR_MASK | Attributes.RGB_MASK);
+        attr.bg |= DEFAULT_ATTR_DATA.bg & Attributes.RGB_MASK;
       } else if (p === 38 || p === 48 || p === 58) {
         // fg color 256 and RGB
         i += this._extractColor(params, i, attr);
@@ -2971,13 +2950,13 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 22:  // PushTitle
         if (second === 0 || second === 2) {
           this._windowTitleStack.push(this._windowTitle);
-          if (this._windowTitleStack.length > STACK_LIMIT) {
+          if (this._windowTitleStack.length > Constants.STACK_LIMIT) {
             this._windowTitleStack.shift();
           }
         }
         if (second === 0 || second === 1) {
           this._iconNameStack.push(this._iconName);
-          if (this._iconNameStack.length > STACK_LIMIT) {
+          if (this._iconNameStack.length > Constants.STACK_LIMIT) {
             this._iconNameStack.shift();
           }
         }
@@ -3086,7 +3065,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const idx = slots.shift() as string;
       const spec = slots.shift() as string;
       if (/^\d+$/.exec(idx)) {
-        const index = parseInt(idx);
+        const index = parseInt(idx, 10);
         if (isValidColorIndex(index)) {
           if (spec === '?') {
             event.push({ type: ColorRequestType.REPORT, index });
@@ -3249,7 +3228,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const slots = data.split(';');
     for (let i = 0; i < slots.length; ++i) {
       if (/^\d+$/.exec(slots[i])) {
-        const index = parseInt(slots[i]);
+        const index = parseInt(slots[i], 10);
         if (isValidColorIndex(index)) {
           event.push({ type: ColorRequestType.RESTORE, index });
         }

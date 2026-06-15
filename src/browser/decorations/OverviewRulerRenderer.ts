@@ -3,10 +3,10 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ColorZoneStore, IColorZone, IColorZoneStore } from 'browser/decorations/ColorZoneStore';
-import { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IBufferService, IDecorationService, IOptionsService } from 'common/services/Services';
+import { ColorZoneStore, IColorZone, IColorZoneStore } from './ColorZoneStore';
+import { ICoreBrowserService, IRenderService, IThemeService } from '../services/Services';
+import { Disposable, toDisposable } from '../../common/Lifecycle';
+import { IBufferService, IDecorationService, IOptionsService } from '../../common/services/Services';
 
 const enum Constants {
   OVERVIEW_RULER_BORDER_WIDTH = 1
@@ -94,6 +94,12 @@ export class OverviewRulerRenderer extends Disposable {
     this._register(this._coreBrowserService.onDprChange(() => this._queueRefresh(true)));
     this._register(this._optionsService.onSpecificOptionChange('scrollbar', () => this._queueRefresh(true)));
     this._register(this._themeService.onChangeColors(() => this._queueRefresh()));
+    this._register(toDisposable(() => {
+      if (this._animationFrame !== undefined) {
+        this._coreBrowserService.window.cancelAnimationFrame(this._animationFrame);
+        this._animationFrame = undefined;
+      }
+    }));
     this._queueRefresh(true);
   }
 
@@ -136,6 +142,9 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshCanvasDimensions(): void {
+    if (this._store.isDisposed || !this._renderService.hasRenderer()) {
+      return;
+    }
     const cssCanvasHeight = this._renderService.dimensions.css.canvas.height;
     const deviceCanvasHeight = this._renderService.dimensions.device.canvas.height;
     this._canvas.style.width = `${this._width}px`;
@@ -147,6 +156,9 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _refreshDecorations(): void {
+    if (this._store.isDisposed || !this._renderService.hasRenderer()) {
+      return;
+    }
     if (this._shouldUpdateDimensions) {
       this._refreshCanvasDimensions();
     }
@@ -200,13 +212,18 @@ export class OverviewRulerRenderer extends Disposable {
   }
 
   private _queueRefresh(updateCanvasDimensions?: boolean, updateAnchor?: boolean): void {
+    if (this._store.isDisposed) {
+      return;
+    }
     this._shouldUpdateDimensions = updateCanvasDimensions || this._shouldUpdateDimensions;
     this._shouldUpdateAnchor = updateAnchor || this._shouldUpdateAnchor;
     if (this._animationFrame !== undefined) {
       return;
     }
     this._animationFrame = this._coreBrowserService.window.requestAnimationFrame(() => {
-      this._refreshDecorations();
+      if (!this._store.isDisposed) {
+        this._refreshDecorations();
+      }
       this._animationFrame = undefined;
     });
   }

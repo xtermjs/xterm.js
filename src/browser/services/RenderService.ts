@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { RenderDebouncer } from 'browser/RenderDebouncer';
-import { IRenderDebouncerWithCallback } from 'browser/Types';
-import { IRenderDimensions, IRenderer } from 'browser/renderer/shared/Types';
-import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
-import { DebouncedIdleTask } from 'common/TaskQueue';
-import { IBufferService, ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'common/Event';
+import { RenderDebouncer } from '../RenderDebouncer';
+import { IRenderDebouncerWithCallback } from '../Types';
+import { IRenderDimensions, IRenderer } from '../renderer/shared/Types';
+import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from './Services';
+import { Disposable, MutableDisposable, toDisposable } from '../../common/Lifecycle';
+import { DebouncedIdleTask } from '../../common/TaskQueue';
+import { IBufferService, ICoreService, IDecorationService, ILogService, IOptionsService } from '../../common/services/Services';
+import { Emitter } from '../../common/Event';
 
 interface ISelectionState {
   start: [number, number] | undefined;
@@ -29,6 +29,7 @@ export class RenderService extends Disposable implements IRenderService {
   private _renderDebouncer: IRenderDebouncerWithCallback;
   private _pausedResizeTask: DebouncedIdleTask;
   private _observerDisposable = this._register(new MutableDisposable());
+  private _intersectionObserver: IntersectionObserver | undefined;
 
   private _isPaused: boolean = false;
   private _needsFullRefresh: boolean = false;
@@ -68,7 +69,7 @@ export class RenderService extends Disposable implements IRenderService {
   ) {
     super();
 
-    this._pausedResizeTask = new DebouncedIdleTask(this._logService);
+    this._pausedResizeTask = this._register(new DebouncedIdleTask(this._logService));
 
     this._renderDebouncer = new RenderDebouncer((start, end) => this._renderRows(start, end), this._coreBrowserService);
     this._register(this._renderDebouncer);
@@ -127,8 +128,12 @@ export class RenderService extends Disposable implements IRenderService {
     // and resume based on terminal visibility if so
     if ('IntersectionObserver' in w) {
       const observer = new w.IntersectionObserver(e => this._handleIntersectionChange(e[e.length - 1]), { threshold: 0 });
+      this._observerDisposable.value = toDisposable(() => {
+        this._intersectionObserver?.disconnect();
+        this._intersectionObserver = undefined;
+      });
+      this._intersectionObserver = observer;
       observer.observe(screenElement);
-      this._observerDisposable.value = toDisposable(() => observer.disconnect());
     }
   }
 

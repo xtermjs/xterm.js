@@ -20,7 +20,7 @@ test.describe('ClipboardAddon', () => {
 
   test.beforeEach(async ({}, testInfo) => {
     // DEBT: This test doesn't work since the migration to @playwright/test
-    if (ctx.browser.browserType().name() !== 'chromium') {
+    if (ctx.browser.browserType().name() === 'webkit') {
       testInfo.skip();
       return;
     }
@@ -29,7 +29,7 @@ test.describe('ClipboardAddon', () => {
       await ctx.page.context().grantPermissions(['clipboard-read', 'clipboard-write']);
     }
     await ctx.page.evaluate(`
-      window.term.reset()
+      window.term.reset();
       window.clipboard?.dispose();
       window.clipboard = new ClipboardAddon();
       window.term.loadAddon(window.clipboard);
@@ -48,6 +48,14 @@ test.describe('ClipboardAddon', () => {
       await ctx.proxy.write(`\x1b]52;c;${testDataEncoded}\x07`);
       deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), testDataDecoded);
     });
+    test('primary selection', async () => {
+      await ctx.proxy.write(`\x1b]52;p;${testDataEncoded}\x07`);
+      deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), testDataDecoded);
+    });
+    test('empty selection (default)', async () => {
+      await ctx.proxy.write(`\x1b]52;;${testDataEncoded}\x07`);
+      deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), testDataDecoded);
+    });
     test('invalid base64 string', async () => {
       await ctx.proxy.write(`\x1b]52;c;${testDataEncoded}invalid\x07`);
       deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), '');
@@ -60,19 +68,46 @@ test.describe('ClipboardAddon', () => {
   });
 
   test.describe('read data', async function (): Promise<any> {
-    test('simple string', async () => {
+    test.beforeAll(async () => {
       await ctx.page.evaluate(`
         window.data = [];
         window.term.onData(e => data.push(e));
       `);
+    });
+    test('simple string', async () => {
+      await ctx.page.evaluate('window.data.length = 0;');
       await ctx.page.evaluate(() => window.navigator.clipboard.writeText('hello world'));
       await ctx.proxy.write(`\x1b]52;c;?\x07`);
       deepEqual(await ctx.page.evaluate('window.data'), [`\x1b]52;c;${testDataEncoded}\x07`]);
+    });
+    test('primary selection', async () => {
+      await ctx.page.evaluate('window.data.length = 0;');
+      await ctx.page.evaluate(() => window.navigator.clipboard.writeText('hello world'));
+      await ctx.proxy.write(`\x1b]52;p;?\x07`);
+      deepEqual(await ctx.page.evaluate('window.data'), [`\x1b]52;p;${testDataEncoded}\x07`]);
     });
     test('clear clipboard', async () => {
       await ctx.proxy.write(`\x1b]52;c;!\x07`);
       await ctx.proxy.write(`\x1b]52;c;?\x07`);
       deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), '');
+    });
+  });
+
+  test.describe('non-ASCII', () => {
+    const testDataEncoded = '4oKsbWzDpMO8dMOf';
+    const testDataDecoded = '€mläütß';
+    test('write simple string', async () => {
+      await ctx.proxy.write(`\x1b]52;c;${testDataEncoded}\x07`);
+      deepEqual(await ctx.page.evaluate(() => window.navigator.clipboard.readText()), testDataDecoded);
+    });
+    test('read simple string', async () => {
+      await ctx.page.evaluate(`
+        window.data2 = [];
+        window.term.onData(e => data2.push(e));
+      `);
+      await ctx.page.evaluate((d) => window.navigator.clipboard.writeText(d), testDataDecoded);
+      await ctx.proxy.write(`\x1b]52;c;?\x07`);
+      deepEqual(await ctx.page.evaluate('window.data2'), [`\x1b]52;c;${testDataEncoded}\x07`]);
     });
   });
 });

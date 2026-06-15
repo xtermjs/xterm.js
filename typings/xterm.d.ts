@@ -207,6 +207,17 @@ declare module '@xterm/xterm' {
     minimumContrastRatio?: number;
 
     /**
+     * When enabled and the terminal is in mouse events mode, mouse click, drag,
+     * and move events are only sent to the underlying application when the alt
+     * key is held. The alt key is not included in the mouse reports sent to the
+     * application. Wheel events are not affected. This allows normal text
+     * selection by default while still supporting application mouse interaction
+     * and scrolling when holding alt. When enabled, this takes precedence over
+     * `macOptionClickForcesSelection`.
+     */
+    mouseEventsRequireAlt?: boolean;
+
+    /**
      * Control various quirks features that are either non-standard or standard
      * in but generally rejected in modern terminals.
      */
@@ -1909,12 +1920,12 @@ declare module '@xterm/xterm' {
     prefix?: string;
     /**
      * Optional intermediate bytes, must be in range \x20 .. \x2f.
-     * Usable in CSI, DCS and ESC.
+     * Usable in CSI, DCS, ESC and APC.
      */
     intermediates?: string;
     /**
      * Final byte, must be in range \x40 .. \x7e for CSI and DCS,
-     * \x30 .. \x7e for ESC.
+     * \x30 .. \x7e for ESC and APC.
      */
     final: string;
   }
@@ -2002,8 +2013,8 @@ declare module '@xterm/xterm' {
 
     /**
      * Adds a handler for APC escape sequences.
-     * @param ident The identifier (first character) of the sequence as a
-     * character code, e.g. 71 for 'G' (Kitty graphics protocol).
+     * @param id Specifies the function identifier under which the callback
+     * gets registered, e.g. {final: 'G'} for Kitty graphics protocol.
      * @param callback The function to handle the sequence. Note that the
      * function will only be called once if the sequence finished successfully.
      * There is currently no way to intercept smaller data chunks, data chunks
@@ -2016,7 +2027,7 @@ declare module '@xterm/xterm' {
      * handler. The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+    registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   }
 
   /**

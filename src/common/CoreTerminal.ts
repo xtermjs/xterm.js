@@ -21,27 +21,42 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, IMouseStateService, IUnicodeService, LogLevelEnum, ITerminalOptions, IOscLinkService } from 'common/services/Services';
-import { InstantiationService } from 'common/services/InstantiationService';
-import { LogService } from 'common/services/LogService';
-import { BufferService, MINIMUM_COLS, MINIMUM_ROWS } from 'common/services/BufferService';
-import { OptionsService } from 'common/services/OptionsService';
-import { IDisposable, IAttributeData, ICoreTerminal, IScrollEvent } from 'common/Types';
-import { CoreService } from 'common/services/CoreService';
-import { MouseStateService } from 'common/services/MouseStateService';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { CharsetService } from 'common/services/CharsetService';
-import { updateWindowsModeWrappedState } from 'common/WindowsMode';
-import { IFunctionIdentifier, IParams } from 'common/parser/Types';
-import { IBufferSet } from 'common/buffer/Types';
-import { InputHandler } from 'common/InputHandler';
-import { WriteBuffer } from 'common/input/WriteBuffer';
-import { OscLinkService } from 'common/services/OscLinkService';
-import { Emitter, EventUtils, type IEvent } from 'common/Event';
-import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { IInstantiationService, IOptionsService, IBufferService, ILogService, ICharsetService, ICoreService, IMouseStateService, IUnicodeService, LogLevelEnum, IOscLinkService } from './services/Services';
+import { InstantiationService } from './services/InstantiationService';
+import { LogService } from './services/LogService';
+import { BufferService, BufferServiceConstants } from './services/BufferService';
+import { OptionsService } from './services/OptionsService';
+import { IDisposable, IScrollEvent, ITerminalOptions, IParams } from './Types';
+import { IAttributeData, IBufferSet } from './buffer/Types';
+import { CoreService } from './services/CoreService';
+import { MouseStateService } from './services/MouseStateService';
+import { UnicodeV6 } from './input/UnicodeV6';
+import { UnicodeService } from './services/UnicodeService';
+import { CharsetService } from './services/CharsetService';
+import { updateWindowsModeWrappedState } from './WindowsMode';
+import { IFunctionIdentifier } from './parser/Types';
+import { InputHandler } from './InputHandler';
+import { WriteBuffer } from './input/WriteBuffer';
+import { OscLinkService } from './services/OscLinkService';
+import { Emitter, EventUtils, type IEvent } from './Event';
+import { Disposable, MutableDisposable, toDisposable } from './Lifecycle';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
+
+export interface ICoreTerminal {
+  mouseStateService: IMouseStateService;
+  coreService: ICoreService;
+  optionsService: IOptionsService;
+  unicodeService: IUnicodeService;
+  buffers: IBufferSet;
+  options: Required<ITerminalOptions>;
+  registerCsiHandler(id: IFunctionIdentifier, callback: (params: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: IParams) => boolean | Promise<boolean>): IDisposable;
+  registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
+  registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+  registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+}
 
 export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   protected readonly _instantiationService: IInstantiationService;
@@ -116,6 +131,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     this.mouseStateService = this._register(this._instantiationService.createInstance(MouseStateService));
     this._instantiationService.setService(IMouseStateService, this.mouseStateService);
     this.unicodeService = this._register(this._instantiationService.createInstance(UnicodeService));
+    this.unicodeService.register(new UnicodeV6());
     this._instantiationService.setService(IUnicodeService, this.unicodeService);
     this._charsetService = this._instantiationService.createInstance(CharsetService);
     this._instantiationService.setService(ICharsetService, this._charsetService);
@@ -173,8 +189,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
       return;
     }
 
-    x = Math.max(x, MINIMUM_COLS);
-    y = Math.max(y, MINIMUM_ROWS);
+    x = Math.max(x, BufferServiceConstants.MINIMUM_COLS);
+    y = Math.max(y, BufferServiceConstants.MINIMUM_ROWS);
 
     // Flush pending writes before resize to avoid race conditions where async
     // writes are processed with incorrect dimensions
@@ -243,8 +259,8 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   }
 
   /** Add handler for APC escape sequence. See xterm.d.ts for details. */
-  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
-    return this._inputHandler.registerApcHandler(ident, callback);
+  public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._inputHandler.registerApcHandler(id, callback);
   }
 
   protected _setup(): void {
@@ -263,7 +279,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   private _handleWindowsPtyOptionChange(): void {
     let value = false;
     const windowsPty = this.optionsService.rawOptions.windowsPty;
-    if (windowsPty && windowsPty.buildNumber !== undefined && windowsPty.buildNumber !== undefined) {
+    if (windowsPty && windowsPty.backend !== undefined && windowsPty.buildNumber !== undefined) {
       value = !!(windowsPty.backend === 'conpty' && windowsPty.buildNumber < 21376);
     }
     if (value) {

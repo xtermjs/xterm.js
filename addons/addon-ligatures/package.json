@@ -20,7 +20,7 @@
     "package": "webpack",
     "pretest": "npm run build",
     "test": "nyc mocha out/**/*.test.js",
-    "prepublish": "npm run package"
+    "prepublishOnly": "npm run package"
   },
   "keywords": [
     "font",
@@ -31,15 +31,11 @@
   ],
   "license": "MIT",
   "dependencies": {
-    "lru-cache": "^6.0.0",
-    "opentype.js": "^0.8.0"
+    "lru-cache": "^11.3.6",
+    "opentype.js": "^2.0.0"
   },
   "devDependencies": {
-    "@types/lru-cache": "^5.1.0",
-    "@types/opentype.js": "^0.7.0",
-    "axios": "^1.6.0",
-    "font-finder": "^1.1.0",
-    "mkdirp": "0.5.5",
-    "yauzl": "^3.2.1"
+    "@types/opentype.js": "^1.3.9",
+    "font-finder": "^1.1.0"
   }
 }

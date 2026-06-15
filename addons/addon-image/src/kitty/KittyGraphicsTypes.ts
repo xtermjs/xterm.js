@@ -82,9 +82,11 @@ export const enum KittyKey {
 }
 
 // Pixel format constants
-export const BYTES_PER_PIXEL_RGB = 3;
-export const BYTES_PER_PIXEL_RGBA = 4;
-export const ALPHA_OPAQUE = 255;
+export const enum KittyPixelConstants {
+  BYTES_PER_PIXEL_RGB = 3,
+  BYTES_PER_PIXEL_RGBA = 4,
+  ALPHA_OPAQUE = 255
+}
 
 // Parsed Kitty graphics command.
 export interface IKittyCommand {
@@ -166,7 +168,7 @@ export function parseKittyCommand(data: string): IKittyCommand {
       cmd.deleteSelector = value;
       continue;
     }
-    const numValue = parseInt(value);
+    const numValue = parseInt(value, 10);
     switch (key) {
       case KittyKey.FORMAT: cmd.format = numValue; break;
       case KittyKey.ID: cmd.id = numValue; break;

@@ -1,7 +1,11 @@
 ---
-applyTo: '**/*.benchmark.ts'
+name: benchmark
+description: Run and author benchmark tests in xterm.js. Use when editing benchmark files, working in `*.benchmark.ts`, or when asked how to run the full benchmark suite, a single benchmark file, or a single benchmark case.
 ---
-# Benchmark run instructions
+
+# Benchmark Run Instructions
+
+## Running Benchmarks
 
 - Full suite: `npm run benchmark`
 - Single benchmark file:
@@ -11,8 +15,14 @@ applyTo: '**/*.benchmark.ts'
   - Use `-t` to get the path, then:
   - `npm run benchmark -- -s "<path>" out-test/benchmark/Event.benchmark.js`
 
-When writing instructions, use `RuntimeCase` to measure pure runtime in ms, use `ThroughputRuntimeCase` when measuring throughput in MB/s.
+## Benchmark Case Selection
 
-Notes:
+When writing benchmark instructions:
+
+- Use `RuntimeCase` to measure pure runtime in ms.
+- Use `ThroughputRuntimeCase` when measuring throughput in MB/s.
+
+## Notes
+
 - Benchmarks run from built JS in `out-test/benchmark/*.benchmark.js`.
 - Keep `NODE_PATH=./out` (handled by the npm script).

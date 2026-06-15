@@ -57,7 +57,8 @@ function isUrl(urlString: string): boolean {
 
 export class LinkComputer {
   public static computeLink(y: number, regex: RegExp, terminal: Terminal, activate: (event: MouseEvent, uri: string) => void): ILink[] {
-    const rex = new RegExp(regex.source, (regex.flags || '') + 'g');
+    const flags = regex.flags.includes('g') ? regex.flags : `${regex.flags}g`;
+    const rex = new RegExp(regex.source, flags);
 
     const [lines, startLineIndex] = LinkComputer._getWindowedLineStrings(y - 1, terminal);
     const line = lines.join('');

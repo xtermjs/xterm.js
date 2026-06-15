@@ -5,23 +5,26 @@
 
 import { assert } from 'chai';
 import { SelectionService, SelectionMode } from './SelectionService';
-import { SelectionModel } from 'browser/selection/SelectionModel';
-import { IBufferLine } from 'common/Types';
-import { MockBufferService, MockOptionsService, MockCoreService, createCellData } from 'common/TestUtils.test';
-import { BufferLine } from 'common/buffer/BufferLine';
-import { IBufferService, IOptionsService } from 'common/services/Services';
-import { MockCoreBrowserService, MockMouseService, MockRenderService } from 'browser/TestUtils.test';
-import { CellData } from 'common/buffer/CellData';
-import { IBuffer } from 'common/buffer/Types';
-import { IRenderService } from 'browser/services/Services';
+import { SelectionModel } from '../selection/SelectionModel';
+import { IBuffer, IBufferLine } from '../../common/buffer/Types';
+import { MockBufferService, MockOptionsService, MockCoreService, MockMouseStateService, createCellData } from '../../common/TestUtils.test';
+import { BufferLine } from '../../common/buffer/BufferLine';
+import { BufferLineStringCache } from '../../common/buffer/BufferLineStringCache';
+import { IBufferService, IOptionsService } from '../../common/services/Services';
+import { MockCoreBrowserService, MockMouseService, MockRenderService } from '../TestUtils.test';
+import { CellData } from '../../common/buffer/CellData';
+import { IRenderService } from './Services';
+
+const TEST_STRING_CACHE = new BufferLineStringCache();
 
 class TestSelectionService extends SelectionService {
   constructor(
     bufferService: IBufferService,
     optionsService: IOptionsService,
-    renderService: IRenderService
+    renderService: IRenderService,
+    public readonly mouseStateService: MockMouseStateService
   ) {
-    super(null!, null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, renderService, new MockCoreBrowserService());
+    super(null!, null!, null!, bufferService, new MockCoreService(), new MockMouseService(), optionsService, mouseStateService, renderService, new MockCoreBrowserService());
   }
 
   public get model(): SelectionModel { return this._model; }
@@ -42,20 +45,22 @@ describe('SelectionService', () => {
   let buffer: IBuffer;
   let bufferService: IBufferService;
   let optionsService: IOptionsService;
+  let mouseStateService: MockMouseStateService;
   let selectionService: TestSelectionService;
 
   beforeEach(() => {
     optionsService = new MockOptionsService();
+    mouseStateService = new MockMouseStateService();
     bufferService = new MockBufferService(20, 20, optionsService);
     buffer = bufferService.buffer;
     const renderService = new MockRenderService();
     renderService.dimensions.css.canvas.height = 10 * 20;
     renderService.dimensions.css.canvas.width = 10 * 20;
-    selectionService = new TestSelectionService(bufferService, optionsService, renderService);
+    selectionService = new TestSelectionService(bufferService, optionsService, renderService, mouseStateService);
   });
 
   function stringToRow(text: string): IBufferLine {
-    const result = new BufferLine(text.length);
+    const result = new BufferLine(TEST_STRING_CACHE, text.length);
     for (let i = 0; i < text.length; i++) {
       result.setCell(i, createCellData(0, text.charAt(i), 1));
     }
@@ -63,7 +68,7 @@ describe('SelectionService', () => {
   }
 
   function stringArrayToRow(chars: string[]): IBufferLine {
-    const line = new BufferLine(chars.length);
+    const line = new BufferLine(TEST_STRING_CACHE, chars.length);
     chars.map((c, idx) => line.setCell(idx, createCellData(0, c, 1)));
     return line;
   }
@@ -118,7 +123,7 @@ describe('SelectionService', () => {
         [0, 'o', 1, 'o'.charCodeAt(0)],
         [0, 'o', 1, 'o'.charCodeAt(0)]
       ];
-      const line = new BufferLine(data.length);
+      const line = new BufferLine(TEST_STRING_CACHE, data.length);
       for (let i = 0; i < data.length; ++i) line.setCell(i, CellData.fromCharData(data[i]));
       buffer.lines.set(0, line);
       // Ensure wide characters take up 2 columns
@@ -494,6 +499,22 @@ describe('SelectionService', () => {
       assert.isTrue(selectionService.areCoordsInSelection([0, 1], [2, 0], [2, 1]));
       assert.isTrue(selectionService.areCoordsInSelection([1, 1], [2, 0], [2, 1]));
       assert.isFalse(selectionService.areCoordsInSelection([2, 1], [2, 0], [2, 1]));
+    });
+  });
+
+  describe('shouldForceSelection', () => {
+    it('should force selection without alt when mouseEventsRequireAlt is enabled', () => {
+      optionsService.options.mouseEventsRequireAlt = true;
+      mouseStateService.areMouseEventsActive = true;
+      assert.isTrue(selectionService.shouldForceSelection({ altKey: false } as MouseEvent));
+      assert.isFalse(selectionService.shouldForceSelection({ altKey: true } as MouseEvent));
+    });
+
+    it('should take precedence over macOptionClickForcesSelection', () => {
+      optionsService.options.mouseEventsRequireAlt = true;
+      optionsService.options.macOptionClickForcesSelection = true;
+      mouseStateService.areMouseEventsActive = true;
+      assert.isFalse(selectionService.shouldForceSelection({ altKey: true } as MouseEvent));
     });
   });
 });

@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { IRenderDebouncerWithCallback } from 'browser/Types';
-import { ICoreBrowserService } from 'browser/services/Services';
+import { IRenderDebouncerWithCallback } from './Types';
+import { ICoreBrowserService } from './services/Services';
 
 /**
  * Debounces calls to render terminal rows using animation frames.
@@ -23,7 +23,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
   }
 
   public dispose(): void {
-    if (this._animationFrame) {
+    if (this._animationFrame !== undefined) {
       this._coreBrowserService.window.cancelAnimationFrame(this._animationFrame);
       this._animationFrame = undefined;
     }
@@ -31,9 +31,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
 
   public addRefreshCallback(callback: FrameRequestCallback): number {
     this._refreshCallbacks.push(callback);
-    if (!this._animationFrame) {
-      this._animationFrame = this._coreBrowserService.window.requestAnimationFrame(() => this._innerRefresh());
-    }
+    this._animationFrame ??= this._coreBrowserService.window.requestAnimationFrame(() => this._innerRefresh());
     return this._animationFrame;
   }
 
@@ -46,7 +44,7 @@ export class RenderDebouncer implements IRenderDebouncerWithCallback {
     this._rowStart = this._rowStart !== undefined ? Math.min(this._rowStart, rowStart) : rowStart;
     this._rowEnd = this._rowEnd !== undefined ? Math.max(this._rowEnd, rowEnd) : rowEnd;
 
-    if (this._animationFrame) {
+    if (this._animationFrame !== undefined) {
       return;
     }
 

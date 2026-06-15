@@ -3,12 +3,10 @@
  * @license MIT
  */
 
-import { IDisposable } from 'common/Types';
-import { ParserState } from 'common/parser/Constants';
+import { IDisposable, IParams, ParamsArray } from '../Types';
+import { ParserState } from './Constants';
 
-
-/** sequence params serialized to js arrays */
-export type ParamsArray = (number | number[])[];
+export type { IParams, ParamsArray };
 
 /** Params constructor type. */
 export interface IParamsConstructor {
@@ -16,27 +14,6 @@ export interface IParamsConstructor {
 
   /** create params from ParamsArray */
   fromArray(values: ParamsArray): IParams;
-}
-
-/** Interface of Params storage class. */
-export interface IParams {
-  /** from ctor */
-  maxLength: number;
-  maxSubParamsLength: number;
-
-  /** param values and its length */
-  params: Int32Array;
-  length: number;
-
-  /** methods */
-  clone(): IParams;
-  toArray(): ParamsArray;
-  reset(): void;
-  addParam(value: number): void;
-  addSubParam(value: number): void;
-  hasSubParams(idx: number): boolean;
-  getSubParams(idx: number): Int32Array | null;
-  getSubParamsAll(): {[idx: number]: Int32Array};
 }
 
 /**
@@ -107,7 +84,7 @@ export type EscFallbackHandlerType = (identifier: number) => void;
 /**
  * EXECUTE handler types.
  */
-export type ExecuteHandlerType = () => boolean;
+export type ExecuteHandlerType = (ident?: number) => boolean;
 export type ExecuteFallbackHandlerType = (ident: number) => void;
 
 /**
@@ -219,8 +196,8 @@ export interface IEscapeSequenceParser extends IDisposable {
   clearOscHandler(ident: number): void;
   setOscHandlerFallback(handler: OscFallbackHandlerType): void;
 
-  registerApcHandler(ident: number, handler: IApcHandler): IDisposable;
-  clearApcHandler(ident: number): void;
+  registerApcHandler(id: IFunctionIdentifier, handler: IApcHandler): IDisposable;
+  clearApcHandler(id: IFunctionIdentifier): void;
   setApcHandlerFallback(handler: ApcFallbackHandlerType): void;
 
   setErrorHandler(handler: (state: IParsingState) => IParsingState): void;
@@ -251,14 +228,14 @@ export interface IDcsParser extends ISubParser<IDcsHandler, DcsFallbackHandlerTy
 }
 
 export interface IApcParser extends ISubParser<IApcHandler, ApcFallbackHandlerType> {
-  start(): void;
+  start(ident: number): void;
   end(success: boolean, promiseResult?: boolean): void | Promise<boolean>;
 }
 
 /**
  * Interface to denote a specific ESC, CSI or DCS handler slot.
- * The values are used to create an integer respresentation during handler
- * regristation before passed to the subparsers as `ident`.
+ * The values are used to create an integer representation during handler
+ * registration before passed to the subparsers as `ident`.
  * The integer translation is made to allow a faster handler access
  * in `EscapeSequenceParser.parse`.
  */

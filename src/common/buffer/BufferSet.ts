@@ -3,12 +3,11 @@
  * @license MIT
  */
 
-import { Disposable } from 'common/Lifecycle';
-import { IAttributeData } from 'common/Types';
-import { Buffer } from 'common/buffer/Buffer';
-import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { IBufferService, ILogService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'common/Event';
+import { Disposable, MutableDisposable } from '../Lifecycle';
+import { Buffer } from './Buffer';
+import { IAttributeData, IBuffer, IBufferSet } from './Types';
+import { IBufferService, ILogService, IOptionsService } from '../services/Services';
+import { Emitter } from '../Event';
 
 /**
  * The BufferSet represents the set of two buffers used by xterm terminals (normal and alt) and
@@ -18,6 +17,8 @@ export class BufferSet extends Disposable implements IBufferSet {
   private _normal!: Buffer;
   private _alt!: Buffer;
   private _activeBuffer!: Buffer;
+  private readonly _normalBuffer = this._register(new MutableDisposable<Buffer>());
+  private readonly _altBuffer = this._register(new MutableDisposable<Buffer>());
 
   private readonly _onBufferActivate = this._register(new Emitter<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>());
   public readonly onBufferActivate = this._onBufferActivate.event;
@@ -38,11 +39,13 @@ export class BufferSet extends Disposable implements IBufferSet {
 
   public reset(): void {
     this._normal = new Buffer(true, this._optionsService, this._bufferService, this._logService);
+    this._normalBuffer.value = this._normal;
     this._normal.fillViewportRows();
 
     // The alt buffer should never have scrollback.
     // See http://invisible-island.net/xterm/ctlseqs/ctlseqs.html#h2-The-Alternate-Screen-Buffer
     this._alt = new Buffer(false, this._optionsService, this._bufferService, this._logService);
+    this._altBuffer.value = this._alt;
     this._activeBuffer = this._normal;
     this._onBufferActivate.fire({
       activeBuffer: this._normal,
