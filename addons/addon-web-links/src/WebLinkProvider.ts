@@ -102,7 +102,7 @@ export class LinkComputer {
 
   /**
    * Get wrapped content lines for the current line index.
-   * The top/bottom line expansion stops at whitespaces or length > 2048.
+   * The top/bottom line expansion stops at length > 2048.
    * Returns an array with line strings and the top line index.
    *
    * NOTE: We pull line strings with trimRight=true on purpose to make sure
@@ -114,38 +114,30 @@ export class LinkComputer {
     let topIdx = lineIndex;
     let bottomIdx = lineIndex;
     let length = 0;
-    let content = '';
     const lines: string[] = [];
 
     if ((line = terminal.buffer.active.getLine(lineIndex))) {
       const currentContent = line.translateToString(true);
 
-      // expand top, stop on whitespaces or length > 2048
-      if (line.isWrapped && currentContent[0] !== ' ') {
-        length = 0;
-        while ((line = terminal.buffer.active.getLine(--topIdx)) && length < 2048) {
-          content = line.translateToString(true);
-          length += content.length;
-          lines.push(content);
-          if (!line.isWrapped || content.indexOf(' ') !== -1) {
-            break;
-          }
+      // expand top, stop on length > 2048
+      if (line.isWrapped) {
+        while ((line = terminal.buffer.active.getLine(topIdx))?.isWrapped && length < 2048) {
+          topIdx--;
+          const topContent = terminal.buffer.active.getLine(topIdx)?.translateToString(true) ?? '';
+          length += topContent.length;
+          lines.unshift(topContent);
         }
-        lines.reverse();
       }
 
       // append current line
       lines.push(currentContent);
 
-      // expand bottom, stop on whitespaces or length > 2048
+      // expand bottom, stop on length > 2048
       length = 0;
       while ((line = terminal.buffer.active.getLine(++bottomIdx)) && line.isWrapped && length < 2048) {
-        content = line.translateToString(true);
-        length += content.length;
-        lines.push(content);
-        if (content.indexOf(' ') !== -1) {
-          break;
-        }
+        const bottomContent = line.translateToString(true);
+        length += bottomContent.length;
+        lines.push(bottomContent);
       }
     }
     return [lines, topIdx];

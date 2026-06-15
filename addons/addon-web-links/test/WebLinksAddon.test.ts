@@ -134,6 +134,23 @@ test.describe('WebLinksAddon', () => {
     await pollForLinkAtCell(3, 3, `HTTP://Example.com:80/staysUpper`);
     await pollForLinkAtCell(3, 4, `HTTP://Ab:xY@abc.com:80/staysUpper`);
   });
+
+  test('should detect wrapped urls after resize', async () => {
+    await ctx.page.evaluate(`
+      window._linkStateData = {uri:''};
+      window._linkaddon._options.hover = (event, uri, range) => { window._linkStateData = { uri, range }; };
+      window.term.resize(120, 24);
+    `);
+    const url = 'https://auth.openai.com/oauth/authorize?response_type=code&client_id=aljsdhfjkahsdkjfhakjsdjkfa&redirect_uri=http%3A%2F%2Flocalhost%3A1455%2Fauth%2Fcallback&scope=openid%20profile%20email%20offline_access&code_challenge=y9F1nT-S38-R5Xa4yu0oXR3kxIq8yd42-bf8P-Ten78&code_challenge_method=S256&id_token_add_organizations=true&codex_cli_simplified_flow=true&state=xfkjsadjkghsjkafhgksjhdfgjkfaskjdfhajshdfkjhaskd&originator=codex_cli_rs';
+    await ctx.proxy.write(`  ${url}\r\n`);
+    await ctx.page.evaluate('window.term.resize(40, 24);');
+    await resetAndHover(3, 0);
+    let data: ILinkStateData = await ctx.page.evaluate(`window._linkStateData`);
+    strictEqual(data.uri, url);
+    await resetAndHover(3, 1);
+    data = await ctx.page.evaluate(`window._linkStateData`);
+    strictEqual(data.uri, url);
+  });
 });
 
 async function testHostName(hostname: string): Promise<void> {
