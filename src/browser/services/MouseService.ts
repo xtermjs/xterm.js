@@ -76,7 +76,7 @@ export class MouseService implements IMouseService {
     };
     this._altMouseCursor = new AltMouseCursorController(
       element,
-      document,
+      target.document,
       () => this._mouseStateService.areMouseEventsActive
         && !!this._optionsService.rawOptions.mouseEventsRequireAlt
     );
