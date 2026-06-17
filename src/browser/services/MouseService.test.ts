@@ -351,3 +351,96 @@ describe('MouseService mouseEventsRequireAlt', () => {
     assert.isFalse(element.classList.contains(MouseEventCssClasses.ENABLE_MOUSE_EVENTS));
   });
 });
+
+describe('MouseService multi-window', () => {
+  interface IRecordingDocument {
+    doc: Document;
+    added: string[];
+    removed: string[];
+    listeners: { [type: string]: EventListener[] };
+  }
+
+  function createRecordingDocument(): IRecordingDocument {
+    const added: string[] = [];
+    const removed: string[] = [];
+    const listeners: { [type: string]: EventListener[] } = {};
+    const doc = {
+      addEventListener: (type: string, listener: EventListener) => {
+        added.push(type);
+        (listeners[type] ??= []).push(listener);
+      },
+      removeEventListener: (type: string) => removed.push(type)
+    } as any;
+    return { doc, added, removed, listeners };
+  }
+
+  it('should manage protocol mouseup/mousemove listeners on the element\'s current document, not the document the terminal was opened with', () => {
+    const mouseStateService = new MouseStateService();
+    const optionsService = new OptionsService({});
+    const mouseService = new MouseService(
+      new MockRenderService(),
+      {
+        getMouseReportCoords: () => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      mouseStateService,
+      {
+        triggerDataEvent: () => {},
+        triggerBinaryEvent: () => {},
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      bufferService,
+      optionsService,
+      new TestSelectionService(),
+      logService,
+      new MockCoreBrowserService()
+    );
+
+    // Simulate a terminal that was opened with one document but whose element now lives in
+    // another document (eg. it was moved to a child window)
+    const openDocument = createRecordingDocument();
+    const childDocument = createRecordingDocument();
+    const elementListeners: { [type: string]: EventListener[] } = {};
+    const element = {
+      classList: {
+        add: () => {},
+        remove: () => {},
+        contains: () => false
+      },
+      addEventListener: (type: string, listener: EventListener) => {
+        (elementListeners[type] ??= []).push(listener);
+      },
+      removeEventListener: () => {},
+      ownerDocument: childDocument.doc
+    } as any;
+
+    mouseService.bindMouse({
+      element,
+      screenElement: createTestMouseTargetElement(),
+      document: openDocument.doc
+    }, disposable => disposable, () => {});
+    mouseStateService.activeProtocol = 'ANY';
+
+    elementListeners['mousedown'][0]({
+      type: 'mousedown',
+      button: 0,
+      buttons: 1,
+      altKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      preventDefault: () => {}
+    } as any);
+    assert.deepEqual(childDocument.added, ['mouseup', 'mousemove']);
+    assert.deepEqual(openDocument.added, []);
+
+    childDocument.listeners['mouseup'][0]({
+      type: 'mouseup',
+      button: 0,
+      buttons: 0,
+      altKey: false,
+      ctrlKey: false,
+      shiftKey: false
+    } as any);
+    assert.deepEqual(childDocument.removed, ['mouseup', 'mousemove']);
+    assert.deepEqual(openDocument.removed, []);
+  });
+});
