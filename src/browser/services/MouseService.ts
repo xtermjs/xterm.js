@@ -7,7 +7,7 @@ import { addDisposableListener } from '../Dom';
 import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptionsService } from '../../common/services/Services';
 import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent, IDisposable } from '../../common/Types';
 import { C0 } from '../../common/data/EscapeSequences';
-import { DisposableStore, MutableDisposable, toDisposable } from '../../common/Lifecycle';
+import { DisposableStore, MutableDisposable } from '../../common/Lifecycle';
 import { ICoreBrowserService, IMouseCoordsService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';
 import { Gesture, EventType as GestureEventType, IGestureEvent } from '../scrollable/touch';
 
@@ -21,7 +21,8 @@ interface IMouseBindContext {
   readonly target: IMouseServiceTarget;
   readonly focus: () => void;
   readonly requestedEvents: RequestedMouseEvents;
-  listenerDocument: Document | null;
+  readonly mouseupListener: MutableDisposable<IDisposable>;
+  readonly mousedragListener: MutableDisposable<IDisposable>;
 }
 
 export class MouseService implements IMouseService {
@@ -46,7 +47,7 @@ export class MouseService implements IMouseService {
   }
 
   public bindMouse(target: IMouseServiceTarget, register: (disposable: IDisposable) => void, focus: () => void): void {
-    const { element, document } = target;
+    const { element } = target;
 
     /**
      * Event listener state handling.
@@ -62,7 +63,11 @@ export class MouseService implements IMouseService {
       mousedrag: null,
       mousemove: null
     };
-    const ctx: IMouseBindContext = { target, focus, requestedEvents, listenerDocument: null };
+    const mouseupListener = new MutableDisposable<IDisposable>();
+    const mousedragListener = new MutableDisposable<IDisposable>();
+    register(mouseupListener);
+    register(mousedragListener);
+    const ctx: IMouseBindContext = { target, focus, requestedEvents, mouseupListener, mousedragListener };
     const eventListeners: Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener> = {
       mouseup: (ev: Event) => this._handleMouseUp(ctx, ev as MouseEvent),
       wheel: (ev: Event) => this._handleWheel(ctx, ev as WheelEvent),
@@ -85,17 +90,6 @@ export class MouseService implements IMouseService {
     }));
     // force initial onProtocolChange so we dont miss early mouse requests
     this._mouseStateService.activeProtocol = this._mouseStateService.activeProtocol;
-
-    // Ensure document-level listeners are removed on dispose
-    register(toDisposable(() => {
-      const listenerDocument = ctx.listenerDocument ?? document;
-      if (requestedEvents.mouseup) {
-        listenerDocument.removeEventListener('mouseup', requestedEvents.mouseup);
-      }
-      if (requestedEvents.mousedrag) {
-        listenerDocument.removeEventListener('mousemove', requestedEvents.mousedrag);
-      }
-    }));
 
     /**
      * "Always on" event listeners.
@@ -201,14 +195,8 @@ export class MouseService implements IMouseService {
     this._sendEvent(ctx, ev);
     if (!ev.buttons) {
       // if no other button is held remove global handlers
-      const listenerDocument = ctx.listenerDocument ?? ctx.target.document;
-      if (ctx.requestedEvents.mouseup) {
-        listenerDocument.removeEventListener('mouseup', ctx.requestedEvents.mouseup);
-      }
-      if (ctx.requestedEvents.mousedrag) {
-        listenerDocument.removeEventListener('mousemove', ctx.requestedEvents.mousedrag);
-      }
-      ctx.listenerDocument = null;
+      ctx.mouseupListener.clear();
+      ctx.mousedragListener.clear();
     }
   }
 
@@ -253,12 +241,11 @@ export class MouseService implements IMouseService {
     // Use the element's current document in case it moved to another window after open.
     const listenerDocument = ctx.target.element.ownerDocument ?? ctx.target.document;
     if (ctx.requestedEvents.mouseup) {
-      listenerDocument.addEventListener('mouseup', ctx.requestedEvents.mouseup);
+      ctx.mouseupListener.value = addDisposableListener(listenerDocument, 'mouseup', ctx.requestedEvents.mouseup);
     }
     if (ctx.requestedEvents.mousedrag) {
-      listenerDocument.addEventListener('mousemove', ctx.requestedEvents.mousedrag);
+      ctx.mousedragListener.value = addDisposableListener(listenerDocument, 'mousemove', ctx.requestedEvents.mousedrag);
     }
-    ctx.listenerDocument = listenerDocument;
   }
 
   private _handlePassiveWheel(ctx: IMouseBindContext, ev: WheelEvent): false | void {
@@ -407,7 +394,6 @@ export class MouseService implements IMouseService {
   private _handleProtocolChange(ctx: IMouseBindContext, eventListeners: Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener>, events: CoreMouseEventType): void {
     const { element } = ctx.target;
     const { requestedEvents } = ctx;
-    const listenerDocument = ctx.listenerDocument ?? ctx.target.document;
     // apply global changes on events
     if (events) {
       if (this._optionsService.rawOptions.logLevel === 'debug') {
@@ -441,18 +427,14 @@ export class MouseService implements IMouseService {
     }
 
     if (!(events & CoreMouseEventType.UP)) {
-      if (requestedEvents.mouseup) {
-        listenerDocument.removeEventListener('mouseup', requestedEvents.mouseup);
-      }
+      ctx.mouseupListener.clear();
       requestedEvents.mouseup = null;
     } else {
       requestedEvents.mouseup ??= eventListeners.mouseup;
     }
 
     if (!(events & CoreMouseEventType.DRAG)) {
-      if (requestedEvents.mousedrag) {
-        listenerDocument.removeEventListener('mousemove', requestedEvents.mousedrag);
-      }
+      ctx.mousedragListener.clear();
       requestedEvents.mousedrag = null;
     } else {
       requestedEvents.mousedrag ??= eventListeners.mousedrag;
