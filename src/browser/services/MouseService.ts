@@ -47,7 +47,7 @@ export class MouseService implements IMouseService {
   }
 
   public bindMouse(target: IMouseServiceTarget, register: (disposable: IDisposable) => void, focus: () => void): void {
-    const { element } = target;
+    const { element, document } = target;
 
     /**
      * Event listener state handling.
@@ -76,7 +76,7 @@ export class MouseService implements IMouseService {
     };
     this._altMouseCursor = new AltMouseCursorController(
       element,
-      target.document,
+      document,
       () => this._mouseStateService.areMouseEventsActive
         && !!this._optionsService.rawOptions.mouseEventsRequireAlt
     );
@@ -239,7 +239,8 @@ export class MouseService implements IMouseService {
     // Note: Other emulators also do this for 'mousedown' while a button
     // is held, we currently limit 'mousedown' to the terminal only.
     // Use the element's current document in case it moved to another window after open.
-    const listenerDocument = ctx.target.element.ownerDocument ?? ctx.target.document;
+    const { element, document: targetDocument } = ctx.target;
+    const listenerDocument = element.ownerDocument ?? targetDocument;
     if (ctx.requestedEvents.mouseup) {
       ctx.mouseupListener.value = addDisposableListener(listenerDocument, 'mouseup', ctx.requestedEvents.mouseup);
     }
