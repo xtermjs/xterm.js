@@ -47,8 +47,10 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
   private _length: number;
 
   public readonly onDeleteEmitter = this._register(new Emitter<IDeleteEvent>());
+  /** Fires before items have been removed. */
   public readonly onDelete = this.onDeleteEmitter.event;
   public readonly onInsertEmitter = this._register(new Emitter<IInsertEvent>());
+  /** Fires after items have been inserted. */
   public readonly onInsert = this.onInsertEmitter.event;
   public readonly onTrimEmitter = this._register(new Emitter<number>());
   public readonly onTrim = this.onTrimEmitter.event;

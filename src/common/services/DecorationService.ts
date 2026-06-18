@@ -125,7 +125,7 @@ export class DecorationService extends Disposable implements IDecorationService 
    */
   public *getDecorationsAtCell(x: number, line: number, layer?: 'bottom' | 'top'): IterableIterator<IInternalDecoration> {
     const bline = this._currentBuffer?.lines.get(line);
-    if (! bline) { return; }
+    if (!bline) { return; }
     const lline = bline.logical();
     for (const m of lline.markers) {
       const d = m.payload;
@@ -146,7 +146,7 @@ export class DecorationService extends Disposable implements IDecorationService 
 
   public forEachDecorationAtCell(x: number, line: number, layer: 'bottom' | 'top' | undefined, callback: (decoration: IInternalDecoration) => void): void {
     const bline = this._currentBuffer?.lines.get(line);
-    if (! bline) { return; }
+    if (!bline) { return; }
     const lline = bline.logical();
     x += bline.startColumn;
     lline.forEachMarker((marker: IMarker) => {

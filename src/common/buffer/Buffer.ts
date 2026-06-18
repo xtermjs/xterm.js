@@ -44,10 +44,12 @@ export class Buffer extends Disposable implements IBuffer {
   public savedGlevel: number = 0;
   public savedOriginMode: boolean = false;
   public savedWraparoundMode: boolean = true;
-  /** Reflow may be needed for line indexes less than lastReflowNeeded.
+  /**
+   * Reflow may be needed for line indexes less than lastReflowNeeded.
    * I.e. if i >= lastReflowNeeded then lines.get(i).reflowNeeded is false.
    * Lines later in the buffer are more likly to be visible and hence
-   * have been updated. */
+   * have been updated.
+   */
   public lastReflowNeeded: number = 0;
 
   /**
@@ -393,7 +395,7 @@ export class Buffer extends Disposable implements IBuffer {
           if (ySavedOld === row + oldWrapCount) {
             logicalSavedX = nextLine.startColumn + this.savedX;
           }
-          if (! nextLine.nextBufferLine || row + oldWrapCount + 1 >= endRow) {
+          if (!nextLine.nextBufferLine || row + oldWrapCount + 1 >= endRow) {
             break;
           }
           nextLine = nextLine.nextBufferLine;

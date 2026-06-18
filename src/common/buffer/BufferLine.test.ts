@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from './Constants';
-import { BufferLine, LogicalLine } from './/BufferLine';
+import { BufferLine, LogicalLine } from './BufferLine';
 import { BufferLineStringCache } from './BufferLineStringCache';
 import { CellData } from './CellData';
 import { CharData, IBufferLine, ICellData } from './Types';
