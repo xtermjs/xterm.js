@@ -402,6 +402,93 @@ describe('Terminal', () => {
     });
 
     describe('keyDown', () => {
+      function createKeyDownEvent(key: string, keyCode: number): KeyboardEvent {
+        return {
+          type: 'keydown',
+          key,
+          keyCode,
+          preventDefault: () => { },
+          stopPropagation: () => { }
+        } as KeyboardEvent;
+      }
+
+      function createKeyPressEvent(keyCode: number): KeyboardEvent {
+        return {
+          type: 'keypress',
+          charCode: keyCode,
+          keyCode,
+          preventDefault: () => { },
+          stopPropagation: () => { }
+        } as KeyboardEvent;
+      }
+
+      function createInputEvent(data: string): InputEvent & { defaultPreventedForTest: boolean, propagationStoppedForTest: boolean } {
+        const ev = {
+          data,
+          inputType: 'insertText',
+          defaultPreventedForTest: false,
+          propagationStoppedForTest: false,
+          preventDefault(): void { this.defaultPreventedForTest = true; },
+          stopPropagation(): void { this.propagationStoppedForTest = true; }
+        };
+        return ev as InputEvent & { defaultPreventedForTest: boolean, propagationStoppedForTest: boolean };
+      }
+
+      it('should prefer beforeinput data over printable keydown data', async () => {
+        const data: string[] = [];
+        term.onData(e => data.push(e));
+        (term as any).textarea = { value: '' };
+
+        term.keyDown(createKeyDownEvent('a', 65));
+        term.keyPress(createKeyPressEvent(97));
+        assert.deepEqual(data, []);
+
+        const ev = createInputEvent('あ');
+        assert.equal(term.beforeInput(ev), true);
+        assert.equal(ev.defaultPreventedForTest, true);
+        assert.equal(ev.propagationStoppedForTest, true);
+        await new Promise(r => setTimeout(r, 0));
+
+        assert.deepEqual(data, ['あ']);
+      });
+
+      it('should send printable keydown data via beforeinput for regular text', async () => {
+        const data: string[] = [];
+        term.onData(e => data.push(e));
+        (term as any).textarea = { value: '' };
+
+        term.keyDown(createKeyDownEvent('a', 65));
+        const ev = createInputEvent('a');
+        assert.equal(term.beforeInput(ev), true);
+        await new Promise(r => setTimeout(r, 0));
+
+        assert.deepEqual(data, ['a']);
+      });
+
+      it('should fall back to keydown data when beforeinput/input does not arrive', async () => {
+        const data: string[] = [];
+        term.onData(e => data.push(e));
+        (term as any).textarea = { value: '' };
+
+        term.keyDown(createKeyDownEvent('a', 65));
+        assert.deepEqual(data, []);
+        await new Promise(r => setTimeout(r, 0));
+
+        assert.deepEqual(data, ['a']);
+      });
+
+      it('should not defer printable keydown data in special keyboard modes', () => {
+        const data: string[] = [];
+        term.onData(e => data.push(e));
+        term.options.vtExtensions = { win32InputMode: true };
+        term.coreService.decPrivateModes.win32InputMode = true;
+        (term as any).textarea = { value: '' };
+
+        term.keyDown(createKeyDownEvent('a', 65));
+
+        assert.lengthOf(data, 1);
+      });
+
       it('should not scroll down on modifier-only input in win32 input mode', async () => {
         term.options.vtExtensions = { win32InputMode: true };
         term.coreService.decPrivateModes.win32InputMode = true;
