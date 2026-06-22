@@ -10,7 +10,9 @@ permissions:
   contents: read 
 
 jobs:
+
   build:
+    needs: lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -229,7 +231,7 @@ jobs:
       run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-webgl
 
   release-dry-run:
-    needs: build
+    needs: [build, test-unit, test-integration, test-unit-coverage]
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -264,3 +266,4 @@ jobs:
         node ./bin/package_headless.js
     - name: Publish to npm (dry run)
       run: node ./bin/publish.js --dry
+
