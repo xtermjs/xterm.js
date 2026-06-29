@@ -495,6 +495,21 @@ describe('BufferLine', function(): void {
       assert.deepEqual(columns, [0]);
     });
   });
+  describe('copyCellsFrom', () => {
+    it('should only move combined data within the copied range', () => {
+      const src = new TestBufferLine(10, NULL_CELL_DATA, false);
+      src.setCell(1, createCellData(1, 'a', 1));
+      src.addCodepointToCell(1, '\u0301'.charCodeAt(0), 0);
+      src.setCell(5, createCellData(1, 'z', 1));
+      src.addCodepointToCell(5, '\u0301'.charCodeAt(0), 0);
+
+      const dest = new TestBufferLine(10, NULL_CELL_DATA, false);
+      dest.copyCellsFrom(src, 0, 0, 2, false);
+
+      assert.property(dest.combined, '1');
+      assert.notProperty(dest.combined, '5');
+    });
+  });
   describe('addCharToCell', () => {
     it('should set width to 1 for empty cell', () => {
       const line = new TestBufferLine(3, NULL_CELL_DATA, false);

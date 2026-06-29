@@ -99,6 +99,11 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
     }
 
     if (countToRemove > 0) {
+      wrappedLines[destLineIndex].isWrapped = false;
+      const lineAfterGroup = lines.get(y + wrappedLines.length);
+      if (lineAfterGroup) {
+        lineAfterGroup.isWrapped = false;
+      }
       toRemove.push(y + wrappedLines.length - countToRemove); // index
       toRemove.push(countToRemove);
     }
