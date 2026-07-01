@@ -1523,6 +1523,16 @@ describe('InputHandler', () => {
       await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Sm');
       assert.deepEqual(getLines(bufferService), ['m', '3', '', '', '4', '5', '6', '7', '8', '9']);
     });
+    it('scrollUp adds scrolled out lines to scrollback when scroll region top is at row 1', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[1;4r\x1b[2Sm');
+      assert.equal(bufferService.buffer.ybase, 2);
+      assert.deepEqual(getLines(bufferService, 12), ['0', '1', 'm', '3', '', '', '4', '5', '6', '7', '8', '9']);
+    });
+    it('scrollUp adds scrolled out lines to scrollback without a scroll region', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2S');
+      assert.equal(bufferService.buffer.ybase, 2);
+      assert.deepEqual(getLines(bufferService, 12), ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '', '']);
+    });
     it('scrollDown', async () => {
       await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Tm');
       assert.deepEqual(getLines(bufferService), ['m', '', '', '1', '4', '5', '6', '7', '8', '9']);
