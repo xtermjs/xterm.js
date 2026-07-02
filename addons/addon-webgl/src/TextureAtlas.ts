@@ -149,6 +149,7 @@ export class TextureAtlas implements ITextureAtlas {
     this._cacheMap.clear();
     this._cacheMapCombined.clear();
     this._didWarmUp = false;
+    this._requestClearModel = true;
   }
 
   private _createNewPage(): AtlasPage {
