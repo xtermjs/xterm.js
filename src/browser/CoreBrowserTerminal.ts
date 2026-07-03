@@ -126,6 +126,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * preedit is disabled. Defer those keys long enough for the input event to take precedence.
    */
   private _deferredCandidateCommitKey: { key: string, domEvent: KeyboardEvent } | undefined;
+  private _deferredCandidateCommitKeyTimeout: number | undefined;
   private _skipNextKeyPress: string[] | undefined;
   private _skipNextInput: string | undefined;
   private _lastKeyDownWasProcess: boolean = false;
@@ -854,6 +855,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   protected _keyDown(event: KeyboardEvent): boolean | undefined {
     this._keyDownHandled = false;
     this._keyDownSeen = true;
+    if (this._deferredCandidateCommitKeyTimeout !== undefined) {
+      this._sendDeferredCandidateCommitKey(true);
+    }
     this._clearDeferredCandidateCommitKey();
     this._skipNextKeyPress = undefined;
     this._skipNextInput = undefined;
@@ -990,7 +994,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this.updateCursorStyle(ev);
     if (this._deferredCandidateCommitKey && this._getCandidateCommitKey(ev, undefined) === this._deferredCandidateCommitKey.key) {
-      this._sendDeferredCandidateCommitKey(true);
+      this._scheduleDeferredCandidateCommitKey();
     }
     this._lastKeyDownWasProcess = false;
     this._keyPressHandled = false;
@@ -1136,7 +1140,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
   private _deferCandidateCommitKey(event: KeyboardEvent, key: string | undefined): boolean {
     if (this.optionsService.rawOptions.screenReaderMode ||
-      this._keyboardService.useKitty || this._keyboardService.useWin32InputMode ||
+      this._keyboardService.useWin32InputMode ||
       !this.browser.isLinux || event.ctrlKey || event.altKey || event.metaKey) {
       return false;
     }
@@ -1153,6 +1157,16 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._unprocessedDeadKey = false;
 
     return true;
+  }
+
+  private _scheduleDeferredCandidateCommitKey(): void {
+    if (this._deferredCandidateCommitKeyTimeout !== undefined) {
+      return;
+    }
+    this._deferredCandidateCommitKeyTimeout = window.setTimeout(() => {
+      this._deferredCandidateCommitKeyTimeout = undefined;
+      this._sendDeferredCandidateCommitKey(true);
+    }, 50);
   }
 
   private _getCandidateCommitKey(event: KeyboardEvent, key: string | undefined): string | undefined {
@@ -1188,6 +1202,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   private _clearDeferredCandidateCommitKey(): void {
+    if (this._deferredCandidateCommitKeyTimeout !== undefined) {
+      window.clearTimeout(this._deferredCandidateCommitKeyTimeout);
+      this._deferredCandidateCommitKeyTimeout = undefined;
+    }
     this._deferredCandidateCommitKey = undefined;
   }
 
