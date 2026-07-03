@@ -42,6 +42,7 @@ export interface ICompositionHelper {
   compositionstart(): void;
   compositionupdate(ev: CompositionEvent): void;
   compositionend(): void;
+  recordDataAlreadySent(data: string): void;
   updateCompositionElements(dontRecurse?: boolean): void;
   keydown(ev: KeyboardEvent): boolean;
 }
@@ -55,6 +56,7 @@ export interface IBrowser {
   isIpad: boolean;
   isIphone: boolean;
   isWindows: boolean;
+  isLinux: boolean;
 }
 
 export interface IColorSet {

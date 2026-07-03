@@ -121,6 +121,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    */
   private _unprocessedDeadKey: boolean = false;
 
+  /**
+   * Raw candidate selection keys can be followed by a text insertion from Linux IMEs when inline
+   * preedit is disabled. Defer those keys long enough for the input event to take precedence.
+   */
+  private _deferredCandidateCommitKey: { key: string, domEvent: KeyboardEvent } | undefined;
+  private _skipNextKeyPress: string[] | undefined;
+  private _skipNextInput: string | undefined;
+  private _lastKeyDownWasProcess: boolean = false;
+
   private _compositionHelper: ICompositionHelper | undefined;
   private _accessibilityManager: MutableDisposable<AccessibilityManager> = this._register(new MutableDisposable());
 
@@ -845,6 +854,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   protected _keyDown(event: KeyboardEvent): boolean | undefined {
     this._keyDownHandled = false;
     this._keyDownSeen = true;
+    this._clearDeferredCandidateCommitKey();
+    this._skipNextKeyPress = undefined;
+    this._skipNextInput = undefined;
+    this._lastKeyDownWasProcess = event.key === 'Process' || event.keyCode === 229;
 
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
@@ -852,6 +865,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     // Ignore composing with Alt key on Mac when macOptionIsMeta is enabled
     const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
+
+    if (!shouldIgnoreComposition && this._compositionHelper!.isComposing && this._deferCandidateCommitKey(event, undefined)) {
+      event.stopPropagation();
+      return false;
+    }
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
@@ -890,10 +908,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       event.stopPropagation();
     }
 
-    if (!result.key) {
-      return true;
-    }
-
     // HACK: Process A-Z in the keypress event to fix an issue with macOS IMEs where lower case
     // letters cannot be input while caps lock is on. Skip this hack when using kitty protocol
     // or Win32 input mode as they need to send proper sequences for all key events.
@@ -905,6 +919,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     if (this._unprocessedDeadKey) {
       this._unprocessedDeadKey = false;
+      return true;
+    }
+
+    if (this._deferCandidateCommitKey(event, result.key)) {
+      event.stopPropagation();
+      return false;
+    }
+
+    if (!result.key) {
       return true;
     }
 
@@ -966,6 +989,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
 
     this.updateCursorStyle(ev);
+    if (this._deferredCandidateCommitKey && this._getCandidateCommitKey(ev, undefined) === this._deferredCandidateCommitKey.key) {
+      this._sendDeferredCandidateCommitKey(true);
+    }
+    this._lastKeyDownWasProcess = false;
     this._keyPressHandled = false;
   }
 
@@ -1006,6 +1033,32 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     key = String.fromCharCode(key);
 
+    if (this._consumeSkipNextKeyPress(key)) {
+      this._keyPressHandled = true;
+      return true;
+    }
+
+    if (this._deferredCandidateCommitKey?.key === key) {
+      // A raw candidate selection key can still be followed by IME committed text in an input
+      // event. Keep deferring until input or keyup decides whether to send the raw key.
+      this._keyPressHandled = true;
+      this._unprocessedDeadKey = false;
+      return true;
+    }
+
+    const deferredCandidateCommitKey = this._deferredCandidateCommitKey;
+    if (deferredCandidateCommitKey) {
+      this._skipNextInput = key;
+      this._clearDeferredCandidateCommitKey();
+      this._onKey.fire({ key, domEvent: ev });
+      this._showCursor();
+      this.coreService.triggerDataEvent(key, true);
+      this._compositionHelper!.recordDataAlreadySent(key);
+      this._keyPressHandled = true;
+      this._unprocessedDeadKey = false;
+      return true;
+    }
+
     this._onKey.fire({ key, domEvent: ev });
     this._showCursor();
     this.coreService.triggerDataEvent(key, true);
@@ -1029,21 +1082,137 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
     // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
-    if (ev.data && ev.inputType === 'insertText' && (!ev.composed || !this._keyDownSeen) && !this.optionsService.rawOptions.screenReaderMode) {
-      if (this._keyPressHandled) {
+    if (ev.data && ev.inputType === 'insertText' && !this.optionsService.rawOptions.screenReaderMode) {
+      if (this._skipNextInput) {
+        const skipInput = this._skipNextInput;
+        this._skipNextInput = undefined;
+        if (skipInput === ev.data) {
+          return false;
+        }
+      }
+
+      if (this._keyPressHandled && !this._deferredCandidateCommitKey && !this._lastKeyDownWasProcess) {
+        return false;
+      }
+
+      if (!this._deferredCandidateCommitKey && !this._lastKeyDownWasProcess && (ev.composed && this._keyDownSeen)) {
         return false;
       }
 
       // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
       // keys could be ignored
       this._unprocessedDeadKey = false;
+      const deferredCandidateCommitKey = this._deferredCandidateCommitKey;
+      if (deferredCandidateCommitKey) {
+        this._addSkipNextKeyPress(deferredCandidateCommitKey.key);
+        if (ev.data !== deferredCandidateCommitKey.key) {
+          this._addSkipNextKeyPress(ev.data);
+        }
+        if (ev.data === deferredCandidateCommitKey.key) {
+          this._sendDeferredCandidateCommitKey();
+        } else {
+          this._clearDeferredCandidateCommitKey();
+          const text = ev.data;
+          this.coreService.triggerDataEvent(text, true);
+          this._compositionHelper!.recordDataAlreadySent(text);
+        }
+        this._lastKeyDownWasProcess = false;
+        this._keyPressHandled = false;
+        return true;
+      }
+      this._clearDeferredCandidateCommitKey();
 
       const text = ev.data;
       this.coreService.triggerDataEvent(text, true);
+      if (this._lastKeyDownWasProcess) {
+        this._compositionHelper!.recordDataAlreadySent(text);
+      }
+      this._lastKeyDownWasProcess = false;
       return true;
     }
 
     return false;
+  }
+
+  private _deferCandidateCommitKey(event: KeyboardEvent, key: string | undefined): boolean {
+    if (this.optionsService.rawOptions.screenReaderMode ||
+      this._keyboardService.useKitty || this._keyboardService.useWin32InputMode ||
+      !this.browser.isLinux || event.ctrlKey || event.altKey || event.metaKey) {
+      return false;
+    }
+
+    const candidateCommitKey = this._getCandidateCommitKey(event, key);
+    if (!candidateCommitKey) {
+      return false;
+    }
+
+    this._deferredCandidateCommitKey = { key: candidateCommitKey, domEvent: event };
+    this._keyPressHandled = true;
+    // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+    // keys could be ignored
+    this._unprocessedDeadKey = false;
+
+    return true;
+  }
+
+  private _getCandidateCommitKey(event: KeyboardEvent, key: string | undefined): string | undefined {
+    if (key === ' ' || event.key === ' ' || event.code === 'Space' || event.keyCode === 32) {
+      return ' ';
+    }
+
+    for (let i = 1; i <= 9; i++) {
+      const digit = `${i}`;
+      if (key === digit || event.key === digit || event.code === `Digit${digit}` ||
+        event.code === `Numpad${digit}` || event.keyCode === 48 + i || event.keyCode === 96 + i) {
+        return digit;
+      }
+    }
+
+    return undefined;
+  }
+
+  private _sendDeferredCandidateCommitKey(skipNextInput: boolean = false): boolean {
+    const deferred = this._deferredCandidateCommitKey;
+    if (!deferred) {
+      return false;
+    }
+    this._clearDeferredCandidateCommitKey();
+    if (skipNextInput) {
+      this._skipNextInput = deferred.key;
+    }
+    this._onKey.fire({ key: deferred.key, domEvent: deferred.domEvent });
+    this._showCursor();
+    this.coreService.triggerDataEvent(deferred.key, true);
+    this._unprocessedDeadKey = false;
+    return true;
+  }
+
+  private _clearDeferredCandidateCommitKey(): void {
+    this._deferredCandidateCommitKey = undefined;
+  }
+
+  private _addSkipNextKeyPress(key: string): void {
+    this._skipNextKeyPress ??= [];
+    if (!this._skipNextKeyPress.includes(key)) {
+      this._skipNextKeyPress.push(key);
+    }
+  }
+
+  private _consumeSkipNextKeyPress(key: string): boolean {
+    if (!this._skipNextKeyPress) {
+      return false;
+    }
+
+    const index = this._skipNextKeyPress.indexOf(key);
+    if (index === -1) {
+      return false;
+    }
+
+    this._skipNextKeyPress.splice(index, 1);
+    if (this._skipNextKeyPress.length === 0) {
+      this._skipNextKeyPress = undefined;
+    }
+    return true;
   }
 
   /**
