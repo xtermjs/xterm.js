@@ -132,12 +132,16 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
-  private _requestClearModel = false;
-  public beginFrame(): boolean {
-    const result = this._requestClearModel;
-    this._requestClearModel = false;
-    return result;
-  }
+  /**
+   * Incremented whenever the structure of the pages array changes in a way that
+   * invalidates texture page indexes/coordinates cached outside the atlas (page
+   * merges, overflow page creation). Renderers compare this against their own
+   * last-seen value to decide when to rebuild their models; the atlas is shared
+   * across terminals, so a consume-once flag would only repair the first
+   * renderer to draw (see the shared-atlas garble in vscode#322756).
+   */
+  private _pagesVersion = 0;
+  public get pagesVersion(): number { return this._pagesVersion; }
 
   public clearTexture(): void {
     if (this._pages[0].currentRow.x === 0 && this._pages[0].currentRow.y === 0) {
@@ -206,8 +210,8 @@ export class TextureAtlas implements ITextureAtlas {
       // Add the new merged page to the end
       this.pages.push(mergedPage);
 
-      // Request the model to be cleared to refresh all texture pages.
-      this._requestClearModel = true;
+      // Invalidate models so all texture pages are refreshed.
+      this._pagesVersion++;
       this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
     }
 
@@ -818,8 +822,8 @@ export class TextureAtlas implements ITextureAtlas {
           this._overflowSizePage = new AtlasPage(this._document, this._config.deviceMaxTextureSize);
           this.pages.push(this._overflowSizePage);
 
-          // Request the model to be cleared to refresh all texture pages.
-          this._requestClearModel = true;
+          // Invalidate models so all texture pages are refreshed.
+          this._pagesVersion++;
           this._onAddTextureAtlasCanvas.fire(this._overflowSizePage.canvas);
         }
         activePage = this._overflowSizePage;

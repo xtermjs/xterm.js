@@ -100,6 +100,7 @@ export class GlyphRenderer extends Disposable {
   private readonly _attributesBuffer: WebGLBuffer;
 
   private _atlas: ITextureAtlas | undefined;
+  private _lastAtlasPagesVersion: number = -1;
   private _activeBuffer: number = 0;
   private readonly _vertices: IVertices = {
     count: 0,
@@ -213,8 +214,21 @@ export class GlyphRenderer extends Disposable {
     this.handleResize();
   }
 
+  /**
+   * Returns whether the full model must be rebuilt before rendering this frame.
+   * This is tracked per renderer (not on the shared atlas) so that every
+   * terminal sharing the atlas rebuilds its model after a page merge, not just
+   * the first one to render (vscode#322756).
+   */
   public beginFrame(): boolean {
-    return this._atlas ? this._atlas.beginFrame() : true;
+    if (!this._atlas) {
+      return true;
+    }
+    if (this._atlas.pagesVersion !== this._lastAtlasPagesVersion) {
+      this._lastAtlasPagesVersion = this._atlas.pagesVersion;
+      return true;
+    }
+    return false;
   }
 
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
@@ -375,6 +389,9 @@ export class GlyphRenderer extends Disposable {
 
   public setAtlas(atlas: ITextureAtlas): void {
     this._atlas = atlas;
+    // Force a model rebuild on the next frame as glyph coordinates from a
+    // previous atlas are meaningless in the new one.
+    this._lastAtlasPagesVersion = -1;
     this.invalidateAtlasTextures();
   }
 
