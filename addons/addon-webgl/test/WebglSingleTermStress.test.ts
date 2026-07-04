@@ -16,6 +16,7 @@ import {
   floodDistinctGlyphs,
   getAtlasPageCount,
   loadWebglStrict,
+  resetMaxAtlasPages,
   setMaxAtlasPages,
   waitForRender,
   writeAndWaitForRender
@@ -36,6 +37,9 @@ test.describe('WebGL single-terminal heavy render + merge', () => {
     await openTerminal(ctx, { cols: 80, rows: 24, scrollback: 5000 });
     await loadWebglStrict(ctx);
   });
+
+  // A lowered page cap must not leak into renderers built by later tests.
+  test.afterEach(async () => await resetMaxAtlasPages(ctx));
 
   test('heavy merge churn must not crash the GlyphRenderer (vscode#322756)', async () => {
     // Guard: heavy merges must not throw from GlyphRenderer.render. Note the

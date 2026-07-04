@@ -23,6 +23,7 @@ import {
   captureRowSignatures,
   expectSignatureMatches,
   loadWebglStrict,
+  resetMaxAtlasPages,
   setMaxAtlasPages,
   writeAndWaitForRender
 } from '../../../test/playwright/RendererTestUtils';
@@ -96,13 +97,7 @@ test.describe('atlas page overflow (#322756 class)', () => {
     } finally {
       ctx.page.off('pageerror', onError);
       // Restore the default so a lowered cap can never leak into other tests.
-      await ctx.page.evaluate(() => {
-        const renderer = (window as any).term._core._renderService._renderer.value;
-        const atlas = renderer?._charAtlas;
-        if (atlas) {
-          (atlas.constructor as any).maxAtlasPages = undefined;
-        }
-      }).catch(() => { /* page may already be unusable after a crash */ });
+      await resetMaxAtlasPages(ctx).catch(() => { /* page may already be unusable after a crash */ });
       await ctx.page.close();
     }
   });

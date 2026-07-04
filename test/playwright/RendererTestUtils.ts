@@ -293,6 +293,23 @@ export async function setMaxAtlasPages(ctx: ITestContext, maxAtlasPages: number)
 }
 
 /**
+ * Resets `maxAtlasPages` to undefined so the next constructed renderer re-derives it from GL
+ * capabilities. Call after any test that used {@link setMaxAtlasPages}: the static lives for
+ * the page's lifetime, so without a reset every terminal opened later in the same file builds
+ * its GL texture and shader sampler arrays at the lowered cap.
+ * @param ctx The test context.
+ */
+export async function resetMaxAtlasPages(ctx: ITestContext): Promise<void> {
+  await ctx.page.evaluate(() => {
+    const renderer = (window as any).term?._core?._renderService?._renderer?.value;
+    const atlas = renderer?._charAtlas;
+    if (atlas) {
+      (atlas.constructor as any).maxAtlasPages = undefined;
+    }
+  });
+}
+
+/**
  * Writes `chunks` screenfuls of distinct glyphs, rendering after each chunk.
  *
  * Only glyphs that are actually visible during a render get rasterized into the

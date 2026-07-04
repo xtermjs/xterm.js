@@ -14,7 +14,7 @@
  */
 import test, { expect } from '@playwright/test';
 import { ITestContext, createTestContext, openTerminal } from '../../../test/playwright/TestUtils';
-import { captureRowSignatures, expectSignatureMatches, getAtlasPageCount, loadWebglStrict, setMaxAtlasPages, writeAndWaitForRender } from '../../../test/playwright/RendererTestUtils';
+import { captureRowSignatures, expectSignatureMatches, getAtlasPageCount, loadWebglStrict, resetMaxAtlasPages, setMaxAtlasPages, writeAndWaitForRender } from '../../../test/playwright/RendererTestUtils';
 import { generateColoredAsciiFlood } from '../../../test/playwright/SyntheticTui';
 
 const HEADER = ' HEADER_REF_0123456789';
@@ -26,6 +26,9 @@ test.afterAll(async () => await ctx.page.close());
 test.describe('single-terminal merge integrity (#322756 class)', () => {
   test.skip(({ browserName }) => browserName !== 'chromium');
   test.describe.configure({ timeout: 60000 });
+
+  // A lowered page cap must not leak into renderers built by later tests.
+  test.afterEach(async () => await resetMaxAtlasPages(ctx));
 
   test('pinned header renders identically across 30 merge-heavy body redraws', async () => {
     await openTerminal(ctx, { cols: 80, rows: 24 });

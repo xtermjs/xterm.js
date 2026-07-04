@@ -23,6 +23,7 @@ import {
   expectSignatureMatches,
   floodDistinctGlyphs,
   loadWebglStrict,
+  resetMaxAtlasPages,
   setMaxAtlasPages,
   waitForRender,
   writeAndWaitForRender
@@ -44,6 +45,9 @@ test.describe('WebGL glyph + atlas integrity', () => {
     await openTerminal(ctx, { cols: 80, rows: 24 });
     await loadWebglStrict(ctx);
   });
+
+  // A lowered page cap must not leak into renderers built by later tests.
+  test.afterEach(async () => await resetMaxAtlasPages(ctx));
 
   test('renders distinct, non-blank glyphs', async () => {
     await writeAndWaitForRender(ctx, 'A W .');
