@@ -1,20 +1,24 @@
 /**
  * Copyright (c) 2025 The xterm.js authors. All rights reserved.
  * @license MIT
- * Produces a strong BEFORE/AFTER visual of single-terminal #322756 garble:
- * a plain white header that should stay readable, body churns colored text
- * forcing atlas merges. Saves before.png / after.png for manual viewing.
+ * Produces BEFORE/AFTER screenshots of a single terminal under merge-heavy
+ * churn for manual inspection (before.png / after.png, mono-*.png). On current
+ * master the single-terminal merge path is healthy, so the pinned header lines
+ * are expected to remain readable in the "after" images; a corrupted header in
+ * these captures indicates a renderer regression. Note the mono "after" body is
+ * SUPPOSED to look like glyph soup — that is the mixed box-drawing/braille
+ * payload rendered faithfully, not corruption.
  */
 import test from '@playwright/test';
 import { ITestContext, createTestContext, openTerminal } from '../../../test/playwright/TestUtils';
-import { loadWebglStrict, setMaxAtlasPages, waitForRender, writeAndWaitForRender } from '../../../test/playwright/RendererTestUtils';
+import { loadWebglStrict, setMaxAtlasPages, writeAndWaitForRender } from '../../../test/playwright/RendererTestUtils';
 import { generateColoredAsciiFlood, generateMixedGlyphBlock } from '../../../test/playwright/SyntheticTui';
 
 test.describe('visual #322756', () => {
   test.skip(({ browserName }) => browserName !== 'chromium');
   test.describe.configure({ timeout: 60000 });
 
-  test('capture before/after header garble', async ({ browser }) => {
+  test('capture before/after pinned header under merge churn', async ({ browser }) => {
     const ctx: ITestContext = await createTestContext(browser);
     await openTerminal(ctx, { cols: 80, rows: 24 });
     await loadWebglStrict(ctx);
@@ -30,8 +34,9 @@ test.describe('visual #322756', () => {
     await ctx.page.close();
   });
 
-  // Closer to vscode#322756: prefill realistic CLI text, trigger ONE merge,
-  // rewrite a couple lines -> some lines intact, most garble sparsely on dark bg.
+  // Issue-like framing: prefill realistic CLI text, force merges with a mixed
+  // glyph payload, then rewrite the top lines clean. The rewritten header lines
+  // must stay readable in mono-after.png.
   test('capture mono before/after (issue-like)', async ({ browser }) => {
     const ctx: ITestContext = await createTestContext(browser);
     await openTerminal(ctx, { cols: 80, rows: 24 });
@@ -46,14 +51,14 @@ test.describe('visual #322756', () => {
     }
     await writeAndWaitForRender(ctx, pre);
     await screen.screenshot({ path: 'out-esbuild-test/playwright/mono-before.png' });
-    // Overflow the atlas (cap=4) so pages MERGE; churn most rows so their cells
-    // hold stale slots, then rewrite a few lines clean (like scroll/redraw).
+    // Overflow the atlas (cap=4) so pages MERGE while most rows keep their cells,
+    // then rewrite a few lines clean (like scroll/redraw).
     for (let c = 0; c < 12; c++) {
       let frame = '\x1b[3;1H';
       frame += generateMixedGlyphBlock(c + 1, 18, 78);
       await writeAndWaitForRender(ctx, frame);
     }
-    await writeAndWaitForRender(ctx, '\x1b[1;1H $ Shell grep installed Copilot CLI binary - 53 lines\r\n Thought for 1s');
+    await writeAndWaitForRender(ctx, '\x1b[1;1H\x1b[2K $ Shell grep installed Copilot CLI binary - 53 lines\r\n\x1b[2K Thought for 1s');
     await screen.screenshot({ path: 'out-esbuild-test/playwright/mono-after.png' });
     await ctx.page.close();
   });

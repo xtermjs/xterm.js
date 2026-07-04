@@ -37,11 +37,12 @@ test.describe('WebGL single-terminal heavy render + merge', () => {
     await loadWebglStrict(ctx);
   });
 
-  test('heavy merge churn must not crash the GlyphRenderer (xtermjs#322756)', async () => {
-    // EXPECTED RED: with a small page cap, atlas merges shrink the pages array
-    // while GlyphRenderer.render still indexes the old page count -> throws
-    // "Cannot read properties of undefined (reading 'version')" and the terminal
-    // garbles. Capture the crash via pageerror.
+  test('heavy merge churn must not crash the GlyphRenderer (vscode#322756)', async () => {
+    // Guard: heavy merges must not throw from GlyphRenderer.render. Note the
+    // page cap here is lowered AFTER the renderer was built, so _atlasTextures
+    // keeps its original (large) length and this test cannot hit the
+    // page-overflow crash; that scenario needs the cap lowered BEFORE loading
+    // the addon and is covered separately (WebglAtlasOverflow.test.ts).
     const errors: string[] = [];
     const onError = (e: Error): void => { errors.push(e.message); };
     ctx.page.on('pageerror', onError);

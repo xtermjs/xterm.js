@@ -177,6 +177,11 @@ export function generateMixedGlyphBlock(seed: number = 1, lines: number = 10, co
  * Emits ASCII letters/words each in a distinct 256-color foreground+background.
  * Every (char,color) pair is a unique atlas glyph, so this fills/merges atlas
  * pages with realistic English text (no CJK). Deterministic.
+ *
+ * No `\r\n` is emitted after the final cell: when the flood's last line lands on
+ * the terminal's bottom row a trailing linefeed would scroll the screen (in the
+ * alt buffer this destroys pinned reference rows and makes glyph-integrity
+ * assertions fail for buffer-content reasons rather than rendering reasons).
  * @param cells Number of colored cells to emit.
  * @param offset Color offset so consecutive chunks use new color combos.
  */
@@ -188,7 +193,7 @@ export function generateColoredAsciiFlood(cells: number, offset: number = 0): st
     const fg = (offset + i) % 256;
     const bg = (offset + i * 7) % 256;
     out += `\x1b[38;5;${fg}m\x1b[48;5;${bg}m${ch}`;
-    if ((i + 1) % 78 === 0) { out += '\x1b[0m\r\n'; }
+    if ((i + 1) % 78 === 0 && i + 1 < cells) { out += '\x1b[0m\r\n'; }
   }
   return out + '\x1b[0m';
 }
