@@ -101,6 +101,7 @@ export class GlyphRenderer extends Disposable {
 
   private _atlas: ITextureAtlas | undefined;
   private _lastAtlasPagesVersion: number = -1;
+  private _pageOverflowWarned: boolean = false;
   private _activeBuffer: number = 0;
   private readonly _vertices: IVertices = {
     count: 0,
@@ -376,8 +377,15 @@ export class GlyphRenderer extends Disposable {
 
     // Bind the atlas page texture if they have changed. AtlasPage.version is globally
     // monotonic, so a page object swap at the same index (which happens after a page merge)
-    // is detected by the same comparison.
-    for (let i = 0; i < this._atlas.pages.length; i++) {
+    // is detected by the same comparison. The page count is clamped to the fixed texture
+    // array size so an atlas page overflow degrades (untextured glyphs) instead of throwing
+    // mid-frame; the atlas is responsible for never exceeding maxAtlasPages.
+    const pageCount = Math.min(this._atlas.pages.length, this._atlasTextures.length);
+    if (this._atlas.pages.length > this._atlasTextures.length && !this._pageOverflowWarned) {
+      this._pageOverflowWarned = true;
+      this._logService.warn(`Atlas page count (${this._atlas.pages.length}) exceeds the renderer's texture capacity (${this._atlasTextures.length}), some glyphs will not render correctly`);
+    }
+    for (let i = 0; i < pageCount; i++) {
       if (this._atlas.pages[i].version !== this._atlasTextures[i].version) {
         this._bindAtlasPageTexture(gl, this._atlas, i);
       }

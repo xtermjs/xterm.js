@@ -161,7 +161,7 @@ export class TextureAtlas implements ITextureAtlas {
     // animation frame which would result in blank rendered areas. This is actually not that
     // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
     if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages)) {
-      // Find the set of the largest 4 images, below the maximum size, with the highest
+      // Find the set of the largest images, below the maximum size, with the highest
       // percentages used
       const pagesBySize = this._pages.filter(e => {
         return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
@@ -171,48 +171,55 @@ export class TextureAtlas implements ITextureAtlas {
         }
         return b.percentageUsed - a.percentageUsed;
       });
-      let sameSizeI = -1;
-      let size = 0;
-      for (let i = 0; i < pagesBySize.length; i++) {
-        if (pagesBySize[i].canvas.width !== size) {
-          sameSizeI = i;
-          size = pagesBySize[i].canvas.width;
-        } else if (i - sameSizeI === 3) {
-          break;
+
+      // Find the largest group (up to 4) of same-sized pages, preferring larger page sizes. A
+      // group of 2 or 3 still reduces (or at worst maintains) the page count net of the new page
+      // pushed below; growing past the cap is never an option as GlyphRenderer's texture and
+      // shader sampler arrays are sized to exactly maxAtlasPages (exceeding them crashes render).
+      let bestGroupStart = -1;
+      let bestGroupSize = 0;
+      let groupStart = 0;
+      for (let i = 1; i <= pagesBySize.length; i++) {
+        if (i === pagesBySize.length || pagesBySize[i].canvas.width !== pagesBySize[groupStart].canvas.width) {
+          const groupSize = Math.min(4, i - groupStart);
+          if (groupSize > bestGroupSize) {
+            bestGroupSize = groupSize;
+            bestGroupStart = groupStart;
+            if (groupSize === 4) {
+              break;
+            }
+          }
+          groupStart = i;
         }
       }
 
-      // Gather details of the merge
-      const mergingPages = pagesBySize.slice(sameSizeI, sameSizeI + 4);
+      if (bestGroupSize >= 2) {
+        // Gather details of the merge
+        const mergingPages = pagesBySize.slice(bestGroupStart, bestGroupStart + bestGroupSize);
+        const sortedMergingPagesIndexes = mergingPages.map(e => this._pages.indexOf(e)).sort((a, b) => a - b);
+        const mergedPageIndex = this.pages.length - mergingPages.length;
 
-      // Only proceed with merge if we have exactly 4 same-sized pages. If not, we cannot
-      // effectively reduce page count and merging would cause issues.
-      if (mergingPages.length < 4 || mergingPages.some(p => p.canvas.width !== mergingPages[0].canvas.width)) {
-        const newPage = new AtlasPage(this._document, this._textureSize);
-        this._pages.push(newPage);
-        this._activePages.push(newPage);
-        this._onAddTextureAtlasCanvas.fire(newPage.canvas);
-        return newPage;
+        // Merge into the new page
+        const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
+        mergedPage.version = ++AtlasPage.nextVersion;
+
+        // Delete the pages, shifting glyph texture pages as needed
+        for (let i = sortedMergingPagesIndexes.length - 1; i >= 0; i--) {
+          this._deletePage(sortedMergingPagesIndexes[i]);
+        }
+
+        // Add the new merged page to the end
+        this.pages.push(mergedPage);
+
+        // Invalidate models so all texture pages are refreshed.
+        this._pagesVersion++;
+        this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
+      } else {
+        // No two same-sized pages below the maximum size exist, so merging cannot reduce the
+        // page count. Evict all pages rather than exceed the renderers' fixed texture/sampler
+        // capacity; glyphs re-rasterize on demand and models rebuild via pagesVersion.
+        this._evictAllPages();
       }
-
-      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a - b);
-      const mergedPageIndex = this.pages.length - mergingPages.length;
-
-      // Merge into the new page
-      const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
-      mergedPage.version = ++AtlasPage.nextVersion;
-
-      // Delete the pages, shifting glyph texture pages as needed
-      for (let i = sortedMergingPagesIndexes.length - 1; i >= 0; i--) {
-        this._deletePage(sortedMergingPagesIndexes[i]);
-      }
-
-      // Add the new merged page to the end
-      this.pages.push(mergedPage);
-
-      // Invalidate models so all texture pages are refreshed.
-      this._pagesVersion++;
-      this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
     }
 
     // All new atlas pages are created small as they are highly dynamic
@@ -260,6 +267,27 @@ export class TextureAtlas implements ITextureAtlas {
       }
       adjustingPage.version = ++AtlasPage.nextVersion;
     }
+  }
+
+  /**
+   * Removes every page and clears the glyph caches. This is the last resort when the page cap is
+   * reached but no same-sized pages exist to merge: the page count must never exceed
+   * maxAtlasPages because renderers size their texture and shader sampler arrays to exactly
+   * that. Glyphs re-rasterize on demand and renderers rebuild their models via
+   * {@link pagesVersion}.
+   */
+  private _evictAllPages(): void {
+    for (const page of this._pages) {
+      this._onRemoveTextureAtlasCanvas.fire(page.canvas);
+      page.canvas.remove();
+    }
+    this._pages.length = 0;
+    this._activePages.length = 0;
+    this._overflowSizePage = undefined;
+    this._cacheMap.clear();
+    this._cacheMapCombined.clear();
+    this._didWarmUp = false;
+    this._pagesVersion++;
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph {
@@ -1103,7 +1131,7 @@ class AtlasPage {
           sourcePages[2]._usedPixels +
           sourcePages[3]._usedPixels;
       } else {
-        // fallback for non quadmerges (should never be used)
+        // 2- and 3-page merges, used when no 4-page same-size set exists at the page cap
         for (let i = 0; i < sourcePages.length; ++i) {
           this._glyphs = this._glyphs.concat(sourcePages[i].glyphs);
           this._usedPixels += sourcePages[i]._usedPixels;
