@@ -100,6 +100,7 @@ export class GlyphRenderer extends Disposable {
   private readonly _attributesBuffer: WebGLBuffer;
 
   private _atlas: ITextureAtlas | undefined;
+  private _lastSeenClearModelGeneration: number = 0;
   private _activeBuffer: number = 0;
   private readonly _vertices: IVertices = {
     count: 0,
@@ -214,7 +215,15 @@ export class GlyphRenderer extends Disposable {
   }
 
   public beginFrame(): boolean {
-    return this._atlas ? this._atlas.beginFrame() : true;
+    if (!this._atlas) {
+      return true;
+    }
+    // Shared atlases need per-renderer clear tracking.
+    if (this._atlas.clearModelGeneration === this._lastSeenClearModelGeneration) {
+      return false;
+    }
+    this._lastSeenClearModelGeneration = this._atlas.clearModelGeneration;
+    return true;
   }
 
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
@@ -374,7 +383,11 @@ export class GlyphRenderer extends Disposable {
   }
 
   public setAtlas(atlas: ITextureAtlas): void {
-    this._atlas = atlas;
+    if (this._atlas !== atlas) {
+      this._atlas = atlas;
+      // Texture invalidation below already handles the atlas swap.
+      this._lastSeenClearModelGeneration = atlas.clearModelGeneration;
+    }
     this.invalidateAtlasTextures();
   }
 
