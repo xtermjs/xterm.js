@@ -22,8 +22,11 @@ export interface ITestContext {
   proxy: TerminalProxy;
 }
 
-export async function createTestContext(browser: Browser): Promise<ITestContext> {
-  const page = await browser.newPage();
+export async function createTestContext(
+  browser: Browser,
+  options: { deviceScaleFactor?: number } = {}
+): Promise<ITestContext> {
+  const page = await browser.newPage({ deviceScaleFactor: options.deviceScaleFactor });
   page.on('console', e => console.log(`[${browser.browserType().name()}:${e.type()}]`, e));
   page.on('pageerror', e => console.error(`[${browser.browserType().name()}]`, e));
   await page.goto('/test');
