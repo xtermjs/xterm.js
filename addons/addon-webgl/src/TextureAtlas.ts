@@ -152,7 +152,7 @@ export class TextureAtlas implements ITextureAtlas {
     // microtask to ensure it does not interrupt textures that will be rendered in the current
     // animation frame which would result in blank rendered areas. This is actually not that
     // expensive relative to drawing the glyphs, so there is no need to wait for an idle callback.
-    if (TextureAtlas.maxAtlasPages && this._pages.length >= Math.max(4, TextureAtlas.maxAtlasPages)) {
+    if (TextureAtlas.maxAtlasPages && this._pages.length >= TextureAtlas.maxAtlasPages) {
       // Find the set of the largest 4 images, below the maximum size, with the highest
       // percentages used
       const pagesBySize = this._pages.filter(e => {
@@ -180,31 +180,27 @@ export class TextureAtlas implements ITextureAtlas {
       // Only proceed with merge if we have exactly 4 same-sized pages. If not, we cannot
       // effectively reduce page count and merging would cause issues.
       if (mergingPages.length < 4 || mergingPages.some(p => p.canvas.width !== mergingPages[0].canvas.width)) {
-        const newPage = new AtlasPage(this._document, this._textureSize);
-        this._pages.push(newPage);
-        this._activePages.push(newPage);
-        this._onAddTextureAtlasCanvas.fire(newPage.canvas);
-        return newPage;
+        this._evictAllPages();
+      } else {
+        const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a - b);
+        const mergedPageIndex = this.pages.length - mergingPages.length;
+
+        // Merge into the new page
+        const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
+        mergedPage.version = ++AtlasPage.nextVersion;
+
+        // Delete the pages, shifting glyph texture pages as needed
+        for (let i = sortedMergingPagesIndexes.length - 1; i >= 0; i--) {
+          this._deletePage(sortedMergingPagesIndexes[i]);
+        }
+
+        // Add the new merged page to the end
+        this.pages.push(mergedPage);
+
+        // Request the model to be cleared to refresh all texture pages.
+        this._pageLayoutVersion++;
+        this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
       }
-
-      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a - b);
-      const mergedPageIndex = this.pages.length - mergingPages.length;
-
-      // Merge into the new page
-      const mergedPage = this._mergePages(mergingPages, mergedPageIndex);
-      mergedPage.version = ++AtlasPage.nextVersion;
-
-      // Delete the pages, shifting glyph texture pages as needed
-      for (let i = sortedMergingPagesIndexes.length - 1; i >= 0; i--) {
-        this._deletePage(sortedMergingPagesIndexes[i]);
-      }
-
-      // Add the new merged page to the end
-      this.pages.push(mergedPage);
-
-      // Request the model to be cleared to refresh all texture pages.
-      this._pageLayoutVersion++;
-      this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
     }
 
     // All new atlas pages are created small as they are highly dynamic
@@ -252,6 +248,20 @@ export class TextureAtlas implements ITextureAtlas {
       }
       adjustingPage.version = ++AtlasPage.nextVersion;
     }
+  }
+
+  private _evictAllPages(): void {
+    for (const page of this._pages) {
+      this._onRemoveTextureAtlasCanvas.fire(page.canvas);
+      page.canvas.remove();
+    }
+    this._pages.length = 0;
+    this._activePages.length = 0;
+    this._overflowSizePage = undefined;
+    this._cacheMap.clear();
+    this._cacheMapCombined.clear();
+    this._didWarmUp = false;
+    this._pageLayoutVersion++;
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph {
@@ -811,6 +821,9 @@ export class TextureAtlas implements ITextureAtlas {
       // Create a new page for oversized glyphs as they come up
       if (rasterizedGlyph.size.x > this._textureSize) {
         if (!this._overflowSizePage) {
+          if (TextureAtlas.maxAtlasPages && this._pages.length >= TextureAtlas.maxAtlasPages) {
+            this._evictAllPages();
+          }
           this._overflowSizePage = new AtlasPage(this._document, this._config.deviceMaxTextureSize);
           this.pages.push(this._overflowSizePage);
 
