@@ -68,9 +68,10 @@ export interface ITextureAtlas extends IDisposable {
   warmUp(): void;
 
   /**
-   * Incremented whenever atlas page indexes or coordinates cached by renderers may be stale.
-   * Each renderer tracks its own last-seen value so shared atlas layout changes are observed
-   * independently by every terminal.
+   * Incremented whenever cached glyph texture page mappings may be stale, such as after atlas page
+   * merges or overflow page creation. Renderers compare this against their own last-seen value and
+   * rebuild their model when it changes; a shared atlas can have many renderers, so this must not
+   * be a consume-once flag.
    */
   readonly pageLayoutVersion: number;
 

@@ -214,6 +214,10 @@ export class GlyphRenderer extends Disposable {
     this.handleResize();
   }
 
+  /**
+   * Call when a frame is being drawn. Returns whether the full model must be rebuilt before
+   * rendering this frame because the atlas page layout changed since this renderer last drew.
+   */
   public beginFrame(): boolean {
     if (!this._atlas) {
       return true;
