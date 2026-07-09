@@ -100,7 +100,7 @@ export class GlyphRenderer extends Disposable {
   private readonly _attributesBuffer: WebGLBuffer;
 
   private _atlas: ITextureAtlas | undefined;
-  private _lastSeenPagesVersion: number = -1;
+  private _lastSeenPageLayoutVersion: number = -1;
   private _activeBuffer: number = 0;
   private readonly _vertices: IVertices = {
     count: 0,
@@ -218,8 +218,8 @@ export class GlyphRenderer extends Disposable {
     if (!this._atlas) {
       return true;
     }
-    if (this._atlas.pagesVersion !== this._lastSeenPagesVersion) {
-      this._lastSeenPagesVersion = this._atlas.pagesVersion;
+    if (this._atlas.pageLayoutVersion !== this._lastSeenPageLayoutVersion) {
+      this._lastSeenPageLayoutVersion = this._atlas.pageLayoutVersion;
       return true;
     }
     return false;
@@ -383,7 +383,7 @@ export class GlyphRenderer extends Disposable {
 
   public setAtlas(atlas: ITextureAtlas): void {
     this._atlas = atlas;
-    this._lastSeenPagesVersion = -1;
+    this._lastSeenPageLayoutVersion = -1;
     this.invalidateAtlasTextures();
   }
 
