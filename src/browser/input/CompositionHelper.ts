@@ -154,6 +154,9 @@ export class CompositionHelper {
       // Cancel any delayed composition send requests and send the input immediately.
       this._isSendingComposition = false;
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
+      // Record the data sent so the deferred send scheduled by the upcoming compositionend event
+      // doesn't send the same text again (issue #5778).
+      this._dataAlreadySent = input;
       this._coreService.triggerDataEvent(input, true);
     } else {
       // Make a deep copy of the composition position here as a new compositionstart event may

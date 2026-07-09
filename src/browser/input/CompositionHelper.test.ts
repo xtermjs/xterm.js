@@ -234,6 +234,25 @@ describe('CompositionHelper', () => {
       }, 0);
     });
 
+    it('Should not duplicate the composition when a keydown ends it before compositionend fires', (done) => {
+      // Compose 'こんにちは'
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'こんにちは' });
+      textarea.value = 'こんにちは';
+      setTimeout(() => { // wait for any textarea updates
+        // A keydown that is not consumed by the IME ends the composition and sends it immediately,
+        // eg. the macOS eisuu (英数) input source switch key (issue #5778)
+        compositionHelper.keydown({ keyCode: 102 } as KeyboardEvent);
+        assert.equal(handledText, 'こんにちは');
+        // The browser fires compositionend afterwards, which must not send the text again
+        compositionHelper.compositionend();
+        setTimeout(() => { // wait for any textarea updates
+          assert.equal(handledText, 'こんにちは');
+          done();
+        }, 0);
+      }, 0);
+    });
+
     it('Should insert middle composition and subsequent input without appending existing trailing text', (done) => {
       textarea.value = '一二';
       // screenReaderMode keeps textarea content/selection for assistive technologies (eg. screen
