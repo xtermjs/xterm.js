@@ -5,9 +5,52 @@
 
 import { IImage32, decodePng } from '@lunapaint/png-codec';
 import test, { expect } from '@playwright/test';
+import type { Terminal, ITerminalInitOnlyOptions, ITerminalOptions } from '@xterm/xterm';
+import type { IWebglAddonOptions, WebglAddon } from '@xterm/addon-webgl';
 import { ITestContext, createTestContext, openTerminal } from '../../../test/playwright/TestUtils';
 
 type CellSignature = number[];
+type TestTerminalConstructor = new (options?: ITerminalOptions & ITerminalInitOnlyOptions) => ITestTerminal;
+type TestWebglAddonConstructor = new (options?: IWebglAddonOptions) => ITestWebglAddon;
+
+interface ITestTextureAtlasConstructor {
+  maxAtlasPages: number | undefined;
+}
+
+interface ITestTextureAtlas {
+  constructor: ITestTextureAtlasConstructor;
+}
+
+interface ITestRenderer {
+  _charAtlas?: ITestTextureAtlas;
+}
+
+interface ITestRenderService {
+  _renderer?: {
+    value?: ITestRenderer;
+  };
+}
+
+interface ITestTerminal extends Terminal {
+  _core?: {
+    _renderService?: ITestRenderService;
+  };
+}
+
+interface ITestWebglAddon extends WebglAddon {
+  _renderer?: ITestRenderer;
+}
+
+declare global {
+  interface Window { // eslint-disable-line @typescript-eslint/naming-convention
+    Terminal: TestTerminalConstructor;
+    WebglAddon: TestWebglAddonConstructor;
+    term: ITestTerminal;
+    termB?: ITestTerminal;
+    addon?: ITestWebglAddon;
+    addonB?: ITestWebglAddon;
+  }
+}
 
 const HEADER = ' HEADER_REF_0123456789';
 const HEADER_COLS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
@@ -15,35 +58,35 @@ const TERM_B_SELECTOR = '#terminal-container-b .xterm-screen';
 
 async function loadWebglStrict(ctx: ITestContext): Promise<void> {
   await ctx.page.evaluate(() => {
-    const w = window as any;
-    w.addon = new w.WebglAddon({ preserveDrawingBuffer: true });
-    w.term.loadAddon(w.addon);
+    window.addon = new window.WebglAddon({ preserveDrawingBuffer: true });
+    window.term.loadAddon(window.addon);
   });
   const isWebglRenderer = await ctx.page.evaluate(() => {
-    const w = window as any;
-    return !!w.addon && w.term?._core?._renderService?._renderer?.value === w.addon._renderer;
+    return !!window.addon && window.term?._core?._renderService?._renderer?.value === window.addon._renderer;
   });
   expect(isWebglRenderer, 'WebGL renderer must be active').toBe(true);
 }
 
 async function createTerminalB(ctx: ITestContext): Promise<void> {
   await ctx.page.evaluate(() => {
-    const w = window as any;
-    w.termB?.dispose();
+    window.termB?.dispose();
     document.getElementById('terminal-container-b')?.remove();
     const el = document.createElement('div');
     el.id = 'terminal-container-b';
     document.body.appendChild(el);
-    w.termB = new w.Terminal({ cols: 80, rows: 24, allowProposedApi: true });
-    w.termB.open(el);
-    w.addonB = new w.WebglAddon({ preserveDrawingBuffer: true });
-    w.termB.loadAddon(w.addonB);
+    window.termB = new window.Terminal({ cols: 80, rows: 24, allowProposedApi: true });
+    window.termB.open(el);
+    window.addonB = new window.WebglAddon({ preserveDrawingBuffer: true });
+    window.termB.loadAddon(window.addonB);
   });
 }
 
 async function writeToBAndWaitForRender(ctx: ITestContext, data: string): Promise<void> {
   await ctx.page.evaluate(d => new Promise<void>(resolve => {
-    const termB = (window as any).termB;
+    const termB = window.termB;
+    if (!termB) {
+      throw new Error('Terminal B must be created before writing to it');
+    }
     const disposable = termB.onRender(() => {
       disposable.dispose();
       resolve();
@@ -65,11 +108,11 @@ async function writeAndWaitForRender(ctx: ITestContext, data: string): Promise<v
 
 async function setMaxAtlasPages(ctx: ITestContext, maxAtlasPages: number): Promise<void> {
   const applied = await ctx.page.evaluate(max => {
-    const atlas = (window as any).term?._core?._renderService?._renderer?.value?._charAtlas;
+    const atlas = window.term?._core?._renderService?._renderer?.value?._charAtlas;
     if (!atlas) {
       return false;
     }
-    (atlas.constructor as any).maxAtlasPages = max;
+    atlas.constructor.maxAtlasPages = max;
     return true;
   }, maxAtlasPages);
   expect(applied, 'should be able to set TextureAtlas.maxAtlasPages').toBe(true);
@@ -77,9 +120,9 @@ async function setMaxAtlasPages(ctx: ITestContext, maxAtlasPages: number): Promi
 
 async function resetMaxAtlasPages(ctx: ITestContext): Promise<void> {
   await ctx.page.evaluate(() => {
-    const atlas = (window as any).term?._core?._renderService?._renderer?.value?._charAtlas;
+    const atlas = window.term?._core?._renderService?._renderer?.value?._charAtlas;
     if (atlas) {
-      (atlas.constructor as any).maxAtlasPages = undefined;
+      atlas.constructor.maxAtlasPages = undefined;
     }
   });
 }
@@ -171,8 +214,7 @@ test.describe('shared-atlas garble across terminals (#6038)', () => {
       await createTerminalB(ctx);
 
       const atlasShared = await ctx.page.evaluate(() => {
-        const w = window as any;
-        return w.term._core._renderService._renderer.value._charAtlas === w.termB._core._renderService._renderer.value._charAtlas;
+        return window.term._core?._renderService?._renderer?.value?._charAtlas === window.termB?._core?._renderService?._renderer?.value?._charAtlas;
       });
       expect(atlasShared, 'terminals with equal configs should share one texture atlas').toBe(true);
 
@@ -186,7 +228,7 @@ test.describe('shared-atlas garble across terminals (#6038)', () => {
       }
 
       await writeToBAndWaitForRender(ctx, '\x1b[24;1Hx');
-      const termBHeader = await ctx.page.evaluate(() => (window as any).termB.buffer.active.getLine(0)?.translateToString(true));
+      const termBHeader = await ctx.page.evaluate(() => window.termB?.buffer.active.getLine(0)?.translateToString(true));
       expect(termBHeader, 'terminal B buffer must still contain the header').toBe(HEADER);
 
       const after = await captureRowSignatures(ctx, 1, HEADER_COLS);
