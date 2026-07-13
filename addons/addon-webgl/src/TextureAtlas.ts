@@ -251,6 +251,8 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   private _evictAllPages(): void {
+    const startTime = performance.now();
+    const pageCount = this._pages.length;
     for (const page of this._pages) {
       this._onRemoveTextureAtlasCanvas.fire(page.canvas);
       page.canvas.remove();
@@ -262,6 +264,7 @@ export class TextureAtlas implements ITextureAtlas {
     this._cacheMapCombined.clear();
     this._didWarmUp = false;
     this._pageLayoutVersion++;
+    this._logService.debug(`Evicted ${pageCount} WebGL atlas pages in ${(performance.now() - startTime).toFixed(2)}ms`);
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph {
