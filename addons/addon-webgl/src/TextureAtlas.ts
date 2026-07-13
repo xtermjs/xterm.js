@@ -204,7 +204,7 @@ export class TextureAtlas implements ITextureAtlas {
       // Add the new merged page to the end
       this.pages.push(mergedPage);
 
-      // Request the model to be cleared to refresh all texture pages.
+      // Invalidate renderer models so all texture pages are refreshed.
       this._pageLayoutVersion++;
       this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
     }
@@ -837,7 +837,7 @@ export class TextureAtlas implements ITextureAtlas {
           this._overflowSizePage = new AtlasPage(this._document, this._config.deviceMaxTextureSize);
           this.pages.push(this._overflowSizePage);
 
-          // Request the model to be cleared to refresh all texture pages.
+          // Invalidate renderer models so all texture pages are refreshed.
           this._pageLayoutVersion++;
           this._onAddTextureAtlasCanvas.fire(this._overflowSizePage.canvas);
         }

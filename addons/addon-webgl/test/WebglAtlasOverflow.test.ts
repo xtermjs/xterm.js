@@ -65,7 +65,6 @@ interface ITestWebglAddon extends WebglAddon {
 }
 
 interface IAtlasEventStats {
-  additions: number;
   removals: number;
   maxPages: number;
 }
@@ -90,7 +89,6 @@ interface IAtlasState {
   atlasTextures: number;
   pageLayoutVersion: number;
   overflowPageCreated: boolean;
-  additions: number;
   removals: number;
   maxPages: number;
 }
@@ -211,13 +209,11 @@ async function installAtlasEventStats(ctx: ITestContext): Promise<void> {
       return false;
     }
     const stats: IAtlasEventStats = {
-      additions: 0,
       removals: 0,
       maxPages: atlas.pages.length
     };
     w.atlasEventStats = stats;
     w.addon.onAddTextureAtlasCanvas(() => {
-      stats.additions++;
       stats.maxPages = Math.max(stats.maxPages, atlas.pages.length);
     });
     w.addon.onRemoveTextureAtlasCanvas(() => stats.removals++);
@@ -241,7 +237,6 @@ async function getAtlasState(ctx: ITestContext): Promise<IAtlasState> {
       atlasTextures: glyphRenderer._atlasTextures.length,
       pageLayoutVersion: atlas.pageLayoutVersion,
       overflowPageCreated: !!atlas._overflowSizePage,
-      additions: stats.additions,
       removals: stats.removals,
       maxPages: stats.maxPages
     };
