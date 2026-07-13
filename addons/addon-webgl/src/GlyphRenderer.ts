@@ -376,6 +376,7 @@ export class GlyphRenderer extends Disposable {
     // Bind the atlas page texture if they have changed. AtlasPage.version is globally
     // monotonic, so a page object swap at the same index (which happens after a page merge)
     // is detected by the same comparison.
+    // Clamp defensively in case the atlas unexpectedly exceeds texture capacity.
     const pageCount = Math.min(this._atlas.pages.length, this._atlasTextures.length);
     if (this._atlas.pages.length > this._atlasTextures.length && !this._pageOverflowWarned) {
       this._pageOverflowWarned = true;

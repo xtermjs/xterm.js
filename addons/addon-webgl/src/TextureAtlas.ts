@@ -180,6 +180,7 @@ export class TextureAtlas implements ITextureAtlas {
       // Only proceed with merge if we have exactly 4 same-sized pages. If not, we cannot
       // effectively reduce page count and merging would cause issues.
       if (mergingPages.length < 4 || mergingPages.some(p => p.canvas.width !== mergingPages[0].canvas.width)) {
+        // Evict instead of adding a page beyond the renderer's texture capacity.
         this._evictAllPages();
         const newPage = new AtlasPage(this._document, this._textureSize);
         this._pages.push(newPage);
@@ -829,6 +830,7 @@ export class TextureAtlas implements ITextureAtlas {
       // Create a new page for oversized glyphs as they come up
       if (rasterizedGlyph.size.x > this._textureSize) {
         if (!this._overflowSizePage) {
+          // Make room for the oversized page without exceeding texture capacity.
           if (TextureAtlas.maxAtlasPages && this._pages.length >= TextureAtlas.maxAtlasPages) {
             this._evictAllPages();
           }
