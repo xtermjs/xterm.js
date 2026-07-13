@@ -132,12 +132,8 @@ export class TextureAtlas implements ITextureAtlas {
     }
   }
 
-  private _requestClearModel = false;
-  public beginFrame(): boolean {
-    const result = this._requestClearModel;
-    this._requestClearModel = false;
-    return result;
-  }
+  private _pageLayoutVersion = 0;
+  public get pageLayoutVersion(): number { return this._pageLayoutVersion; }
 
   public clearTexture(): void {
     if (this._pages[0].currentRow.x === 0 && this._pages[0].currentRow.y === 0) {
@@ -207,7 +203,7 @@ export class TextureAtlas implements ITextureAtlas {
       this.pages.push(mergedPage);
 
       // Request the model to be cleared to refresh all texture pages.
-      this._requestClearModel = true;
+      this._pageLayoutVersion++;
       this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
     }
 
@@ -819,7 +815,7 @@ export class TextureAtlas implements ITextureAtlas {
           this.pages.push(this._overflowSizePage);
 
           // Request the model to be cleared to refresh all texture pages.
-          this._requestClearModel = true;
+          this._pageLayoutVersion++;
           this._onAddTextureAtlasCanvas.fire(this._overflowSizePage.canvas);
         }
         activePage = this._overflowSizePage;

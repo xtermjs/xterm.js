@@ -100,6 +100,7 @@ export class GlyphRenderer extends Disposable {
   private readonly _attributesBuffer: WebGLBuffer;
 
   private _atlas: ITextureAtlas | undefined;
+  private _lastSeenPageLayoutVersion: number = -1;
   private _activeBuffer: number = 0;
   private readonly _vertices: IVertices = {
     count: 0,
@@ -213,8 +214,19 @@ export class GlyphRenderer extends Disposable {
     this.handleResize();
   }
 
+  /**
+   * Call when a frame is being drawn. Returns whether the full model must be rebuilt before
+   * rendering this frame because the atlas page layout changed since this renderer last drew.
+   */
   public beginFrame(): boolean {
-    return this._atlas ? this._atlas.beginFrame() : true;
+    if (!this._atlas) {
+      return true;
+    }
+    if (this._atlas.pageLayoutVersion !== this._lastSeenPageLayoutVersion) {
+      this._lastSeenPageLayoutVersion = this._atlas.pageLayoutVersion;
+      return true;
+    }
+    return false;
   }
 
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
@@ -375,6 +387,7 @@ export class GlyphRenderer extends Disposable {
 
   public setAtlas(atlas: ITextureAtlas): void {
     this._atlas = atlas;
+    this._lastSeenPageLayoutVersion = -1;
     this.invalidateAtlasTextures();
   }
 
