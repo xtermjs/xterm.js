@@ -170,7 +170,7 @@ export class Viewport extends Disposable {
   }
 
   private _sync(ydisp: number = this._bufferService.buffer.ydisp): void {
-    if (!this._renderService || this._isSyncing) {
+    if (this._isDisposed || !this._renderService || this._isSyncing) {
       return;
     }
     // Defer DOM scroll updates during synchronized output to prevent visible
