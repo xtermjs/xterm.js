@@ -180,6 +180,8 @@ export class TextureAtlas implements ITextureAtlas {
       // Only proceed with merge if we have exactly 4 same-sized pages. If not, we cannot
       // effectively reduce page count and merging would cause issues.
       if (mergingPages.length < 4 || mergingPages.some(p => p.canvas.width !== mergingPages[0].canvas.width)) {
+        // Evict instead of adding a page beyond the renderer's texture capacity.
+        this._evictAllPages();
         const newPage = new AtlasPage(this._document, this._textureSize);
         this._pages.push(newPage);
         this._activePages.push(newPage);
@@ -202,7 +204,7 @@ export class TextureAtlas implements ITextureAtlas {
       // Add the new merged page to the end
       this.pages.push(mergedPage);
 
-      // Request the model to be cleared to refresh all texture pages.
+      // Invalidate renderer models so all texture pages are refreshed.
       this._pageLayoutVersion++;
       this._onAddTextureAtlasCanvas.fire(mergedPage.canvas);
     }
@@ -252,6 +254,23 @@ export class TextureAtlas implements ITextureAtlas {
       }
       adjustingPage.version = ++AtlasPage.nextVersion;
     }
+  }
+
+  private _evictAllPages(): void {
+    const startTime = performance.now();
+    const pageCount = this._pages.length;
+    for (const page of this._pages) {
+      this._onRemoveTextureAtlasCanvas.fire(page.canvas);
+      page.canvas.remove();
+    }
+    this._pages.length = 0;
+    this._activePages.length = 0;
+    this._overflowSizePage = undefined;
+    this._cacheMap.clear();
+    this._cacheMapCombined.clear();
+    this._didWarmUp = false;
+    this._pageLayoutVersion++;
+    this._logService.debug(`Evicted ${pageCount} WebGL atlas pages in ${(performance.now() - startTime).toFixed(2)}ms`);
   }
 
   public getRasterizedGlyphCombinedChar(chars: string, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): IRasterizedGlyph {
@@ -811,10 +830,14 @@ export class TextureAtlas implements ITextureAtlas {
       // Create a new page for oversized glyphs as they come up
       if (rasterizedGlyph.size.x > this._textureSize) {
         if (!this._overflowSizePage) {
+          // Make room for the oversized page without exceeding texture capacity.
+          if (TextureAtlas.maxAtlasPages && this._pages.length >= TextureAtlas.maxAtlasPages) {
+            this._evictAllPages();
+          }
           this._overflowSizePage = new AtlasPage(this._document, this._config.deviceMaxTextureSize);
           this.pages.push(this._overflowSizePage);
 
-          // Request the model to be cleared to refresh all texture pages.
+          // Invalidate renderer models so all texture pages are refreshed.
           this._pageLayoutVersion++;
           this._onAddTextureAtlasCanvas.fire(this._overflowSizePage.canvas);
         }
