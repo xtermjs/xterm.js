@@ -15,28 +15,30 @@ export class WebglWindow extends BaseWindow implements IControlWindow {
   private _stressScrolling: HTMLInputElement | undefined;
 
   public build(container: HTMLElement): void {
-    const stressDiv = document.createElement('div');
+    const stressButtons = document.createElement('div');
     const stressStart = document.createElement('button');
     stressStart.id = 'stress-start';
     stressStart.textContent = 'atlas stress start';
     stressStart.addEventListener('click', () => this._stress());
-    stressDiv.appendChild(stressStart);
+    stressButtons.appendChild(stressStart);
 
     const stressStop = document.createElement('button');
     stressStop.id = 'stress-stop';
     stressStop.textContent = 'atlas stress stop';
     stressStop.addEventListener('click', () => this._stressRunning = false);
-    stressDiv.appendChild(stressStop);
+    stressButtons.appendChild(stressStop);
+    container.appendChild(stressButtons);
 
+    const stressOptions = document.createElement('div');
     this._stressScrolling = document.createElement('input');
     this._stressScrolling.type = 'checkbox';
     this._stressScrolling.id = 'stress-scrolling';
-    stressDiv.appendChild(this._stressScrolling);
+    stressOptions.appendChild(this._stressScrolling);
     const stressScrollingLabel = document.createElement('label');
     stressScrollingLabel.htmlFor = 'stress-scrolling';
     stressScrollingLabel.textContent = 'stress scrolling';
-    stressDiv.appendChild(stressScrollingLabel);
-    container.appendChild(stressDiv);
+    stressOptions.appendChild(stressScrollingLabel);
+    container.appendChild(stressOptions);
 
     const zoomCheckbox = document.createElement('input');
     zoomCheckbox.type = 'checkbox';
