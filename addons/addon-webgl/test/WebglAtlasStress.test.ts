@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IImage32, decodePng } from '@lunapaint/png-codec';
+import { decodePng, type IImage32 } from '@lunapaint/png-codec';
 import test, { expect } from '@playwright/test';
 import type { Terminal, ITerminalInitOnlyOptions, ITerminalOptions } from '@xterm/xterm';
 import type { IWebglAddonOptions, WebglAddon } from '@xterm/addon-webgl';
@@ -14,11 +14,11 @@ type TestTerminalConstructor = new (options?: ITerminalOptions & ITerminalInitOn
 type TestWebglAddonConstructor = new (options?: IWebglAddonOptions) => ITestWebglAddon;
 
 interface ITestTextureAtlas {
-  pages: { canvas: HTMLCanvasElement }[];
+  readonly pages: ReadonlyArray<{ readonly canvas: HTMLCanvasElement }>;
 }
 
 interface ITestGlyphRenderer {
-  _atlasTextures: unknown[];
+  readonly _atlasTextures: ReadonlyArray<unknown>;
 }
 
 interface ITestRenderer {
