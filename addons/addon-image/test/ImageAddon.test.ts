@@ -118,7 +118,10 @@ test.describe('ImageAddon', () => {
     }
     // bufferline privates
     strictEqual(await ctx.page.evaluate('window.term._core.buffer.lines.get(0)._data instanceof Uint32Array'), true);
-    strictEqual(await ctx.page.evaluate('window.term._core.buffer.lines.get(0)._extendedAttrs instanceof Object'), true);
+    strictEqual(await ctx.page.evaluate(`(() => {
+      const ea = window.term._core.buffer.lines.get(0)._extendedAttrs;
+      return ea === undefined || (typeof ea === 'object' && ea !== null);
+    })()`), true);
     // inputhandler privates
     strictEqual(await ctx.page.evaluate('window.term._core._inputHandler._curAttrData.constructor.name'), '_AttributeData');
     strictEqual(await ctx.page.evaluate('window.term._core._inputHandler._parser.constructor.name'), 'EscapeSequenceParser');
