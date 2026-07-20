@@ -1203,6 +1203,21 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * Scroll-margin column operations clear isWrapped on lines inside the margins.
+   * Also clear the line below the bottom margin when it still continues a wrap chain.
+   */
+  private _clearWrapBelowScrollMargins(): void {
+    const rowBelowMargin = this._activeBuffer.scrollBottom + 1;
+    if (rowBelowMargin >= this._bufferService.rows) {
+      return;
+    }
+    const lineBelow = this._activeBuffer.lines.get(this._activeBuffer.ybase + rowBelowMargin);
+    if (lineBelow) {
+      lineBelow.isWrapped = false;
+    }
+  }
+
+  /**
    * CSI Ps J  Erase in Display (ED).
    *     Ps = 0  -> Erase Below (default).
    *     Ps = 1  -> Erase Above.
@@ -1246,7 +1261,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         this._eraseInBufferLine(j, 0, this._activeBuffer.x + 1, true, respectProtect);
         if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
           // Deleted entire previous line. This next line can no longer be wrapped.
-          const nextLine = this._activeBuffer.lines.get(j + 1);
+          const nextLine = this._activeBuffer.lines.get(this._activeBuffer.ybase + j + 1);
           if (nextLine) {
             nextLine.isWrapped = false;
           }
@@ -1324,6 +1339,12 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 1:
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._activeBuffer.x + 1, false, respectProtect);
+        if (this._activeBuffer.x + 1 >= this._bufferService.cols) {
+          const nextLine = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y + 1);
+          if (nextLine) {
+            nextLine.isWrapped = false;
+          }
+        }
         break;
       case 2:
         this._eraseInBufferLine(this._activeBuffer.y, 0, this._bufferService.cols, true, respectProtect);
@@ -1515,6 +1536,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
+    this._clearWrapBelowScrollMargins();
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
@@ -1548,6 +1570,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
+    this._clearWrapBelowScrollMargins();
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
@@ -1571,6 +1594,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
+    this._clearWrapBelowScrollMargins();
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
@@ -1594,6 +1618,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
       line.isWrapped = false;
     }
+    this._clearWrapBelowScrollMargins();
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
   }
