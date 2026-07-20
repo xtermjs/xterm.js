@@ -145,6 +145,11 @@ export class TextureAtlas implements ITextureAtlas {
     this._cacheMap.clear();
     this._cacheMapCombined.clear();
     this._didWarmUp = false;
+
+    // Invalidate renderer models so all texture pages are refreshed. The atlas may be shared, in
+    // which case the clearing renderer has cleared only its own model and every other owner still
+    // holds texture coords into the rows just wiped.
+    this._pageLayoutVersion++;
   }
 
   private _createNewPage(): AtlasPage {
