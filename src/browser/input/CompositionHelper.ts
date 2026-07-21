@@ -43,7 +43,7 @@ export class CompositionHelper {
   private _isSendingComposition: boolean;
 
   /**
-   * Data already sent due to keydown event.
+   * Data already sent before delayed composition or textarea-change finalization.
    */
   private _dataAlreadySent: string;
 
@@ -105,6 +105,17 @@ export class CompositionHelper {
    */
   public compositionend(): void {
     this._finalizeComposition(true);
+  }
+
+  /**
+   * Records text that has already been forwarded while delayed composition or textarea-change
+   * handling is still pending. This prevents the final textarea diff from sending it again.
+   */
+  public recordDataAlreadySent(data: string): void {
+    if (!this._isComposing && !this._isSendingComposition && !this._textareaChangeTimer) {
+      return;
+    }
+    this._dataAlreadySent += data;
   }
 
   /**
@@ -178,7 +189,7 @@ export class CompositionHelper {
         if (this._isSendingComposition) {
           this._isSendingComposition = false;
           let input;
-          // Add length of data already sent due to keydown event,
+          // Add length of data already sent due to keydown/input events,
           // otherwise input characters can be duplicated. (Issue #3191)
           currentCompositionPosition.start += this._dataAlreadySent.length;
           if (this._isComposing) {
@@ -214,24 +225,36 @@ export class CompositionHelper {
       return;
     }
     const oldValue = this._textarea.value;
+    const dataAlreadySentLength = this._dataAlreadySent.length;
     this._textareaChangeTimer = window.setTimeout(() => {
       this._textareaChangeTimer = undefined;
       // Ignore if a composition has started since the timeout
       if (!this._isComposing) {
         const newValue = this._textarea.value;
 
-        const diff = newValue.replace(oldValue, '');
-
-        this._dataAlreadySent = diff;
+        let diff = newValue.replace(oldValue, '');
+        if (diff.length > 0) {
+          const alreadySent = this._dataAlreadySent.substring(dataAlreadySentLength);
+          if (diff.startsWith(alreadySent)) {
+            diff = diff.substring(alreadySent.length);
+          } else if (alreadySent.startsWith(diff)) {
+            diff = '';
+          }
+        }
 
         if (newValue.length > oldValue.length) {
-          this._coreService.triggerDataEvent(diff, true);
+          if (diff.length > 0) {
+            this._dataAlreadySent += diff;
+            this._coreService.triggerDataEvent(diff, true);
+          }
         } else if (newValue.length < oldValue.length) {
           this._coreService.triggerDataEvent(`${C0.DEL}`, true);
         } else if ((newValue.length === oldValue.length) && (newValue !== oldValue)) {
+          this._dataAlreadySent += newValue;
           this._coreService.triggerDataEvent(newValue, true);
         }
 
+        this._dataAlreadySent = '';
       }
     }, 0);
   }
