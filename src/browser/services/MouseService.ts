@@ -344,6 +344,15 @@ export class MouseService implements IMouseService {
       return;
     }
 
+    // Wheel reports carry the cell the "wheel" happened over, so a gesture
+    // event without usable coordinates must not be reported: NaN passes
+    // through getMouseReportCoords' clamping untouched and ends up serialized
+    // into the report sequence (e.g. `CSI < 64 ; NaN ; NaN M`), which the
+    // application then reads as garbage input.
+    if (!isFinite(e.clientX) || !isFinite(e.clientY)) {
+      return;
+    }
+
     this._touchScrollAccumulator -= e.translationY;
     const lines = Math.trunc(this._touchScrollAccumulator / cellHeight);
     if (lines === 0) {
