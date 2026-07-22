@@ -145,9 +145,12 @@ declare module '@xterm/xterm' {
     letterSpacing?: number;
 
     /**
-     * The line height used to render text.
+     * The line height used to render text. When a number is given, it is used
+     * as a multiplier of the character height (must be >= 1). When a string
+     * ending in `'px'` is given (e.g. `'23px'`), it sets an absolute pixel
+     * line height (the parsed value must be >= 1).
      */
-    lineHeight?: number;
+    lineHeight?: number | string;
 
     /**
      * The handler for OSC 8 hyperlinks. Links will use the `confirm` browser
