@@ -255,6 +255,7 @@ Xterm.js is used in many world-class applications to provide great terminal expe
 - [**Orca**](https://github.com/stablyai/orca): Agentic development environment for 100x builders.
 - [**4bit**](https://ciembor.github.io/4bit): Terminal Color Scheme Designer.
 - [**Cate**](https://github.com/0-AI-UG/cate): Open source desktop IDE on an infinite zoomable canvas. Editor, browser, and terminal panels float in spatial space; the terminals are xterm.js with the WebGL addon, backed by node-pty.
+- [**OmnyShell PWA**](https://github.com/OmnyGrid/omnyshell_web): Web client for [**OmnyShell**](https://github.com/OmnyGrid/omnyshell), featuring remote terminals, a built-in IDE, AI-assisted workflows, and detachable/resumable sessions for seamless browser-based access to nodes.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Please add any new contributions to the end of the list.
