@@ -572,6 +572,7 @@ declare module '@xterm/xterm' {
   export interface IMarker extends IDisposableWithEvent {
     /**
      * A unique identifier for this marker.
+     * @deprecated
      */
     readonly id: number;
 
@@ -580,6 +581,7 @@ declare module '@xterm/xterm' {
      * -1 if the marker has been disposed.
      */
     readonly line: number;
+    payload?: IDisposable;
   }
 
   /**
