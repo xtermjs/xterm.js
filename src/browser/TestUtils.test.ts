@@ -25,6 +25,7 @@ export class TestTerminal extends CoreBrowserTerminal {
   public get curAttrData(): IAttributeData { return (this as any)._inputHandler._curAttrData; }
   public keyDown(ev: any): boolean | undefined { return this._keyDown(ev); }
   public keyPress(ev: any): boolean { return this._keyPress(ev); }
+  public inputEvent(ev: InputEvent): boolean { return this._inputEvent(ev); }
   public writeP(data: string | Uint8Array): Promise<void> {
     return new Promise(r => this.write(data, r));
   }
@@ -359,6 +360,12 @@ export class MockCompositionHelper implements ICompositionHelper {
   }
   public keydown(ev: KeyboardEvent): boolean {
     return true;
+  }
+  public keypress(text: string): boolean {
+    return false;
+  }
+  public input(text: string): boolean {
+    return false;
   }
 }
 

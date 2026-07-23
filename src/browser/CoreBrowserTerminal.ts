@@ -1008,7 +1008,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this._onKey.fire({ key, domEvent: ev });
     this._showCursor();
-    this.coreService.triggerDataEvent(key, true);
+    if (!this._compositionHelper!.keypress(key)) {
+      this.coreService.triggerDataEvent(key, true);
+    }
 
     this._keyPressHandled = true;
 
@@ -1029,7 +1031,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
     // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
-    if (ev.data && ev.inputType === 'insertText' && (!ev.composed || !this._keyDownSeen) && !this.optionsService.rawOptions.screenReaderMode) {
+    if (ev.data && ev.inputType === 'insertText' && !this.optionsService.rawOptions.screenReaderMode) {
+      if (this._compositionHelper!.input(ev.data)) {
+        this._unprocessedDeadKey = false;
+        return true;
+      }
+      if (ev.composed && this._keyDownSeen) {
+        return false;
+      }
       if (this._keyPressHandled) {
         return false;
       }
