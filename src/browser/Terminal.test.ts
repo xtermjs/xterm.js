@@ -106,6 +106,38 @@ describe('Terminal', () => {
       } as KeyboardEvent;
       term.keyDown(evKeyDown);
     });
+    it('should offer keypress text to a pending composition before emitting data', () => {
+      let compositionText = '';
+      const compositionHelper = new MockCompositionHelper();
+      compositionHelper.keypress = text => {
+        compositionText = text;
+        return true;
+      };
+      (term as any)._compositionHelper = compositionHelper;
+      let emittedText = '';
+      term.onData(data => emittedText += data);
+
+      term.keyPress({ charCode: 97, type: 'keypress' } as KeyboardEvent);
+
+      assert.equal(compositionText, 'a');
+      assert.equal(emittedText, '');
+    });
+    it('should offer insertText data to a pending composition before emitting data', () => {
+      let compositionText = '';
+      const compositionHelper = new MockCompositionHelper();
+      compositionHelper.input = text => {
+        compositionText = text;
+        return true;
+      };
+      (term as any)._compositionHelper = compositionHelper;
+      let emittedText = '';
+      term.onData(data => emittedText += data);
+
+      assert.isTrue(term.inputEvent({ data: '한', inputType: 'insertText', composed: true } as InputEvent));
+
+      assert.equal(compositionText, '한');
+      assert.equal(emittedText, '');
+    });
     it('should fire the onResize event', (done) => {
       term.onResize(e => {
         assert.equal(typeof e.cols, 'number');
