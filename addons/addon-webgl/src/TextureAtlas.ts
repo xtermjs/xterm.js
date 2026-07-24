@@ -4,6 +4,7 @@
  */
 
 import { IColorContrastCache } from 'browser/Types';
+import { cacheKeyBg } from './CharAtlasUtils';
 import { DIM_OPACITY, TEXT_BASELINE } from './Constants';
 import { tryDrawCustomGlyph } from './customGlyphs/CustomGlyphRasterizer';
 import { computeNextVariantOffset, treatGlyphAsBackgroundColor, isPowerlineGlyph, isRestrictedPowerlineGlyph, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
@@ -293,10 +294,17 @@ export class TextureAtlas implements ITextureAtlas {
     restrictToCellHeight: boolean,
     domContainer: HTMLElement | undefined
   ): IRasterizedGlyph {
-    $glyph = cacheMap.get(key, bg, fg, ext);
+    // Glyphs that cannot depend on the background colour share a single entry
+    // across every background they are drawn over — see `cacheKeyBg`. The real
+    // `bg` is still handed to `_drawToCache`: by that same invariant every
+    // background rasterises an identical tile, so whichever arrives first is
+    // as good as any, and passing the caller's own value keeps this purely a
+    // change to how entries are keyed.
+    const keyBg = cacheKeyBg(bg, fg, this._config);
+    $glyph = cacheMap.get(key, keyBg, fg, ext);
     if (!$glyph) {
       $glyph = this._drawToCache(key, bg, fg, ext, restrictToCellHeight, domContainer);
-      cacheMap.set(key, bg, fg, ext, $glyph);
+      cacheMap.set(key, keyBg, fg, ext, $glyph);
     }
     return $glyph;
   }
