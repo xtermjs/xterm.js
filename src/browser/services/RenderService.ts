@@ -6,6 +6,7 @@
 import { RenderDebouncer } from '../RenderDebouncer';
 import { IRenderDebouncerWithCallback } from '../Types';
 import { IRenderDimensions, IRenderer } from '../renderer/shared/Types';
+import { createRenderDimensions } from '../renderer/shared/RendererUtils';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from './Services';
 import { Disposable, MutableDisposable, toDisposable } from '../../common/Lifecycle';
 import { DebouncedIdleTask } from '../../common/TaskQueue';
@@ -53,7 +54,15 @@ export class RenderService extends Disposable implements IRenderService {
   private readonly _onRefreshRequest = this._register(new Emitter<{ start: number, end: number }>());
   public readonly onRefreshRequest = this._onRefreshRequest.event;
 
-  public get dimensions(): IRenderDimensions { return this._renderer.value!.dimensions; }
+  private _cachedDimensions: IRenderDimensions = createRenderDimensions();
+
+  public get dimensions(): IRenderDimensions {
+    const renderer = this._renderer.value;
+    if (renderer) {
+      this._cachedDimensions = renderer.dimensions;
+    }
+    return this._cachedDimensions;
+  }
 
   constructor(
     private _rowCount: number,
