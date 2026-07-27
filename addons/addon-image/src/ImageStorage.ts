@@ -436,9 +436,9 @@ export class ImageStorage implements IDisposable {
       for (let col = 0; col < cols; ++col) {
         let e: IExtendedAttrsImage;
         if (line.getBg(col) & BgFlags.HAS_EXTENDED) {
-          e = line._extendedAttrs[col] ?? EMPTY_ATTRS;
+          e = line._extendedAttrs?.[col] ?? EMPTY_ATTRS;
         } else {
-          const maybeImg = line._extendedAttrs[col] as IExtendedAttrsImage | undefined;
+          const maybeImg = line._extendedAttrs?.[col] as IExtendedAttrsImage | undefined;
           if (!maybeImg || maybeImg.imageId === undefined || maybeImg.imageId === -1) {
             continue;
           }
@@ -461,7 +461,7 @@ export class ImageStorage implements IDisposable {
            * Also check _extendedAttrs directly for cells where text cleared HAS_EXTENDED.
            */
           while (++col < cols) {
-            const nextE = line._extendedAttrs[col] as IExtendedAttrsImage | undefined;
+            const nextE = line._extendedAttrs?.[col] as IExtendedAttrsImage | undefined;
             if (!nextE || nextE.imageId !== imageId || nextE.tileId !== startTile + count) {
               break;
             }
@@ -515,7 +515,7 @@ export class ImageStorage implements IDisposable {
     for (let row = 0; row < rows; ++row) {
       const line = buffer.lines.get(row) as IBufferLineExt;
       if (line.getBg(oldCol) & BgFlags.HAS_EXTENDED) {
-        const e: IExtendedAttrsImage = line._extendedAttrs[oldCol] ?? EMPTY_ATTRS;
+        const e: IExtendedAttrsImage = line._extendedAttrs?.[oldCol] ?? EMPTY_ATTRS;
         const imageId = e.imageId;
         if (imageId === undefined || imageId === -1) {
           continue;
@@ -560,7 +560,7 @@ export class ImageStorage implements IDisposable {
     const buffer = this._terminal._core.buffer;
     const line = buffer.lines.get(y) as IBufferLineExt;
     if (line && line.getBg(x) & BgFlags.HAS_EXTENDED) {
-      const e: IExtendedAttrsImage = line._extendedAttrs[x] ?? EMPTY_ATTRS;
+      const e: IExtendedAttrsImage = line._extendedAttrs?.[x] ?? EMPTY_ATTRS;
       if (e.imageId && e.imageId !== -1) {
         const orig = this._images.get(e.imageId)?.orig;
         if (window.ImageBitmap && orig instanceof ImageBitmap) {
@@ -580,7 +580,7 @@ export class ImageStorage implements IDisposable {
     const buffer = this._terminal._core.buffer;
     const line = buffer.lines.get(y) as IBufferLineExt;
     if (line && line.getBg(x) & BgFlags.HAS_EXTENDED) {
-      const e: IExtendedAttrsImage = line._extendedAttrs[x] ?? EMPTY_ATTRS;
+      const e: IExtendedAttrsImage = line._extendedAttrs?.[x] ?? EMPTY_ATTRS;
       if (e.imageId && e.imageId !== -1 && e.tileId !== -1) {
         const spec = this._images.get(e.imageId);
         if (spec) {
@@ -611,7 +611,7 @@ export class ImageStorage implements IDisposable {
 
   private _writeToCell(line: IBufferLineExt, x: number, imageId: number, tileId: number): void {
     if (line._data[x * Cell.SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
-      const old = line._extendedAttrs[x];
+      const old = line._extendedAttrs?.[x];
       if (old) {
         if (old.imageId !== undefined) {
           // found an old ExtendedAttrsImage, since we know that
@@ -627,13 +627,13 @@ export class ImageStorage implements IDisposable {
           return;
         }
         // found a plain ExtendedAttrs instance, clone it to new entry
-        line._extendedAttrs[x] = new ExtendedAttrsImage(old.ext, old.urlId, imageId, tileId);
+        (line._extendedAttrs ??= {})[x] = new ExtendedAttrsImage(old.ext, old.urlId, imageId, tileId);
         return;
       }
     }
     // fall-through: always create new ExtendedAttrsImage entry
     line._data[x * Cell.SIZE + Cell.BG] |= BgFlags.HAS_EXTENDED;
-    line._extendedAttrs[x] = new ExtendedAttrsImage(0, 0, imageId, tileId);
+    (line._extendedAttrs ??= {})[x] = new ExtendedAttrsImage(0, 0, imageId, tileId);
   }
 
   private _evictOnAlternate(): void {
@@ -652,7 +652,7 @@ export class ImageStorage implements IDisposable {
       }
       for (let x = 0; x < this._terminal.cols; ++x) {
         if (line._data[x * Cell.SIZE + Cell.BG] & BgFlags.HAS_EXTENDED) {
-          const imgId = line._extendedAttrs[x]?.imageId;
+          const imgId = line._extendedAttrs?.[x]?.imageId;
           if (imgId) {
             const spec = this._images.get(imgId);
             if (spec) {
