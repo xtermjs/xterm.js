@@ -431,8 +431,8 @@ export class ImageStorage implements IDisposable {
     // because text writes clear the BG flag but leave image tile data intact.
     // This lets top-layer images survive text overwrites (kitty C=1 behavior).
     for (let row = start; row <= end; ++row) {
-      const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
-      if (!line) return;
+      const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt | undefined;
+      if (!line) continue;
       for (let col = 0; col < cols; ++col) {
         let e: IExtendedAttrsImage;
         if (line.getBg(col) & BgFlags.HAS_EXTENDED) {
@@ -513,7 +513,10 @@ export class ImageStorage implements IDisposable {
     const rows = buffer.lines.length;
     const oldCol = this._viewportMetrics.cols - 1;
     for (let row = 0; row < rows; ++row) {
-      const line = buffer.lines.get(row) as IBufferLineExt;
+      const line = buffer.lines.get(row) as IBufferLineExt | undefined;
+      if (!line) {
+        continue;
+      }
       if (line.getBg(oldCol) & BgFlags.HAS_EXTENDED) {
         const e: IExtendedAttrsImage = line._extendedAttrs[oldCol] ?? EMPTY_ATTRS;
         const imageId = e.imageId;
@@ -531,7 +534,7 @@ export class ImageStorage implements IDisposable {
         }
         // expand only if right side is empty (nothing got wrapped from below)
         let hasData = false;
-        for (let rightCol = oldCol + 1; rightCol > metrics.cols; ++rightCol) {
+        for (let rightCol = oldCol + 1; rightCol < metrics.cols; ++rightCol) {
           if (line._data[rightCol * Cell.SIZE + Cell.CONTENT] & Content.HAS_CONTENT_MASK) {
             hasData = true;
             break;
