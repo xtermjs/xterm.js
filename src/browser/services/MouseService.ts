@@ -117,23 +117,31 @@ export class MouseService implements IMouseService {
           // buttons is not supported on macOS, try to get a value from button instead
           but = CoreMouseButton.NONE;
           if (ev.button !== undefined) {
-            but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
+            but = ev.button < 3 ? ev.button :
+              ev.button >= 3 && ev.button <= 10 ? (ev.button + 5) as CoreMouseButton :
+                CoreMouseButton.NONE;
           }
         } else {
           // according to MDN buttons only reports up to button 5 (AUX2)
           but = ev.buttons & 1 ? CoreMouseButton.LEFT :
             ev.buttons & 4 ? CoreMouseButton.MIDDLE :
               ev.buttons & 2 ? CoreMouseButton.RIGHT :
-                CoreMouseButton.NONE; // fallback to NONE
+                ev.buttons & 8 ? CoreMouseButton.AUX1 :
+                  ev.buttons & 16 ? CoreMouseButton.AUX2 :
+                    CoreMouseButton.NONE; // fallback to NONE
         }
         break;
       case 'mouseup':
         action = CoreMouseAction.UP;
-        but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
+        but = ev.button < 3 ? ev.button :
+          ev.button >= 3 && ev.button <= 10 ? (ev.button + 5) as CoreMouseButton :
+            CoreMouseButton.NONE;
         break;
       case 'mousedown':
         action = CoreMouseAction.DOWN;
-        but = ev.button < 3 ? ev.button : CoreMouseButton.NONE;
+        but = ev.button < 3 ? ev.button :
+          ev.button >= 3 && ev.button <= 10 ? (ev.button + 5) as CoreMouseButton :
+            CoreMouseButton.NONE;
         break;
       case 'wheel':
         if (!this._mouseStateService.allowCustomWheelEvent(ev as WheelEvent)) {
@@ -160,8 +168,8 @@ export class MouseService implements IMouseService {
     }
 
     // exit if we cannot determine valid button/action values
-    // do nothing for higher buttons than wheel
-    if (action === undefined || but === undefined || but > CoreMouseButton.WHEEL) {
+    // do nothing for higher buttons than wheel, except auxiliary buttons
+    if (action === undefined || but === undefined || (but > CoreMouseButton.WHEEL && (but < CoreMouseButton.AUX1 || but > CoreMouseButton.AUX8))) {
       return false;
     }
 
