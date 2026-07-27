@@ -17,7 +17,17 @@ const xtermHeadlessPackageJson = {
   name: '@xterm/headless',
   description: 'A headless terminal component that runs in Node.js',
   main: 'lib-headless/xterm-headless.js',
+  // Override every artifact-path field: the spread above copies the main
+  // package's values, whose module ("lib/xterm.mjs") does not exist in the
+  // published @xterm/headless package (see headless/package.json for the
+  // intended values).
+  module: 'lib-headless/xterm-headless.mjs',
   types: 'typings/xterm-headless.d.ts',
+  exports: {
+    types: './typings/xterm-headless.d.ts',
+    import: './lib-headless/xterm-headless.mjs',
+    require: './lib-headless/xterm-headless.js'
+  },
 };
 delete xtermHeadlessPackageJson['scripts'];
 delete xtermHeadlessPackageJson['devDependencies'];
