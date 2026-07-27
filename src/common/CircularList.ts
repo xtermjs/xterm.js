@@ -31,7 +31,6 @@ export interface ICircularList<T> {
   get(index: number): T | undefined;
   set(index: number, value: T): void;
   push(value: T): void;
-  recycle(): T;
   pop(): T | undefined;
   splice(start: number, deleteCount: number, ...items: T[]): void;
   trimStart(count: number): void;
@@ -134,20 +133,6 @@ export class CircularList<T> extends Disposable implements ICircularList<T> {
     } else {
       this._length++;
     }
-  }
-
-  /**
-   * Advance ringbuffer index and return current element for recycling.
-   * Note: The buffer must be full for this method to work.
-   * @throws When the buffer is not full.
-   */
-  public recycle(): T {
-    if (this._length !== this._maxLength) {
-      throw new Error('Can only recycle when the buffer is full');
-    }
-    this._startIndex = ++this._startIndex % this._maxLength;
-    this.onTrimEmitter.fire(1);
-    return this._array[this._getCyclicIndex(this._length - 1)]!;
   }
 
   /**
