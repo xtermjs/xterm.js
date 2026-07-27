@@ -844,7 +844,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    */
   protected _keyDown(event: KeyboardEvent): boolean | undefined {
     this._keyDownHandled = false;
-    this._keyDownSeen = true;
+    // A pure modifier keydown (Shift, Ctrl, Alt, Meta) never produces text and its keyup may not
+    // arrive before the next character, so recording it here would leave _keyDownSeen stuck true
+    // and cause _inputEvent() to drop an IME-committed character (e.g. holding Shift while typing
+    // full-width punctuation in a WKWebView). Modifiers are irrelevant to that heuristic, so skip
+    // them. See https://github.com/xtermjs/xterm.js/issues/5887
+    if (!wasModifierKeyOnlyEvent(event)) {
+      this._keyDownSeen = true;
+    }
 
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
