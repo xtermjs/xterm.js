@@ -609,9 +609,13 @@ export class BufferLine implements IBufferLine {
     const srcStart = srcCol * Constants.CELL_INDICIES;
     if (src._data[srcStart + Cell.CONTENT] & Content.IS_COMBINED_MASK) {
       this._combined[destCol] = src._combined[srcCol];
+    } else {
+      delete this._combined[destCol];
     }
     if (src._data[srcStart + Cell.BG] & BgFlags.HAS_EXTENDED) {
       this._extendedAttrs[destCol] = src._extendedAttrs[srcCol];
+    } else {
+      delete this._extendedAttrs[destCol];
     }
   }
 
