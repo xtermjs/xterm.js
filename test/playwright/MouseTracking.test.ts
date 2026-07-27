@@ -181,6 +181,45 @@ test.describe('Mouse Tracking Tests', () => {
     await ctx.proxy.resize(cols, rows);
   });
 
+  test('should report the correct cell under an ancestor CSS scale transform', async () => {
+    const encoding = 'SGR';
+    await resetMouseModes();
+    await ctx.page.evaluate(`
+      const container = document.querySelector('#terminal-container');
+      container.style.transformOrigin = 'top left';
+      container.style.transform = 'scale(0.6)';
+    `);
+
+    try {
+      await ctx.proxy.write('\x1b[?9h\x1b[?1006h');
+      const [x, y]: number[] = await ctx.page.evaluate(`
+        (function() {
+          const rect = window.term.element.getBoundingClientRect();
+          const dimensions = window.term.dimensions.css.cell;
+          const scaleX = rect.width / window.term.element.offsetWidth;
+          const scaleY = rect.height / window.term.element.offsetHeight;
+          return [
+            rect.left + (50 * dimensions.width + 2) * scaleX,
+            rect.top + (10 * dimensions.height + 2) * scaleY
+          ];
+        })();
+      `);
+      await ctx.page.mouse.move(x, y);
+      await mouseDown('left');
+      await mouseUp('left');
+      await pollFor(ctx.page, () => getReports(encoding), [
+        { col: 51, row: 11, state: { action: 'press', button: 'left', modifier: { control: false, shift: false, meta: false } } }
+      ]);
+    } finally {
+      await resetMouseModes();
+      await ctx.page.evaluate(`
+        const container = document.querySelector('#terminal-container');
+        container.style.transformOrigin = '';
+        container.style.transform = '';
+      `);
+    }
+  });
+
   test.describe('DECSET 9 (X10)', async () => {
     /**
      * X10 protocol:
