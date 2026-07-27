@@ -206,24 +206,36 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     const width = this._renderer.dimensions?.css.canvas.width || cw * this._coreTerminal.cols;
     const height = this._renderer.dimensions?.css.canvas.height || ch * this._coreTerminal.rows;
 
-    const rw = this._dim(this._header.width!, width, cw);
-    const rh = this._dim(this._header.height!, height, ch);
+    // Target size in CSS pixels, then scaled to device pixels: the image layer
+    // renders at device resolution, so decoding the source at device resolution
+    // keeps images crisp on HiDPI displays (see ImageRenderer.cellSize).
+    const dpr = this._renderer.dpr;
+    const rw = this._dim(this._header.width!, width, cw, dpr);
+    const rh = this._dim(this._header.height!, height, ch, dpr);
+    let tw: number;
+    let th: number;
     if (!rw && !rh) {
       const wf = width / w;         // TODO: should this respect initial cursor offset?
       const hf = (height - ch) / h; // TODO: fix offset issues from float cell height
       const f = Math.min(wf, hf);
-      return f < 1 ? [w * f, h * f] : [w, h];
+      [tw, th] = f < 1 ? [w * f, h * f] : [w, h];
+    } else {
+      [tw, th] = !rw
+        ? [w * rh / h, rh]
+        : this._header.preserveAspectRatio || !rw || !rh
+          ? [rw, h * rw / w] : [rw, rh];
     }
-    return !rw
-      ? [w * rh / h, rh]
-      : this._header.preserveAspectRatio || !rw || !rh
-        ? [rw, h * rw / w] : [rw, rh];
+    return [tw * dpr, th * dpr];
   }
 
-  private _dim(s: string, total: number, cdim: number): number {
+  private _dim(s: string, total: number, cdim: number, dpr: number): number {
     if (s === 'auto') return 0;
     if (s.endsWith('%')) return parseInt(s.slice(0, -1), 10) * total / 100;
-    if (s.endsWith('px')) return parseInt(s.slice(0, -2), 10);
+    // `px` addresses DEVICE pixels (iTerm2 semantics, confirmed by gnachman in
+    // xtermjs/xterm.js#5861). The caller multiplies the result by dpr, so
+    // express it in CSS px here to land on exactly the requested device-pixel
+    // count instead of double-scaling by dpr.
+    if (s.endsWith('px')) return parseInt(s.slice(0, -2), 10) / dpr;
     return parseInt(s, 10) * cdim;
   }
 }
