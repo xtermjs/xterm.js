@@ -342,6 +342,7 @@ export class MockViewport implements IViewport {
 }
 
 export class MockCompositionHelper implements ICompositionHelper {
+  public wkImeComposing: boolean = false;
   public get isComposing(): boolean {
     return false;
   }

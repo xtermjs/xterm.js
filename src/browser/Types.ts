@@ -39,6 +39,7 @@ export type LineData = CharData[];
 
 export interface ICompositionHelper {
   readonly isComposing: boolean;
+  wkImeComposing: boolean;
   compositionstart(): void;
   compositionupdate(ev: CompositionEvent): void;
   compositionend(): void;
