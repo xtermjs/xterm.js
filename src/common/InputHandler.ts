@@ -1456,16 +1456,27 @@ export class InputHandler extends Disposable implements IInputHandler {
    * CSI Ps S  Scroll up Ps lines (default = 1) (SU).
    *
    * @vt: #Y CSI SU  "Scroll Up"   "CSI Ps S"  "Scroll `Ps` lines up (default=1)."
-   *
-   *
-   * FIXME: scrolled out lines at top = 1 should add to scrollback (xterm)
+   * Scrolled out lines are added to the scrollback when the scroll region top is at row 1,
+   * consistent with linefeed scrolling at the bottom margin (matches xterm).
    */
   public scrollUp(params: IParams): boolean {
     let param = params.params[0] || 1;
 
-    while (param--) {
-      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 1);
-      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
+    if (this._activeBuffer.scrollTop === 0) {
+      // Scroll into the scrollback, consistent with linefeed scrolling at the bottom margin
+      // and with xterm. Resolves the FIXME that previously lived on this function.
+      // Saved cursors stay anchored to the same screen row (matching xterm and the previous
+      // in-place behavior), so advance savedY by the amount the viewport base moved.
+      while (param--) {
+        const ybase = this._activeBuffer.ybase;
+        this._bufferService.scroll(this._eraseAttrData());
+        this._activeBuffer.savedY += this._activeBuffer.ybase - ybase;
+      }
+    } else {
+      while (param--) {
+        this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 1);
+        this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
+      }
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
