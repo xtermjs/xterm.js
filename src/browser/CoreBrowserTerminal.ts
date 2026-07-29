@@ -115,6 +115,17 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _keyPressHandled: boolean = false;
 
   /**
+   * A printable keydown that is being held briefly so beforeinput/input can override it. Some IMEs
+   * (eg. SKK) commit certain characters without composition events, which means keydown reports the
+   * raw key (eg. "a") while beforeinput/input reports the composed text (eg. "あ").
+   */
+  private _deferredPrintableKeyDown: {
+    key: string;
+    event: KeyboardEvent;
+    timer: ReturnType<typeof setTimeout>;
+  } | undefined;
+
+  /**
    * Records whether there has been a keydown event for a dead key without a corresponding keydown
    * event for the composed/alternative character. If we cancel the keydown event for the dead key,
    * no events will be emitted for the final character.
@@ -426,6 +437,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }));
     this._register(addDisposableListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
     this._register(addDisposableListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
+    this._register(addDisposableListener(this.textarea!, 'beforeinput', (ev: InputEvent) => this._beforeInputEvent(ev), true));
     this._register(addDisposableListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this._register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
   }
@@ -915,6 +927,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this.textarea!.value = '';
     }
 
+    if (this._shouldDeferPrintableKeyDown(event, result.key)) {
+      this._deferPrintableKeyDown(result.key, event);
+      // Don't preventDefault here; doing so would suppress the beforeinput/input event containing
+      // the IME-transformed text. Do stop propagation like the synchronous path below.
+      event.stopPropagation();
+      return false;
+    }
+
     const wasModifierOnly = this._keyboardService.useWin32InputMode && wasModifierKeyOnlyEvent(event);
     this._onKey.fire({ key: result.key, domEvent: event });
     this._showCursor();
@@ -931,6 +951,73 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
 
     this._keyDownHandled = true;
+  }
+
+  private _shouldDeferPrintableKeyDown(event: KeyboardEvent, key: string): boolean {
+    if (
+      this._keyboardService.useKitty ||
+      this._keyboardService.useWin32InputMode ||
+      this.optionsService.rawOptions.screenReaderMode ||
+      event.ctrlKey ||
+      event.altKey ||
+      event.metaKey
+    ) {
+      return false;
+    }
+
+    // Defer only printable keydown events that map directly to a single character. Control
+    // sequences, modified keys and special keyboard modes must stay synchronous.
+    return key.length === 1 && event.key === key;
+  }
+
+  private _deferPrintableKeyDown(key: string, event: KeyboardEvent): void {
+    this._flushDeferredPrintableKeyDown();
+    this._deferredPrintableKeyDown = {
+      key,
+      event,
+      timer: setTimeout(() => this._flushDeferredPrintableKeyDown(), 0)
+    };
+  }
+
+  private _flushDeferredPrintableKeyDown(): void {
+    if (!this._deferredPrintableKeyDown) {
+      return;
+    }
+    const deferred = this._deferredPrintableKeyDown;
+    this._deferredPrintableKeyDown = undefined;
+    clearTimeout(deferred.timer);
+    this._onKey.fire({ key: deferred.key, domEvent: deferred.event });
+    this._showCursor();
+    this.coreService.triggerDataEvent(deferred.key, true);
+  }
+
+  private _clearDeferredPrintableKeyDown(): { key: string, event: KeyboardEvent } | undefined {
+    if (!this._deferredPrintableKeyDown) {
+      return undefined;
+    }
+    const deferred = this._deferredPrintableKeyDown;
+    this._deferredPrintableKeyDown = undefined;
+    clearTimeout(deferred.timer);
+    return deferred;
+  }
+
+  private _handleDeferredPrintableInput(ev: InputEvent): boolean {
+    if (!ev.data || ev.inputType !== 'insertText' || this.optionsService.rawOptions.screenReaderMode) {
+      return false;
+    }
+    const deferred = this._clearDeferredPrintableKeyDown();
+    if (!deferred) {
+      return false;
+    }
+
+    // The key was handled so clear the dead key state, otherwise certain keystrokes like arrow
+    // keys could be ignored.
+    this._unprocessedDeadKey = false;
+
+    this._onKey.fire({ key: ev.data, domEvent: deferred.event });
+    this._showCursor();
+    this.coreService.triggerDataEvent(ev.data, true);
+    return true;
   }
 
   private _isThirdLevelShift(browser: IBrowser, ev: KeyboardEvent): boolean {
@@ -984,6 +1071,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
+    // A printable keydown is pending so the browser's beforeinput/input event can provide the
+    // authoritative text. Suppress keypress to avoid sending the raw key first.
+    if (this._deferredPrintableKeyDown) {
+      return false;
+    }
+
     if (this._customKeyEventHandler && this._customKeyEventHandler(ev) === false) {
       return false;
     }
@@ -1020,12 +1113,31 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   }
 
   /**
+   * Handle a beforeinput event.
+   * Key Resources:
+   *   - https://developer.mozilla.org/en-US/docs/Web/API/InputEvent
+   * @param ev The beforeinput event to be handled.
+   */
+  protected _beforeInputEvent(ev: InputEvent): boolean {
+    if (this._handleDeferredPrintableInput(ev)) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      return true;
+    }
+    return false;
+  }
+
+  /**
    * Handle an input event.
    * Key Resources:
    *   - https://developer.mozilla.org/en-US/docs/Web/API/InputEvent
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
+    if (this._handleDeferredPrintableInput(ev)) {
+      return true;
+    }
+
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
     // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
