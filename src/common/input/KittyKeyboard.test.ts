@@ -929,9 +929,65 @@ describe('KittyKeyboard', () => {
         assert.strictEqual(result.key, 'ƒ');
       });
 
-      it('falls through when ev.code is not Key*/Digit* (Opt+;)', () => {
+      it('Opt+; (key=…) → CSI 59;3 u', () => {
         const result = kitty.evaluate(createEvent({ key: '…', code: 'Semicolon', altKey: true }), flags, press, true);
-        assert.strictEqual(result.key, '\x1b[8230;3u');
+        assert.strictEqual(result.key, '\x1b[59;3u');
+      });
+
+      it('Opt+] → CSI 93;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '’', code: 'BracketRight', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[93;3u');
+      });
+
+      it('Opt+[ → CSI 91;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '“', code: 'BracketLeft', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[91;3u');
+      });
+
+      it('Opt+/ → CSI 47;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '÷', code: 'Slash', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[47;3u');
+      });
+
+      it('Opt+- → CSI 45;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '–', code: 'Minus', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[45;3u');
+      });
+
+      it('Opt+= → CSI 61;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '≠', code: 'Equal', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[61;3u');
+      });
+
+      it('Opt+, → CSI 44;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '≤', code: 'Comma', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[44;3u');
+      });
+
+      it('Opt+. → CSI 46;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '≥', code: 'Period', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[46;3u');
+      });
+
+      it('Opt+quote → CSI 39;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'æ', code: 'Quote', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[39;3u');
+      });
+
+      it('Opt+backslash → CSI 92;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: '«', code: 'Backslash', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[92;3u');
+      });
+
+      it('Opt+backtick dead key → CSI 96;3 u', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Dead', code: 'Backquote', altKey: true }), flags, press, true);
+        assert.strictEqual(result.key, '\x1b[96;3u');
+      });
+
+      it('Shift+] with REPORT_ALL_KEYS unwinds to base → CSI 93;2 u', () => {
+        const allKeys = KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES;
+        const result = kitty.evaluate(createEvent({ key: '}', code: 'BracketRight', shiftKey: true }), allKeys, press, false);
+        assert.strictEqual(result.key, '\x1b[93;2u');
       });
 
       it('Opt+f release with REPORT_EVENT_TYPES → CSI 102;3:3 u', () => {

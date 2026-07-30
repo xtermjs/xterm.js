@@ -162,6 +162,26 @@ export class KittyKeyboard {
   };
 
   /**
+   * Punctuation keys mapped from their physical `code` to the base US-layout
+   * codepoint. Used to recover the unmodified key when macOS Option composition
+   * (or Shift) has replaced ev.key with a different character.
+   */
+  private readonly _punctuationKeyCodes: { [key: string]: number } = {
+    'Backquote': 96,
+    'Minus': 45,
+    'Equal': 61,
+    'BracketLeft': 91,
+    'BracketRight': 93,
+    'Backslash': 92,
+    'Semicolon': 59,
+    'Quote': 39,
+    'Comma': 44,
+    'Period': 46,
+    'Slash': 47,
+    'Space': 32
+  };
+
+  /**
    * Map browser key codes to Kitty numpad codes.
    */
   private _getNumpadKeyCode(ev: IKeyboardEvent): number | undefined {
@@ -244,6 +264,10 @@ export class KittyKeyboard {
       if (ev.code.startsWith('Key') && ev.code.length === 4) {
         const letter = ev.code.charAt(3).toLowerCase();
         return letter.charCodeAt(0);
+      }
+      const punctuationCode = this._punctuationKeyCodes[ev.code];
+      if (punctuationCode !== undefined) {
+        return punctuationCode;
       }
     }
 
