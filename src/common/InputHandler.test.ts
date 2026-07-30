@@ -2394,6 +2394,54 @@ describe('InputHandler', () => {
     });
   });
 
+  describe('ED3 - erase saved lines', () => {
+    beforeEach(() => {
+      bufferService.resize(10, 5);
+    });
+    it('should stop locking the viewport when the scrollback the user scrolled into is erased', async () => {
+      for (let i = 0; i < 20; ++i) {
+        await inputHandler.parseP(`old ${i}\r\n`);
+      }
+      bufferService.scrollLines(-5);
+      assert.strictEqual(bufferService.isUserScrolling, true);
+
+      await inputHandler.parseP('\x1b[3J');
+
+      assert.strictEqual(bufferService.isUserScrolling, false);
+      assert.strictEqual(bufferService.buffer.ybase, 0);
+      assert.strictEqual(bufferService.buffer.ydisp, 0);
+
+      for (let i = 0; i < 20; ++i) {
+        await inputHandler.parseP(`new ${i}\r\n`);
+      }
+
+      assert.strictEqual(bufferService.buffer.ydisp, bufferService.buffer.ybase);
+    });
+    it('should not reset the scroll position when erasing scrollback on a resized alt buffer', async () => {
+      bufferService.resize(10, 50);
+      bufferService.resize(10, 5);
+      for (let i = 0; i < 20; ++i) {
+        await inputHandler.parseP(`old ${i}\r\n`);
+      }
+      bufferService.scrollLines(-5);
+      const ydisp = bufferService.buffer.ydisp;
+
+      await inputHandler.parseP('\x1b[?1049h');
+      for (let i = 0; i < 20; ++i) {
+        await inputHandler.parseP(`new ${i}\r\n`);
+      }
+      await inputHandler.parseP('\x1b[3J\x1b[?1049l');
+
+      assert.strictEqual(bufferService.isUserScrolling, true);
+      assert.strictEqual(bufferService.buffer.ydisp, ydisp);
+
+      await inputHandler.parseP('more\r\n');
+
+      assert.strictEqual(bufferService.isUserScrolling, true);
+      assert.strictEqual(bufferService.buffer.ydisp, ydisp);
+    });
+  });
+
   describe('DECSCA and DECSED/DECSEL', () => {
     it('default is unprotected', async () => {
       await inputHandler.parseP('some text');
