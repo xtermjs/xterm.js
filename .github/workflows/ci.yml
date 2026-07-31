@@ -11,9 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      with:
+        persist-credentials: false
     - name: Use Node.js 22.x
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
       with:
         node-version: 22.x
         cache: 'npm'
@@ -69,7 +71,7 @@ jobs:
           ./addons/addon-webgl/out/* \
           ./addons/addon-webgl/out-*st/*
     - name: Upload artifacts
-      uses: actions/upload-artifact@v6
+      uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
       with:
         name: build-artifacts
         path: compressed-build.zip
@@ -79,9 +81,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      with:
+        persist-credentials: false
     - name: Use Node.js 22.x
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
       with:
         node-version: 22.x
         cache: 'npm'
@@ -100,16 +104,18 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      with:
+        persist-credentials: false
     - name: Use Node.js 22.x
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
       with:
         node-version: 22.x
         cache: 'npm'
     - name: Install dependencies
       run: |
         npm ci
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -137,16 +143,18 @@ jobs:
         runs-on: [ubuntu, macos, windows]
     runs-on: ${{ matrix.runs-on }}-latest
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      with:
+        persist-credentials: false
     - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
       with:
         node-version: ${{ matrix.node-version }}.x
         cache: 'npm'
     - name: Install dependencies
       run: |
         npm ci
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -171,9 +179,11 @@ jobs:
         browser: [chromium, firefox, webkit]
     runs-on: ${{ matrix.runs-on }}
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      with:
+        persist-credentials: false
     - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
       with:
         node-version: ${{ matrix.node-version }}.x
         cache: 'npm'
@@ -182,7 +192,7 @@ jobs:
         npm ci
     - name: Install playwright
       run: npx playwright install --with-deps ${{ matrix.browser }}
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
       with:
         name: build-artifacts
     - name: Unzip artifacts
@@ -232,9 +242,11 @@ jobs:
       matrix:
         node-version: [22]
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+      with:
+        persist-credentials: false
     - name: Use Node.js ${{ matrix.node-version }}.x
-      uses: actions/setup-node@v5
+      uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
       with:
         node-version: ${{ matrix.node-version }}.x
         cache: 'npm'
@@ -243,7 +255,7 @@ jobs:
         npm ci
     - name: Install playwright
       run: npx playwright install
-    - uses: actions/download-artifact@v7
+    - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
       with:
         name: build-artifacts
     - name: Unzip artifacts
