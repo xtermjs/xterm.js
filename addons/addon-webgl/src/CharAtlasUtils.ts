@@ -4,7 +4,7 @@
  */
 
 import { ICharAtlasConfig } from './Types';
-import { Attributes } from 'common/buffer/Constants';
+import { Attributes, FgFlags } from 'common/buffer/Constants';
 import { ITerminalOptions } from '@xterm/xterm';
 import { IColorSet, ReadonlyColorSet } from 'browser/Types';
 import { NULL_COLOR } from 'common/Color';
@@ -80,4 +80,42 @@ export function configEquals(a: ICharAtlasConfig, b: ICharAtlasConfig): boolean 
 
 export function is256Color(colorCode: number): boolean {
   return (colorCode & Attributes.CM_MASK) === Attributes.CM_P16 || (colorCode & Attributes.CM_MASK) === Attributes.CM_P256;
+}
+
+/**
+ * The `bg` component of a glyph's atlas cache key.
+ *
+ * `TextureAtlas._drawToCache` reads the *colour* held in `bg` in exactly three
+ * places:
+ *
+ * - `_getBackgroundColor`, which fills the tile. It returns `NULL_COLOR` for
+ *   every background when `allowTransparency` is set, because a translucent
+ *   background must not be baked into the glyph.
+ * - `_getMinimumContrastColor`, which adjusts the foreground against the
+ *   background. It returns early when `minimumContrastRatio` is 1.
+ * - the inverse swap, which promotes the background colour to the foreground.
+ *
+ * When none of the three apply, every background produces a pixel-identical
+ * tile, and keying the cache on the background colour only multiplies the
+ * atlas: one entry per glyph per colour it has ever been drawn over. Content
+ * that varies the background per cell — an animated background, a heatmap, a
+ * diff with highlighted regions, ANSI art — then misses on every cell of every
+ * frame and grows the atlas without bound, since glyphs are never evicted.
+ *
+ * Only the colour bits are dropped. `bg` also carries `BgFlags`, and `ITALIC`,
+ * `DIM` and `OVERLINE` each change what is rasterised, so they must stay part
+ * of the key.
+ *
+ * `INVERSE` is read from `fg`: the flag lives there even though the swap it
+ * describes is what makes the background colour matter.
+ */
+export function cacheKeyBg(bg: number, fg: number, config: ICharAtlasConfig): number {
+  if (
+    !config.allowTransparency ||
+    config.minimumContrastRatio !== 1 ||
+    (fg & FgFlags.INVERSE) !== 0
+  ) {
+    return bg;
+  }
+  return bg & ~(Attributes.CM_MASK | Attributes.RGB_MASK);
 }
