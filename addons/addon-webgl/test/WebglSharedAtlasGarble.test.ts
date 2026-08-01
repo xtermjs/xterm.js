@@ -240,4 +240,43 @@ test.describe('shared-atlas garble across terminals (#6038)', () => {
       await ctx.page.close();
     }
   });
+
+  test('keeps a second terminal rendering correctly after terminal A clears the shared atlas', async ({ browser }) => {
+    const ctx = await createTestContext(browser);
+    try {
+      await openTerminal(ctx, { cols: 80, rows: 24 });
+      await loadWebglStrict(ctx);
+      await createTerminalB(ctx);
+
+      const atlasShared = await ctx.page.evaluate(() => {
+        return window.term._core?._renderService?._renderer?.value?._charAtlas === window.termB?._core?._renderService?._renderer?.value?._charAtlas;
+      });
+      expect(atlasShared, 'terminals with equal configs should share one texture atlas').toBe(true);
+
+      await writeToBAndWaitForRender(ctx, HEADER);
+      const reference = await captureRowSignatures(ctx, 1, HEADER_COLS);
+
+      // Terminal A alone clears the shared atlas, as embedders do to force a redraw (VS Code calls
+      // this for every terminal on OS resume). This wipes the pages that terminal B's model still
+      // holds texture coords into.
+      await ctx.proxy.clearTextureAtlas();
+
+      // Terminal A repopulates the cleared pages with a different glyph set, so B's stale coords now
+      // resolve to whatever A rasterized into those slots.
+      await writeAndWaitForRender(ctx, '\x1b[2;1H' + generateColoredAsciiFlood(23 * 78));
+
+      // Nudge B into a render that does not touch row 1, mirroring a terminal that is idle but
+      // visible. Row 1 must still be drawn from a model B rebuilt against the current atlas.
+      await writeToBAndWaitForRender(ctx, '\x1b[24;1Hx');
+      const termBHeader = await ctx.page.evaluate(() => window.termB?.buffer.active.getLine(0)?.translateToString(true));
+      expect(termBHeader, 'terminal B buffer must still contain the header').toBe(HEADER);
+
+      const after = await captureRowSignatures(ctx, 1, HEADER_COLS);
+      for (let i = 0; i < HEADER_COLS.length; i++) {
+        expectSignatureMatches(after[i], reference[i], `terminal B header col ${HEADER_COLS[i]} garbled by terminal A's atlas clear`);
+      }
+    } finally {
+      await ctx.page.close();
+    }
+  });
 });
