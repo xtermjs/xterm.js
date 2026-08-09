@@ -68,10 +68,12 @@ export interface ITextureAtlas extends IDisposable {
   warmUp(): void;
 
   /**
-   * Call when a frame is being drawn, this will return true if the atlas was cleared to make room
-   * for a new set of glyphs.
+   * Incremented whenever cached glyph texture page mappings may be stale, such as after atlas page
+   * merges or overflow page creation. Renderers compare this against their own last-seen value and
+   * rebuild their model when it changes; a shared atlas can have many renderers, so this must not
+   * be a consume-once flag.
    */
-  beginFrame(): boolean;
+  readonly pageLayoutVersion: number;
 
   /**
    * Clear all glyphs from the texture atlas.

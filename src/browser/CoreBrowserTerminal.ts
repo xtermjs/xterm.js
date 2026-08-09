@@ -492,6 +492,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       // https://issuetracker.google.com/issues/260170397
       this.textarea.setAttribute('aria-multiline', 'false');
     }
+    this.textarea.setAttribute('autocomplete', 'off');
     this.textarea.setAttribute('autocorrect', 'off');
     this.textarea.setAttribute('autocapitalize', 'off');
     this.textarea.setAttribute('spellcheck', 'false');
