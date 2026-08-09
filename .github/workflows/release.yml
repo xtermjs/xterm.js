@@ -6,6 +6,9 @@ on:
     # without running tests to save time to publish
     branches: [ "master" ]
 
+permissions:
+  contents: read
+
 jobs:
   release:
     runs-on: ubuntu-latest
