@@ -100,6 +100,8 @@ export class GlyphRenderer extends Disposable {
   private readonly _attributesBuffer: WebGLBuffer;
 
   private _atlas: ITextureAtlas | undefined;
+  private _lastSeenPageLayoutVersion: number = -1;
+  private _pageOverflowWarned: boolean = false;
   private _activeBuffer: number = 0;
   private readonly _vertices: IVertices = {
     count: 0,
@@ -213,8 +215,19 @@ export class GlyphRenderer extends Disposable {
     this.handleResize();
   }
 
+  /**
+   * Call when a frame is being drawn. Returns whether the full model must be rebuilt before
+   * rendering this frame because the atlas page layout changed since this renderer last drew.
+   */
   public beginFrame(): boolean {
-    return this._atlas ? this._atlas.beginFrame() : true;
+    if (!this._atlas) {
+      return true;
+    }
+    if (this._atlas.pageLayoutVersion !== this._lastSeenPageLayoutVersion) {
+      this._lastSeenPageLayoutVersion = this._atlas.pageLayoutVersion;
+      return true;
+    }
+    return false;
   }
 
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
@@ -363,7 +376,13 @@ export class GlyphRenderer extends Disposable {
     // Bind the atlas page texture if they have changed. AtlasPage.version is globally
     // monotonic, so a page object swap at the same index (which happens after a page merge)
     // is detected by the same comparison.
-    for (let i = 0; i < this._atlas.pages.length; i++) {
+    // Clamp defensively in case the atlas unexpectedly exceeds texture capacity.
+    const pageCount = Math.min(this._atlas.pages.length, this._atlasTextures.length);
+    if (this._atlas.pages.length > this._atlasTextures.length && !this._pageOverflowWarned) {
+      this._pageOverflowWarned = true;
+      this._logService.warn(`Atlas page count (${this._atlas.pages.length}) exceeds the renderer's texture capacity (${this._atlasTextures.length}), some glyphs will not render correctly`);
+    }
+    for (let i = 0; i < pageCount; i++) {
       if (this._atlas.pages[i].version !== this._atlasTextures[i].version) {
         this._bindAtlasPageTexture(gl, this._atlas, i);
       }
@@ -375,6 +394,7 @@ export class GlyphRenderer extends Disposable {
 
   public setAtlas(atlas: ITextureAtlas): void {
     this._atlas = atlas;
+    this._lastSeenPageLayoutVersion = -1;
     this.invalidateAtlasTextures();
   }
 
