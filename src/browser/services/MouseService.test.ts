@@ -76,8 +76,27 @@ function createTestMouseTargetElement(): HTMLElement {
 describe('MouseService _triggerMouseEvent', () => {
   let mouseService: MouseService;
   let mouseStateService: MouseStateService;
+  let renderService: MockRenderService;
   let coreService: ICoreService;
   let reports: string[];
+  let originalWheelEvent: typeof WheelEvent | undefined;
+
+  before(() => {
+    originalWheelEvent = globalThis.WheelEvent;
+    (globalThis as any).WheelEvent ??= {
+      DOM_DELTA_PIXEL: 0,
+      DOM_DELTA_LINE: 1,
+      DOM_DELTA_PAGE: 2
+    };
+  });
+
+  after(() => {
+    if (originalWheelEvent) {
+      (globalThis as any).WheelEvent = originalWheelEvent;
+    } else {
+      delete (globalThis as any).WheelEvent;
+    }
+  });
 
   beforeEach(() => {
     reports = [];
@@ -87,9 +106,12 @@ describe('MouseService _triggerMouseEvent', () => {
       triggerBinaryEvent: (data: string) => reports.push(data),
       decPrivateModes: { applicationCursorKeys: false }
     } as any;
+    renderService = new MockRenderService();
+    renderService.dimensions.device.cell.width = 10;
+    renderService.dimensions.device.cell.height = 20;
 
     mouseService = new MouseService(
-      new MockRenderService(),
+      renderService,
       {
         getMouseReportCoords: (_ev: MouseEvent, _el: HTMLElement) => ({ col: 0, row: 0, x: 0, y: 0 })
       } as any,
@@ -105,6 +127,20 @@ describe('MouseService _triggerMouseEvent', () => {
 
   function trigger(e: Parameters<any>[0]): boolean {
     return (mouseService as any)._triggerMouseEvent(e);
+  }
+
+  function sendWheel(deltaX: number, deltaY: number, deltaMode: number = WheelEvent.DOM_DELTA_LINE): boolean {
+    return (mouseService as any)._sendEvent({
+      target: { screenElement: createTestMouseTargetElement() }
+    }, {
+      type: 'wheel',
+      deltaX,
+      deltaY,
+      deltaMode,
+      altKey: false,
+      ctrlKey: false,
+      shiftKey: false
+    } as WheelEvent);
   }
 
   it('NONE', () => {
@@ -168,6 +204,44 @@ describe('MouseService _triggerMouseEvent', () => {
     assert.equal(trigger({ col: 500, row: 0, x: 0, y: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), false);
     assert.equal(trigger({ col: 0, row: -1, x: 0, y: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), false);
     assert.equal(trigger({ col: 0, row: 500, x: 0, y: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), false);
+  });
+
+  it('should report wheel events on both axes using the dominant axis', () => {
+    mouseStateService.activeProtocol = 'ANY';
+    mouseStateService.activeEncoding = 'SGR';
+
+    assert.isTrue(sendWheel(-1, 0));
+    assert.isTrue(sendWheel(1, 0));
+    assert.isTrue(sendWheel(0, -1));
+    assert.isTrue(sendWheel(0, 1));
+    assert.isTrue(sendWheel(2, -1));
+    assert.isTrue(sendWheel(1, -2));
+
+    assert.deepEqual(reports, [
+      '\x1b[<66;1;1M',
+      '\x1b[<67;1;1M',
+      '\x1b[<64;1;1M',
+      '\x1b[<65;1;1M',
+      '\x1b[<67;1;1M',
+      '\x1b[<64;1;1M'
+    ]);
+  });
+
+  it('should accumulate pixel wheel events independently per axis', () => {
+    mouseStateService.activeProtocol = 'ANY';
+    mouseStateService.activeEncoding = 'SGR';
+
+    for (let i = 0; i < 3; i++) {
+      assert.isFalse(sendWheel(10, 0, WheelEvent.DOM_DELTA_PIXEL));
+      assert.isFalse(sendWheel(0, 20, WheelEvent.DOM_DELTA_PIXEL));
+    }
+    assert.isTrue(sendWheel(10, 0, WheelEvent.DOM_DELTA_PIXEL));
+    assert.isTrue(sendWheel(0, 20, WheelEvent.DOM_DELTA_PIXEL));
+
+    assert.deepEqual(reports, [
+      '\x1b[<67;1;1M',
+      '\x1b[<65;1;1M'
+    ]);
   });
 
   describe('coords', () => {
