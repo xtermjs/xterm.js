@@ -7,7 +7,7 @@ import { IDisposable, IMarker, ILinkProvider, IDecorationOptions, IDecoration, I
 import { ICharacterJoinerService, ICharSizeService, ICoreBrowserService, IMouseService, IRenderService, ISelectionService, IThemeService } from './services/Services';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from './renderer/shared/Types';
 import { IColorSet, ITerminal, ILinkifier2, IBrowser, IViewport, ICompositionHelper, CharacterJoinerHandler, IBufferRange, ReadonlyColorSet, IBufferElementProvider } from './Types';
-import { IAttributeData, IBuffer, IBufferLine, IBufferSet, ICellData } from '../common/buffer/Types';
+import { IAttributeData, IBuffer, IBufferLine, IBufferSet, ILogicalLine, ICellData } from '../common/buffer/Types';
 import { ICircularList } from '../common/CircularList';
 import { XtermListener, ICharset, ITerminalOptions, ColorIndex } from '../common/Types';
 import { Buffer } from '../common/buffer/Buffer';
@@ -256,7 +256,7 @@ export class MockBuffer implements IBuffer {
   public setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
   }
-  public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
+  public getBlankLine(attr: IAttributeData, logicalLine?: ILogicalLine): IBufferLine {
     return Buffer.prototype.getBlankLine.apply(this, arguments as any);
   }
   public getNullCell(attr?: IAttributeData): ICellData {
@@ -269,6 +269,9 @@ export class MockBuffer implements IBuffer {
     throw new Error('Method not implemented.');
   }
   public clearAllMarkers(): void {
+    throw new Error('Method not implemented.');
+  }
+  public setWrapped(row: number, value: boolean): void {
     throw new Error('Method not implemented.');
   }
 }

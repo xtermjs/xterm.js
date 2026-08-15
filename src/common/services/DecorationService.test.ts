@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { DecorationLineCache, DecorationService } from './DecorationService';
+import { DecorationService } from './DecorationService';
 import { IMarker } from '../buffer/Types';
 import { Disposable } from '../Lifecycle';
 import { Emitter } from '../Event';
@@ -129,13 +129,6 @@ describe('DecorationService', () => {
       assert.strictEqual([...service.getDecorationsAtCell(0, 6)].length, 1);
       assert.strictEqual([...service.getDecorationsAtCell(0, 7)].length, 1);
       assert.strictEqual([...service.getDecorationsAtCell(0, 8)].length, 0);
-    });
-  });
-
-  describe('DecorationLineCache', () => {
-    it('should return undefined for lines with no indexed decorations', () => {
-      const cache = new DecorationLineCache();
-      assert.isUndefined(cache.getDecorationsOnLine(0));
     });
   });
 

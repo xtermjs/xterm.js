@@ -766,6 +766,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     }
   }
 
+  /**
+   * This is somewhat expensive operation.
+   * @deprecated
+   */
   public get markers(): IMarker[] {
     return this.buffer.markers;
   }
