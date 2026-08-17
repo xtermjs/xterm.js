@@ -471,6 +471,25 @@ export class BufferLine implements IBufferLine {
     this.isWrapped = line.isWrapped;
   }
 
+  /**
+   * Alter to a full copy of `line`, assuming `line` is a blank line blueprint
+   * (no combined or extended attr cells). Skips the per-cell sparse map scan
+   * that `copyFrom` does, since a blank source never populates those maps.
+   */
+  public copyFromBlank(line: BufferLine): void {
+    this._invalidateStringCache();
+    if (this.length !== line.length) {
+      this._data = new Uint32Array(line._data);
+    } else {
+      // use high speed copy if lengths are equal
+      this._data.set(line._data);
+    }
+    this.length = line.length;
+    this._combined = {};
+    this._extendedAttrs = {};
+    this.isWrapped = line.isWrapped;
+  }
+
   /** create a new clone */
   public clone(): IBufferLine {
     const newLine = new BufferLine(this._stringCache, 0, undefined, false);

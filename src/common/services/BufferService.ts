@@ -86,7 +86,7 @@ export class BufferService extends Disposable implements IBufferService {
       // Insert the line using the fastest method
       if (bottomRow === buffer.lines.length - 1) {
         if (willBufferBeTrimmed) {
-          buffer.lines.recycle().copyFrom(newLine);
+          buffer.lines.recycle().copyFromBlank(newLine);
         } else {
           buffer.lines.push(newLine.clone());
         }
