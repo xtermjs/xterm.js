@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { TimeoutTimer } from '../Async';
+import { MacrotaskTimer } from '../Async';
 import { Disposable, toDisposable } from '../Lifecycle';
 import { Emitter } from '../Event';
 
@@ -42,7 +42,7 @@ export class WriteBuffer extends Disposable {
   private _syncCalls = 0;
   private _didUserInput = false;
 
-  private readonly _innerWriteTimer = this._register(new TimeoutTimer());
+  private readonly _innerWriteTimer = this._register(new MacrotaskTimer());
   private readonly _onWriteParsed = this._register(new Emitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 

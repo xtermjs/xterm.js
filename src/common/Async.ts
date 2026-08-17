@@ -73,6 +73,68 @@ export class TimeoutTimer implements IDisposable {
   }
 }
 
+const hasMessageChannel = typeof MessageChannel !== 'undefined';
+
+/**
+ * Like {@link TimeoutTimer}, but a zero delay is scheduled via `MessageChannel` instead of
+ * `setTimeout` when available. Browsers clamp nested zero-delay `setTimeout` calls to a minimum
+ * of ~4ms after a handful of iterations, which matters for call sites that reschedule themselves
+ * at a high frequency (e.g. chunked input processing). `MessageChannel` posts a macrotask without
+ * that clamp. Non-zero delays always go through `setTimeout`, and environments without
+ * `MessageChannel` fall back to it for zero delays too.
+ */
+export class MacrotaskTimer implements IDisposable {
+  private _timeoutToken: any = -1;
+  private _channel: MessageChannel | undefined;
+  private _isDisposed = false;
+
+  private _closeChannel(): void {
+    if (this._channel) {
+      this._channel.port1.onmessage = null;
+      this._channel.port1.close();
+      this._channel.port2.close();
+      this._channel = undefined;
+    }
+  }
+
+  public dispose(): void {
+    this.cancel();
+    this._isDisposed = true;
+  }
+
+  public cancel(): void {
+    if (this._timeoutToken !== -1) {
+      clearTimeout(this._timeoutToken);
+      this._timeoutToken = -1;
+    }
+    // closes any in-flight channel too, cancelling a pending post
+    this._closeChannel();
+  }
+
+  public cancelAndSet(runner: () => void, delay: number): void {
+    if (this._isDisposed) {
+      throw new Error('Calling cancelAndSet on a disposed MacrotaskTimer');
+    }
+    this.cancel();
+    if (delay > 0 || !hasMessageChannel) {
+      this._timeoutToken = setTimeout(() => {
+        this._timeoutToken = -1;
+        runner();
+      }, delay);
+      return;
+    }
+    // a fresh channel per post keeps no handle open while idle, so it cannot
+    // keep a Node event loop alive between schedules (unlike a long-lived port)
+    const channel = new MessageChannel();
+    this._channel = channel;
+    channel.port1.onmessage = () => {
+      this._closeChannel();
+      runner();
+    };
+    channel.port2.postMessage(null);
+  }
+}
+
 /**
  * Schedules a single runner on the microtask queue. Unlike {@link TimeoutTimer}, a scheduled
  * microtask cannot be unqueued; {@link cancel} prevents the runner from executing if it has not
