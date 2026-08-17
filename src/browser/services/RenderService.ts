@@ -22,6 +22,11 @@ const enum Constants {
   SYNCHRONIZED_OUTPUT_TIMEOUT_MS = 1000
 }
 
+const EMPTY_RENDER_DIMENSIONS: IRenderDimensions = {
+  css: { canvas: { width: 0, height: 0 }, cell: { width: 0, height: 0 } },
+  device: { canvas: { width: 0, height: 0 }, cell: { width: 0, height: 0 }, char: { width: 0, height: 0, top: 0, left: 0 } }
+};
+
 export class RenderService extends Disposable implements IRenderService {
   public serviceBrand: undefined;
 
@@ -53,7 +58,15 @@ export class RenderService extends Disposable implements IRenderService {
   private readonly _onRefreshRequest = this._register(new Emitter<{ start: number, end: number }>());
   public readonly onRefreshRequest = this._onRefreshRequest.event;
 
-  public get dimensions(): IRenderDimensions { return this._renderer.value!.dimensions; }
+  private _dimensions: IRenderDimensions = EMPTY_RENDER_DIMENSIONS;
+
+  /**
+   * Falls back to the last known dimensions when there is no live renderer (not yet set, or
+   * disposed), rather than throwing. A disposed terminal can still be reached here through a
+   * lingering event handler elsewhere (e.g. a document-level listener that hasn't torn down
+   * yet), and a stale-but-valid value is preferable to an uncaught exception from a getter.
+   */
+  public get dimensions(): IRenderDimensions { return this._renderer.value?.dimensions ?? this._dimensions; }
 
   constructor(
     private _rowCount: number,
@@ -233,11 +246,13 @@ export class RenderService extends Disposable implements IRenderService {
     if (!this._renderer.value) {
       return;
     }
+    this._dimensions = this._renderer.value.dimensions;
+
     // Don't fire the event if the dimensions haven't changed
-    if (this._renderer.value.dimensions.css.canvas.width === this._canvasWidth && this._renderer.value.dimensions.css.canvas.height === this._canvasHeight) {
+    if (this._dimensions.css.canvas.width === this._canvasWidth && this._dimensions.css.canvas.height === this._canvasHeight) {
       return;
     }
-    this._onDimensionsChange.fire(this._renderer.value.dimensions);
+    this._onDimensionsChange.fire(this._dimensions);
   }
 
   public hasRenderer(): boolean {
@@ -248,6 +263,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.value = renderer;
     // If the value was not set, the terminal is being disposed so ignore it
     if (this._renderer.value) {
+      this._dimensions = this._renderer.value.dimensions;
       this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, e.sync, true));
 
       // Force a refresh
