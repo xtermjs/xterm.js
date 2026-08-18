@@ -699,6 +699,15 @@ export class WebglRenderer extends Disposable implements IRenderer {
     if (this._canvas.width === width && this._canvas.height === height) {
       return;
     }
+    // A device pixel ratio change can arrive here before ScreenDprMonitor reports it, as that only
+    // listens for a window resize and a resolution media query, and a terminal in a fixed size
+    // frame may get neither. Resizing the canvas alone would leave the viewport and the shaders'
+    // resolution set for the old ratio, drawing the terminal at the wrong scale until something
+    // else resizes it, so handle it as the ratio change it is.
+    if (this._devicePixelRatio !== this._coreBrowserService.dpr) {
+      this.handleDevicePixelRatioChange();
+      return;
+    }
     // While the actual canvas size has changed, keep device canvas dimensions as the value before
     // the change as it's an exact multiple of the cell sizes.
     this._canvas.width = width;
