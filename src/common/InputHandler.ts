@@ -1286,6 +1286,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._activeBuffer.lines.trimStart(scrollBackSize);
           this._activeBuffer.ybase = Math.max(this._activeBuffer.ybase - scrollBackSize, 0);
           this._activeBuffer.ydisp = Math.max(this._activeBuffer.ydisp - scrollBackSize, 0);
+          // isUserScrolling tracks the normal buffer's viewport, so ED3 on the alt
+          // screen must not touch it
+          if (this._activeBuffer === this._bufferService.buffers.normal) {
+            this._bufferService.isUserScrolling = false;
+          }
           // Force a scroll event to refresh viewport
           this._onScroll.fire(0);
         }

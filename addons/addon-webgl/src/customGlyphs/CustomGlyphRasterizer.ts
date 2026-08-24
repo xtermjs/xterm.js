@@ -8,6 +8,29 @@ import type { ILogService } from 'common/services/Services';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
 import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
 
+type PatternCanvas = HTMLCanvasElement | OffscreenCanvas;
+type PatternCanvasFactory = (width: number, height: number) => PatternCanvas;
+
+const createOffscreenPatternCanvas: PatternCanvasFactory | undefined = typeof OffscreenCanvas === 'undefined'
+  ? undefined
+  : (width, height) => new OffscreenCanvas(width, height);
+
+const createDomPatternCanvas: PatternCanvasFactory = (width, height) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+};
+
+export function createPatternCanvas(
+  width: number,
+  height: number,
+  offscreenCanvasFactory: PatternCanvasFactory | undefined = createOffscreenPatternCanvas,
+  domCanvasFactory: PatternCanvasFactory = createDomPatternCanvas
+): PatternCanvas {
+  return offscreenCanvasFactory?.(width, height) ?? domCanvasFactory(width, height);
+}
+
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
  * successfully drawn.
@@ -458,9 +481,9 @@ function drawPatternChar(
   if (!pattern) {
     const width = charDefinition[0].length;
     const height = charDefinition.length;
-    const tmpCanvas = ctx.canvas.ownerDocument.createElement('canvas');
-    tmpCanvas.width = width;
-    tmpCanvas.height = height;
+    // The atlas canvas can be adopted into another document, so temporary resources must not use
+    // its mutable ownerDocument.
+    const tmpCanvas = createPatternCanvas(width, height);
     const tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d'));
     const imageData = new ImageData(width, height);
 

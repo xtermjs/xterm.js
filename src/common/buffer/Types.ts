@@ -131,8 +131,8 @@ export interface IBufferLine {
   resize(cols: number, fill: ICellData): boolean;
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
-  copyFrom(line: IBufferLine): void;
-  clone(): IBufferLine;
+  copyFrom(line: IBufferLine, blank?: boolean): void;
+  clone(blank?: boolean): IBufferLine;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;

@@ -7,12 +7,10 @@ import { assert } from 'chai';
 import { ICharacterJoinerService } from './Services';
 import { CharacterJoinerService } from './CharacterJoinerService';
 import { BufferLine } from '../../common/buffer/BufferLine';
-import { BufferLineStringCache } from '../../common/buffer/BufferLineStringCache';
 import { IBufferLine } from '../../common/buffer/Types';
 import { CellData } from '../../common/buffer/CellData';
 import { MockBufferService, createCellData } from '../../common/TestUtils.test';
 
-const TEST_STRING_CACHE = new BufferLineStringCache();
 
 describe('CharacterJoinerService', () => {
   let service: ICharacterJoinerService;
@@ -25,7 +23,7 @@ describe('CharacterJoinerService', () => {
     lines.set(2, lineData([['a -> b -', 0xFFFFFFFF], ['> c -> d', 0]]));
 
     lines.set(3, lineData([['no joined ranges']]));
-    lines.set(4, new BufferLine(TEST_STRING_CACHE, 0));
+    lines.set(4, new BufferLine(0));
     lines.set(5, lineData([['a', 0x11111111], [' -> b -> c -> '], ['d', 0x22222222]]));
     const line6 = lineData([['wi']]);
     line6.resize(line6.length + 1, createCellData(0, '￥', 2));
@@ -270,7 +268,7 @@ describe('CharacterJoinerService', () => {
 type IPartialLineData = ([string] | [string, number]);
 
 function lineData(data: IPartialLineData[]): IBufferLine {
-  const tline = new BufferLine(TEST_STRING_CACHE, 0);
+  const tline = new BufferLine(0);
   for (let i = 0; i < data.length; ++i) {
     const line = data[i][0];
     const attr = (data[i][1] || 0) as number;

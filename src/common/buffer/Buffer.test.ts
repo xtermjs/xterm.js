@@ -8,24 +8,14 @@ import { Buffer } from './Buffer';
 import { CircularList } from '../CircularList';
 import { MockOptionsService, MockBufferService, MockLogService, createCellData } from '../TestUtils.test';
 import { BufferLine, DEFAULT_ATTR_DATA } from './BufferLine';
-import { BufferLineStringCache } from './BufferLineStringCache';
 import { CellData } from './CellData';
-import { ExtendedAttrs } from './AttributeData';
+
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
 const INIT_SCROLLBACK = 1000;
-const TEST_STRING_CACHE = new BufferLineStringCache();
 
-class TestBuffer extends Buffer {
-  public getStringCache(): BufferLineStringCache {
-    return (this as unknown as { _stringCache: BufferLineStringCache })._stringCache;
-  }
-
-  public getStringCacheClearTimeout(): unknown {
-    return (this.getStringCache() as unknown as { _clearTimeout: { value: unknown } })._clearTimeout.value;
-  }
-}
+class TestBuffer extends Buffer {}
 
 describe('Buffer', () => {
   let optionsService: MockOptionsService;
@@ -1202,7 +1192,7 @@ describe('Buffer', () => {
 
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 4);
+      const line = new BufferLine(4);
       line.setCell(0, createCellData(0, 'a', 1));
       line.setCell(1, createCellData(0, 'b', 1));
       line.setCell(2, createCellData(0, 'c', 1));
@@ -1214,7 +1204,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a cut-off double width character by including it', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 3);
+      const line = new BufferLine(3);
       line.setCell(0, createCellData(0, '語', 2));
       line.setCell(1, createCellData(0, '', 0));
       line.setCell(2, createCellData(0, 'a', 1));
@@ -1225,7 +1215,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 3);
+      const line = new BufferLine(3);
       line.setCell(0, createCellData(0, '語', 2));
       line.setCell(1, createCellData(0, '', 0));
       line.setCell(2, createCellData(0, 'a', 1));
@@ -1242,7 +1232,7 @@ describe('Buffer', () => {
     });
 
     it('should handle single width emojis', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 2);
+      const line = new BufferLine(2);
       line.setCell(0, createCellData(0, '😁', 1));
       line.setCell(1, createCellData(0, 'a', 1));
       buffer.lines.set(0, line);
@@ -1255,7 +1245,7 @@ describe('Buffer', () => {
     });
 
     it('should handle double width emojis', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 2);
+      const line = new BufferLine(2);
       line.setCell(0, createCellData(0, '😁', 2));
       line.setCell(1, createCellData(0, '', 0));
       buffer.lines.set(0, line);
@@ -1266,7 +1256,7 @@ describe('Buffer', () => {
       const str2 = buffer.translateBufferLineToString(0, true, 0, 2);
       assert.equal(str2, '😁');
 
-      const line2 = new BufferLine(TEST_STRING_CACHE, 3);
+      const line2 = new BufferLine(3);
       line2.setCell(0, createCellData(0, '😁', 2));
       line2.setCell(1, createCellData(0, '', 0));
       line2.setCell(2, createCellData(0, 'a', 1));
@@ -1274,99 +1264,6 @@ describe('Buffer', () => {
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
       assert.equal(str3, '😁a');
-    });
-  });
-
-  describe('line string cache cleanup', () => {
-    it('should clear shared cache entries with a single timer', () => {
-      const originalSetTimeout = globalThis.setTimeout;
-      const originalClearTimeout = globalThis.clearTimeout;
-      const originalDateNow = Date.now;
-      let timeoutId = 0;
-      let now = 0;
-      const clearedTimeouts: number[] = [];
-      const scheduledTimeouts = new Map<number, { delay: number, fire: () => void }>();
-      (globalThis as any).setTimeout = ((handler: (...args: any[]) => void, timeout?: number) => {
-        const id = ++timeoutId;
-        scheduledTimeouts.set(id, {
-          delay: timeout ?? 0,
-          fire: () => {
-            scheduledTimeouts.delete(id);
-            handler();
-          }
-        });
-        return id as ReturnType<typeof setTimeout>;
-      }) as typeof setTimeout;
-      (globalThis as any).clearTimeout = ((id: ReturnType<typeof setTimeout>) => {
-        const numericId = id as unknown as number;
-        clearedTimeouts.push(numericId);
-        scheduledTimeouts.delete(numericId);
-      }) as typeof clearTimeout;
-      Date.now = () => now;
-      try {
-        buffer.fillViewportRows();
-        buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
-        buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 1));
-
-        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-        assert.equal(buffer.translateBufferLineToString(1, false), `b${' '.repeat(INIT_COLS - 1)}`);
-
-        const cache = buffer.getStringCache();
-        assert.equal(cache.entries.size, 2);
-        assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
-        assert.equal(scheduledTimeouts.size, 1);
-        assert.equal([...scheduledTimeouts.values()][0].delay, 15000);
-        const initialTimerCreationCount = timeoutId;
-
-        now = 5000;
-        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-        assert.equal(timeoutId, initialTimerCreationCount);
-        assert.equal(scheduledTimeouts.size, 1);
-        assert.deepEqual(clearedTimeouts, []);
-
-        now = 15000;
-        [...scheduledTimeouts.values()][0].fire();
-        assert.equal(timeoutId, initialTimerCreationCount + 1);
-        assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
-        assert.equal(scheduledTimeouts.size, 1);
-        assert.equal([...scheduledTimeouts.values()][0].delay, 5000);
-
-        now = 20000;
-        [...scheduledTimeouts.values()][0].fire();
-
-        assert.equal(cache.entries.size, 0);
-        assert.equal(buffer.getStringCacheClearTimeout(), undefined);
-
-        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-        assert.equal(cache.entries.size, 1);
-      } finally {
-        Date.now = originalDateNow;
-        globalThis.setTimeout = originalSetTimeout;
-        globalThis.clearTimeout = originalClearTimeout;
-      }
-    });
-
-    it('should reset line string cache state on clear and resize', () => {
-      buffer.fillViewportRows();
-      buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
-      buffer.translateBufferLineToString(0, false);
-
-      const cache = buffer.getStringCache();
-      assert.equal(cache.entries.size, 1);
-      assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
-
-      buffer.clear();
-      assert.equal(cache.entries.size, 0);
-      assert.equal(buffer.getStringCacheClearTimeout(), undefined);
-
-      buffer.fillViewportRows();
-      buffer.lines.get(0)!.setCell(0, createCellData(0, 'b', 1));
-      buffer.translateBufferLineToString(0, false);
-      assert.equal(cache.entries.size, 1);
-
-      buffer.resize(INIT_COLS - 1, INIT_ROWS);
-      assert.equal(cache.entries.size, 0);
-      assert.equal(buffer.getStringCacheClearTimeout(), undefined);
     });
   });
 

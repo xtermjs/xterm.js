@@ -255,6 +255,12 @@ Xterm.js is used in many world-class applications to provide great terminal expe
 - [**Orca**](https://github.com/stablyai/orca): Agentic development environment for 100x builders.
 - [**4bit**](https://ciembor.github.io/4bit): Terminal Color Scheme Designer.
 - [**Cate**](https://github.com/0-AI-UG/cate): Open source desktop IDE on an infinite zoomable canvas. Editor, browser, and terminal panels float in spatial space; the terminals are xterm.js with the WebGL addon, backed by node-pty.
+- [**OmnyShell PWA**](https://github.com/OmnyGrid/omnyshell_web): Web client for [**OmnyShell**](https://github.com/OmnyGrid/omnyshell), featuring remote terminals, a built-in IDE, AI-assisted workflows, and detachable/resumable sessions for seamless browser-based access to nodes.
+- [**kmux**](https://github.com/kkd927/kmux): A keyboard-centric terminal workspace for running parallel AI coding agents side by side on macOS and Linux.
+- [**LynxHub**](https://github.com/KindaBrazy/LynxHub): Cross-platform, extensible terminal and browser for AI management.
+- [**Codeman**](https://github.com/Ark0N/Codeman): Self-hosted mission control for AI coding agents, streaming live tmux sessions to browser and phone.
+- [**JSVIsion**](https://github.com/blendsdk/jsvision): A Turbo Vision-Style TUI SDK for TypeScript. We use xterm.js in our docs to show live JSVision examples running in a web terminal.
+- [**BitFun**](https://github.com/GCWing/BitFun): Open-source desktop AI agent whose integrated terminals and read-only terminal output views use xterm.js with the Fit, Web Links, and WebGL addons.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Please add any new contributions to the end of the list.

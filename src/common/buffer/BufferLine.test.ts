@@ -4,19 +4,16 @@
  */
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from './Constants';
 import { BufferLine } from './BufferLine';
-import { BufferLineStringCache } from './BufferLineStringCache';
 import { CellData } from './CellData';
 import { CharData, IBufferLine, ICellData } from './Types';
 import { assert } from 'chai';
 import { AttributeData } from './AttributeData';
 import { createCellData, NULL_CELL_DATA, extendedAttributes } from '../TestUtils.test';
 
-const TEST_STRING_CACHE = new BufferLineStringCache();
-
 
 class TestBufferLine extends BufferLine {
   constructor(cols: number, fillCellData?: ICellData, isWrapped: boolean = false) {
-    super(TEST_STRING_CACHE, cols, fillCellData, isWrapped);
+    super(cols, fillCellData, isWrapped);
   }
 
   public get combined(): {[index: number]: string} {
@@ -24,19 +21,19 @@ class TestBufferLine extends BufferLine {
   }
 
   public get cachedString(): string | undefined {
-    return this._getStringCacheEntry(false)?.value;
+    return this._cacheValid ? this._cache : undefined;
   }
 
   public set cachedString(value: string | undefined) {
-    this._getStringCacheEntry(true)!.value = value;
+    this._cache = value ?? '';
   }
 
   public get isCachedStringTrimmed(): boolean {
-    return this._getStringCacheEntry(false)?.isTrimmed ?? false;
+    return this._cacheTrimmed;
   }
 
   public set isCachedStringTrimmed(value: boolean) {
-    this._getStringCacheEntry(true)!.isTrimmed = value;
+    this._cacheTrimmed = value;
   }
 
   public toArray(): CharData[] {

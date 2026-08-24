@@ -82,45 +82,4 @@ describe('BufferSet', () => {
       assert.equal(bufferSet.alt.markers.length, 0);
     });
   });
-
-  describe('lifecycle', () => {
-    it('should dispose previous buffers on reset', () => {
-      const oldNormal = bufferSet.normal as any;
-      oldNormal.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
-      oldNormal.translateBufferLineToString(0, false);
-
-      const oldCache = oldNormal._stringCache;
-      assert.equal(oldCache.entries.size, 1);
-      assert.notEqual(oldCache._clearTimeout.value, undefined);
-
-      bufferSet.reset();
-
-      assert.notEqual(bufferSet.normal, oldNormal);
-      assert.equal(oldCache.entries.size, 0);
-      assert.equal(oldCache._clearTimeout.value, undefined);
-    });
-
-    it('should dispose both buffers when disposed', () => {
-      const normal = bufferSet.normal as any;
-      normal.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
-      normal.translateBufferLineToString(0, false);
-
-      bufferSet.activateAltBuffer();
-      const alt = bufferSet.alt as any;
-      alt.lines.get(0)!.setCell(0, createCellData(0, 'b', 1));
-      alt.translateBufferLineToString(0, false);
-
-      const normalCache = normal._stringCache;
-      const altCache = alt._stringCache;
-      assert.notEqual(normalCache._clearTimeout.value, undefined);
-      assert.notEqual(altCache._clearTimeout.value, undefined);
-
-      bufferSet.dispose();
-
-      assert.equal(normalCache.entries.size, 0);
-      assert.equal(altCache.entries.size, 0);
-      assert.equal(normalCache._clearTimeout.value, undefined);
-      assert.equal(altCache._clearTimeout.value, undefined);
-    });
-  });
 });
