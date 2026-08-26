@@ -72,7 +72,10 @@ jobs:
           ./addons/addon-web-fonts/out-*/* \
           ./addons/addon-webgl/lib/* \
           ./addons/addon-webgl/out/* \
-          ./addons/addon-webgl/out-*st/*
+          ./addons/addon-webgl/out-*st/* \
+          ./addons/addon-webgpu/lib/* \
+          ./addons/addon-webgpu/out/* \
+          ./addons/addon-webgpu/out-*/*
     - name: Upload artifacts
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
       with:

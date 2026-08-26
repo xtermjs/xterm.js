@@ -41,6 +41,9 @@
       "@xterm/addon-webgl": [
         "../../addons/addon-webgl"
       ],
+      "@xterm/addon-webgpu": [
+        "../../addons/addon-webgpu"
+      ],
       "@xterm/addon-unicode11": [
         "../../addons/addon-unicode11"
       ],
