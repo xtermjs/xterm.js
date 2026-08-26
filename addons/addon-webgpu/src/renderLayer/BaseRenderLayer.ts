@@ -219,4 +219,3 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     return `${fontStyle} ${fontWeight} ${terminal.options.fontSize! * this._coreBrowserService.dpr}px ${terminal.options.fontFamily}`;
   }
 }
-

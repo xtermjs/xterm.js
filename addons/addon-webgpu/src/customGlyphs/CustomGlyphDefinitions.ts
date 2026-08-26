@@ -1016,4 +1016,3 @@ function segmentedDigit(pattern: number): string {
 
   return paths.join(' ');
 }
-
