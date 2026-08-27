@@ -136,8 +136,8 @@ function drawBlockVectorChar(
 ): void {
   const xEighth = deviceCellWidth / 8;
   const yEighth = deviceCellHeight / 8;
-  const snapX = deviceCellWidth >= 8;
-  const snapY = deviceCellHeight >= 8;
+  const snapX = canSnapBlockVectorAxis(charDefinition, xOffset, xEighth, 'x', 'w');
+  const snapY = canSnapBlockVectorAxis(charDefinition, yOffset, yEighth, 'y', 'h');
   for (let i = 0; i < charDefinition.length; i++) {
     const box = charDefinition[i];
     let left = xOffset + box.x * xEighth;
@@ -145,7 +145,7 @@ function drawBlockVectorChar(
     let right = xOffset + (box.x + box.w) * xEighth;
     let bottom = yOffset + (box.y + box.h) * yEighth;
     // Use shared pixel boundaries to avoid antialiasing seams without expanding adjacent boxes.
-    // Preserve fractional coverage when an axis has fewer pixels than octants.
+    // Preserve fractional coverage when snapping would collapse a used boundary.
     if (snapX) {
       left = Math.round(left);
       right = Math.round(right);
@@ -161,6 +161,37 @@ function drawBlockVectorChar(
       bottom - top
     );
   }
+}
+
+function canSnapBlockVectorAxis(
+  charDefinition: ICustomGlyphSolidOctantBlockVector[],
+  offset: number,
+  eighth: number,
+  startKey: 'x' | 'y',
+  sizeKey: 'w' | 'h'
+): boolean {
+  if (eighth >= 1) {
+    return true;
+  }
+
+  let boundaryMask = 0;
+  for (let i = 0; i < charDefinition.length; i++) {
+    const box = charDefinition[i];
+    boundaryMask |= 1 << box[startKey];
+    boundaryMask |= 1 << (box[startKey] + box[sizeKey]);
+  }
+
+  let previous = Number.NEGATIVE_INFINITY;
+  for (let i = 0; i <= 8; i++) {
+    if (boundaryMask & (1 << i)) {
+      const current = Math.round(offset + i * eighth);
+      if (current <= previous) {
+        return false;
+      }
+      previous = current;
+    }
+  }
+  return true;
 }
 
 /**

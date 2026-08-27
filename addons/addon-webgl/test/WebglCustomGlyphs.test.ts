@@ -169,7 +169,7 @@ test.describe('WebGL custom glyphs', () => {
         return renderer.dimensions.device.char.width;
       });
       const deviceCharWidth = Math.floor(charWidth);
-      const targetCellWidth = Math.max(9, deviceCharWidth % 2 === 0 ? deviceCharWidth + 1 : deviceCharWidth);
+      const targetCellWidth = 7;
       await ctx.proxy.setOption('letterSpacing', targetCellWidth - deviceCharWidth);
       await ctx.page.evaluate(() => {
         window.addon = new window.WebglAddon({ customGlyphs: true });
@@ -186,27 +186,17 @@ test.describe('WebGL custom glyphs', () => {
       expect(dimensions.width).toBe(targetCellWidth);
       expect(dimensions.width % 2).toBe(1);
 
-      await writeAndWaitForRender(ctx, '\x1b[?25l\x1b[H\u259B\u259A\u{1FB81}\u{1FB95}');
-      const glyphPixels = await getGlyphPixels(ctx, ['\u259B', '\u259A', '\u{1FB81}', '\u{1FB95}']);
+      await writeAndWaitForRender(ctx, '\x1b[?25l\x1b[H\u259B\u259C\u259D\u259A\u{1FB81}\u{1FB95}');
+      const glyphPixels = await getGlyphPixels(ctx, ['\u259B', '\u259C', '\u259D', '\u259A', '\u{1FB81}', '\u{1FB95}']);
       for (const glyph of glyphPixels) {
         expect(glyph.colored, `U+${glyph.code.toString(16).toUpperCase()} must not be empty`).toBeGreaterThan(0);
         expect(glyph.partial, `U+${glyph.code.toString(16).toUpperCase()} must be opaque`).toBe(0);
       }
 
-      const narrowCellWidth = 7;
-      await ctx.proxy.setOption('letterSpacing', narrowCellWidth - deviceCharWidth);
-      const resizedCellWidth = await ctx.page.evaluate(() => {
-        const renderer = window.term._core?._renderService?._renderer?.value as ITestRendererWithAtlasCanvas | undefined;
-        if (!renderer) {
-          throw new Error('WebGL renderer must be available');
-        }
-        return renderer.dimensions.device.cell.width;
-      });
-      expect(resizedCellWidth).toBe(narrowCellWidth);
-
       await writeAndWaitForRender(ctx, '\x1b[H\u{1FB73}');
       const [narrowStripePixels] = await getGlyphPixels(ctx, ['\u{1FB73}']);
       expect(narrowStripePixels.colored, `U+${narrowStripePixels.code.toString(16).toUpperCase()} must not be empty`).toBeGreaterThan(0);
+      expect(narrowStripePixels.partial, `U+${narrowStripePixels.code.toString(16).toUpperCase()} must retain fractional coverage`).toBeGreaterThan(0);
     } finally {
       await ctx.page.close();
     }

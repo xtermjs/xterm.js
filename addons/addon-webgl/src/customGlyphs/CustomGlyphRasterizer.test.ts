@@ -65,18 +65,20 @@ function getIntersectionArea(a: IFillRectCall, b: IFillRectCall): number {
 describe('CustomGlyphRasterizer', () => {
   describe('solid octant block vectors', () => {
     it('shares integer boundaries between composite and complementary blocks', () => {
-      const [leftFull, upperRight] = getBlockRectCalls('\u259B', 9, 17);
-      assert.isTrue([leftFull, upperRight]
-        .flatMap(e => [e.x, e.y, e.width, e.height])
-        .every(Number.isInteger));
-      assert.equal(leftFull.x + leftFull.width, upperRight.x);
-      assert.equal(leftFull.height, 17);
-      assert.isBelow(upperRight.height, leftFull.height);
+      for (const width of [7, 9]) {
+        const [leftFull, upperRight] = getBlockRectCalls('\u259B', width, 17);
+        assert.isTrue([leftFull, upperRight]
+          .flatMap(e => [e.x, e.y, e.width, e.height])
+          .every(Number.isInteger));
+        assert.equal(leftFull.x + leftFull.width, upperRight.x);
+        assert.equal(leftFull.height, 17);
+        assert.isBelow(upperRight.height, leftFull.height);
 
-      const [left] = getBlockRectCalls('\u258C', 9, 17);
-      const [right] = getBlockRectCalls('\u2590', 9, 17);
-      assert.equal(left.x + left.width, right.x);
-      assert.equal(left.width + right.width, 9);
+        const [left] = getBlockRectCalls('\u258C', width, 17);
+        const [right] = getBlockRectCalls('\u2590', width, 17);
+        assert.equal(left.x + left.width, right.x);
+        assert.equal(left.width + right.width, width);
+      }
 
       const [top] = getBlockRectCalls('\u2580', 9, 17);
       const [bottom] = getBlockRectCalls('\u2584', 9, 17);
@@ -93,6 +95,12 @@ describe('CustomGlyphRasterizer', () => {
           assert.isTrue(Number.isInteger(stripe.width));
         }
       }
+      const [unsafeStripe] = getBlockRectCalls('\u{1FB73}', 7, 17);
+      assert.isFalse(Number.isInteger(unsafeStripe.x));
+      assert.isFalse(Number.isInteger(unsafeStripe.width));
+      const [offsetSafeStripe] = getBlockRectCalls('\u{1FB73}', 7, 17, 0.25);
+      assert.deepEqual(offsetSafeStripe, { x: 4, y: 0, width: 1, height: 17 });
+
       const [horizontalStripe] = getBlockRectCalls('\u{1FB79}', 9, 7);
       assert.isAbove(horizontalStripe.height, 0);
       assert.isFalse(Number.isInteger(horizontalStripe.y));
@@ -107,19 +115,21 @@ describe('CustomGlyphRasterizer', () => {
         assert.isBelow(stripes[i - 1].y + stripes[i - 1].height, stripes[i].y);
       }
 
-      const checker = getBlockRectCalls('\u{1FB95}', 9, 9);
-      const coverage = getIntegerCoverage(checker);
-      for (let i = 0; i < checker.length; i++) {
-        for (let j = i + 1; j < checker.length; j++) {
-          assert.equal(getIntersectionArea(checker[i], checker[j]), 0);
+      for (const size of [7, 9]) {
+        const checker = getBlockRectCalls('\u{1FB95}', size, size);
+        const coverage = getIntegerCoverage(checker);
+        for (let i = 0; i < checker.length; i++) {
+          for (let j = i + 1; j < checker.length; j++) {
+            assert.equal(getIntersectionArea(checker[i], checker[j]), 0);
+          }
         }
-      }
-      assert.isAtLeast(coverage.size, 36);
-      assert.isAtMost(coverage.size, 45);
-      for (let y = 0; y < 9; y++) {
-        const count = Array.from({ length: 9 }, (_, x) => coverage.has(`${x},${y}`)).filter(Boolean).length;
-        assert.isAbove(count, 0);
-        assert.isBelow(count, 9);
+        assert.isAtLeast(coverage.size, Math.floor(size * size / 2));
+        assert.isAtMost(coverage.size, Math.ceil(size * size / 2));
+        for (let y = 0; y < size; y++) {
+          const count = Array.from({ length: size }, (_, x) => coverage.has(`${x},${y}`)).filter(Boolean).length;
+          assert.isAbove(count, 0);
+          assert.isBelow(count, size);
+        }
       }
     });
 
