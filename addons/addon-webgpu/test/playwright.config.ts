@@ -8,7 +8,6 @@ const config: PlaywrightTestConfig = {
       name: 'Chromium',
       use: {
         browserName: 'chromium',
-        channel: 'chrome',
         launchOptions: {
           args: ['--enable-unsafe-webgpu', '--enable-unsafe-swiftshader']
         }

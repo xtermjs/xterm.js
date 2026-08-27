@@ -198,9 +198,6 @@ jobs:
         npm ci
     - name: Install playwright
       run: npx playwright install --with-deps ${{ matrix.browser }}
-    - name: Install Google Chrome for WebGPU tests
-      if: matrix.browser == 'chromium'
-      run: npx playwright install chrome
     - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
       with:
         name: build-artifacts
