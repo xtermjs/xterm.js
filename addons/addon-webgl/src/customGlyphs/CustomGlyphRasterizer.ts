@@ -134,15 +134,31 @@ function drawBlockVectorChar(
   deviceCellWidth: number,
   deviceCellHeight: number
 ): void {
+  const xEighth = deviceCellWidth / 8;
+  const yEighth = deviceCellHeight / 8;
+  const snapX = deviceCellWidth >= 8;
+  const snapY = deviceCellHeight >= 8;
   for (let i = 0; i < charDefinition.length; i++) {
     const box = charDefinition[i];
-    const xEighth = deviceCellWidth / 8;
-    const yEighth = deviceCellHeight / 8;
+    let left = xOffset + box.x * xEighth;
+    let top = yOffset + box.y * yEighth;
+    let right = xOffset + (box.x + box.w) * xEighth;
+    let bottom = yOffset + (box.y + box.h) * yEighth;
+    // Use shared pixel boundaries to avoid antialiasing seams without expanding adjacent boxes.
+    // Preserve fractional coverage when an axis has fewer pixels than octants.
+    if (snapX) {
+      left = Math.round(left);
+      right = Math.round(right);
+    }
+    if (snapY) {
+      top = Math.round(top);
+      bottom = Math.round(bottom);
+    }
     ctx.fillRect(
-      xOffset + box.x * xEighth,
-      yOffset + box.y * yEighth,
-      box.w * xEighth,
-      box.h * yEighth
+      left,
+      top,
+      right - left,
+      bottom - top
     );
   }
 }
