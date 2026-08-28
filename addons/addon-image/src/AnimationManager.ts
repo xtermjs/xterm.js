@@ -89,7 +89,7 @@ const enum Constants {
 
 class BitmapBuffer implements IDisposable {
   private readonly _d: IBufferSlot[];
-  private _isDisposed = false;
+  private _disposed = false;
 
   constructor() {
     this._d = Array(Constants.BUFFERSIZE).fill(0).map(() => ({ id: -1, bm: null }));
@@ -97,7 +97,7 @@ class BitmapBuffer implements IDisposable {
 
   public dispose(): void {
     this.clear();
-    this._isDisposed = true;
+    this._disposed = true;
   }
 
   public peek(id: number): ImageBitmap | null {
@@ -122,7 +122,7 @@ class BitmapBuffer implements IDisposable {
      * the bitmap, we use the isDisposed flag to
      * free it right away.
      */
-    if (this._isDisposed) {
+    if (this._disposed) {
       bm.close();
       return;
     }
@@ -198,7 +198,6 @@ async function BlobDecoder(blob: Blob, type: string): Promise<ImageDecoder> {
  *
  * There are a few intersections with the ImageStorage and the ImageRenderer,
  * which still need to be consolidated (TODOs):
- * - ImageStorage: API for getting an ImageSpec
  * - ImageStorage: API for announcing memory state, better eviction strategy
  * - ImageRenderer: API for better drawing primitives
  *
@@ -230,9 +229,6 @@ export class AnimationManager implements IDisposable, IResetHandler {
 
   public dispose(): void {
     this.reset();
-    this._storage = undefined!;
-    this._terminal = undefined!;
-    this._renderer = undefined!;
   }
 
 
@@ -383,7 +379,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
           if (imageId === undefined || imageId === -1) {
             continue;
           }
-          const imgSpec = (this._storage as any)._images.get(imageId);
+          const imgSpec = this._storage.getImage(imageId);
           if (e.tileId !== -1) {
             const startTile = e.tileId;
             const startCol = col;
@@ -486,7 +482,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
     for (const anim of this._animations.values()) {
       if (!anim.inViewport) continue;
 
-      const spec = (this._storage as any)._images.get(anim.id);
+      const spec = this._storage.getImage(anim.id);
       if (!spec) {
         this.unregisterAnimation(anim.id);
         continue;
@@ -501,13 +497,21 @@ export class AnimationManager implements IDisposable, IResetHandler {
         anim.current = current;
         const bm = anim.cache.pop(current);
         if (bm) {
-          // FIXME: setting spec.actual delegates draws from onRender back to ImageStorage
-          // --> should be avoided to prevent double draws within same rAF
+          // FIXME: setting spec.actual delegates draws from onRender back to ImageStorage.render
+          // --> should be avoided to prevent double draws within same AF
+          // idea: create a mutex on image spec to tell storage.render to skip
 
-          // we took ownership of spec.actual, thus have to close it here
+          // by swapping spec.actual we take ownership, thus have to close it here
           // but only if we have more than 4 frames (ringbuffer size is 4)
-          if (anim.numFrames > 4) spec.actual?.close();
-          else anim.cache.push(anim.actual, spec.actual);
+          // for <= 4 frames we move the bitmap back into cache
+          // FIXME: create a bitmap swapping API in storage
+          if (spec.actual instanceof ImageBitmap) {
+            if (anim.numFrames > Constants.BUFFERSIZE) {
+              spec.actual.close();
+            } else {
+              anim.cache.push(anim.actual, spec.actual);
+            }
+          }
           spec.actual = bm;
           anim.actual = current;
           mustRender = true;

@@ -225,6 +225,13 @@ export class ImageStorage implements IDisposable {
   }
 
   /**
+   * Retrieve image spec from storage.
+   */
+  public getImage(id: number): IImageSpec | undefined {
+    return this._images.get(id);
+  }
+
+  /**
    * Delete an image by its internal storage ID.
    * Used by protocols that support explicit deletion (e.g. Kitty a=d).
    */
