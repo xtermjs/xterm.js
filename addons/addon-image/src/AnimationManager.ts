@@ -42,7 +42,7 @@ interface IAnimation {
   /** ImageDecoder instance */
   decoder: ImageDecoder | undefined;
   decoderPromise: Promise<ImageDecoder> | undefined;
-  cache: BitmapBuffer,
+  cache: BitmapBuffer;
   /** start timestamp */
   startTime: number | undefined;
   /** whether a decode task ist scheduled */
@@ -64,7 +64,7 @@ interface IAnimation {
 }
 
 
-interface ImageDraw {
+interface IImageDraw {
   imageId: number;
   imgSpec: IImageSpec;
   tileId: number;
@@ -143,7 +143,7 @@ class BitmapBuffer implements IDisposable {
 }
 
 
-
+// eslint-disable-next-line
 declare const InstallTrigger: any;
 
 
@@ -165,8 +165,8 @@ async function BlobDecoder(blob: Blob, type: string): Promise<ImageDecoder> {
    *
    * But this straightforward handling with blob.stream() uncovers several bugs:
    * 1. Chromium: Fails to stream chunked blobs reliably.
-   * 2. Firefox: Native lifecycle race condition. Closing an old decoder breaks the 
-   *    shared underlying native stream of the same blob for new decoders, throwing 
+   * 2. Firefox: Native lifecycle race condition. Closing an old decoder breaks the
+   *    shared underlying native stream of the same blob for new decoders, throwing
    *    an uncatchable "Closed decoder" DOMException during `tracks.ready`.
    *
    * So we use a safer approach by pulling full raw bytes over first and transferring ownership.
@@ -207,16 +207,20 @@ async function BlobDecoder(blob: Blob, type: string): Promise<ImageDecoder> {
  */
 export class AnimationManager implements IDisposable, IResetHandler {
   private _animations = new Map<number, IAnimation>();
-  private _raf: number | null = null;
-  private _draws: ImageDraw[] = [];
+  private _animationFrame: number | undefined = undefined;
+  private _draws: IImageDraw[] = [];
 
 
   constructor(
     private _storage: ImageStorage,
     private _renderer: ImageRenderer,
-    private _terminal: ITerminalExt)
-  {}
+    private _terminal: ITerminalExt
+  ) {}
 
+
+  private _raf(callback: FrameRequestCallback): number {
+    return this._terminal._core._coreBrowserService!.window.requestAnimationFrame(callback);
+  }
 
   public dispose(): void {
     this.reset();
@@ -238,8 +242,8 @@ export class AnimationManager implements IDisposable, IResetHandler {
     }
     this._animations.clear();
     this._draws = [];
-    if (this._raf) cancelAnimationFrame(this._raf);
-    this._raf = null;
+    if (this._animationFrame) this._terminal._core._coreBrowserService?.window.cancelAnimationFrame(this._animationFrame);
+    this._animationFrame = undefined;
   }
 
 
@@ -271,7 +275,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
         const result = await decoder.decode({ frameIndex: i });
         const frame = result.image;
         const width = frame.displayWidth;
-        const height = frame.displayHeight
+        const height = frame.displayHeight;
         const duration = (frame.duration ?? 0) / 1000;
         frame.close();
         // skip wrong dimensions and zero duration
@@ -287,7 +291,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
         timestamps.push(elapsed);
         durations.push(duration);
         elapsed += duration;
-      } catch (e) {
+      } catch {
         break;
       }
     }
@@ -334,8 +338,8 @@ export class AnimationManager implements IDisposable, IResetHandler {
     this.viewportUpdated();
     // early schedule to give decoder time to fill the cache before RAF
     this._schedule(anim);
-    if (this._raf === null) {
-      this._raf = requestAnimationFrame(this._loop);
+    if (this._animationFrame === undefined) {
+      this._animationFrame = this._raf?.(ts => this._loop(ts));
     }
   }
 
@@ -363,7 +367,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
     const rows = this._terminal.rows;
     const cols = this._terminal.cols;
     const buffer = this._terminal._core.buffer;
-    const actives: Set<number> = new Set;
+    const actives: Set<number> = new Set();
     this._draws = [];
     for (let row = 0; row < rows; ++row) {
       const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
@@ -457,8 +461,8 @@ export class AnimationManager implements IDisposable, IResetHandler {
         this._closeDecoder(anim);
       }
     }
-    if (visibles.size && this._raf === null) {
-      this._raf = requestAnimationFrame(this._loop);
+    if (visibles.size && this._animationFrame === undefined) {
+      this._animationFrame = this._raf?.(ts => this._loop(ts));
     }
   }
 
@@ -468,7 +472,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
    */
   private _loop = (ts: number): void => {
     if (!this._animations.size) {
-      this._raf = null;
+      this._animationFrame = undefined;
       return;
     }
 
@@ -484,9 +488,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
         continue;
       }
       anyVisible = true;
-
-      if (anim.startTime === undefined) anim.startTime = ts;
-
+      anim.startTime ??= ts;
       const frameIdx = this._timedFrameIdx(anim, ts - anim.startTime);
       anim.frameIdx = frameIdx;
       const current = anim.frames[frameIdx];
@@ -497,7 +499,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
         if (bm) {
           // FIXME: setting spec.actual delegates draws from onRender back to ImageStorage
           // --> should be avoided to prevent double draws within same rAF
-          
+
           // we took ownership of spec.actual, thus have to close it here
           // but only if we have more than 4 frames (ringbuffer size is 4)
           if (anim.numFrames > 4) spec.actual?.close();
@@ -518,7 +520,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
         this._renderer.draw(d.imgSpec, d.tileId, d.col, d.row, d.count);
       }
     }
-    this._raf = anyVisible ? requestAnimationFrame(this._loop) : null;
+    this._animationFrame = anyVisible ? this._raf?.(ts => this._loop(ts)) : undefined;
   };
 
 
@@ -579,11 +581,11 @@ export class AnimationManager implements IDisposable, IResetHandler {
         let res: ImageDecodeResult;
         try {
           res = await a.decoder.decode({ frameIndex: n });
-        } catch (e) { continue; }
+        } catch { continue; }
         let bm: ImageBitmap;
         try {
           bm = await createImageBitmap(res.image, { resizeWidth: a.w, resizeHeight: a.h });
-        } catch (e) { continue; } finally { res?.image?.close(); }
+        } catch { continue; } finally { res?.image?.close(); }
         if (!a.inViewport) {
           bm.close();
           break;
@@ -601,7 +603,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
   private _closeDecoder(a: IAnimation): void {
     const decoder = a.decoder;
     a.decoder = undefined;
-    try { decoder?.close(); } catch (e) {}
+    try { decoder?.close(); } catch {}
     const decP = a.decoderPromise;
     a.decoderPromise = undefined;
     decP?.then(dec => dec && dec !== decoder ? dec.close() : null).catch(() => {});

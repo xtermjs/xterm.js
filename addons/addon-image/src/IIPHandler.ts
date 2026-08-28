@@ -199,10 +199,6 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     } else {
       blob = new Blob([this._dec.data8], { type: metrics.mime });
     }
-    //let imgBytes: Uint8Array;
-    //if (this._aniManager && metrics.animated) {
-    //  imgBytes = new Uint8Array(this._dec.data8);
-    //}
     this._dec.release();
     return createImageBitmap(blob, { resizeWidth: w, resizeHeight: h })
       .then(bm => {
