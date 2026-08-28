@@ -24,6 +24,7 @@ export interface IImageAddonOptions {
   sixelSizeLimit: number;
   iipSupport: boolean;
   iipSizeLimit: number;
+  iipAnimation: boolean;
   kittySupport: boolean;
   kittySizeLimit: number;
 }
@@ -137,6 +138,7 @@ test.describe('ImageAddon', () => {
         showPlaceholder: true,
         iipSupport: true,
         iipSizeLimit: 33554432,
+        iipAnimation: true, // alpha
         kittySupport: true,
         kittySizeLimit: 33554432
       };
@@ -154,6 +156,7 @@ test.describe('ImageAddon', () => {
         showPlaceholder: false,
         iipSupport: false,
         iipSizeLimit: 1000,
+        iipAnimation: true, // alpha
         kittySupport: false,
         kittySizeLimit: 1000
       };
