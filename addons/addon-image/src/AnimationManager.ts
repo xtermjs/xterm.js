@@ -4,9 +4,9 @@
  */
 
 import { IDisposable } from '@xterm/xterm';
-import { ImageRenderer } from 'ImageRenderer';
-import { EMPTY_ATTRS, ImageStorage } from 'ImageStorage';
-import { BgFlags, IBufferLineExt, IImageSpec, ITerminalExt, IExtendedAttrsImage, IResetHandler } from 'Types';
+import type { ImageRenderer } from './ImageRenderer';
+import { EMPTY_ATTRS, type ImageStorage } from './ImageStorage';
+import { BgFlags, IBufferLineExt, IImageSpec, ITerminalExt, IExtendedAttrsImage, IResetHandler } from './Types';
 
 
 /**
