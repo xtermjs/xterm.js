@@ -70,9 +70,10 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   showPlaceholder: true,
   iipSupport: true,
   iipSizeLimit: 33554432,
-  iipAnimation: true, // alpha
   kittySupport: true,
-  kittySizeLimit: 33554432
+  kittySizeLimit: 33554432,
+  animationSupport: true, // alpha
+  animationPixelLimit: 4194304  // limit to 2048 * 2048 pixels
 };
 
 // max palette size supported by the sixel lib (compile time setting)
@@ -147,7 +148,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
       terminal.options.windowOptions = windowOps;
     }
 
-    if (this._opts.iipAnimation && typeof ImageDecoder === 'function') {
+    if (this._opts.animationSupport && typeof ImageDecoder === 'function') {
       this._aniManager = new AnimationManager(this._storage, this._renderer, terminal);
       this._disposeLater(terminal.onRender(range => this._aniManager!.viewportUpdated(range)));
     }

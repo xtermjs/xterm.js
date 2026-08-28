@@ -204,7 +204,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       .then(bm => {
         const id = this._storage.addImage(bm);
         if (this._aniManager && metrics.animated) {
-          this._aniManager.registerAnimation(id, blob as Blob, metrics.mime, w, h);
+          this._aniManager.registerAnimation(id, blob as Blob, metrics, w, h);
         }
         return true;
       })

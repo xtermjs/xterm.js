@@ -7,6 +7,7 @@ import { IDisposable } from '@xterm/xterm';
 import type { ImageRenderer } from './ImageRenderer';
 import { EMPTY_ATTRS, type ImageStorage } from './ImageStorage';
 import { BgFlags, IBufferLineExt, IImageSpec, ITerminalExt, IExtendedAttrsImage, IResetHandler } from './Types';
+import { IMetrics } from 'IIPMetrics';
 
 
 /**
@@ -30,8 +31,8 @@ interface IAnimation {
   id: number;
   /** image bytes */
   data: Blob;
-  /** mime type */
-  mime: string;
+  /** metrics of the image */
+  metrics: IMetrics;
   /** width */
   w: number;
   /** height */
@@ -258,8 +259,8 @@ export class AnimationManager implements IDisposable, IResetHandler {
    * @param w Output width in pixel.
    * @param h Output height in pixel.
    */
-  public async registerAnimation(id: number, data: Blob, mime: string, w: number, h: number): Promise<void> {
-    let decoder = await BlobDecoder(data, mime);
+  public async registerAnimation(id: number, data: Blob, metrics: IMetrics, w: number, h: number): Promise<void> {
+    let decoder = await BlobDecoder(data, metrics.mime);
     const track = decoder.tracks.selectedTrack;
     if (!track || track.frameCount < 2) {
       decoder.close();
@@ -282,7 +283,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
         frame.close();
         // skip wrong dimensions and zero duration
         // FIXME: needs orig image dimensions in IAnimation
-        if (width !== w || height !== h || !duration) {
+        if (width !== metrics.width || height !== metrics.height || !duration) {
           if (durations.length) {
             durations[durations.length - 1] += duration;
             elapsed += duration;
@@ -317,11 +318,12 @@ export class AnimationManager implements IDisposable, IResetHandler {
 
     if (isFirefox) {
       decoder.close();
-      decoder = await BlobDecoder(data, mime);
+      decoder = await BlobDecoder(data, metrics.mime);
     }
 
     const anim: IAnimation = {
-      id, data, mime, w, h, decoder,
+      id, data, w, h, decoder,
+      metrics,
       numFrames: frames.length,
       decoderPromise: undefined,
       cache: new BitmapBuffer(),
@@ -340,7 +342,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
     this.viewportUpdated();
     // early schedule to give decoder time to fill the cache before RAF
     this._schedule(anim);
-    this._animationFrame ??= this._requestAF(ts => this._loop(ts));
+    this._animationFrame ??= this._requestAF(this._loop);
   }
 
 
@@ -363,7 +365,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
    * Scratches the viewport buffer to collect draws for animation RAF
    * and to pause/resume invisible/visible animations.
    */
-  public viewportUpdated(range?: { start: number, end: number }): any {
+  public viewportUpdated(_range?: { start: number, end: number }): void {
     const rows = this._terminal.rows;
     const cols = this._terminal.cols;
     const buffer = this._terminal._core.buffer;
@@ -452,7 +454,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
         anim.frameIdx = frameIdx;
         anim.current = anim.frames[frameIdx];
         if (!anim.decoder && !anim.decoderPromise) {
-          anim.decoderPromise = BlobDecoder(anim.data, anim.mime);
+          anim.decoderPromise = BlobDecoder(anim.data, anim.metrics.mime);
         }
         this._schedule(anim);
       } else if (!isVisible && anim.inViewport) {
@@ -462,7 +464,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
       }
     }
     if (visibles.size && this._animationFrame === undefined) {
-      this._animationFrame = this._requestAF(ts => this._loop(ts));
+      this._animationFrame = this._requestAF(this._loop);
     }
   }
 
@@ -528,7 +530,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
         this._renderer.draw(d.imgSpec, d.tileId, d.col, d.row, d.count);
       }
     }
-    this._animationFrame = anyVisible ? this._requestAF(ts => this._loop(ts)) : undefined;
+    this._animationFrame = anyVisible ? this._requestAF(this._loop) : undefined;
   };
 
 
@@ -571,7 +573,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
     if (!a.decoder) {
       const decP = a.decoderPromise;
       a.decoderPromise = undefined;
-      a.decoder = await (decP ?? BlobDecoder(a.data, a.mime));
+      a.decoder = await (decP ?? BlobDecoder(a.data, a.metrics.mime));
     }
     const n1 = a.frames[(a.frameIdx + 1) % a.numFrames];
     const n2 = a.frames[(a.frameIdx + 2) % a.numFrames];
@@ -582,7 +584,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
           if (n <= a.highest) {
             a.highest = -1;
             a.decoder?.close();
-            a.decoder = await BlobDecoder(a.data, a.mime);
+            a.decoder = await BlobDecoder(a.data, a.metrics.mime);
           }
           a.highest = Math.max(n, a.highest);
         }
