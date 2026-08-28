@@ -255,7 +255,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
    *
    * @param id Image ID of the image storage the image was registered under.
    * @param data Raw data bytes of the image.
-   * @param mime Mimetype of the image.
+   * @param metrics Metrics of the image as returned by IIPMetrics.imageType.
    * @param w Output width in pixel.
    * @param h Output height in pixel.
    */
