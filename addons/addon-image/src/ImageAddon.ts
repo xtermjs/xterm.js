@@ -15,7 +15,7 @@ import { SixelHandler } from './SixelHandler';
 import { SixelImageStorage } from './SixelImageStorage';
 import { IIPImageStorage } from './IIPImageStorage';
 import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
-import { AnimationManager } from 'AnimationManager';
+import { AnimationManager } from './AnimationManager';
 
 
 /**
