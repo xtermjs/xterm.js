@@ -22,7 +22,7 @@ export class IIPImageStorage {
    * Add an IIP image to storage.
    * Always uses scrolling mode — cursor advances past the image.
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap): void {
-    this._storage.addImage(img, this._addImageOpts);
+  public addImage(img: HTMLCanvasElement | ImageBitmap): number {
+    return this._storage.addImage(img, this._addImageOpts);
   }
 }

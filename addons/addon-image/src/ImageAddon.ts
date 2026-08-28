@@ -15,6 +15,7 @@ import { SixelHandler } from './SixelHandler';
 import { SixelImageStorage } from './SixelImageStorage';
 import { IIPImageStorage } from './IIPImageStorage';
 import { ITerminalExt, IImageAddonOptions, IResetHandler } from './Types';
+import { AnimationManager } from 'AnimationManager';
 
 
 /**
@@ -69,6 +70,7 @@ const DEFAULT_OPTIONS: IImageAddonOptions = {
   showPlaceholder: true,
   iipSupport: true,
   iipSizeLimit: 33554432,
+  iipAnimation: true, // alpha
   kittySupport: true,
   kittySizeLimit: 33554432
 };
@@ -104,6 +106,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
   private _disposables: IDisposable[] = [];
   private _terminal: ITerminalExt | undefined;
   private _handlers: Map<String, IResetHandler> = new Map();
+  private _aniManager: AnimationManager | undefined;
   private readonly _onImageAdded = new Emitter<void>();
   public readonly onImageAdded: IEvent<void> = this._onImageAdded.event;
 
@@ -142,6 +145,11 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
       windowOps.getCellSizePixels = true;
       windowOps.getWinSizeChars = true;
       terminal.options.windowOptions = windowOps;
+    }
+
+    if (this._opts.iipAnimation && typeof ImageDecoder === 'function') {
+      this._aniManager = new AnimationManager(this._storage, this._renderer, terminal);
+      this._disposeLater(terminal.onRender(range => this._aniManager!.viewportUpdated(range)));
     }
 
     this._disposeLater(
@@ -187,7 +195,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
     // iTerm IIP handler
     if (this._opts.iipSupport) {
       const iipStorage = new IIPImageStorage(this._storage!);
-      const iipHandler = new IIPHandler(this._opts, this._renderer!, iipStorage, terminal);
+      const iipHandler = new IIPHandler(this._opts, this._renderer!, iipStorage, terminal, this._aniManager);
       this._handlers.set('iip', iipHandler);
       this._disposeLater(
         terminal._core._inputHandler._parser.registerOscHandler(1337, iipHandler)
@@ -218,6 +226,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
     for (const handler of this._handlers.values()) {
       handler.reset();
     }
+    this._aniManager?.reset();
     return false;
   }
 

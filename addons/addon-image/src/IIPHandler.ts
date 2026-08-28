@@ -2,14 +2,15 @@
  * Copyright (c) 2023 The xterm.js authors. All rights reserved.
  * @license MIT
  */
-import { IImageAddonOptions, IOscHandler, IResetHandler, ITerminalExt } from './Types';
+import type { IImageAddonOptions, IOscHandler, IResetHandler, ITerminalExt } from './Types';
 import { ImageRenderer } from './ImageRenderer';
-import { IIPImageStorage } from './IIPImageStorage';
+import type { IIPImageStorage } from './IIPImageStorage';
 import { CELL_SIZE_DEFAULT } from './ImageStorage';
 import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import QoiDecoder from 'xterm-wasm-parts/lib/qoi/QoiDecoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState, SequenceType } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
+import type { AnimationManager } from 'AnimationManager';
 
 // Local const enum mirror - esbuild can't inline const enums from external packages
 const enum DecoderConst {
@@ -46,7 +47,8 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     private readonly _opts: IImageAddonOptions,
     private readonly _renderer: ImageRenderer,
     private readonly _storage: IIPImageStorage,
-    private readonly _coreTerminal: ITerminalExt
+    private readonly _coreTerminal: ITerminalExt,
+    private readonly _aniManager: AnimationManager | undefined
   ) {
     const maxEncodedBytes = Math.ceil(this._opts.iipSizeLimit * 4 / 3);
     const initialBytes = Math.min(DecoderConst.INITIAL_DATA, maxEncodedBytes);
@@ -197,10 +199,17 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     } else {
       blob = new Blob([this._dec.data8], { type: metrics.mime });
     }
+    //let imgBytes: Uint8Array;
+    //if (this._aniManager && metrics.animated) {
+    //  imgBytes = new Uint8Array(this._dec.data8);
+    //}
     this._dec.release();
     return createImageBitmap(blob, { resizeWidth: w, resizeHeight: h })
       .then(bm => {
-        this._storage.addImage(bm);
+        const id = this._storage.addImage(bm);
+        if (this._aniManager && metrics.animated) {
+          this._aniManager.registerAnimation(id, blob as Blob, metrics.mime, w, h);
+        }
         return true;
       })
       .catch(e => {

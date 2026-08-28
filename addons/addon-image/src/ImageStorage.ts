@@ -103,7 +103,7 @@ class ExtendedAttrsImage implements IExtendedAttrsImage {
     return this.underlineStyle === UnderlineStyle.NONE && this._urlId === 0 && this.imageId === -1;
   }
 }
-const EMPTY_ATTRS = new ExtendedAttrsImage();
+export const EMPTY_ATTRS = new ExtendedAttrsImage();
 
 
 /**
