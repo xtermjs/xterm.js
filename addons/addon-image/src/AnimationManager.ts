@@ -218,9 +218,15 @@ export class AnimationManager implements IDisposable, IResetHandler {
   ) {}
 
 
-  private _raf(callback: FrameRequestCallback): number {
-    return this._terminal._core._coreBrowserService!.window.requestAnimationFrame(callback);
+  private _requestAF(cb: FrameRequestCallback): number | undefined {
+    return this._terminal._core._coreBrowserService?.window.requestAnimationFrame(cb);
   }
+
+
+  private _cancelAF(id: number): void | undefined {
+    return this._terminal._core._coreBrowserService?.window.cancelAnimationFrame(id);
+  }
+
 
   public dispose(): void {
     this.reset();
@@ -242,7 +248,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
     }
     this._animations.clear();
     this._draws = [];
-    if (this._animationFrame) this._terminal._core._coreBrowserService?.window.cancelAnimationFrame(this._animationFrame);
+    if (this._animationFrame) this._cancelAF(this._animationFrame);
     this._animationFrame = undefined;
   }
 
@@ -338,9 +344,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
     this.viewportUpdated();
     // early schedule to give decoder time to fill the cache before RAF
     this._schedule(anim);
-    if (this._animationFrame === undefined) {
-      this._animationFrame = this._raf?.(ts => this._loop(ts));
-    }
+    this._animationFrame ??= this._requestAF(ts => this._loop(ts));
   }
 
 
@@ -462,7 +466,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
       }
     }
     if (visibles.size && this._animationFrame === undefined) {
-      this._animationFrame = this._raf?.(ts => this._loop(ts));
+      this._animationFrame = this._requestAF(ts => this._loop(ts));
     }
   }
 
@@ -520,7 +524,7 @@ export class AnimationManager implements IDisposable, IResetHandler {
         this._renderer.draw(d.imgSpec, d.tileId, d.col, d.row, d.count);
       }
     }
-    this._animationFrame = anyVisible ? this._raf?.(ts => this._loop(ts)) : undefined;
+    this._animationFrame = anyVisible ? this._requestAF(ts => this._loop(ts)) : undefined;
   };
 
 
