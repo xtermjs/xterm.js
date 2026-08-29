@@ -154,6 +154,10 @@ export class CompositionHelper {
       // Cancel any delayed composition send requests and send the input immediately.
       this._isSendingComposition = false;
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
+      // Record what was sent so the deferred send scheduled by the compositionend that follows
+      // skips it, using the same offset the keyCode 229 path relies on (issue #3191). Without
+      // this the same text is emitted twice (issue #5778).
+      this._dataAlreadySent = input;
       this._coreService.triggerDataEvent(input, true);
     } else {
       // Make a deep copy of the composition position here as a new compositionstart event may
