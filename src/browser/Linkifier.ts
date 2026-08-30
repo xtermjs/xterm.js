@@ -9,7 +9,13 @@ import { IDisposable } from '../common/Types';
 import { IBufferService } from '../common/services/Services';
 import { ILinkProviderService, IMouseCoordsService, IRenderService } from './services/Services';
 import { Emitter } from '../common/Event';
+import { TimeoutTimer } from '../common/Async';
 import { addDisposableListener } from './Dom';
+
+// Time to wait before re-evaluating the line under a stationary cursor after the viewport
+// changed. Debouncing only this path keeps regular mouse moves undelayed while avoiding a
+// re-evaluation per render when output is constantly streaming (#4323).
+const RECHECK_STATIONARY_CURSOR_DEBOUNCE_MS = 50;
 
 export class Linkifier extends Disposable implements ILinkifier2 {
   public get currentLink(): ILinkWithState | undefined { return this._currentLink; }
@@ -22,6 +28,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   private _wasResized: boolean = false;
   private _activeProviderReplies: Map<Number, ILinkWithState[] | undefined> | undefined;
   private _activeLine: number = -1;
+  private readonly _recheckStationaryCursor = this._register(new TimeoutTimer());
 
   private readonly _onShowLinkUnderline = this._register(new Emitter<ILinkifierEvent>());
   public readonly onShowLinkUnderline = this._onShowLinkUnderline.event;
@@ -55,6 +62,28 @@ export class Linkifier extends Disposable implements ILinkifier2 {
     this._register(addDisposableListener(this._element, 'mousemove', this._handleMouseMove.bind(this)));
     this._register(addDisposableListener(this._element, 'mousedown', this._handleMouseDown.bind(this)));
     this._register(addDisposableListener(this._element, 'mouseup', this._handleMouseUp.bind(this)));
+    // Listen to viewport changes to detect a link appearing under a stationary cursor, which
+    // would otherwise stay undetected until the cursor moves (#4323). When a link is already
+    // active, the listener registered in _handleNewLink re-evaluates it instead.
+    this._register(this._renderService.onRenderedViewportChange(() => {
+      if (this._currentLink || this._isMouseOut || !this._lastMouseEvent) {
+        return;
+      }
+      this._recheckStationaryCursor.cancelAndSet(() => {
+        // The state may have changed while the timer was pending
+        if (this._currentLink || this._isMouseOut || !this._lastMouseEvent) {
+          return;
+        }
+        const position = this._positionFromMouseEvent(this._lastMouseEvent, this._element);
+        if (!position) {
+          return;
+        }
+        // Invalidate the cached line so the providers are asked again for the line under the
+        // cursor
+        this._activeLine = -1;
+        this._handleHover(position);
+      }, RECHECK_STATIONARY_CURSOR_DEBOUNCE_MS);
+    }));
   }
 
   private _handleMouseMove(event: MouseEvent): void {
