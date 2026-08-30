@@ -7,9 +7,9 @@ import { SixelImageStorage } from './SixelImageStorage';
 import { IDcsHandler, IParams, IImageAddonOptions, ITerminalExt, AttributeData, IResetHandler, ReadonlyColorSet } from './Types';
 import { toRGBA8888, BIG_ENDIAN, PALETTE_ANSI_256, PALETTE_VT340_COLOR } from 'sixel/lib/Colors';
 import { RGBA8888 } from 'sixel/lib/Types';
-import { ImageRenderer } from './ImageRenderer';
 
 import { DecoderAsync, Decoder } from 'sixel/lib/Decoder';
+import { createCanvas } from './Primitives';
 
 // always free decoder ressources after decoding if it exceeds this limit
 const MEM_PERMA_LIMIT = 4194304; // 1024 pixels * 1024 pixels * 4 channels = 4MB
@@ -98,7 +98,7 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
       return true;
     }
 
-    const canvas = ImageRenderer.createCanvas(undefined, width, height);
+    const canvas = createCanvas(undefined, width, height);
     canvas.getContext('2d')?.putImageData(new ImageData(this._dec.data8 as Uint8ClampedArray<ArrayBuffer>, width, height), 0, 0);
     if (this._dec.memoryUsage > MEM_PERMA_LIMIT) {
       this._dec.release();

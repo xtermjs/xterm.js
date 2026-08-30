@@ -19,6 +19,7 @@ import {
   KittyPixelConstants,
   parseKittyCommand
 } from './KittyGraphicsTypes';
+import { createCanvas } from '../Primitives';
 
 const enum Constants {
   // Memory limit for base64 decoder (4MB, same as IIPHandler)
@@ -636,7 +637,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         // the natural cell dimensions.
         const canvasW = (cmd.columns !== undefined) ? Math.round(imgCols * cw) : bitmap.width + xOffset;
         const canvasH = (cmd.rows !== undefined) ? Math.round(imgRows * ch) : bitmap.height + yOffset;
-        const offsetCanvas = ImageRenderer.createCanvas(window.document, canvasW, canvasH);
+        const offsetCanvas = createCanvas(window.document, canvasW, canvasH);
         const offsetCtx = offsetCanvas.getContext('2d');
         if (!offsetCtx) {
           throw new Error('Failed to create offset canvas context');
@@ -700,7 +701,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         return new Promise<ImageBitmap>((resolve, reject) => {
           img.addEventListener('load', () => {
             URL.revokeObjectURL(url);
-            const canvas = ImageRenderer.createCanvas(window.document, img.width, img.height);
+            const canvas = createCanvas(window.document, img.width, img.height);
             canvas.getContext('2d')?.drawImage(img, 0, 0);
             createImageBitmap(canvas).then(resolve).catch(reject);
           });

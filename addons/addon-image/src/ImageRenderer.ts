@@ -7,6 +7,7 @@ import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from '@xterm/xterm';
 import { ICellSize, ImageLayer, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
+import { createCanvas } from './Primitives';
 
 const enum Constants {
   PLACEHOLDER_LENGTH = 4096,
@@ -29,46 +30,6 @@ export class ImageRenderer extends Disposable implements IDisposable {
   private _oldOpen: ((parent: HTMLElement) => void) | undefined;
   private _renderService: IRenderService | undefined;
   private _oldSetRenderer: ((renderer: any) => void) | undefined;
-
-  // drawing primitive - canvas
-  public static createCanvas(localDocument: Document | undefined, width: number, height: number): HTMLCanvasElement {
-    /**
-     * NOTE: We normally dont care, from which document the canvas
-     * gets created, so we can fall back to global document,
-     * if the terminal has no document associated yet.
-     * This way early image loads before calling .open keep working
-     * (still discouraged though, as the metrics will be screwed up).
-     * Only the DOM output canvas should be on the terminal's document,
-     * which gets explicitly checked in `insertLayerToDom`.
-     */
-    const canvas = (localDocument ?? document).createElement('canvas');
-    canvas.width = width | 0;
-    canvas.height = height | 0;
-    return canvas;
-  }
-
-  // drawing primitive - ImageData with optional buffer
-  public static createImageData(ctx: CanvasRenderingContext2D, width: number, height: number, buffer?: ArrayBuffer): ImageData {
-    if (typeof ImageData !== 'function') {
-      const imgData = ctx.createImageData(width, height);
-      if (buffer) {
-        imgData.data.set(new Uint8ClampedArray(buffer, 0, width * height * 4));
-      }
-      return imgData;
-    }
-    return buffer
-      ? new ImageData(new Uint8ClampedArray(buffer, 0, width * height * 4), width, height)
-      : new ImageData(width, height);
-  }
-
-  // drawing primitive - ImageBitmap
-  public static createImageBitmap(img: ImageBitmapSource): Promise<ImageBitmap | undefined> {
-    if (typeof createImageBitmap !== 'function') {
-      return Promise.resolve(undefined);
-    }
-    return createImageBitmap(img);
-  }
-
 
   constructor(private _terminal: ITerminalExt) {
     super();
@@ -225,7 +186,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
     const finalWidth = width + sx > img.width ? img.width - sx : width;
     const finalHeight = sy + height > img.height ? img.height - sy : height;
 
-    const canvas = ImageRenderer.createCanvas(this.document, finalWidth, finalHeight);
+    const canvas = createCanvas(this.document, finalWidth, finalHeight);
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.drawImage(
@@ -299,7 +260,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
       spec.actualCellSize.height = originalHeight;
       return;
     }
-    const canvas = ImageRenderer.createCanvas(
+    const canvas = createCanvas(
       this.document,
       Math.ceil(spec.orig!.width * currentWidth / originalWidth),
       Math.ceil(spec.orig!.height * currentHeight / originalHeight)
@@ -336,8 +297,9 @@ export class ImageRenderer extends Disposable implements IDisposable {
     if (this._layers.has(layer)) {
       return;
     }
-    const canvas = ImageRenderer.createCanvas(
-      this.document, this.dimensions?.css.canvas.width || 0,
+    const canvas = createCanvas(
+      this.document,
+      this.dimensions?.css.canvas.width || 0,
       this.dimensions?.css.canvas.height || 0
     );
     canvas.classList.add(`xterm-image-layer-${layer}`);
@@ -387,10 +349,10 @@ export class ImageRenderer extends Disposable implements IDisposable {
 
     // create blueprint to fill placeholder with
     const bWidth = 32;  // must be 2^n
-    const blueprint = ImageRenderer.createCanvas(this.document, bWidth, height);
+    const blueprint = createCanvas(this.document, bWidth, height);
     const ctx = blueprint.getContext('2d', { alpha: false });
     if (!ctx) return;
-    const imgData = ImageRenderer.createImageData(ctx, bWidth, height);
+    const imgData = new ImageData(bWidth, height);
     const d32 = new Uint32Array(imgData.data.buffer);
     const black = toRGBA8888(0, 0, 0);
     const white = toRGBA8888(255, 255, 255);
@@ -406,7 +368,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
 
     // create placeholder line, width aligned to blueprint width
     const width = (screen.width + bWidth - 1) & ~(bWidth - 1) || Constants.PLACEHOLDER_LENGTH;
-    this._placeholder = ImageRenderer.createCanvas(this.document, width, height);
+    this._placeholder = createCanvas(this.document, width, height);
     const ctx2 = this._placeholder.getContext('2d', { alpha: false });
     if (!ctx2) {
       this._placeholder = undefined;
@@ -415,7 +377,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
     for (let i = 0; i < width; i += bWidth) {
       ctx2.drawImage(blueprint, i, 0);
     }
-    ImageRenderer.createImageBitmap(this._placeholder).then(bitmap => this._placeholderBitmap = bitmap);
+    createImageBitmap(this._placeholder).then(bitmap => this._placeholderBitmap = bitmap);
   }
 
   public get document(): Document | undefined {

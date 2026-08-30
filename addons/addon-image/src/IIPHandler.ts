@@ -10,6 +10,7 @@ import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import QoiDecoder from 'xterm-wasm-parts/lib/qoi/QoiDecoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState, SequenceType } from './IIPHeaderParser';
 import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
+import { createCanvas } from './Primitives';
 
 // Local const enum mirror - esbuild can't inline const enums from external packages
 const enum DecoderConst {
@@ -189,7 +190,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       if (w === this._qoiDec.width && h === this._qoiDec.height) {
         // use fast-path if we don't need to rescale
         this._dec.release();
-        const canvas = ImageRenderer.createCanvas(undefined, this._qoiDec.width, this._qoiDec.height);
+        const canvas = createCanvas(undefined, this._qoiDec.width, this._qoiDec.height);
         canvas.getContext('2d')?.putImageData(blob, 0, 0);
         this._storage.addImage(canvas);
         return true;

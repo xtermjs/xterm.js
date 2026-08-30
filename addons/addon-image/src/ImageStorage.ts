@@ -10,6 +10,7 @@ import type {
 } from './Types';
 import type { IBufferLine } from 'common/buffer/Types';
 import { CellData } from 'common/buffer/CellData';
+import { createCanvas } from './Primitives';
 
 // fallback default cell size
 export const CELL_SIZE_DEFAULT: ICellSize = {
@@ -472,7 +473,7 @@ export class ImageStorage implements IDisposable {
       if (e instanceof ImageTileInfo && e.imageId && e.imageId !== -1) {
         const orig = this._images.get(e.imageId)?.orig;
         if (window.ImageBitmap && orig instanceof ImageBitmap) {
-          const canvas = ImageRenderer.createCanvas(window.document, orig.width, orig.height);
+          const canvas = createCanvas(window.document, orig.width, orig.height);
           canvas.getContext('2d')?.drawImage(orig, 0, 0, orig.width, orig.height);
           return canvas;
         }
