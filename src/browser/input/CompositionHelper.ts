@@ -37,10 +37,21 @@ export class CompositionHelper {
   private _compositionSuffix: string;
 
   /**
-   * Whether a composition is in the process of being sent, setting this to false will cancel any
-   * in-progress composition.
+   * Sends for compositions that have finished but whose text has not been forwarded yet, oldest
+   * first. More than one can be outstanding: each is queued from `_finalizeComposition` and
+   * flushed either by its own timer or, if a non-composition key arrives first, by the
+   * synchronous path draining this queue in order. A single shared flag cannot express that —
+   * clearing it to cancel one pending send used to cancel every other one too, silently dropping
+   * whatever text they were carrying.
    */
-  private _isSendingComposition: boolean;
+  private readonly _pendingSends: (() => void)[] = [];
+
+  /**
+   * How far into the textarea's value has already been forwarded to the handler. Every send emits
+   * `[max(start, _sentUpTo), end)` and pushes this forward, so no range can go out twice no matter
+   * which path emits it first.
+   */
+  private _sentUpTo: number;
 
   /**
    * Data already sent due to keydown event.
@@ -61,7 +72,7 @@ export class CompositionHelper {
     @IRenderService private readonly _renderService: IRenderService
   ) {
     this._isComposing = false;
-    this._isSendingComposition = false;
+    this._sentUpTo = 0;
     this._compositionPosition = { start: 0, end: 0 };
     this._compositionSuffix = '';
     this._dataAlreadySent = '';
@@ -79,6 +90,9 @@ export class CompositionHelper {
     this._compositionPosition.start = Math.min(start, end);
     this._compositionPosition.end = Math.max(start, end);
     this._compositionSuffix = this._textarea.value.substring(this._compositionPosition.end);
+    // The watermark is an absolute offset into the textarea, so it has to come back down if the
+    // value was rewritten underneath us (eg. by _syncTextArea) and offsets no longer line up.
+    this._sentUpTo = Math.min(this._sentUpTo, this._compositionPosition.start);
     this._compositionView.textContent = '';
     this._dataAlreadySent = '';
     this._compositionView.classList.add('active');
@@ -113,7 +127,7 @@ export class CompositionHelper {
    * @returns Whether the Terminal should continue processing the keydown event.
    */
   public keydown(ev: KeyboardEvent): boolean {
-    if (this._isComposing || this._isSendingComposition) {
+    if (this._isComposing || this._pendingSends.length > 0) {
       if (ev.keyCode === 20 || ev.keyCode === 229) {
         // 20 is CapsLock, 229 is Enter
         // Continue composing if the keyCode is the "composition character"
@@ -151,10 +165,16 @@ export class CompositionHelper {
     this._isComposing = false;
 
     if (!waitForPropagation) {
-      // Cancel any delayed composition send requests and send the input immediately.
-      this._isSendingComposition = false;
-      const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
-      this._coreService.triggerDataEvent(input, true);
+      // Flush anything already queued, in order, before sending our own slice. These used to be
+      // cancelled here, which is only correct while at most one send can be outstanding.
+      for (const send of this._pendingSends.splice(0, this._pendingSends.length)) {
+        send();
+      }
+      const end = Math.max(this._compositionPosition.end, this._textarea.selectionEnd ?? this._compositionPosition.end);
+      const input = this._sliceUnsent(this._compositionPosition.start, end);
+      if (input.length > 0) {
+        this._coreService.triggerDataEvent(input, true);
+      }
     } else {
       // Make a deep copy of the composition position here as a new compositionstart event may
       // fire before the setTimeout executes.
@@ -172,35 +192,53 @@ export class CompositionHelper {
       // - The last compositionupdate event's data property does not always accurately describe
       //   the character, a counter example being Korean where an ending consonsant can move to
       //   the following character if the following input is a vowel.
-      this._isSendingComposition = true;
+      const send = (): void => {
+        // Add length of data already sent due to keydown event,
+        // otherwise input characters can be duplicated. (Issue #3191)
+        currentCompositionPosition.start += this._dataAlreadySent.length;
+        const value = this._textarea.value;
+        let end: number;
+        if (this._compositionPosition.start > currentCompositionPosition.start) {
+          // A newer composition has started past this one, so its start is where this one ends.
+          // Note this cannot test `_isComposing`: when this send is flushed by the synchronous
+          // path rather than by its own timer, `_finalizeComposition` has already cleared that
+          // flag, and the else branch below would read on into the newer composition's preedit.
+          end = this._compositionPosition.start;
+        } else {
+          // Keep support for non-composition characters typed immediately after composition end
+          // while avoiding re-sending the trailing text that was already present
+          // before composition started.
+          end = currentCompositionSuffix.length > 0 && value.endsWith(currentCompositionSuffix)
+            ? value.length - currentCompositionSuffix.length
+            : value.length;
+        }
+        const input = this._sliceUnsent(currentCompositionPosition.start, end);
+        if (input.length > 0) {
+          this._coreService.triggerDataEvent(input, true);
+        }
+      };
+
+      this._pendingSends.push(send);
       setTimeout(() => {
-        // Ensure that the input has not already been sent
-        if (this._isSendingComposition) {
-          this._isSendingComposition = false;
-          let input;
-          // Add length of data already sent due to keydown event,
-          // otherwise input characters can be duplicated. (Issue #3191)
-          currentCompositionPosition.start += this._dataAlreadySent.length;
-          if (this._isComposing) {
-            // Use the start position of the new composition to get the string
-            // if a new composition has started.
-            input = this._textarea.value.substring(currentCompositionPosition.start, this._compositionPosition.start);
-          } else {
-            // Keep support for non-composition characters typed immediately after composition end
-            // while avoiding re-sending the trailing text that was already present
-            // before composition started.
-            const value = this._textarea.value;
-            const valueEnd = currentCompositionSuffix.length > 0 && value.endsWith(currentCompositionSuffix)
-              ? value.length - currentCompositionSuffix.length
-              : value.length;
-            input = value.substring(currentCompositionPosition.start, Math.max(currentCompositionPosition.start, valueEnd));
-          }
-          if (input.length > 0) {
-            this._coreService.triggerDataEvent(input, true);
-          }
+        // Ensure that the input has not already been sent by the synchronous path draining it
+        const i = this._pendingSends.indexOf(send);
+        if (i !== -1) {
+          this._pendingSends.splice(i, 1);
+          send();
         }
       }, 0);
     }
+  }
+
+  /**
+   * Takes the part of `[start, end)` that has not been forwarded yet and marks it as forwarded, so
+   * that a range cannot be sent twice regardless of which path gets to it first.
+   */
+  private _sliceUnsent(start: number, end: number): string {
+    const from = Math.max(start, this._sentUpTo);
+    const to = Math.max(from, end);
+    this._sentUpTo = Math.max(this._sentUpTo, to);
+    return this._textarea.value.substring(from, to);
   }
 
   /**
