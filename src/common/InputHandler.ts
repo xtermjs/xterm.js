@@ -2748,7 +2748,9 @@ export class InputHandler extends Disposable implements IInputHandler {
         break;
       case 6:
         // cursor position
-        const y = this._activeBuffer.y + 1;
+        // In origin mode (DECOM) the report is relative to the top scroll
+        // margin, mirroring how CUP positions the cursor.
+        const y = this._activeBuffer.y + 1 - (this._coreService.decPrivateModes.origin ? this._activeBuffer.scrollTop : 0);
         const x = this._activeBuffer.x + 1;
         this._coreService.triggerDataEvent(`${C0.ESC}[${y};${x}R`);
         break;
@@ -2763,7 +2765,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     switch (params.params[0]) {
       case 6:
         // cursor position
-        const y = this._activeBuffer.y + 1;
+        // In origin mode (DECOM) the report is relative to the top scroll
+        // margin, mirroring how CUP positions the cursor.
+        const y = this._activeBuffer.y + 1 - (this._coreService.decPrivateModes.origin ? this._activeBuffer.scrollTop : 0);
         const x = this._activeBuffer.x + 1;
         this._coreService.triggerDataEvent(`${C0.ESC}[?${y};${x}R`);
         break;

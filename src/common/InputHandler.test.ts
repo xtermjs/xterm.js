@@ -1259,6 +1259,29 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[2;1H');
       assert.deepEqual(getCursor(bufferService), [0, 1]);
     });
+    it('cursor position report (CPR) is relative to scroll margin under DECOM', async () => {
+      const cpr: number[][] = [];
+      coreService.onData(data => {
+        const m = data.match(/\x1b\[\??(\d+);(\d+)R/);
+        if (m) { cpr.push([parseInt(m[1]), parseInt(m[2])]); }
+      });
+      // origin mode on, scroll region rows 3..8 (1-based) -> scrollTop = 2
+      await inputHandler.parseP('\x1b[?6h\x1b[3;8r');
+      // CUP to origin-relative row 2, col 5 -> absolute buffer cursor [x=4, y=3]
+      await inputHandler.parseP('\x1b[2;5H');
+      assert.deepEqual(getCursor(bufferService), [4, 3]);
+      // CPR (DSR 6) and DECXCPR (private DSR ?6) both report the
+      // origin-relative row 2, not the absolute row 4
+      await inputHandler.parseP('\x1b[6n');
+      await inputHandler.parseP('\x1b[?6n');
+      assert.deepEqual(cpr, [[2, 5], [2, 5]]);
+      // with origin mode off, CPR reports the absolute row
+      await inputHandler.parseP('\x1b[?6l\x1b[4;5H');
+      assert.deepEqual(getCursor(bufferService), [4, 3]);
+      cpr.length = 0;
+      await inputHandler.parseP('\x1b[6n');
+      assert.deepEqual(cpr, [[4, 5]]);
+    });
     it('horizontal position absolute (HPA)', async () => {
       await inputHandler.parseP('\x1b[`');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
