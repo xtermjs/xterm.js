@@ -444,3 +444,73 @@ describe('MouseService multi-window', () => {
     assert.deepEqual(openDocument.removed, []);
   });
 });
+
+describe('MouseService _handlePassiveWheel (alt buffer)', () => {
+  before(() => {
+    (globalThis as any).WheelEvent = { DOM_DELTA_PIXEL: 0, DOM_DELTA_PAGE: 2 };
+  });
+
+  after(() => {
+    delete (globalThis as any).WheelEvent;
+  });
+
+  function createMouseService(): { mouseService: MouseService, reports: string[] } {
+    const reports: string[] = [];
+    const renderService = new MockRenderService();
+    renderService.dimensions.device.cell.height = 22;
+    const mouseService = new MouseService(
+      renderService,
+      {
+        getMouseReportCoords: (_ev: MouseEvent, _el: HTMLElement) => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      new MouseStateService(),
+      {
+        triggerDataEvent: (data: string) => reports.push(data),
+        triggerBinaryEvent: () => {},
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      { buffer: { hasScrollback: false } } as any,
+      new OptionsService({}),
+      new TestSelectionService(),
+      logService,
+      new MockCoreBrowserService()
+    );
+    return { mouseService, reports };
+  }
+
+  function wheelEvent(deltaY: number, deltaMode: number = 0, shiftKey: boolean = false): WheelEvent {
+    return {
+      deltaY,
+      deltaMode,
+      shiftKey,
+      preventDefault: () => {},
+      stopPropagation: () => {}
+    } as any;
+  }
+
+  it('sends a single down sequence for a small pixel delta that rounds to zero lines', () => {
+    const { mouseService, reports } = createMouseService();
+    const result = (mouseService as any)._handlePassiveWheel({ requestedEvents: {} } as any, wheelEvent(20));
+    assert.equal(result, false);
+    assert.deepEqual(toBytes(reports.join('')), [0x1b, 0x5b, 0x42]);
+  });
+
+  it('sends a single up sequence for a negative delta', () => {
+    const { mouseService, reports } = createMouseService();
+    (mouseService as any)._handlePassiveWheel({ requestedEvents: {} } as any, wheelEvent(-100));
+    assert.deepEqual(toBytes(reports.join('')), [0x1b, 0x5b, 0x41]);
+  });
+
+  it('does not send sequences for a zero delta', () => {
+    const { mouseService, reports } = createMouseService();
+    (mouseService as any)._handlePassiveWheel({ requestedEvents: {} } as any, wheelEvent(0));
+    assert.deepEqual(reports, []);
+  });
+
+  it('does not send sequences when the app handles the wheel itself', () => {
+    const { mouseService, reports } = createMouseService();
+    const ctx = { requestedEvents: { wheel: () => {} } } as any;
+    (mouseService as any)._handlePassiveWheel(ctx, wheelEvent(100));
+    assert.deepEqual(reports, []);
+  });
+});
