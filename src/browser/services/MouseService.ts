@@ -29,7 +29,7 @@ export class MouseService implements IMouseService {
   public serviceBrand: undefined;
 
   private _lastEvent: ICoreMouseEvent | null = null;
-  private _wheelPartialScroll: number = 0;
+  private _wheelPartialScroll: Record<'x' | 'y', number> = { x: 0, y: 0 };
   private _touchScrollAccumulator: number = 0;
   private _altMouseCursor: AltMouseCursorController | undefined;
 
@@ -139,19 +139,26 @@ export class MouseService implements IMouseService {
         if (!this._mouseStateService.allowCustomWheelEvent(ev as WheelEvent)) {
           return false;
         }
-        const deltaY = (ev as WheelEvent).deltaY;
-        if (deltaY === 0) {
+        const wheelEvent = ev as WheelEvent;
+        const axis = Math.abs(wheelEvent.deltaX) > Math.abs(wheelEvent.deltaY) ? 'x' : 'y';
+        const delta = axis === 'x' ? wheelEvent.deltaX : wheelEvent.deltaY;
+        if (delta === 0) {
           return false;
         }
         const lines = this._consumeWheelEvent(
-          ev as WheelEvent,
-          this._renderService?.dimensions?.device?.cell?.height,
+          wheelEvent,
+          axis,
+          axis === 'x'
+            ? this._renderService?.dimensions?.device?.cell?.width
+            : this._renderService?.dimensions?.device?.cell?.height,
           this._coreBrowserService?.dpr
         );
         if (lines === 0) {
           return false;
         }
-        action = deltaY < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
+        action = axis === 'x'
+          ? delta < 0 ? CoreMouseAction.LEFT : CoreMouseAction.RIGHT
+          : delta < 0 ? CoreMouseAction.UP : CoreMouseAction.DOWN;
         but = CoreMouseButton.WHEEL;
         break;
       default:
@@ -275,6 +282,7 @@ export class MouseService implements IMouseService {
 
       const lines = this._consumeWheelEvent(
         ev,
+        'y',
         this._renderService?.dimensions?.device?.cell?.height,
         this._coreBrowserService?.dpr
       );
@@ -373,7 +381,8 @@ export class MouseService implements IMouseService {
 
   public reset(): void {
     this._lastEvent = null;
-    this._wheelPartialScroll = 0;
+    this._wheelPartialScroll.x = 0;
+    this._wheelPartialScroll.y = 0;
     this._touchScrollAccumulator = 0;
   }
 
@@ -454,32 +463,32 @@ export class MouseService implements IMouseService {
    * Processes a wheel event, accounting for partial scrolls for trackpad, mouse scrolls.
    * This prevents hyper-sensitive scrolling in alt buffer.
    */
-  private _consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number {
-    // Do nothing if it's not a vertical scroll event
-    if (ev.deltaY === 0 || ev.shiftKey) {
+  private _consumeWheelEvent(ev: WheelEvent, axis: 'x' | 'y', cellSize?: number, dpr?: number): number {
+    const delta = axis === 'x' ? ev.deltaX : ev.deltaY;
+    if (delta === 0 || ev.shiftKey) {
       return 0;
     }
 
-    if (cellHeight === undefined || dpr === undefined) {
+    if (cellSize === undefined || dpr === undefined) {
       return 0;
     }
 
-    const targetWheelEventPixels = cellHeight / dpr;
-    let amount = this._applyScrollModifier(ev.deltaY, ev);
+    const targetWheelEventPixels = cellSize / dpr;
+    let amount = this._applyScrollModifier(delta, ev);
 
     if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
       amount /= (targetWheelEventPixels + 0.0); // Prevent integer division
 
-      const isLikelyTrackpad = Math.abs(ev.deltaY) < 50;
+      const isLikelyTrackpad = Math.abs(delta) < 50;
       if (isLikelyTrackpad) {
         amount *= 0.3;
       }
 
-      this._wheelPartialScroll += amount;
-      amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
-      this._wheelPartialScroll %= 1;
+      this._wheelPartialScroll[axis] += amount;
+      amount = Math.floor(Math.abs(this._wheelPartialScroll[axis])) * (this._wheelPartialScroll[axis] > 0 ? 1 : -1);
+      this._wheelPartialScroll[axis] %= 1;
     } else if (ev.deltaMode === WheelEvent.DOM_DELTA_PAGE) {
-      amount *= this._bufferService.rows;
+      amount *= axis === 'x' ? this._bufferService.cols : this._bufferService.rows;
     }
     return amount;
   }
