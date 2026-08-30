@@ -17,7 +17,7 @@ export const CELL_SIZE_DEFAULT: ICellSize = {
   height: 14
 };
 
-class ImageTileInfo {
+export class ImageTileInfo {
   constructor(
     public imageId = -1,
     public tileId = -1) {

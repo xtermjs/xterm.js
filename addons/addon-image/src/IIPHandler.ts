@@ -204,12 +204,13 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       .then(bm => {
         const id = this._storage.addImage(bm);
         if (this._aniManager && metrics.animated) {
-          this._aniManager.registerAnimation(id, blob as Blob, metrics, w, h);
+          this._aniManager.registerAnimation(id, blob as Blob, metrics, w, h).catch(() => {});
         }
         return true;
       })
       .catch(e => {
         console.warn(`IIP: decoding error ${metrics.mime} ${metrics.width}x${metrics.height}`, e);
+        // FIXME: try ImageDecoder here instead (e.g. some AVIF work in Firefox)
         return true;
       });
   }

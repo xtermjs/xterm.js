@@ -3,11 +3,11 @@
  * @license MIT
  */
 
-import { IDisposable } from '@xterm/xterm';
+import type { IDisposable } from '@xterm/xterm';
 import type { ImageRenderer } from './ImageRenderer';
-import { EMPTY_ATTRS, type ImageStorage } from './ImageStorage';
-import { BgFlags, IBufferLineExt, IImageSpec, ITerminalExt, IExtendedAttrsImage, IResetHandler } from './Types';
-import { IMetrics } from 'IIPMetrics';
+import { ImageTileInfo, type ImageStorage } from './ImageStorage';
+import type { IImageSpec, ITerminalExt, IResetHandler } from './Types';
+import type { IMetrics } from 'IIPMetrics';
 
 
 /**
@@ -282,7 +282,6 @@ export class AnimationManager implements IDisposable, IResetHandler {
         const duration = (frame.duration ?? 0) / 1000;
         frame.close();
         // skip wrong dimensions and zero duration
-        // FIXME: needs orig image dimensions in IAnimation
         if (width !== metrics.width || height !== metrics.height || !duration) {
           if (durations.length) {
             durations[durations.length - 1] += duration;
@@ -372,11 +371,11 @@ export class AnimationManager implements IDisposable, IResetHandler {
     const actives: Set<number> = new Set();
     this._draws = [];
     for (let row = 0; row < rows; ++row) {
-      const line = buffer.lines.get(row + buffer.ydisp) as IBufferLineExt;
+      const line = buffer.lines.get(row + buffer.ydisp);
       if (!line) break;
       for (let col = 0; col < cols; ++col) {
-        if (line.getBg(col) & BgFlags.HAS_EXTENDED) {
-          let e: IExtendedAttrsImage = line._extendedAttrs[col] ?? EMPTY_ATTRS;
+        const e = line.getExtended(col)?.payload;
+        if (e instanceof ImageTileInfo) {
           const imageId = e.imageId;
           if (imageId === undefined || imageId === -1) {
             continue;
@@ -386,13 +385,17 @@ export class AnimationManager implements IDisposable, IResetHandler {
             const startTile = e.tileId;
             const startCol = col;
             let count = 1;
-            while (
-              ++col < cols
-              && (line.getBg(col) & BgFlags.HAS_EXTENDED)
-              && (e = line._extendedAttrs[col] ?? EMPTY_ATTRS)
-              && (e.imageId === imageId)
-              && (e.tileId === startTile + count)
-            ) {
+            /**
+             * merge tiles to the right into a single draw call, if:
+             * - not at end of line
+             * - cell has same image id
+             * - cell has consecutive tile id
+             */
+            while (++col < cols) {
+              const nextE = line.getExtended(col)?.payload;
+              if (!(nextE instanceof ImageTileInfo) || nextE.imageId !== imageId || nextE.tileId !== startTile + count) {
+                break;
+              }
               count++;
             }
             col--;
@@ -594,6 +597,12 @@ export class AnimationManager implements IDisposable, IResetHandler {
         } catch { continue; }
         let bm: ImageBitmap;
         try {
+          // FIXME: we should not resize here yet
+          // BETTER: rescale during draw:
+          // - eases the GPU druing decoding
+          // - rescales only what needs to be drawn
+          // --> funneling down
+          // FIXME: needs changes in image spec and rendering functions
           bm = await createImageBitmap(res.image, { resizeWidth: a.w, resizeHeight: a.h });
         } catch { continue; } finally { res?.image?.close(); }
         if (!a.inViewport) {
