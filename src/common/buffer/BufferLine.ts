@@ -555,13 +555,8 @@ export class BufferLine implements IBufferLine {
    */
   public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
     const isCanonical = (startCol === undefined || startCol === 0) && endCol === undefined && outColumns === undefined;
-    if (isCanonical && this._cacheValid) {
-      if (trimRight) {
-        return this._cacheTrimmed ? this._cache : this._cache.trimEnd();
-      }
-      if (!this._cacheTrimmed) {
-        return this._cache;
-      }
+    if (isCanonical && this._cacheValid && trimRight === this._cacheTrimmed) {
+      return this._cache;
     }
     startCol = startCol ?? 0;
     endCol = endCol ?? this.length;

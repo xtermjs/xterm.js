@@ -848,13 +848,13 @@ describe('BufferLine', function(): void {
 
       // Once non-trimmed is cached, trimmed should be derived via trimEnd().
       assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
-      assert.equal(line.cachedString, 'abc  ');
-      assert.equal(line.isCachedStringTrimmed, false);
+      assert.equal(line.cachedString, 'abc');
+      assert.equal(line.isCachedStringTrimmed, true);
 
       line.cachedString = 'cached-non-trimmed  ';
       line.isCachedStringTrimmed = false;
       assert.equal(line.translateToString(false, undefined, undefined, undefined), 'cached-non-trimmed  ');
-      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'cached-non-trimmed');
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
 
       line.cachedString = 'cached-trimmed';
       line.isCachedStringTrimmed = true;
@@ -866,6 +866,10 @@ describe('BufferLine', function(): void {
       // Any optional translation argument should bypass cache.
       assert.equal(line.translateToString(false, 0, 2, undefined), 'ab');
       assert.equal(line.translateToString(true, 0, 2, undefined), 'ab');
+
+      line.setCell(3, createCellData(1, ' ', 1));
+      assert.equal(line.translateToString(false, undefined, undefined, undefined), 'abc  ');
+      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc ');
     });
 
     it('should invalidate cached canonical strings on line mutations', () => {
