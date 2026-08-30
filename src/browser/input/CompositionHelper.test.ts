@@ -14,6 +14,21 @@ describe('CompositionHelper', () => {
   let textarea: HTMLTextAreaElement;
   let handledText: string;
 
+  function nextEventLoop(): Promise<void> {
+    return new Promise(resolve => setTimeout(resolve, 0));
+  }
+
+  async function beginComposition(data: string, value: string = textarea.value + data): Promise<void> {
+    textarea.selectionStart = textarea.value.length;
+    textarea.selectionEnd = textarea.value.length;
+    compositionHelper.compositionstart();
+    compositionHelper.compositionupdate({ data });
+    textarea.value = value;
+    textarea.selectionStart = value.length;
+    textarea.selectionEnd = value.length;
+    await nextEventLoop();
+  }
+
   beforeEach(() => {
     compositionView = {
       classList: {
@@ -258,6 +273,160 @@ describe('CompositionHelper', () => {
           done();
         }, 0);
       }, 0);
+    });
+
+    it('should send a propagated composition commit exactly once', async () => {
+      await beginComposition('한');
+
+      compositionHelper.compositionend();
+      assert.isTrue(compositionHelper.input('한'));
+      await nextEventLoop();
+
+      assert.equal(handledText, '한');
+    });
+
+    it('should send an unpropagated composition commit exactly once', async () => {
+      await beginComposition('한');
+
+      compositionHelper.compositionend();
+      await nextEventLoop();
+
+      assert.equal(handledText, '한');
+    });
+
+    it('should send a pending commit before a following key', async () => {
+      await beginComposition('한');
+      compositionHelper.compositionend();
+      compositionHelper.input('한');
+      textarea.value = '';
+
+      assert.isTrue(compositionHelper.keydown({ keyCode: 65 } as KeyboardEvent));
+      assert.equal(handledText, '한');
+      await nextEventLoop();
+      assert.equal(handledText, '한');
+    });
+
+    it('should preserve Hangul, ASCII, Hangul input order', async () => {
+      await beginComposition('한');
+      compositionHelper.compositionend();
+      compositionHelper.input('한');
+      compositionHelper.keypress('a');
+      compositionHelper.input('a');
+      textarea.value = '한a';
+
+      await beginComposition('글');
+      compositionHelper.compositionend();
+      compositionHelper.input('글');
+      await nextEventLoop();
+
+      assert.equal(handledText, '한a글');
+    });
+
+    it('should preserve following input when the composition has no insertText event', async () => {
+      await beginComposition('日');
+      compositionHelper.compositionend();
+      compositionHelper.keypress('a');
+      compositionHelper.input('a');
+      textarea.value = '日a';
+      await nextEventLoop();
+
+      assert.equal(handledText, '日a');
+    });
+
+    it('should preserve fast consecutive Hangul syllables', async () => {
+      await beginComposition('한');
+      compositionHelper.compositionend();
+      compositionHelper.input('한');
+
+      await beginComposition('글');
+      compositionHelper.compositionend();
+      compositionHelper.input('글');
+      await nextEventLoop();
+
+      assert.equal(handledText, '한글');
+    });
+
+    it('should leave a transferred final consonant for the next Hangul composition', async () => {
+      await beginComposition('텟');
+      compositionHelper.compositionend();
+      compositionHelper.input('테');
+      compositionHelper.keypress('t');
+      textarea.value = '테';
+
+      await beginComposition('스');
+      compositionHelper.compositionend();
+      compositionHelper.input('스');
+      await nextEventLoop();
+
+      assert.equal(handledText, '테스');
+    });
+
+    it('should send a composition once when Enter finalizes it before compositionend', async () => {
+      await beginComposition('한');
+
+      assert.isTrue(compositionHelper.keydown({ keyCode: 13 } as KeyboardEvent));
+      compositionHelper.compositionend();
+      compositionHelper.input('한');
+      await nextEventLoop();
+
+      assert.equal(handledText, '한');
+    });
+
+    it('should send a cleared pending commit before Enter', async () => {
+      await beginComposition('한');
+      compositionHelper.compositionend();
+      compositionHelper.input('한');
+      textarea.value = '';
+
+      assert.isTrue(compositionHelper.keydown({ keyCode: 13 } as KeyboardEvent));
+      await nextEventLoop();
+
+      assert.equal(handledText, '한');
+    });
+
+    it('should not repeat a keydown-finalized Japanese commit', async () => {
+      await beginComposition('日本');
+
+      assert.isTrue(compositionHelper.keydown({ keyCode: 65 } as KeyboardEvent));
+      compositionHelper.compositionend();
+      compositionHelper.input('日本');
+      await nextEventLoop();
+
+      assert.equal(handledText, '日本');
+    });
+
+    it('should reconcile duplicate keypress and input observations', async () => {
+      await beginComposition('한');
+      compositionHelper.compositionend();
+      compositionHelper.keypress('한');
+      compositionHelper.input('한');
+      await nextEventLoop();
+
+      assert.equal(handledText, '한');
+    });
+
+    it('should preserve repeated identical commits from separate compositions', async () => {
+      await beginComposition('한');
+      compositionHelper.compositionend();
+      compositionHelper.input('한');
+      await nextEventLoop();
+
+      await beginComposition('한');
+      compositionHelper.compositionend();
+      compositionHelper.input('한');
+      await nextEventLoop();
+
+      assert.equal(handledText, '한한');
+    });
+
+    it('should reconcile generic multi-character IME commits', async () => {
+      await beginComposition('日本');
+      compositionHelper.compositionend();
+      compositionHelper.keypress('日本');
+      compositionHelper.input('日本');
+      await nextEventLoop();
+
+      assert.equal(handledText, '日本');
     });
   });
 });
