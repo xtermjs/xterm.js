@@ -259,5 +259,50 @@ describe('CompositionHelper', () => {
         }, 0);
       }, 0);
     });
+
+    it('Should not drop leading pre-existing text when the IME replaces the whole textarea value', (done) => {
+      // 3 characters typed before composing (already sent to the terminal) remain in the textarea.
+      // Windows TSF IMEs (eg. Microsoft Pinyin) apply the composition as a whole-value replacement
+      // that absorbs this pre-existing text, so the start offset recorded at compositionstart is
+      // left stale and slicing the textarea drops the leading commit. The compositionend event's
+      // data carries the authoritative committed string, which is immune to the replacement
+      // geometry. (Issue #6049)
+      textarea.value = '   ';
+      textarea.selectionStart = 3;
+      textarea.selectionEnd = 3;
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'n' });
+      textarea.value = '   n';
+      setTimeout(() => { // wait for any textarea updates
+        // The next TSF frame replaces the ENTIRE value (selection spanned 0..4 in the real trace).
+        compositionHelper.compositionupdate({ data: 'ni' });
+        textarea.value = 'ni';
+        setTimeout(() => { // wait for any textarea updates
+          compositionHelper.compositionend({ data: '你是' } as CompositionEvent);
+          textarea.value = '你是';
+          setTimeout(() => { // wait for any textarea updates
+            assert.equal(handledText, '你是');
+            done();
+          }, 0);
+        }, 0);
+      }, 0);
+    });
+
+    it('Should emit nothing when a composition is cancelled with empty compositionend data', (done) => {
+      // An empty compositionend data string is a legitimate "nothing was committed" result (eg. the
+      // composition was cancelled) and must be distinguished from the undefined passed when no
+      // compositionend event is available (which falls back to slicing).
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'n' });
+      textarea.value = 'n';
+      setTimeout(() => { // wait for any textarea updates
+        compositionHelper.compositionend({ data: '' } as CompositionEvent);
+        textarea.value = '';
+        setTimeout(() => { // wait for any textarea updates
+          assert.equal(handledText, '');
+          done();
+        }, 0);
+      }, 0);
+    });
   });
 });
