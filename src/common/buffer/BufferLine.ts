@@ -208,18 +208,23 @@ export class BufferLine implements IBufferLine {
     } else {
       cell.combinedData = '';
     }
-    if (cell.bg & BgFlags.HAS_EXTENDED) {
-      cell.extended = this._extendedAttrs[index]!;
-    } else {
-      // Do not mutate cell.extended in place: it may still reference this line's map entry from a
-      // prior loadCell into a reused CellData (e.g. $workCell during insert/delete).
-      // We use $extended as blueprint and reset the internals
-      // mimicking the ctor to avoid a new allocation.
-      $extended._ext = 0;
-      $extended._urlId = 0;
-      cell.extended = $extended;
-    }
+    cell.extended = this.getExtended(index);
     return cell;
+  }
+
+  public getExtended(index: number): IExtendedAttrs {
+    $startIndex = index * Constants.CELL_INDICIES;
+    if (this._data[$startIndex + Cell.BG] & BgFlags.HAS_EXTENDED) {
+      return this._extendedAttrs[index]!;
+    }
+    // Do not mutate cell.extended in place: it may still reference this line's map entry from a
+    // prior loadCell into a reused CellData (e.g. $workCell during insert/delete).
+    // We use $extended as blueprint and reset the internals
+    // mimicking the ctor to avoid a new allocation.
+    $extended._ext = 0;
+    $extended._urlId = 0;
+    $extended.payload = undefined;
+    return $extended;
   }
 
   /**

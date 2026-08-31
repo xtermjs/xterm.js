@@ -20,6 +20,7 @@ export interface IExtendedAttrs {
   underlineColor: number;
   underlineVariantOffset: number;
   urlId: number;
+  payload: Object | undefined;
   clone(): IExtendedAttrs;
   isEmpty(): boolean;
 }
@@ -146,6 +147,7 @@ export interface IBufferLine {
   getCodePoint(index: number): number;
   isCombined(index: number): number;
   getString(index: number): string;
+  getExtended(index: number): IExtendedAttrs;
 }
 
 export interface IMarker extends IDisposable {
