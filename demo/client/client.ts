@@ -39,6 +39,7 @@ import { SerializeAddon } from '@xterm/addon-serialize';
 import { WebFontsAddon } from '@xterm/addon-web-fonts';
 import { WebLinksAddon } from '@xterm/addon-web-links';
 import { WebglAddon } from '@xterm/addon-webgl';
+import { WebgpuAddon } from '@xterm/addon-webgpu';
 import { Unicode11Addon } from '@xterm/addon-unicode11';
 import { UnicodeGraphemesAddon } from '@xterm/addon-unicode-graphemes';
 import { AddonCollection, type AddonType, type IDemoAddon } from './types';
@@ -55,6 +56,7 @@ export interface IWindowWithTerminal extends Window {
   SerializeAddon?: typeof SerializeAddon;
   WebLinksAddon?: typeof WebLinksAddon;
   WebglAddon?: typeof WebglAddon;
+  WebgpuAddon?: typeof WebgpuAddon;
   Unicode11Addon?: typeof Unicode11Addon;
   UnicodeGraphemesAddon?: typeof UnicodeGraphemesAddon;
   LigaturesAddon?: typeof LigaturesAddon;
@@ -83,6 +85,7 @@ const addons: AddonCollection = {
   webFonts: { name: 'webFonts', ctor: WebFontsAddon, canChange: true },
   webLinks: { name: 'webLinks', ctor: WebLinksAddon, canChange: true },
   webgl: { name: 'webgl', ctor: WebglAddon, canChange: true },
+  webgpu: { name: 'webgpu', ctor: WebgpuAddon, canChange: true },
   unicode11: { name: 'unicode11', ctor: Unicode11Addon, canChange: true },
   unicodeGraphemes: { name: 'unicodeGraphemes', ctor: UnicodeGraphemesAddon, canChange: true },
   ligatures: { name: 'ligatures', ctor: LigaturesAddon, canChange: true }
@@ -157,6 +160,7 @@ const disposeRecreateButtonHandler: () => void = () => {
     addons.ligatures.instance = undefined;
     addons.webLinks.instance = undefined;
     addons.webgl.instance = undefined;
+    addons.webgpu.instance = undefined;
     document.getElementById('dispose')!.innerHTML = 'Recreate Terminal';
   } else {
     createTerminal();
@@ -207,6 +211,7 @@ if (document.location.pathname === '/test') {
   window.LigaturesAddon = LigaturesAddon;
   window.WebLinksAddon = WebLinksAddon;
   window.WebglAddon = WebglAddon;
+  window.WebgpuAddon = WebgpuAddon;
 } else {
   const typedTerm = createTerminal();
 
@@ -449,6 +454,7 @@ function updateTerminalContainerBackground(): void {
 
 function initAddons(term: Terminal): void {
   const fragment = document.createDocumentFragment();
+  const addonCheckboxes = new Map<AddonType, HTMLInputElement>();
 
   function postInitWebgl(): void {
     controlBar.setTabVisible('addon-webgl', true);
@@ -464,12 +470,26 @@ function initAddons(term: Terminal): void {
       addons.webgl.instance!.textureAtlas.remove();
     }
   }
+  function monitorWebgpu(checkbox: HTMLInputElement): void {
+    const instance = addons.webgpu.instance!;
+    instance.onRendererError(error => console.warn('WebGPU renderer error:', error));
+    void instance.ready.catch(error => {
+      if (addons.webgpu.instance !== instance) {
+        return;
+      }
+      console.warn('error during loading webgpu addon:', error);
+      instance.dispose();
+      addons.webgpu.instance = undefined;
+      checkbox.checked = false;
+    });
+  }
 
   (Object.keys(addons) as AddonType[]).forEach(name => {
     const addon = addons[name];
     const checkbox = document.createElement('input') as HTMLInputElement;
     checkbox.type = 'checkbox';
     checkbox.checked = !!addon.instance;
+    addonCheckboxes.set(name, checkbox);
     if (!addon.canChange) {
       checkbox.disabled = true;
     }
@@ -499,12 +519,24 @@ function initAddons(term: Terminal): void {
         return;
       }
       if (checkbox.checked) {
+        if (name === 'webgl' && addons.webgpu.instance) {
+          addons.webgpu.instance.dispose();
+          addons.webgpu.instance = undefined;
+          addonCheckboxes.get('webgpu')!.checked = false;
+        } else if (name === 'webgpu' && addons.webgl.instance) {
+          preDisposeWebgl();
+          addons.webgl.instance.dispose();
+          addons.webgl.instance = undefined;
+          addonCheckboxes.get('webgl')!.checked = false;
+        }
         // HACK: Manually remove addons that cannot be changes
         addon.instance = new (addon as IDemoAddon<Exclude<AddonType, 'attach'>>).ctor();
         try {
           term.loadAddon(addon.instance);
           if (name === 'webgl') {
             postInitWebgl();
+          } else if (name === 'webgpu') {
+            monitorWebgpu(checkbox);
           } else if (name === 'unicode11') {
             term.unicode.activeVersion = '11';
           } else if (name === 'unicodeGraphemes') {
@@ -556,6 +588,12 @@ function initAddons(term: Terminal): void {
           addons.webgl.instance = new addons.webgl.ctor({ customGlyphs: customGlyphsCheckbox?.checked ?? true });
           term.loadAddon(addons.webgl.instance);
           postInitWebgl();
+        }
+        if (addons.webgpu.instance) {
+          addons.webgpu.instance.dispose();
+          addons.webgpu.instance = new addons.webgpu.ctor();
+          term.loadAddon(addons.webgpu.instance);
+          monitorWebgpu(addonCheckboxes.get('webgpu')!);
         }
       }
     });

@@ -72,7 +72,10 @@ jobs:
           ./addons/addon-web-fonts/out-*/* \
           ./addons/addon-webgl/lib/* \
           ./addons/addon-webgl/out/* \
-          ./addons/addon-webgl/out-*st/*
+          ./addons/addon-webgl/out-*st/* \
+          ./addons/addon-webgpu/lib/* \
+          ./addons/addon-webgpu/out/* \
+          ./addons/addon-webgpu/out-*/*
     - name: Upload artifacts
       uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
       with:
@@ -237,6 +240,9 @@ jobs:
       run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-web-links
     - name: Integration tests (addon-webgl)
       run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-webgl
+    - name: Integration tests (addon-webgpu)
+      if: matrix.browser == 'chromium'
+      run: npm run test-integration-${{ matrix.browser }} -- --workers=50% --forbid-only --suite=addon-webgpu
 
   release-dry-run:
     needs: build
