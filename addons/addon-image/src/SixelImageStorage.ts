@@ -29,7 +29,24 @@ export class SixelImageStorage {
    */
   public addImage(img: HTMLCanvasElement | ImageBitmap): void {
     this._addImageOpts.scrolling = this._opts.sixelScrolling;
-    this._storage.addImage(img, this._addImageOpts);
+    this._storage.addImage(this._toDevicePixels(img), this._addImageOpts);
+  }
+
+  /**
+   * Scale a decoded sixel (native pixels == CSS pixels) up to device pixels so
+   * it keeps its CSS footprint on HiDPI displays, where the image layer renders
+   * in device pixels (see ImageRenderer.cellSize). Sixel carries no resolution
+   * beyond its own pixels, so this only preserves size, it cannot add detail.
+   */
+  private _toDevicePixels(img: HTMLCanvasElement | ImageBitmap): HTMLCanvasElement | ImageBitmap {
+    const dpr = this._renderer.dpr;
+    if (dpr === 1) return img;
+    const canvas = ImageRenderer.createCanvas(
+      undefined, Math.ceil(img.width * dpr), Math.ceil(img.height * dpr));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return img;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    return canvas;
   }
 
   /**
