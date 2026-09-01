@@ -96,14 +96,49 @@ export interface IAddImageOpts {
   cursorPos: CursorPos;
 }
 
+export interface IDrawable {
+  native: ImageBitmap | VideoFrame | HTMLCanvasElement;
+  width: number;
+  height: number;
+  close(): void;
+  readonly bytes: number;
+}
+
+export type ImageType = 'unsupported'
+  | 'image/png'
+  | 'image/jpeg'
+  | 'image/gif'
+  | 'image/qoi'
+  | 'image/webp'
+  | 'image/avif'
+  // sixel
+  | 'image/sixel'
+  // rgb|a blobs for kitty
+  | 'image/rgb'
+  | 'image/rgba';
+
+export interface IMetrics {
+  mime: ImageType;
+  width: number;
+  height: number;
+}
+
 export interface IImageSpec {
-  orig: HTMLCanvasElement | ImageBitmap | undefined;
-  origCellSize: ICellSize;
-  actual: HTMLCanvasElement | ImageBitmap | undefined;
-  actualCellSize: ICellSize;
+  /** drawable for screen rendering */
+  src: IDrawable;
+  /** image bytes as blob */
+  data: Blob | undefined;
+  /** metrics about image like mime and dimensions */
+  metrics: IMetrics;
+  /** cell size at time of insert */
+  cellSize: ICellSize;
+  /** eviction marker */
   marker: IMarker | undefined;
+  /** used tiles as eviction hint */
   tileCount: number;
+  /** buffer it was placed on */
   bufferType: 'alternate' | 'normal';
+  /** layer it was placed on */
   layer: ImageLayer;
   zIndex: number;
 }

@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IAddImageOpts } from './Types';
+import { IAddImageOpts, IDrawable, IMetrics } from './Types';
 import { ImageStorage } from './ImageStorage';
 
 /**
@@ -22,7 +22,7 @@ export class IIPImageStorage {
    * Add an IIP image to storage.
    * Always uses scrolling mode — cursor advances past the image.
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap): void {
-    this._storage.addImage(img, this._addImageOpts);
+  public addImage(src: IDrawable, data: Blob | undefined, metrics: IMetrics): void {
+    this._storage.addImage(src, data, metrics, this._addImageOpts);
   }
 }

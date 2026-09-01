@@ -3,20 +3,14 @@
  * @license MIT
  */
 
-import { toRGBA8888 } from 'sixel/lib/Colors';
 import { IDisposable } from '@xterm/xterm';
-import { ICellSize, ImageLayer, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
+import type { ICellSize, ImageLayer, ITerminalExt, IImageSpec, IRenderDimensions, IRenderService } from './Types';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { createCanvas } from './Primitives';
 
-const enum Constants {
-  PLACEHOLDER_LENGTH = 4096,
-  PLACEHOLDER_HEIGHT = 24
-}
 
 /**
  * ImageRenderer - terminal frontend extension:
- * - provide primitives for canvas, ImageData, Bitmap (static)
  * - add canvas layer to DOM (browser only for now)
  * - draw image tiles onRender
  */
@@ -25,11 +19,14 @@ export class ImageRenderer extends Disposable implements IDisposable {
   public get canvas(): HTMLCanvasElement | undefined { return this._layers.get('top')?.canvas; }
   private _layers = new Map<ImageLayer, CanvasRenderingContext2D>();
   private _placeholder: HTMLCanvasElement | undefined;
-  private _placeholderBitmap: ImageBitmap | undefined;
   private _optionsRefresh = this._register(new MutableDisposable());
   private _oldOpen: ((parent: HTMLElement) => void) | undefined;
   private _renderService: IRenderService | undefined;
   private _oldSetRenderer: ((renderer: any) => void) | undefined;
+
+  // some local variables for faster access
+  private _dimensions: IRenderDimensions | undefined;
+  private _cellSize: ICellSize | undefined;
 
   constructor(private _terminal: ITerminalExt) {
     super();
@@ -61,8 +58,6 @@ export class ImageRenderer extends Disposable implements IDisposable {
       }
       this._renderService = undefined;
       this._layers.clear();
-      this._placeholderBitmap?.close();
-      this._placeholderBitmap = undefined;
       this._placeholder = undefined;
     }));
   }
@@ -71,15 +66,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
    * Enable the placeholder.
    */
   public showPlaceholder(value: boolean): void {
-    if (value) {
-      if (!this._placeholder && this.cellSize.height !== -1) {
-        this._createPlaceHolder(Math.max(this.cellSize.height + 1, Constants.PLACEHOLDER_HEIGHT));
-      }
-    } else {
-      this._placeholderBitmap?.close();
-      this._placeholderBitmap = undefined;
-      this._placeholder = undefined;
-    }
+    this._placeholder = value ? this._createPlaceHolder() : undefined;
     this._renderService?.refreshRows(0, this._terminal.rows);
   }
 
@@ -92,22 +79,27 @@ export class ImageRenderer extends Disposable implements IDisposable {
   }
 
   /**
-   * Current cell size (float).
+   * Current cell size.
    */
-  public get cellSize(): ICellSize {
-    return {
-      width: this.dimensions?.css.cell.width || -1,
-      height: this.dimensions?.css.cell.height || -1
-    };
+  public getCellSize(dimensions?: IRenderDimensions): ICellSize | undefined {
+    dimensions ??= this._terminal.dimensions;
+    if (dimensions) {
+      return {
+        width: dimensions.device.canvas.width / this._terminal.cols,
+        height: dimensions.device.canvas.height / this._terminal.rows,
+      };
+    }
   }
 
   /**
    * Clear a region of the image layer canvas.
    */
   public clearLines(start: number, end: number, layer?: ImageLayer): void {
-    const y = start * (this.dimensions?.css.cell.height || 0);
-    const w = this.dimensions?.css.canvas.width || 0;
-    const h = (end + 1 - start) * (this.dimensions?.css.cell.height || 0);
+    const deviceGrid = this._cellSize;
+    if (!deviceGrid || !this._dimensions) return;
+    const y = Math.floor(start * deviceGrid.height);
+    const w = this._dimensions.device.canvas.width;
+    const h = Math.ceil((end + 1 - start) * deviceGrid.height);
     if (!layer || layer === 'top') {
       this._layers.get('top')?.clearRect(0, y, w, h);
     }
@@ -135,67 +127,36 @@ export class ImageRenderer extends Disposable implements IDisposable {
    */
   public draw(imgSpec: IImageSpec, tileId: number, col: number, row: number, count: number = 1): void {
     const ctx = this._layers.get(imgSpec.layer);
-    if (!ctx) {
-      return;
-    }
-    const { width, height } = this.cellSize;
+    const initialGrid = imgSpec.cellSize;
+    const deviceGrid = this._cellSize;
 
-    // Don't try to draw anything, if we cannot get valid renderer metrics.
-    if (width === -1 || height === -1) {
+    if (!ctx || !imgSpec.src.native || !deviceGrid) {
       return;
     }
 
-    this._rescaleImage(imgSpec, width, height);
-    const img = imgSpec.actual!;
-    const cols = Math.ceil(img.width / width);
+    const img = imgSpec.src;
+    const cols = Math.ceil(img.width / initialGrid.width);
 
-    const sx = (tileId % cols) * width;
-    const sy = Math.floor(tileId / cols) * height;
-    const dx = col * width;
-    const dy = row * height;
+    const sx = (tileId % cols) * initialGrid.width;
+    const sy = Math.floor(tileId / cols) * initialGrid.height;
+    const dx = col * deviceGrid.width;
+    const dy = row * deviceGrid.height;
 
-    // safari bug: never access image source out of bounds
-    const finalWidth = count * width + sx > img.width ? img.width - sx : count * width;
-    const finalHeight = sy + height > img.height ? img.height - sy : height;
+    // safari bug: never access image source out of bounds, thus we clamp its dimensions
+    const sWidth = Math.min(count * initialGrid.width, img.width - sx);
+    const sHeight = Math.min(initialGrid.height, img.height - sy);
+    const dWidth = sWidth / initialGrid.width * deviceGrid.width;
+    const dHeight = sHeight / initialGrid.height * deviceGrid.height;
 
     // Floor all pixel offsets to get stable tile mapping without any overflows.
     // Note: For not pixel perfect aligned cells like in the DOM renderer
     // this will move a tile slightly to the top/left (subpixel range, thus ignore it).
     // FIX #34: avoid striping on displays with pixelDeviceRatio != 1 by ceiling height and width
     ctx.drawImage(
-      img,
-      Math.floor(sx), Math.floor(sy), Math.ceil(finalWidth), Math.ceil(finalHeight),
-      Math.floor(dx), Math.floor(dy), Math.ceil(finalWidth), Math.ceil(finalHeight)
+      img.native,
+      Math.floor(sx), Math.floor(sy), Math.ceil(sWidth), Math.ceil(sHeight),
+      Math.floor(dx), Math.floor(dy), Math.ceil(dWidth), Math.ceil(dHeight)
     );
-  }
-
-  /**
-   * Extract a single tile from an image.
-   */
-  public extractTile(imgSpec: IImageSpec, tileId: number): HTMLCanvasElement | undefined {
-    const { width, height } = this.cellSize;
-    // Don't try to draw anything, if we cannot get valid renderer metrics.
-    if (width === -1 || height === -1) {
-      return;
-    }
-    this._rescaleImage(imgSpec, width, height);
-    const img = imgSpec.actual!;
-    const cols = Math.ceil(img.width / width);
-    const sx = (tileId % cols) * width;
-    const sy = Math.floor(tileId / cols) * height;
-    const finalWidth = width + sx > img.width ? img.width - sx : width;
-    const finalHeight = sy + height > img.height ? img.height - sy : height;
-
-    const canvas = createCanvas(this.document, finalWidth, finalHeight);
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(
-        img,
-        Math.floor(sx), Math.floor(sy), Math.floor(finalWidth), Math.floor(finalHeight),
-        0, 0, Math.floor(finalWidth), Math.floor(finalHeight)
-      );
-      return canvas;
-    }
   }
 
   /**
@@ -203,74 +164,58 @@ export class ImageRenderer extends Disposable implements IDisposable {
    */
   public drawPlaceholder(col: number, row: number, count: number = 1): void {
     const ctx = this._layers.get('top');
-    if (ctx) {
-      const { width, height } = this.cellSize;
-
-      // Don't try to draw anything, if we cannot get valid renderer metrics.
-      if (width === -1 || height === -1) {
-        return;
-      }
-
-      if (!this._placeholder) {
-        this._createPlaceHolder(Math.max(height + 1, Constants.PLACEHOLDER_HEIGHT));
-      } else if (height >= this._placeholder!.height) {
-        this._createPlaceHolder(height + 1);
-      }
-      if (!this._placeholder) return;
-      ctx.drawImage(
-        this._placeholderBitmap ?? this._placeholder!,
-        col * width,
-        (row * height) % 2 ? 0 : 1,  // needs %2 offset correction
-        width * count,
-        height,
-        col * width,
-        row * height,
-        width * count,
-        height
-      );
+    const deviceGrid = this._cellSize;
+    if (!ctx || !deviceGrid) {
+      return;
     }
+    this._placeholder ??= this._createPlaceHolder();
+    if (!this._placeholder) return;
+    ctx.drawImage(
+      this._placeholder,
+      0, 0, 1, 1,
+      col * deviceGrid.width,
+      row * deviceGrid.height,
+      count * deviceGrid.width,
+      deviceGrid.height
+    );
   }
 
   /**
    * Rescale image layer canvas if needed.
    * Checked once from `ImageStorage.render`.
+   * NOTE: This method updates dimensions on instance properties
+   * for faster access during draw and clear calls.
+   * So make sure to always call this before doing any draws.
    */
-  public rescaleCanvas(): void {
-    const w = this.dimensions?.css.canvas.width || 0;
-    const h = this.dimensions?.css.canvas.height || 0;
-    for (const ctx of this._layers.values()) {
-      if (ctx.canvas.width !== w || ctx.canvas.height !== h) {
-        ctx.canvas.width = w;
-        ctx.canvas.height = h;
+  public rescaleCanvas(force: boolean = false): void {
+    const dimensions = this._terminal.dimensions;
+    if (dimensions) {
+      const cssW = dimensions.css.canvas.width;
+      const cssH = dimensions.css.canvas.height;
+      const devW = dimensions.device.canvas.width;
+      const devH = dimensions.device.canvas.height;
+      let recalc = force;
+      for (const ctx of this._layers.values()) {
+        if (ctx.canvas.width !== devW
+          || ctx.canvas.height !== devH
+          || ctx.canvas.style.width !== `${cssW}px`
+          || ctx.canvas.style.height !== `${cssH}px`
+        ) {
+          ctx.canvas.width = devW;
+          ctx.canvas.height = devH;
+          ctx.canvas.style.width = `${cssW}px`;
+          ctx.canvas.style.height = `${cssH}px`;
+          recalc = true;
+        }
       }
-    }
-  }
-
-  /**
-   * Rescale image in storage if needed.
-   */
-  private _rescaleImage(spec: IImageSpec, currentWidth: number, currentHeight: number): void {
-    if (currentWidth === spec.actualCellSize.width && currentHeight === spec.actualCellSize.height) {
-      return;
-    }
-    const { width: originalWidth, height: originalHeight } = spec.origCellSize;
-    if (currentWidth === originalWidth && currentHeight === originalHeight) {
-      spec.actual = spec.orig;
-      spec.actualCellSize.width = originalWidth;
-      spec.actualCellSize.height = originalHeight;
-      return;
-    }
-    const canvas = createCanvas(
-      this.document,
-      Math.ceil(spec.orig!.width * currentWidth / originalWidth),
-      Math.ceil(spec.orig!.height * currentHeight / originalHeight)
-    );
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      ctx.drawImage(spec.orig!, 0, 0, canvas.width, canvas.height);
-      spec.actual = canvas;
-      spec.actualCellSize.width = currentWidth;
-      spec.actualCellSize.height = currentHeight;
+      if (recalc) {
+        this._dimensions = dimensions;
+        this._cellSize = this.getCellSize(dimensions);
+      }
+    } else {
+      // we were not able to get render dimensions:
+      // set cellsize to undefined so we don't try to draw anything
+      this._cellSize = this.getCellSize();
     }
   }
 
@@ -299,8 +244,10 @@ export class ImageRenderer extends Disposable implements IDisposable {
     }
     const canvas = createCanvas(
       this.document,
+      this.dimensions?.device.canvas.width || 0,
+      this.dimensions?.device.canvas.height || 0,
       this.dimensions?.css.canvas.width || 0,
-      this.dimensions?.css.canvas.height || 0
+      this.dimensions?.css.canvas.height || 0,
     );
     canvas.classList.add(`xterm-image-layer-${layer}`);
     const screenElement = this._terminal._core.screenElement;
@@ -328,6 +275,8 @@ export class ImageRenderer extends Disposable implements IDisposable {
       return;
     }
     this._layers.set(layer, ctx);
+    // force rescaling to update stored cellSize (maybe not be populated yet)
+    this.rescaleCanvas(true);
     this.clearAll(layer);
   }
 
@@ -343,41 +292,17 @@ export class ImageRenderer extends Disposable implements IDisposable {
     return this._layers.has(layer);
   }
 
-  private _createPlaceHolder(height: number = Constants.PLACEHOLDER_HEIGHT): void {
-    this._placeholderBitmap?.close();
-    this._placeholderBitmap = undefined;
-
-    // create blueprint to fill placeholder with
-    const bWidth = 32;  // must be 2^n
-    const blueprint = createCanvas(this.document, bWidth, height);
-    const ctx = blueprint.getContext('2d', { alpha: false });
+  /**
+   * Create a semi-transparent gray 1x1 placeholder
+   */
+  private _createPlaceHolder(): HTMLCanvasElement | undefined {
+    const imgData = new ImageData(1, 1);
+    new Uint32Array(imgData.data.buffer).fill(128 << 24 | 128 << 16 | 128 << 8 | 128);
+    const canvas = createCanvas(this.document, 1, 1);
+    const ctx = canvas.getContext('2d', { alpha: true });
     if (!ctx) return;
-    const imgData = new ImageData(bWidth, height);
-    const d32 = new Uint32Array(imgData.data.buffer);
-    const black = toRGBA8888(0, 0, 0);
-    const white = toRGBA8888(255, 255, 255);
-    d32.fill(black);
-    for (let y = 0; y < height; ++y) {
-      const shift = y % 2;
-      const offset = y * bWidth;
-      for (let x = 0; x < bWidth; x += 2) {
-        d32[offset + x + shift] = white;
-      }
-    }
     ctx.putImageData(imgData, 0, 0);
-
-    // create placeholder line, width aligned to blueprint width
-    const width = (screen.width + bWidth - 1) & ~(bWidth - 1) || Constants.PLACEHOLDER_LENGTH;
-    this._placeholder = createCanvas(this.document, width, height);
-    const ctx2 = this._placeholder.getContext('2d', { alpha: false });
-    if (!ctx2) {
-      this._placeholder = undefined;
-      return;
-    }
-    for (let i = 0; i < width; i += bWidth) {
-      ctx2.drawImage(blueprint, i, 0);
-    }
-    createImageBitmap(this._placeholder).then(bitmap => this._placeholderBitmap = bitmap);
+    return canvas;
   }
 
   public get document(): Document | undefined {

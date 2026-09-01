@@ -9,8 +9,8 @@ import { CELL_SIZE_DEFAULT } from './ImageStorage';
 import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import QoiDecoder from 'xterm-wasm-parts/lib/qoi/QoiDecoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState, SequenceType } from './IIPHeaderParser';
-import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
-import { createCanvas } from './Primitives';
+import { imageType, UNSUPPORTED_TYPE } from './Metrics';
+import { Drawable } from './Primitives';
 
 // Local const enum mirror - esbuild can't inline const enums from external packages
 const enum DecoderConst {
@@ -178,30 +178,23 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       return true;
     }
 
-    let blob: Blob | ImageData;
+    let bmSrc: Blob | ImageData;
+    let imgBlob: Blob;
     if (metrics.mime === 'image/qoi') {
       const data = this._qoiDec.decode(this._dec.data8);
-      blob = new ImageData(
+      bmSrc = new ImageData(
         new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
         this._qoiDec.width,
         this._qoiDec.height
       );
       this._qoiDec.release();
-      if (w === this._qoiDec.width && h === this._qoiDec.height) {
-        // use fast-path if we don't need to rescale
-        this._dec.release();
-        const canvas = createCanvas(undefined, this._qoiDec.width, this._qoiDec.height);
-        canvas.getContext('2d')?.putImageData(blob, 0, 0);
-        this._storage.addImage(canvas);
-        return true;
-      }
     } else {
-      blob = new Blob([this._dec.data8], { type: metrics.mime });
+      imgBlob = bmSrc = new Blob([this._dec.data8], { type: metrics.mime });
     }
     this._dec.release();
-    return createImageBitmap(blob, { resizeWidth: w, resizeHeight: h })
+    return createImageBitmap(bmSrc, { resizeWidth: w, resizeHeight: h })
       .then(bm => {
-        this._storage.addImage(bm);
+        this._storage.addImage(new Drawable(bm), imgBlob, metrics);
         return true;
       })
       .catch(e => {

@@ -6,7 +6,9 @@
 import { IDisposable } from '@xterm/xterm';
 import { ImageRenderer } from './ImageRenderer';
 import type {
-  ITerminalExt, IImageAddonOptions, IImageSpec, ICellSize, IAddImageOpts
+  ITerminalExt, IImageAddonOptions, IImageSpec, ICellSize, IAddImageOpts,
+  IDrawable,
+  IMetrics
 } from './Types';
 import type { IBufferLine } from 'common/buffer/Types';
 import { CellData } from 'common/buffer/CellData';
@@ -44,7 +46,7 @@ export class ImageStorage implements IDisposable {
   // whether render should do a full clear
   private _needsFullClear = false;
   // hard limit of stored pixels (fallback limit of 10 MB)
-  private _pixelLimit: number = 2500000;
+  private _byteLimit: number = 10000000;
   private _workCell: CellData = new CellData();
 
   private _viewportMetrics: { cols: number, rows: number };
@@ -84,43 +86,54 @@ export class ImageStorage implements IDisposable {
     this._renderer.clearAll();
   }
 
+  /**
+   * FIXME: below we need to introduce separation of:
+   * - RAM usage
+   * - VRAM usage
+   * - Blob unsage
+   */
+
+
   public getLimit(): number {
-    return this._pixelLimit * 4 / 1000000;
+    return this._byteLimit / 1000000;
   }
 
   public setLimit(value: number): void {
     if (value < 0.5 || value > 1000) {
-      throw RangeError('invalid storageLimit, should be at least 0.5 MB and not exceed 1G');
+      throw RangeError('invalid storageLimit, should be at least 0.5 MB and not exceed 1GB');
     }
-    this._pixelLimit = (value / 4 * 1000000) >>> 0;
+    this._byteLimit = (value * 1000000) >>> 0;
     this._evictOldest(0);
   }
 
   public getUsage(): number {
-    return this._getStoredPixels() * 4 / 1000000;
+    return this._getVRAMUsage() / 1000000;
   }
 
-  private _getStoredPixels(): number {
-    let storedPixels = 0;
+  private _getVRAMUsage(): number {
+    let bytes = 0;
     for (const spec of this._images.values()) {
-      if (spec.orig) {
-        storedPixels += spec.orig.width * spec.orig.height;
-        if (spec.actual && spec.actual !== spec.orig) {
-          storedPixels += spec.actual.width * spec.actual.height;
-        }
+      bytes += spec.src.bytes;
+    }
+    return bytes;
+  }
+
+  public getBlobUsage(): number {
+    let size = 0;
+    for (const spec of this._images.values()) {
+      if (spec.data instanceof Blob) {
+        size += spec.data.size;
       }
     }
-    return storedPixels;
+    return size;
   }
 
   private _delImg(id: number): void {
     const spec = this._images.get(id);
     if (!spec) return;
     this._images.delete(id);
-    // FIXME: really ugly workaround to get bitmaps deallocated :(
-    if (window.ImageBitmap && spec.orig instanceof ImageBitmap) {
-      spec.orig.close();
-    }
+    spec.src.close();
+    spec.data = undefined;
     this.onImageDeleted?.(id);
   }
 
@@ -157,8 +170,10 @@ export class ImageStorage implements IDisposable {
   }
 
   /**
-   * Method to add an image to the storage.
-   * @param img - The image to add (canvas or bitmap).
+   * Method to add an drawable to the storage.
+   * @param src - The drawable to add.
+   * @param data - Blob or Uint8Array of the original image data.
+   * @param metrics - IMetrics of the original image.
    * @param opts - Options for addImage:
    *   - scrolling:  When true, cursor advances with the image.
    *                 When false, image is placed at ORIGIN and cursor does not move.
@@ -167,17 +182,14 @@ export class ImageStorage implements IDisposable {
    *   - cursorPos:  'vt340' for bottom-left, 'iip' for bottom.right.
    * @returns The internal image ID assigned to the stored image.
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap, opts: IAddImageOpts): number {
+  public addImage(src: IDrawable, data: Blob | undefined, metrics: IMetrics, opts: IAddImageOpts): number {
     // never allow storage to exceed memory limit
-    this._evictOldest(img.width * img.height);
+    this._evictOldest(src.bytes);
 
     // calc rows x cols needed to display the image
-    let cellSize = this._renderer.cellSize;
-    if (cellSize.width === -1 || cellSize.height === -1) {
-      cellSize = CELL_SIZE_DEFAULT;
-    }
-    const cols = Math.ceil(img.width / cellSize.width);
-    const rows = Math.ceil(img.height / cellSize.height);
+    const cellSize = this._renderer.getCellSize() ?? CELL_SIZE_DEFAULT;
+    const cols = Math.ceil(src.width / cellSize.width);
+    const rows = Math.ceil(src.height / cellSize.height);
 
     const imageId = ++this._lastId;
 
@@ -254,10 +266,10 @@ export class ImageStorage implements IDisposable {
 
     // create storage entry
     const imgSpec: IImageSpec = {
-      orig: img,
-      origCellSize: cellSize,
-      actual: img,
-      actualCellSize: { ...cellSize },  // clone needed, since later modified
+      src,
+      data,
+      metrics,
+      cellSize,
       marker: endMarker || undefined,
       tileCount,
       bufferType: this._terminal.buffer.active.type,
@@ -377,9 +389,7 @@ export class ImageStorage implements IDisposable {
             }
             col--;
             if (imgSpec) {
-              if (imgSpec.actual) {
-                drawCalls.push({ imgSpec, tileId: startTile, col: startCol, row, count });
-              }
+              drawCalls.push({ imgSpec, tileId: startTile, col: startCol, row, count });
             } else if (this._opts.showPlaceholder) {
               placeholderCalls.push({ col: startCol, row, count });
             }
@@ -434,7 +444,7 @@ export class ImageStorage implements IDisposable {
           continue;
         }
         // found an image tile at oldCol, check if it qualifies for right exapansion
-        const tilesPerRow = Math.ceil((imgSpec.actual?.width || 0) / imgSpec.actualCellSize.width);
+        const tilesPerRow = Math.ceil((imgSpec.src.width) / imgSpec.cellSize.width);
         if ((e.tileId % tilesPerRow) + 1 >= tilesPerRow) {
           continue;
         }
@@ -471,30 +481,13 @@ export class ImageStorage implements IDisposable {
     if (line) {
       const e = line.getExtended(x)?.payload;
       if (e instanceof ImageTileInfo && e.imageId && e.imageId !== -1) {
-        const orig = this._images.get(e.imageId)?.orig;
-        if (window.ImageBitmap && orig instanceof ImageBitmap) {
-          const canvas = createCanvas(window.document, orig.width, orig.height);
-          canvas.getContext('2d')?.drawImage(orig, 0, 0, orig.width, orig.height);
+        const src = this._images.get(e.imageId)?.src;
+        if (src?.native instanceof ImageBitmap || src?.native instanceof VideoFrame) {
+          const canvas = createCanvas(window.document, src.width, src.height);
+          canvas.getContext('2d')?.drawImage(src.native, 0, 0, src.width, src.height);
           return canvas;
         }
-        return orig as HTMLCanvasElement;
-      }
-    }
-  }
-
-  /**
-   * Extract active single tile at buffer position.
-   */
-  public extractTileAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
-    const buffer = this._terminal._core.buffer;
-    const line = buffer.lines.get(y);
-    if (line) {
-      const e = line.getExtended(x)?.payload;
-      if (e instanceof ImageTileInfo && e.imageId && e.imageId !== -1 && e.tileId !== -1) {
-        const spec = this._images.get(e.imageId);
-        if (spec) {
-          return this._renderer.extractTile(spec, e.tileId);
-        }
+        return src?.native;
       }
     }
   }
@@ -502,15 +495,12 @@ export class ImageStorage implements IDisposable {
   // TODO: Do we need some blob offloading tricks here to avoid early eviction?
   // also see https://stackoverflow.com/questions/28307789/is-there-any-limitation-on-javascript-max-blob-size
   private _evictOldest(room: number): number {
-    const used = this._getStoredPixels();
+    const used = this._getVRAMUsage();
     let current = used;
-    while (this._pixelLimit < current + room && this._images.size) {
+    while (this._byteLimit < current + room && this._images.size) {
       const spec = this._images.get(++this._lowestId);
-      if (spec && spec.orig) {
-        current -= spec.orig.width * spec.orig.height;
-        if (spec.actual && spec.orig !== spec.actual) {
-          current -= spec.actual.width * spec.actual.height;
-        }
+      if (spec) {
+        current -= spec.src.bytes;
         spec.marker?.dispose();
         this._delImg(this._lowestId);
       }

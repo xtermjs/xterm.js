@@ -144,6 +144,9 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
       terminal.options.windowOptions = windowOps;
     }
 
+    // apply placeholder setting
+    this._renderer.showPlaceholder(this._opts.showPlaceholder);
+
     this._disposeLater(
       this._renderer,
       this._storage,
@@ -248,10 +251,6 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
 
   public getImageAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
     return this._storage?.getImageAtBufferCell(x, y);
-  }
-
-  public extractTileAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
-    return this._storage?.extractTileAtBufferCell(x, y);
   }
 
   private _report(s: string): void {

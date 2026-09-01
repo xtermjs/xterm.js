@@ -9,7 +9,7 @@ import { toRGBA8888, BIG_ENDIAN, PALETTE_ANSI_256, PALETTE_VT340_COLOR } from 's
 import { RGBA8888 } from 'sixel/lib/Types';
 
 import { DecoderAsync, Decoder } from 'sixel/lib/Decoder';
-import { createCanvas } from './Primitives';
+import { createCanvas, Drawable } from './Primitives';
 
 // always free decoder ressources after decoding if it exceeds this limit
 const MEM_PERMA_LIMIT = 4194304; // 1024 pixels * 1024 pixels * 4 channels = 4MB
@@ -103,7 +103,8 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
     if (this._dec.memoryUsage > MEM_PERMA_LIMIT) {
       this._dec.release();
     }
-    this._storage.addImage(canvas);
+    // FIXME: store sixel data in blob
+    this._storage.addImage(new Drawable(canvas), undefined, { width, height, mime: 'image/sixel' });
     return true;
   }
 }
