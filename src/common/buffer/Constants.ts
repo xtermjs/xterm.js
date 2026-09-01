@@ -4,6 +4,7 @@
  */
 
 export const DEFAULT_COLOR = 0;
+// Only used for testing - move to TestUtils?
 export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const DEFAULT_EXT = 0;
 
@@ -74,6 +75,11 @@ export const enum Content {
 }
 
 export const enum Attributes {
+  /**
+   * Color is encoded using 26 bits. The high-order 2 bits is the
+   * color mode, which specifies how to interpret the remaining 24 bits.
+   */
+  COLOR_MASK = 0x3FFFFFF, /* CM_MASK | RGB_MASK */
   /**
    * bit 1..8     blue in RGB, color in P256 and P16
    */
