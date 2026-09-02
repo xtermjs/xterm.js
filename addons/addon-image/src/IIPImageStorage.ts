@@ -22,7 +22,9 @@ export class IIPImageStorage {
    * Add an IIP image to storage.
    * Always uses scrolling mode — cursor advances past the image.
    */
-  public addImage(src: IDrawable, data: Blob | undefined, metrics: IMetrics): void {
+  public addImage(src: IDrawable, data: Blob | undefined, metrics: IMetrics, prescaleX: number, prescaleY: number): void {
+    this._addImageOpts.prescaleX = prescaleX;
+    this._addImageOpts.prescaleY = prescaleY;
     this._storage.addImage(src, data, metrics, this._addImageOpts);
   }
 }

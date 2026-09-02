@@ -452,10 +452,10 @@ test.describe('ImageAddon', () => {
 async function getDimensions(): Promise<IDimensions> {
   const dimensions: any = await ctx.page.evaluate(`term.dimensions`);
   return {
-    cellWidth: Math.round(dimensions.css.cell.width),
-    cellHeight: Math.round(dimensions.css.cell.height),
-    width: Math.round(dimensions.css.canvas.width),
-    height: Math.round(dimensions.css.canvas.height)
+    cellWidth: Math.round(dimensions.device.cell.width),
+    cellHeight: Math.round(dimensions.device.cell.height),
+    width: Math.round(dimensions.device.canvas.width),
+    height: Math.round(dimensions.device.canvas.height)
   };
 }
 
@@ -473,9 +473,9 @@ async function getScrollbackPlusRows(): Promise<number> {
 
 async function getImageSize(id: number): Promise<[number, number]> {
   return ctx.page.evaluate<any>(`[
-    window.imageAddon._storage._images.get(${id}).src.width,
-    window.imageAddon._storage._images.get(${id}).src.height
-  ]`);
+    window.imageAddon._storage._images.get(${id}).src.width * window.imageAddon._storage._images.get(${id}).prescaleX,
+    window.imageAddon._storage._images.get(${id}).src.height * window.imageAddon._storage._images.get(${id}).prescaleY
+  ]`).then(r => r.map(Math.floor));
 }
 
 async function getImageAtBufferCell(x: number, y: number): Promise<string | undefined> {

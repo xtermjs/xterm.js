@@ -135,18 +135,26 @@ export class ImageRenderer extends Disposable implements IDisposable {
     }
 
     const img = imgSpec.src;
-    const cols = Math.ceil(img.width / initialGrid.width);
+    const cols = Math.ceil(img.width * imgSpec.prescaleX / initialGrid.width);
 
-    const sx = (tileId % cols) * initialGrid.width;
-    const sy = Math.floor(tileId / cols) * initialGrid.height;
-    const dx = col * deviceGrid.width;
-    const dy = row * deviceGrid.height;
+    const gridWidth = initialGrid.width / imgSpec.prescaleX;
+    const gridHeight = initialGrid.height / imgSpec.prescaleY;
+
+    // crops are initialGrid px
+    const sx = (tileId % cols) * gridWidth + imgSpec.precropX;
+    const sy = Math.floor(tileId / cols) * gridHeight + imgSpec.precropY;
+    const dx = Math.floor(col * deviceGrid.width + imgSpec.offsetX);
+    const dy = Math.floor(row * deviceGrid.height + imgSpec.offsetY);
 
     // safari bug: never access image source out of bounds, thus we clamp its dimensions
-    const sWidth = Math.min(count * initialGrid.width, img.width - sx);
-    const sHeight = Math.min(initialGrid.height, img.height - sy);
-    const dWidth = sWidth / initialGrid.width * deviceGrid.width;
-    const dHeight = sHeight / initialGrid.height * deviceGrid.height;
+    const sWidth = Math.min(count * gridWidth, img.width - sx);
+    const sHeight = Math.min(gridHeight, img.height - sy);
+    const dWidth = Math.ceil(sWidth / gridWidth * deviceGrid.width * imgSpec.scaleX);
+    const dHeight = Math.ceil(sHeight / gridHeight * deviceGrid.height * imgSpec.scaleY);
+
+    if (imgSpec.blendMode === 'overwrite') {
+      ctx.clearRect(dx, dy, dWidth, dHeight);
+    }
 
     // Floor all pixel offsets to get stable tile mapping without any overflows.
     // Note: For not pixel perfect aligned cells like in the DOM renderer
@@ -155,7 +163,7 @@ export class ImageRenderer extends Disposable implements IDisposable {
     ctx.drawImage(
       img.native,
       Math.floor(sx), Math.floor(sy), Math.ceil(sWidth), Math.ceil(sHeight),
-      Math.floor(dx), Math.floor(dy), Math.ceil(dWidth), Math.ceil(dHeight)
+      dx, dy, dWidth, dHeight
     );
   }
 

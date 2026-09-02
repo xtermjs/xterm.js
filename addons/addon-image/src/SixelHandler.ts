@@ -103,7 +103,6 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
     if (this._dec.memoryUsage > MEM_PERMA_LIMIT) {
       this._dec.release();
     }
-    // FIXME: store sixel data in blob
     this._storage.addImage(new Drawable(canvas), undefined, { width, height, mime: 'image/sixel' });
     return true;
   }

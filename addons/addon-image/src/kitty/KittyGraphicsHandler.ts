@@ -574,8 +574,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         bitmap = cropped;
       }
 
-      const cw = this._renderer.dimensions?.css.cell.width || CELL_SIZE_DEFAULT.width;
-      const ch = this._renderer.dimensions?.css.cell.height || CELL_SIZE_DEFAULT.height;
+      const cw = this._renderer.dimensions?.device.cell.width || CELL_SIZE_DEFAULT.width;
+      const ch = this._renderer.dimensions?.device.cell.height || CELL_SIZE_DEFAULT.height;
 
       // Per spec: c/r default to image's natural cell dimensions.
       // If only one of c/r is specified, compute the other from image aspect ratio.

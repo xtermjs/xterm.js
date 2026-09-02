@@ -94,6 +94,8 @@ export interface IAddImageOpts {
   layer: ImageLayer;
   zIndex: number;
   cursorPos: CursorPos;
+  prescaleX?: number;
+  prescaleY?: number;
 }
 
 export interface IDrawable {
@@ -124,12 +126,15 @@ export interface IMetrics {
 }
 
 export interface IImageSpec {
+  /** entries for a later IImageSource type */
   /** drawable for screen rendering */
   src: IDrawable;
   /** image bytes as blob */
   data: Blob | undefined;
   /** metrics about image like mime and dimensions */
   metrics: IMetrics;
+
+  /** entries for a later IPlacement type */
   /** cell size at time of insert */
   cellSize: ICellSize;
   /** eviction marker */
@@ -141,4 +146,18 @@ export interface IImageSpec {
   /** layer it was placed on */
   layer: ImageLayer;
   zIndex: number;
+  /** scaling factor on source dimensions, default = 1.0 */
+  prescaleX: number;
+  prescaleY: number;
+  /** crop offset into source, default = 0 (currently unused) */
+  precropX: number;
+  precropY: number;
+  /** output scaling, default = 1.0 (currently unused) */
+  scaleX: number;
+  scaleY: number;
+  /** output offset, default = 0 (currently unused) */
+  offsetX: number;
+  offsetY: number;
+  /** compositing mode on output, default = 'alpha' (currently unused) */
+  blendMode: 'overwrite' | 'alpha';
 }

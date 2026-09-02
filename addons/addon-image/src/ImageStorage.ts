@@ -187,9 +187,11 @@ export class ImageStorage implements IDisposable {
     this._evictOldest(src.bytes);
 
     // calc rows x cols needed to display the image
+    const prescaleX = opts.prescaleX ?? 1.0;
+    const prescaleY = opts.prescaleY ?? 1.0;
     const cellSize = this._renderer.getCellSize() ?? CELL_SIZE_DEFAULT;
-    const cols = Math.ceil(src.width / cellSize.width);
-    const rows = Math.ceil(src.height / cellSize.height);
+    const cols = Math.ceil(src.width * prescaleX / cellSize.width);
+    const rows = Math.ceil(src.height * prescaleY / cellSize.height);
 
     const imageId = ++this._lastId;
 
@@ -274,7 +276,16 @@ export class ImageStorage implements IDisposable {
       tileCount,
       bufferType: this._terminal.buffer.active.type,
       layer: opts.layer,
-      zIndex: opts.zIndex
+      zIndex: opts.zIndex,
+      prescaleX,
+      prescaleY,
+      precropX: 0,
+      precropY: 0,
+      scaleX: 1.0,
+      scaleY: 1.0,
+      offsetX: 0,
+      offsetY: 0,
+      blendMode: 'alpha'
     };
 
     // finally add the image

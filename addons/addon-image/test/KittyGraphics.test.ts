@@ -1283,7 +1283,7 @@ test.describe('Kitty Graphics Protocol', () => {
 
       const cursor = await getCursor();
       const cellDims: number[] = await ctx.page.evaluate(() => {
-        const d = (window as any).term._core._renderService.dimensions.css.cell;
+        const d = (window as any).term._core._renderService.dimensions.device.cell;
         return [d.width, d.height];
       });
       const expectedR = Math.ceil((100 / 200) * 10 * cellDims[0] / cellDims[1]);
@@ -1301,7 +1301,7 @@ test.describe('Kitty Graphics Protocol', () => {
 
       const cursor = await getCursor();
       const cellDims: number[] = await ctx.page.evaluate(() => {
-        const d = (window as any).term._core._renderService.dimensions.css.cell;
+        const d = (window as any).term._core._renderService.dimensions.device.cell;
         return [d.width, d.height];
       });
       const expectedC = Math.ceil((200 / 100) * 5 * cellDims[1] / cellDims[0]);
@@ -2236,10 +2236,10 @@ test.describe('Kitty Graphics Protocol', () => {
 async function getDimensions(): Promise<IDimensions> {
   const dimensions: any = await ctx.page.evaluate(`term.dimensions`);
   return {
-    cellWidth: Math.round(dimensions.css.cell.width),
-    cellHeight: Math.round(dimensions.css.cell.height),
-    width: Math.round(dimensions.css.canvas.width),
-    height: Math.round(dimensions.css.canvas.height)
+    cellWidth: Math.round(dimensions.device.cell.width),
+    cellHeight: Math.round(dimensions.device.cell.height),
+    width: Math.round(dimensions.device.canvas.width),
+    height: Math.round(dimensions.device.canvas.height)
   };
 }
 
