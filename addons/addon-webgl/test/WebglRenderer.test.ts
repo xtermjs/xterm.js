@@ -40,4 +40,17 @@ test.describe('WebGL Renderer Integration Tests', async () => {
       } catch (e) {}
     `);
   });
+
+  test('disposes when the terminal core has no store', async () => {
+    await ctx.page.evaluate(() => {
+      const core = (window.term as any)._core;
+      const store = core._store;
+      core._store = undefined;
+      try {
+        window.addon!.dispose();
+      } finally {
+        core._store = store;
+      }
+    });
+  });
 });
