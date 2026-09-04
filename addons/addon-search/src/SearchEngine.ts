@@ -250,23 +250,21 @@ export class SearchEngine {
    * @returns The search result if it was found.
    */
   private _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
-    const row = searchPosition.startRow;
-    const col = searchPosition.startCol;
-
-    // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
-    const firstLine = this._terminal.buffer.active.getLine(row);
-    if (firstLine?.isWrapped) {
+    // Rewind to the first (unwrapped) row of the wrapped line, accumulating the column
+    // offset as we go. This was previously done by self-recursion (one frame per wrapped
+    // row), which overflowed the call stack on a single very long wrapped line; the
+    // iterative loop below is equivalent but cannot grow the stack.
+    while (this._terminal.buffer.active.getLine(searchPosition.startRow)?.isWrapped) {
       if (isReverseSearch) {
         searchPosition.startCol += this._terminal.cols;
         return;
       }
-
-      // This will iterate until we find the line start.
-      // When we find it, we will search using the calculated start column.
       searchPosition.startRow--;
       searchPosition.startCol += this._terminal.cols;
-      return this._findInLine(term, searchPosition, searchOptions);
     }
+
+    const row = searchPosition.startRow;
+    const col = searchPosition.startCol;
     let cache = this._lineCache.getLineFromCache(row);
     if (!cache) {
       cache = this._lineCache.translateBufferLineToStringWithWrap(row, true);
