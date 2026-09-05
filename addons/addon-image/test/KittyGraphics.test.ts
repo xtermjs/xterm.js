@@ -123,7 +123,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(seq);
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
-      deepStrictEqual(await getOrigSize(1), [1, 1]);
+      deepStrictEqual(await getImageSize(1), [1, 1]);
     });
 
     test('stores 3x1 RGB PNG with a=T', async () => {
@@ -131,7 +131,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await ctx.proxy.write(seq);
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
-      deepStrictEqual(await getOrigSize(1), [3, 1]);
+      deepStrictEqual(await getImageSize(1), [3, 1]);
     });
 
     test('transmit only (a=t) does not display but stores in handler', async () => {
@@ -1107,7 +1107,7 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(200);
 
       strictEqual(await getImageStorageLength(), 1);
-      deepStrictEqual(await getOrigSize(1), [20, 50]);
+      deepStrictEqual(await getImageSize(1), [20, 50]);
       deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 128, 0, 255]);
     });
 
@@ -1283,7 +1283,7 @@ test.describe('Kitty Graphics Protocol', () => {
 
       const cursor = await getCursor();
       const cellDims: number[] = await ctx.page.evaluate(() => {
-        const d = (window as any).term._core._renderService.dimensions.css.cell;
+        const d = (window as any).term._core._renderService.dimensions.device.cell;
         return [d.width, d.height];
       });
       const expectedR = Math.ceil((100 / 200) * 10 * cellDims[0] / cellDims[1]);
@@ -1301,7 +1301,7 @@ test.describe('Kitty Graphics Protocol', () => {
 
       const cursor = await getCursor();
       const cellDims: number[] = await ctx.page.evaluate(() => {
-        const d = (window as any).term._core._renderService.dimensions.css.cell;
+        const d = (window as any).term._core._renderService.dimensions.device.cell;
         return [d.width, d.height];
       });
       const expectedC = Math.ceil((200 / 100) * 5 * cellDims[1] / cellDims[0]);
@@ -1535,7 +1535,7 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
         await timeout(200);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [200, 100]);
+        deepStrictEqual(await getImageSize(1), [200, 100]);
       });
 
       test('transmit only (a=t) stores 200x100 image without display', async () => {
@@ -1564,7 +1564,7 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100,i=500;${part2}\x1b\\`);
         await timeout(200);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [200, 100]);
+        deepStrictEqual(await getImageSize(1), [200, 100]);
       });
 
       test('handles 3-chunk transmission', async () => {
@@ -1580,7 +1580,7 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100,i=501;${p3}\x1b\\`);
         await timeout(200);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [200, 100]);
+        deepStrictEqual(await getImageSize(1), [200, 100]);
       });
 
       test('verifies chunked data assembles correctly', async () => {
@@ -1713,7 +1713,7 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100,x=20,y=0,w=20,h=50;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
         await timeout(200);
 
-        deepStrictEqual(await getOrigSize(1), [20, 50]);
+        deepStrictEqual(await getImageSize(1), [20, 50]);
         deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 128, 0, 255]);
         deepStrictEqual(await getPixel(0, 0, 19, 49), [255, 128, 0, 255]);
       });
@@ -1747,7 +1747,7 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100,w=0;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
         await timeout(200);
 
-        deepStrictEqual(await getOrigSize(1), [200, 100]);
+        deepStrictEqual(await getImageSize(1), [200, 100]);
         deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
         deepStrictEqual(await getPixel(0, 0, 199, 99), [255, 255, 255, 255]);
       });
@@ -1756,7 +1756,7 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100,h=0;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
         await timeout(200);
 
-        deepStrictEqual(await getOrigSize(1), [200, 100]);
+        deepStrictEqual(await getImageSize(1), [200, 100]);
         deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
         deepStrictEqual(await getPixel(0, 0, 0, 50), [255, 192, 203, 255]);
       });
@@ -1772,7 +1772,7 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=100,x=-10,y=-10;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
         await timeout(200);
 
-        deepStrictEqual(await getOrigSize(1), [200, 100]);
+        deepStrictEqual(await getImageSize(1), [200, 100]);
         deepStrictEqual(await getPixel(0, 0, 0, 0), [255, 0, 0, 255]);
       });
 
@@ -1893,28 +1893,28 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=24,s=3,v=1;${RAW_RGB_3X1}\x1b\\`);
         await timeout(100);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [3, 1]);
+        deepStrictEqual(await getImageSize(1), [3, 1]);
       });
 
       test('stores image with correct original dimensions (2x2)', async () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=24,s=2,v=2;${RAW_RGB_2X2}\x1b\\`);
         await timeout(100);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [2, 2]);
+        deepStrictEqual(await getImageSize(1), [2, 2]);
       });
 
       test('stores image with correct original dimensions (5x1)', async () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=24,s=5,v=1;${RAW_RGB_5X1}\x1b\\`);
         await timeout(100);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [5, 1]);
+        deepStrictEqual(await getImageSize(1), [5, 1]);
       });
 
       test('stores image with correct original dimensions (4x2)', async () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=24,s=4,v=2;${RAW_RGB_4X2}\x1b\\`);
         await timeout(100);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [4, 2]);
+        deepStrictEqual(await getImageSize(1), [4, 2]);
       });
     });
 
@@ -2034,21 +2034,21 @@ test.describe('Kitty Graphics Protocol', () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=32,s=3,v=1;${RAW_RGBA_3X1}\x1b\\`);
         await timeout(100);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [3, 1]);
+        deepStrictEqual(await getImageSize(1), [3, 1]);
       });
 
       test('stores image with correct original dimensions (2x2)', async () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=32,s=2,v=2;${RAW_RGBA_2X2}\x1b\\`);
         await timeout(100);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [2, 2]);
+        deepStrictEqual(await getImageSize(1), [2, 2]);
       });
 
       test('stores image with correct original dimensions (5x1)', async () => {
         await ctx.proxy.write(`\x1b_Ga=T,f=32,s=5,v=1;${RAW_RGBA_5X1}\x1b\\`);
         await timeout(100);
         strictEqual(await getImageStorageLength(), 1);
-        deepStrictEqual(await getOrigSize(1), [5, 1]);
+        deepStrictEqual(await getImageSize(1), [5, 1]);
       });
     });
 
@@ -2217,7 +2217,7 @@ test.describe('Kitty Graphics Protocol', () => {
   test.describe('text overwrite removes tiles', () => {
     test('a=T placement', async () => {
       await ctx.proxy.write(`\x1b[H\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
-      await pollFor(ctx.page, '!!window.imageAddon.extractTileAtBufferCell(5, 1)', true);
+      await pollFor(ctx.page, '!!window.imageAddon.getImageAtBufferCell(5, 1)', true);
       ok(await hasTileAtBufferCell(0, 1));
       await ctx.proxy.write('\x1b[2;6H#######');
       for (let x = 5; x < 12; x++) {
@@ -2236,10 +2236,10 @@ test.describe('Kitty Graphics Protocol', () => {
 async function getDimensions(): Promise<IDimensions> {
   const dimensions: any = await ctx.page.evaluate(`term.dimensions`);
   return {
-    cellWidth: Math.round(dimensions.css.cell.width),
-    cellHeight: Math.round(dimensions.css.cell.height),
-    width: Math.round(dimensions.css.canvas.width),
-    height: Math.round(dimensions.css.canvas.height)
+    cellWidth: Math.round(dimensions.device.cell.width),
+    cellHeight: Math.round(dimensions.device.cell.height),
+    width: Math.round(dimensions.device.canvas.width),
+    height: Math.round(dimensions.device.canvas.height)
   };
 }
 
@@ -2251,10 +2251,10 @@ async function getImageStorageLength(): Promise<number> {
   return ctx.page.evaluate('window.imageAddon._storage._images.size');
 }
 
-async function getOrigSize(id: number): Promise<[number, number]> {
+async function getImageSize(id: number): Promise<[number, number]> {
   return ctx.page.evaluate<any>(`[
-    window.imageAddon._storage._images.get(${id}).orig.width,
-    window.imageAddon._storage._images.get(${id}).orig.height
+    window.imageAddon._storage._images.get(${id}).src.width,
+    window.imageAddon._storage._images.get(${id}).src.height
   ]`);
 }
 
@@ -2279,5 +2279,5 @@ async function getPixels(col: number, row: number, x: number, y: number, w: numb
 }
 
 async function hasTileAtBufferCell(x: number, y: number): Promise<boolean> {
-  return ctx.page.evaluate(`!!window.imageAddon.extractTileAtBufferCell(${x}, ${y})`);
+  return ctx.page.evaluate(`!!window.imageAddon.getImageAtBufferCell(${x}, ${y})`);
 }

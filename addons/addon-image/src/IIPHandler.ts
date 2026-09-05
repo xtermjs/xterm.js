@@ -3,13 +3,13 @@
  * @license MIT
  */
 import { IImageAddonOptions, IOscHandler, IResetHandler, ITerminalExt } from './Types';
-import { ImageRenderer } from './ImageRenderer';
 import { IIPImageStorage } from './IIPImageStorage';
 import { CELL_SIZE_DEFAULT } from './ImageStorage';
 import Base64Decoder from 'xterm-wasm-parts/lib/base64/Base64Decoder.wasm';
 import QoiDecoder from 'xterm-wasm-parts/lib/qoi/QoiDecoder.wasm';
 import { HeaderParser, IHeaderFields, HeaderState, SequenceType } from './IIPHeaderParser';
-import { imageType, UNSUPPORTED_TYPE } from './IIPMetrics';
+import { imageType, UNSUPPORTED_TYPE } from './Metrics';
+import { Drawable } from './Primitives';
 
 // Local const enum mirror - esbuild can't inline const enums from external packages
 const enum DecoderConst {
@@ -44,7 +44,6 @@ export class IIPHandler implements IOscHandler, IResetHandler {
 
   constructor(
     private readonly _opts: IImageAddonOptions,
-    private readonly _renderer: ImageRenderer,
     private readonly _storage: IIPImageStorage,
     private readonly _coreTerminal: ITerminalExt
   ) {
@@ -118,11 +117,13 @@ export class IIPHandler implements IOscHandler, IResetHandler {
 
     if (seqType === SequenceType.REPORTCELLSIZE) {
       // OSC 1337 ; ReportCellSize=[height];[width];[scale] ST
+      // IMPORTANT: ReportCellSize uses logical points (CSS pixels)
       let w = CELL_SIZE_DEFAULT.width;
       let h = CELL_SIZE_DEFAULT.height;
-      if (this._renderer.dimensions) {
-        w = this._renderer.dimensions.css.canvas.width / this._coreTerminal.cols;
-        h = this._renderer.dimensions.css.canvas.height / this._coreTerminal.rows;
+      const dimensions = this._coreTerminal.dimensions;
+      if (dimensions) {
+        w = dimensions.css.canvas.width / this._coreTerminal.cols;
+        h = dimensions.css.canvas.height / this._coreTerminal.rows;
       }
       const scale = this._coreTerminal._core._coreBrowserService?.dpr ?? 1;
       const report = `\x1b]1337;ReportCellSize=${h.toFixed(3)};${w.toFixed(3)};${scale.toFixed(3)}\x1b\\`;
@@ -147,9 +148,6 @@ export class IIPHandler implements IOscHandler, IResetHandler {
 
     // fallthrough for SequenceType.FILE & SequenceType.FILEEND
 
-    let w = 0;
-    let h = 0;
-
     // early exit condition chain
     let cond: number | boolean;
     let metrics = UNSUPPORTED_TYPE;
@@ -157,12 +155,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       if (cond = !this._dec.end()) {
         metrics = imageType(this._dec.data8);
         if (cond = metrics.mime !== 'unsupported') {
-          w = metrics.width;
-          h = metrics.height;
-          if (cond = w && h && w * h < this._opts.pixelLimit) {
-            [w, h] = this._resize(w, h).map(Math.floor);
-            cond = w && h && w * h < this._opts.pixelLimit;
-          } else {
+          if (!(cond = metrics.width && metrics.height && metrics.width * metrics.height < this._opts.pixelLimit)) {
             console.warn(`IIP: image dimension issue ${metrics.width}x${metrics.height}`);
           }
         } else {
@@ -177,30 +170,24 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       return true;
     }
 
-    let blob: Blob | ImageData;
+    let bmSrc: Blob | ImageData;
+    let imgBlob: Blob;
     if (metrics.mime === 'image/qoi') {
       const data = this._qoiDec.decode(this._dec.data8);
-      blob = new ImageData(
+      bmSrc = new ImageData(
         new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
         this._qoiDec.width,
         this._qoiDec.height
       );
       this._qoiDec.release();
-      if (w === this._qoiDec.width && h === this._qoiDec.height) {
-        // use fast-path if we don't need to rescale
-        this._dec.release();
-        const canvas = ImageRenderer.createCanvas(undefined, this._qoiDec.width, this._qoiDec.height);
-        canvas.getContext('2d')?.putImageData(blob, 0, 0);
-        this._storage.addImage(canvas);
-        return true;
-      }
     } else {
-      blob = new Blob([this._dec.data8], { type: metrics.mime });
+      imgBlob = bmSrc = new Blob([this._dec.data8], { type: metrics.mime });
     }
     this._dec.release();
-    return createImageBitmap(blob, { resizeWidth: w, resizeHeight: h })
+    return createImageBitmap(bmSrc)
       .then(bm => {
-        this._storage.addImage(bm);
+        const [w, h] = this._resize(metrics.width, metrics.height);
+        this._storage.addImage(new Drawable(bm), imgBlob, metrics, w / metrics.width, h / metrics.height);
         return true;
       })
       .catch(e => {
@@ -210,13 +197,25 @@ export class IIPHandler implements IOscHandler, IResetHandler {
   }
 
   private _resize(w: number, h: number): [number, number] {
-    const cw = this._renderer.dimensions?.css.cell.width || CELL_SIZE_DEFAULT.width;
-    const ch = this._renderer.dimensions?.css.cell.height || CELL_SIZE_DEFAULT.height;
-    const width = this._renderer.dimensions?.css.canvas.width || cw * this._coreTerminal.cols;
-    const height = this._renderer.dimensions?.css.canvas.height || ch * this._coreTerminal.rows;
+    let cw;
+    let ch;
+    let width;
+    let height;
+    const dimensions = this._coreTerminal.dimensions;
+    if (dimensions) {
+      width = dimensions.device.canvas.width;
+      height = dimensions.device.canvas.height;
+      cw = width / this._coreTerminal.cols;
+      ch = height / this._coreTerminal.rows;
+    } else {
+      cw = CELL_SIZE_DEFAULT.width;
+      ch = CELL_SIZE_DEFAULT.height;
+      width = cw * this._coreTerminal.cols;
+      height = ch * this._coreTerminal.rows;
+    }
 
-    const rw = this._dim(this._header.width!, width, cw);
-    const rh = this._dim(this._header.height!, height, ch);
+    const rw = this._dim(this._header.width ?? '', width, cw);
+    const rh = this._dim(this._header.height ?? '', height, ch);
     if (!rw && !rh) {
       const wf = width / w;         // TODO: should this respect initial cursor offset?
       const hf = (height - ch) / h; // TODO: fix offset issues from float cell height

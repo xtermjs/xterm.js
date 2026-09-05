@@ -7,6 +7,8 @@ import { IDisposable } from '@xterm/xterm';
 import { ImageStorage } from '../ImageStorage';
 import { ImageLayer, IAddImageOpts } from '../Types';
 import { IKittyImageData } from './KittyGraphicsTypes';
+import { Drawable } from '../Primitives';
+import { UNSUPPORTED_TYPE } from '../Metrics';
 
 // Kitty-specific image storage controller.
 //
@@ -102,7 +104,8 @@ export class KittyImageStorage implements IDisposable {
     this._addImageOpts.scrolling = scrolling;
     this._addImageOpts.layer = layer;
     this._addImageOpts.zIndex = zIndex;
-    const storageId = this._storage.addImage(image, this._addImageOpts);
+    // FIXME: store image data in blob, fill metrics correctly
+    const storageId = this._storage.addImage(new Drawable(image), undefined, UNSUPPORTED_TYPE, this._addImageOpts);
     this._kittyIdToStorageId.set(kittyId, storageId);
     this._storageIdToKittyId.set(storageId, kittyId);
   }
