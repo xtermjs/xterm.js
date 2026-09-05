@@ -455,7 +455,7 @@ export class ImageStorage implements IDisposable {
           continue;
         }
         // found an image tile at oldCol, check if it qualifies for right exapansion
-        const tilesPerRow = Math.ceil((imgSpec.src.width) / imgSpec.cellSize.width);
+        const tilesPerRow = Math.ceil(imgSpec.src.width * imgSpec.prescaleX / imgSpec.cellSize.width);
         if ((e.tileId % tilesPerRow) + 1 >= tilesPerRow) {
           continue;
         }

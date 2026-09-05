@@ -148,9 +148,6 @@ export class IIPHandler implements IOscHandler, IResetHandler {
 
     // fallthrough for SequenceType.FILE & SequenceType.FILEEND
 
-    let w = 0;
-    let h = 0;
-
     // early exit condition chain
     let cond: number | boolean;
     let metrics = UNSUPPORTED_TYPE;
@@ -158,12 +155,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
       if (cond = !this._dec.end()) {
         metrics = imageType(this._dec.data8);
         if (cond = metrics.mime !== 'unsupported') {
-          w = metrics.width;
-          h = metrics.height;
-          if (cond = w && h && w * h < this._opts.pixelLimit) {
-            [w, h] = this._resize(w, h);
-            cond = w && h && w * h < this._opts.pixelLimit;
-          } else {
+          if (!(cond = metrics.width && metrics.height && metrics.width * metrics.height < this._opts.pixelLimit)) {
             console.warn(`IIP: image dimension issue ${metrics.width}x${metrics.height}`);
           }
         } else {
@@ -194,6 +186,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     this._dec.release();
     return createImageBitmap(bmSrc)
       .then(bm => {
+        const [w, h] = this._resize(metrics.width, metrics.height);
         this._storage.addImage(new Drawable(bm), imgBlob, metrics, w / metrics.width, h / metrics.height);
         return true;
       })
