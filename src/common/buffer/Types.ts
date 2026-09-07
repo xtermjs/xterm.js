@@ -114,26 +114,33 @@ export interface ICellData extends IAttributeData {
   getAsCharData(): CharData;
 }
 
+export interface ILogicalLine {
+}
+
 /**
  * Interface for a line in the terminal buffer.
  */
 export interface IBufferLine {
   length: number;
-  isWrapped: boolean;
+  logical(): ILogicalLine;
+  get isWrapped(): boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
   setCell(index: number, cell: ICellData): void;
   setCellFromCodepoint(index: number, codePoint: number, width: number, attrs: IAttributeData): void;
+  setCellsFromCodepoints(index: number, cols: number, codePoints: Uint32Array, start: number, end: number, attrs: IAttributeData): void;
   addCodepointToCell(index: number, codePoint: number, width: number): void;
   insertCells(pos: number, n: number, ch: ICellData): void;
   deleteCells(pos: number, n: number, fill: ICellData): void;
   replaceCells(start: number, end: number, fill: ICellData, respectProtect?: boolean): void;
   resize(cols: number, fill: ICellData): boolean;
+  /**
+   * @deprecated
+   */
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
-  copyFrom(line: IBufferLine, blank?: boolean): void;
-  clone(blank?: boolean): IBufferLine;
+  copyFrom(line: IBufferLine): void;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
@@ -147,7 +154,7 @@ export interface IBufferLine {
   getCodePoint(index: number): number;
   isCombined(index: number): number;
   getString(index: number): string;
-  getExtended(index: number): IExtendedAttrs;
+  getExtended(index: number): IExtendedAttrs | undefined;
 }
 
 export interface IMarker extends IDisposable {
@@ -159,10 +166,33 @@ export interface IMarker extends IDisposable {
 
 export interface IBuffer {
   readonly lines: ICircularList<IBufferLine>;
+  /**
+   * Number of rows above top visible row.
+   * Similar to scrollTop (i.e. affected by scrollbar), but in rows.
+   */
   ydisp: number;
+  /** Number of rows in the scrollback buffer, above the home row. */
   ybase: number;
+
+  /**
+   * Row number relative to the "home" row, zero-origin.
+   * This is the row number changed/reported by cursor escape sequences,
+   * except that y is 0-origin: y=0 when we're at the home row.
+   * Currently assumed to be >= 0, but future may allow negative - i.e.
+   * in scroll-back area, as long as ybase+y >= 0.
+   */
   y: number;
+
+  /**
+   * Column number, zero-origin.
+   * Valid range is 0 through C (inclusive), if C is terminal width in columns.
+   * The first (left-most) column is 0.
+   * The right-most column is either C-1 (before the right-most column, and
+   * ready to write in it), or C (after the right-most column, having written
+   * to it, and ready to wrap). DSR 6 returns C (1-origin) in either case,
+   */
   x: number;
+
   tabs: any;
   scrollBottom: number;
   scrollTop: number;
@@ -181,12 +211,13 @@ export interface IBuffer {
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
-  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
+  getBlankLine(attr: IAttributeData, logicalLine?: ILogicalLine): IBufferLine;
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
   addMarker(y: number): IMarker;
   clearMarkers(y: number): void;
   clearAllMarkers(): void;
+  setWrapped(row: number, value: boolean): void;
 }
 
 export interface IBufferSet extends IDisposable {

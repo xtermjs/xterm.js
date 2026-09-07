@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE, DEFAULT_ATTR, Content, UnderlineStyle, BgFlags, Attributes, FgFlags } from './Constants';
-import { BufferLine } from './BufferLine';
+import { BufferLine, LogicalLine } from './BufferLine';
 import { CellData } from './CellData';
 import { CharData, IBufferLine, ICellData } from './Types';
 import { assert } from 'chai';
@@ -12,28 +12,32 @@ import { createCellData, NULL_CELL_DATA, extendedAttributes } from '../TestUtils
 
 
 class TestBufferLine extends BufferLine {
-  constructor(cols: number, fillCellData?: ICellData, isWrapped: boolean = false) {
-    super(cols, fillCellData, isWrapped);
-  }
-
-  public get combined(): {[index: number]: string} {
-    return this._combined;
+  constructor(cols: number, fillCellData?: CellData, isWrapped: boolean = false) {
+    const lline = new LogicalLine();
+    super(cols, lline);
+    if (isWrapped) {
+      const prevLine = new BufferLine(cols, lline);
+      lline.firstBufferLine = prevLine;
+      prevLine.nextBufferLine = this;
+      this.startColumn = cols;
+      fillCellData && prevLine.fill(fillCellData);
+    } else {
+      lline.firstBufferLine = this;
+    }
+    if (fillCellData) {
+      this.fill(fillCellData);
+    }
   }
 
   public get cachedString(): string | undefined {
-    return this._cacheValid ? this._cache : undefined;
+    const logical = this.logical() as any;
+    return logical._charsIsTextValue ? logical._chars : undefined;
   }
 
   public set cachedString(value: string | undefined) {
-    this._cache = value ?? '';
-  }
-
-  public get isCachedStringTrimmed(): boolean {
-    return this._cacheTrimmed;
-  }
-
-  public set isCachedStringTrimmed(value: boolean) {
-    this._cacheTrimmed = value;
+    const logical = this.logical() as any;
+    if (value === undefined) logical._charsIsTextValue = false;
+    else { logical._chars = value; logical._charsIsTextValue = true; }
   }
 
   public toArray(): CharData[] {
@@ -259,18 +263,6 @@ describe('BufferLine', function(): void {
       [123, 'z', 1, 'z'.charCodeAt(0)]
     ]);
   });
-  it('clone', function(): void {
-    const line = new TestBufferLine(5, undefined, true);
-    line.setCell(0, createCellData(1, 'a', 1));
-    line.setCell(1, createCellData(2, 'b', 1));
-    line.setCell(2, createCellData(3, 'c', 1));
-    line.setCell(3, createCellData(4, 'd', 1));
-    line.setCell(4, createCellData(5, 'e', 1));
-    const line2 = line.clone();
-    assert.deepEqual(TestBufferLine.prototype.toArray.apply(line2), line.toArray());
-    assert.equal(line2.length, line.length);
-    assert.equal(line2.isWrapped, line.isWrapped);
-  });
   it('copyFrom', function(): void {
     const line = new TestBufferLine(5);
     line.setCell(0, createCellData(1, 'a', 1));
@@ -278,11 +270,10 @@ describe('BufferLine', function(): void {
     line.setCell(2, createCellData(3, 'c', 1));
     line.setCell(3, createCellData(4, 'd', 1));
     line.setCell(4, createCellData(5, 'e', 1));
-    const line2 = new TestBufferLine(5, createCellData(1, 'a', 1), true);
+    const line2 = new TestBufferLine(5, createCellData(1, 'a', 1));
     line2.copyFrom(line);
     assert.deepEqual(line2.toArray(), line.toArray());
     assert.equal(line2.length, line.length);
-    assert.equal(line2.isWrapped, line.isWrapped);
   });
   it('should support combining chars', function(): void {
     // CHAR_DATA_CODE_INDEX resembles current behavior in InputHandler.print
@@ -293,8 +284,6 @@ describe('BufferLine', function(): void {
     const line2 = new TestBufferLine(5, createCellData(1, 'a', 1), true);
     line2.copyFrom(line);
     assert.deepEqual(line2.toArray(), line.toArray());
-    const line3 = line.clone();
-    assert.deepEqual(TestBufferLine.prototype.toArray.apply(line3), line.toArray());
   });
   describe('resize', function(): void {
     it('enlarge(false)', function(): void {
@@ -319,15 +308,13 @@ describe('BufferLine', function(): void {
     });
     it('should remove combining data on replaced cells after shrinking then enlarging', () => {
       const line = new TestBufferLine(10, createCellData(1, 'a', 1), false);
-      line.set(2, [ 0, '😁', 1, '😁'.charCodeAt(0) ]);
-      line.set(9, [ 0, '😁', 1, '😁'.charCodeAt(0) ]);
+      line.setCell(2, createCellData(0, '😁', 1));
+      line.setCell(9, createCellData(0, '😁', 1));
       assert.equal(line.translateToString(), 'aa😁aaaaaa😁');
-      assert.equal(Object.keys(line.combined).length, 2);
       line.resize(5, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aa😁aa');
       line.resize(10, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aa😁aaaaaaa');
-      assert.equal(Object.keys(line.combined).length, 1);
     });
   });
   describe('getTrimLength', function(): void {
@@ -786,13 +773,6 @@ describe('BufferLine', function(): void {
       // no eAttrs again
       cell.bg &= ~BgFlags.HAS_EXTENDED;
       line.setCell(4, cell);
-
-      const nLine = line.clone();
-      assert.equal(extendedAttributes(nLine, 0), extendedAttributes(line, 0));
-      assert.equal(extendedAttributes(nLine, 1), extendedAttributes(line, 1));
-      assert.equal(extendedAttributes(nLine, 2), extendedAttributes(line, 2));
-      assert.equal(extendedAttributes(nLine, 3), extendedAttributes(line, 3));
-      assert.equal(extendedAttributes(nLine, 4), extendedAttributes(line, 4));
     });
     it('copyFrom', () => {
       const initial = new TestBufferLine(5);
@@ -838,30 +818,20 @@ describe('BufferLine', function(): void {
       const trimmed = line.translateToString(true, undefined, undefined, undefined);
       assert.equal(trimmed, 'abc');
       assert.equal(line.cachedString, 'abc');
-      assert.equal(line.isCachedStringTrimmed, true);
 
       // Non-trimmed canonical request should refresh cache with the full value.
       const translated = line.translateToString(false, undefined, undefined, undefined);
       assert.equal(translated, 'abc  ');
-      assert.equal(line.cachedString, 'abc  ');
-      assert.equal(line.isCachedStringTrimmed, false);
+      assert.equal(line.cachedString, 'abc');
 
       // Once non-trimmed is cached, trimmed should be derived via trimEnd().
       assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
-      assert.equal(line.cachedString, 'abc  ');
-      assert.equal(line.isCachedStringTrimmed, false);
-
-      line.cachedString = 'cached-non-trimmed  ';
-      line.isCachedStringTrimmed = false;
-      assert.equal(line.translateToString(false, undefined, undefined, undefined), 'cached-non-trimmed  ');
-      assert.equal(line.translateToString(true, undefined, undefined, undefined), 'cached-non-trimmed');
+      assert.equal(line.cachedString, 'abc');
 
       line.cachedString = 'cached-trimmed';
-      line.isCachedStringTrimmed = true;
       assert.equal(line.translateToString(true, undefined, undefined, undefined), 'cached-trimmed');
       assert.equal(line.translateToString(false, undefined, undefined, undefined), 'abc  ');
-      assert.equal(line.cachedString, 'abc  ');
-      assert.equal(line.isCachedStringTrimmed, false);
+      assert.equal(line.cachedString, 'abc');
 
       // Any optional translation argument should bypass cache.
       assert.equal(line.translateToString(false, 0, 2, undefined), 'ab');
@@ -874,13 +844,10 @@ describe('BufferLine', function(): void {
         line.fill(createCellData(1, 'a', 1));
         line.translateToString(true, undefined, undefined, undefined);
         assert.equal(line.cachedString, 'aaaaa');
-        assert.equal(line.isCachedStringTrimmed, true);
         line.translateToString(false, undefined, undefined, undefined);
         assert.equal(line.cachedString, 'aaaaa');
-        assert.equal(line.isCachedStringTrimmed, false);
         mutate(line);
         assert.equal(line.cachedString, undefined);
-        assert.equal(line.isCachedStringTrimmed, false);
       };
 
       assertCacheInvalidated(line => line.set(0, [0, 'b', 1, 'b'.charCodeAt(0)]));

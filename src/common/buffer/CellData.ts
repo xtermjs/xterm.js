@@ -21,10 +21,26 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** Primitives from terminal buffer. */
   public content = 0;
+  /*
+  public get content(): number { return this._content;}
+  public set content(v: number) {
+    this._content = v; }
+    */
   public fg = 0;
   public bg = 0;
   public extended: IExtendedAttrs = new ExtendedAttrs();
-  public combinedData = '';
+  /**
+  * Cache for getChars.
+  * If _stringStart == -1: Use codepoint in this.content.
+  * If _stringStart == 0 && _stringEnd == -1: Entire _string.
+  * Otherwise: substring of _string.
+  */
+  public _string: string  = '';
+  public _stringStart: number = 0;
+  public _stringEnd: number = -1; // Whole string
+  public get combinedData(): string {
+    return this.isCombined() ? this.getChars() : '';
+  }
   /** Whether cell contains a combined string. */
   public isCombined(): number {
     return this.content & Content.IS_COMBINED_MASK;
@@ -35,13 +51,25 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** JS string of the content. */
   public getChars(): string {
-    if (this.content & Content.IS_COMBINED_MASK) {
-      return this.combinedData;
+    if (this._stringStart === 0 && this._stringEnd < 0) {
+      return this._string;
     }
-    if (this.content & Content.CODEPOINT_MASK) {
-      return stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
+    let str;
+    if (this._stringStart < 0) {
+      const codePoint = this.content & Content.CODEPOINT_MASK;
+      str = codePoint ? stringFromCodePoint(codePoint) : '';
+    } else {
+      str = this._string.substring(this._stringStart, this._stringEnd);
     }
-    return '';
+    this._string = str;
+    this._stringStart = 0;
+    this._stringEnd = -1;
+    return str;
+  }
+  public _setChars(str: string, strStart: number = 0, strEnd: number = -1): void {
+    this._string = str;
+    this._stringStart = strStart;
+    this._stringEnd = strEnd;
   }
   /**
    * Codepoint of cell
@@ -50,10 +78,10 @@ export class CellData extends AttributeData implements ICellData {
    * of the last char in string to be in line with code in CharData.
    */
   public getCode(): number {
-    return (this.isCombined())
-      ? this.combinedData.charCodeAt(this.combinedData.length - 1)
-      : this.content & Content.CODEPOINT_MASK;
+    return !this.isCombined() ? this.content & Content.CODEPOINT_MASK
+      : this._string.charCodeAt(this._stringEnd < 0 ? this._string.length -1 : this._stringEnd - 1);
   }
+
   /** Set data from CharData */
   public setFromCharData(value: CharData): void {
     this.fg = value[CHAR_DATA_ATTR_INDEX];
@@ -84,11 +112,19 @@ export class CellData extends AttributeData implements ICellData {
       this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
     if (combined) {
-      this.combinedData = value[CHAR_DATA_CHAR_INDEX];
+      this._string = value[CHAR_DATA_CHAR_INDEX];
+      this._stringStart = 0;
+      this._stringEnd = -1;
       this.content = Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+    } else {
+      this._string = '';
+      this._stringStart = -1;
+      this._stringEnd = 0;
     }
   }
-  /** Get data as CharData. */
+  /** Get data as CharData.
+   * @deprecated
+   */
   public getAsCharData(): CharData {
     return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
