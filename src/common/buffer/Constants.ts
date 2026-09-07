@@ -79,13 +79,16 @@ export const enum Content {
    *                      shortcut if precondition `0 <= width <= 3` is met:
    *                      `content |= width << Content.WIDTH_SHIFT;`
    */
-  WIDTH_MASK = 0xC00000,   // 3 << 22
-  WIDTH_SHIFT = 22,
+  WIDTH_MASK = 0xF0000000,   // 3 << WIDTH_SHIFT
+  WIDTH_SHIFT = 28,
   START_IN_CHARS_MASK = 0x1FFFFF,
   START_IN_CHARS_SHIFT = 0,
-  LENGTH_IN_CHARS_MASK = 0xFF000000,
+  LENGTH_IN_CHARS_MASK = 0x0F000000,
   LENGTH_IN_CHARS_SHIFT = 24,
-  STORED_IN_CHARS_MASK = LENGTH_IN_CHARS_MASK
+  STORED_IN_CHARS_MASK = 0x400000 // 1 << 24
+  // FIXME non-optimal values for some shifts and masks.
+  // The width field must be high-order, unless WIDTH_MASK is used more
+  // The width first field be high-order bits unless we replace >> by >>>.
 }
 
 export const enum Attributes {

@@ -21,9 +21,20 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** Primitives from terminal buffer. */
   public content = 0;
+  /*
+  public get content(): number { return this._content;}
+  public set content(v: number) {
+    this._content = v; }
+    */
   public fg = 0;
   public bg = 0;
   public extended: IExtendedAttrs = new ExtendedAttrs();
+  /**
+  * Cache for getChars.
+  * If _stringStart == -1: Use codepoint in this.content.
+  * If _stringStart == 0 && _stringEnd == -1: Entire _string.
+  * Otherwise: substring of _string.
+  */
   public _string: string  = '';
   public _stringStart: number = 0;
   public _stringEnd: number = -1; // Whole string
@@ -40,16 +51,20 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** JS string of the content. */
   public getChars(): string {
-    if (this.content & (Content.CODEPOINT_MASK|Content.IS_COMBINED_MASK)) {
-      let str = this._string;
-      if (this._stringEnd >= 0) {
-        str = str.substring(this._stringStart, this._stringEnd);
-        this._string = str;
-        this._stringEnd = -1;
-      }
-      return str;
+    if (this._stringStart === 0 && this._stringEnd < 0) {
+      return this._string;
     }
-    return '';
+    let str;
+    if (this._stringStart < 0) {
+      const codePoint = this.content & Content.CODEPOINT_MASK;
+      str = codePoint ? stringFromCodePoint(codePoint) : '';
+    } else {
+      str = this._string.substring(this._stringStart, this._stringEnd);
+    }
+    this._string = str;
+    this._stringStart = 0;
+    this._stringEnd = -1;
+    return str;
   }
   public _setChars(str: string, strStart: number = 0, strEnd: number = -1): void {
     this._string = str;
@@ -98,9 +113,13 @@ export class CellData extends AttributeData implements ICellData {
     }
     if (combined) {
       this._string = value[CHAR_DATA_CHAR_INDEX];
-      this._stringStart = -1;
+      this._stringStart = 0;
       this._stringEnd = -1;
       this.content = Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+    } else {
+      this._string = '';
+      this._stringStart = -1;
+      this._stringEnd = 0;
     }
   }
   /** Get data as CharData.

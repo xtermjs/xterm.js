@@ -160,17 +160,21 @@ export class LogicalLine implements ILogicalLine {
       return cell;
     }
     const startIndex = this._dataStart + index * Constants.CELL_INDICIES;
-    const content = this._data[startIndex + Cell.CONTENT];
-    cell.content = content;
-    cell.fg = this._data[startIndex + Cell.FG];
-    cell.bg = this._data[startIndex + Cell.BG];
-    if (cell.content & Content.IS_COMBINED_MASK) {
+    let content = this._data[startIndex + Cell.CONTENT];
+    if (content & Content.STORED_IN_CHARS_MASK) {
       const start = (content & Content.START_IN_CHARS_MASK) >>> Content.START_IN_CHARS_SHIFT;
       const length = (content & Content.LENGTH_IN_CHARS_MASK) >>> Content.LENGTH_IN_CHARS_SHIFT;
       (cell as CellData)._setChars(this._chars, start, start + length);
+      if (!(content & Content.IS_COMBINED_MASK)) {
+        content &= ~(Content.STORED_IN_CHARS_MASK|Content.CODEPOINT_MASK);
+        content |= (length > 0 && this._chars.codePointAt(start)) || 0;
+      }
     } else {
-      (cell as CellData)._setChars('', 0, 0);
+      (cell as CellData)._setChars('', -1, -1);
     }
+    cell.content = content;
+    cell.fg = this._data[startIndex + Cell.FG];
+    cell.bg = this._data[startIndex + Cell.BG];
     if (cell.bg & BgFlags.HAS_EXTENDED) {
       cell.extended = this._extendedAttrs[index]!;
     } else {
@@ -248,7 +252,7 @@ export class LogicalLine implements ILogicalLine {
       const start = this._chars.length;
       const length = str.length;
       this._chars += str;
-      cell.content = LogicalLine._withRange(cell.content, start, length);
+      this._data[this._dataStart + index * Constants.CELL_INDICIES + Cell.CONTENT] = LogicalLine._withRange(cell.content, start, length);
     }
   }
 
@@ -261,15 +265,28 @@ export class LogicalLine implements ILogicalLine {
    */
   public setCellFromCodepoint(index: LogicalColumn, codePoint: number, width: number, attrs: IAttributeData): void {
     this._charsIsTextValue = false;
-    if (codePoint === 0 && width === 1 && index >= this.length - 1 && attrs.fg === 0 && attrs.bg === this.backgroundColor) {
+    const isNull = codePoint === 0 && width === 1
+      && attrs.bg === this.backgroundColor;
+    if (isNull && index >= this.length - 1 ) {
       if (index === this.length - 1) {
-        // FIXME should also truncate extendedAttrs and composedData
+        // FIXME should also truncate extendedAttrs
+        // remove any now-trailing nulls
+        while (index > 0) {
+          const j = this._dataStart + (index - 1) * Constants.CELL_INDICIES;
+          const content = this._data[j + Cell.CONTENT];
+          if ((content & Content.HAS_CONTENT_MASK)
+            || (content >>> Content.WIDTH_MASK) !== 0
+            || this._data[j + Cell.BG] !== this.backgroundColor) {
+            break;
+          }
+          index--;
+        }
         this.length = index; // this.length - 1;
         this.trimLength();
       }
       return;
     }
-    if (index >= this.length) {
+    if (index >= this.length && !isNull) {
       this.resizeData(index + 1);
       let j = this._dataStart + this.length * Constants.CELL_INDICIES;
       for (let i = this.length; i < index; i++) {
@@ -458,10 +475,15 @@ export class LogicalLine implements ILogicalLine {
       let nchars = 0;
       let j = this._dataStart + Cell.CONTENT;
       for (let i = 0; i < llen; i++) {
-        const cstr = this.getString(i);
-        const clen = cstr.length;
+        let cstr = this.getString(i);
+        let clen = cstr.length;
+        const content = this._data[j];
+        this._data[j] = LogicalLine._withRange(content, nchars, clen);
+        if (clen === 0 && (content >> Content.WIDTH_SHIFT) > 0) {
+          cstr = ' ';
+          clen = 1;
+        }
         cellContents.push(cstr);
-        this._data[j] = LogicalLine._withRange(this._data[j], nchars, clen);
         j += Constants.CELL_INDICIES;
         nchars += clen;
       }
@@ -475,7 +497,10 @@ export class LogicalLine implements ILogicalLine {
       const start = (startContent & Content.START_IN_CHARS_MASK) >>> Content.START_IN_CHARS_SHIFT;
       const lastContent = this._data[this._dataStart + (endCol - 1) * Constants.CELL_INDICIES + Cell.CONTENT];
       const lastStart = (lastContent & Content.START_IN_CHARS_MASK) >>> Content.START_IN_CHARS_SHIFT;
-      const lastLength = (lastContent & Content.LENGTH_IN_CHARS_MASK) >>> Content.LENGTH_IN_CHARS_SHIFT;
+      let lastLength = (lastContent & Content.LENGTH_IN_CHARS_MASK) >>> Content.LENGTH_IN_CHARS_SHIFT;
+      if (lastLength === 0 && (lastContent >>> Content.WIDTH_SHIFT) > 0) {
+        lastLength++; // last char is a NULL
+      }
       return this._chars.substring(start, lastStart + lastLength);
     }
     return this._chars;
@@ -733,7 +758,6 @@ export class BufferLine implements IBufferLine {
     if (pos && this.getWidth(pos - 1) === 2) {
       this.setCellFromCodepoint(pos - 1, 0, 1, fillCellData);
     }
-
     if (n < this.length - pos) {
       for (let i = this.length - pos - n - 1; i >= 0; --i) {
         this.setCell(pos + n + i, this.loadCell(pos + i, $workCell));
@@ -1042,12 +1066,6 @@ export class BufferLine implements IBufferLine {
    * returned string, the corresponding entries in `outColumns` will have the same column number.
    */
   public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
-    /*
-    const isCanonical = (startCol === undefined || startCol === 0) && endCol === undefined && outColumns === undefined;
-    if (isCanonical && this._cacheValid && trimRight === this._cacheTrimmed) {
-      return this._cache;
-    }
-    */
     startCol = startCol ?? 0;
     endCol = endCol ?? this.length;
     if (trimRight) {
@@ -1057,15 +1075,29 @@ export class BufferLine implements IBufferLine {
     const lineStart = this.startColumn;
     startCol += lineStart;
     endCol += lineStart;
-    const validEnd = this.validEnd;
-    const paddingNeeded = trimRight || endCol <= validEnd ? 0
-      : endCol - validEnd;
-    let result = lline.getTrimmedString(startCol, endCol);
-    if (outColumns) {
-      //FIXME
+    const validEnd = Math.min(endCol, this.validEnd);
+    let result = lline.getTrimmedString(startCol, validEnd);
+    const paddingNeeded = trimRight ? 0 : Math.max(0, endCol - validEnd);
+    if (paddingNeeded) {
+      result += WHITESPACE_CELL_CHAR.repeat(paddingNeeded);
     }
-    if (!trimRight && endCol > validEnd) {
-        result += WHITESPACE_CELL_CHAR.repeat(endCol - validEnd);
+    if (outColumns) {
+      outColumns.length = 0;
+      while (startCol < validEnd) {
+        const content = lline._data[lline._dataStart + startCol * Constants.CELL_INDICIES + Cell.CONTENT];
+        let length = (content & Content.LENGTH_IN_CHARS_MASK) >>> Content.LENGTH_IN_CHARS_SHIFT;
+        const width = content >> Content.WIDTH_SHIFT;
+        if (length === 0) { length = width; }
+        for (let i = 0; i < length; ++i) {
+          outColumns.push(startCol - lineStart);
+        }
+        startCol += width || 1; // always advance by at least 1
+      }
+      while (startCol < endCol) {
+        outColumns.push(startCol - lineStart);
+        startCol++;
+      }
+      outColumns.push(startCol);
     }
     return result;
   }
