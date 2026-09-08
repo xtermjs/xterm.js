@@ -27,11 +27,13 @@ export class Emitter<T> {
       }
 
       const entry = { fn: listener, thisArgs };
+      this._listeners = this._listeners.slice();
       this._listeners.push(entry);
 
       const result = toDisposable(() => {
         const idx = this._listeners.indexOf(entry);
         if (idx !== -1) {
+          this._listeners = this._listeners.slice();
           this._listeners.splice(idx, 1);
         }
       });
@@ -50,23 +52,16 @@ export class Emitter<T> {
   }
 
   public fire(event: T): void {
-    if (this._disposed) {
+    if (this._disposed || !this._listeners.length) {
       return;
     }
-    switch (this._listeners.length) {
-      case 0: return;
-      case 1: {
-        const { fn, thisArgs } = this._listeners[0];
-        fn.call(thisArgs, event);
-        return;
-      }
-      default: {
-        // Snapshot listeners to allow modifications during iteration (2+ listeners)
-        const listeners = this._listeners.slice();
-        for (const { fn, thisArgs } of listeners) {
-          fn.call(thisArgs, event);
-        }
-      }
+    if (this._listeners.length === 1) {
+      this._listeners[0].fn.call(this._listeners[0].thisArgs, event);
+      return;
+    }
+    const listeners = this._listeners;
+    for (let i = 0, len = listeners.length; i < len; ++i) {
+      listeners[i].fn.call(listeners[i].thisArgs, event);
     }
   }
 

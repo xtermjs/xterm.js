@@ -2213,6 +2213,21 @@ test.describe('Kitty Graphics Protocol', () => {
       await pollFor(ctx.page, 'window._imageAddedCount', 2);
     });
   });
+
+  test.describe('text overwrite removes tiles', () => {
+    test('a=T placement', async () => {
+      await ctx.proxy.write(`\x1b[H\x1b_Ga=T,f=100;${KITTY_MULTICOLOR_200X100_BASE64}\x1b\\`);
+      await pollFor(ctx.page, '!!window.imageAddon.extractTileAtBufferCell(5, 1)', true);
+      ok(await hasTileAtBufferCell(0, 1));
+      await ctx.proxy.write('\x1b[2;6H#######');
+      for (let x = 5; x < 12; x++) {
+        strictEqual(await hasTileAtBufferCell(x, 1), false);
+      }
+      ok(await hasTileAtBufferCell(0, 1));
+      ok(await hasTileAtBufferCell(13, 1));
+      ok(((await ctx.page.evaluate('window.term.buffer.active.getLine(1).translateToString(true)')) as string).includes('#######'));
+    });
+  });
 });
 
 /**
@@ -2261,4 +2276,8 @@ async function getPixels(col: number, row: number, x: number, y: number, w: numb
     if (!ctx2d) return null;
     return Array.from(ctx2d.getImageData(x, y, w, h).data);
   }, [col, row, x, y, w, h]);
+}
+
+async function hasTileAtBufferCell(x: number, y: number): Promise<boolean> {
+  return ctx.page.evaluate(`!!window.imageAddon.extractTileAtBufferCell(${x}, ${y})`);
 }

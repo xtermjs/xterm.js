@@ -98,7 +98,7 @@ terminal.loadAddon(imageAddon);
   Set by default, change it with `{iipSupport: true}`.
 
   The IIP implementation has the following features / restrictions (sequence will silently fail for unmet conditions):
-  - Supported formats: PNG, JPEG, GIF and QOI
+  - Supported formats: PNG, JPEG, GIF, QOI, WEBP and AVIF
   - No animation support.
   - Image type hinting is not supported (always deducted from data header).
   - File download is not supported.
@@ -111,6 +111,13 @@ terminal.loadAddon(imageAddon);
   - Cursor gets positioned at the next cell of the last image line.
   - ReportCellSize sequence is supported.
   - Hi-res display support is currently limited (image gets blurred).
+
+- **Note on IIP image format support**  
+  For all image formats except QOI the addon only does the dimension extraction and leaves
+  the image decoding to the underlying browser engine. Note that some formats are implemented
+  and enabled with different constraints by browser vendors, especially newer formats
+  (e.g. under Firefox you might need to change the setting _image.avif.compliance_strictness_ to 0
+  to get broader AVIF support).
 
 - **Kitty Graphics Support (TGP)**  
   Set by default, change it with `{kittySupport: true}`.

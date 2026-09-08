@@ -32,6 +32,28 @@ const TEST_IMAGES: [string, IMetrics][] = [
   ['agfa-makernotes.jpg', { mime: 'image/jpeg', width: 8, height: 8 }],
   ['sony-alpha-6000.jpg', { mime: 'image/jpeg', width: 6000, height: 4000 }],
   ['dice.qoi', { mime: 'image/qoi', width: 800, height: 600 }],
+  // VP8
+  ['1.webp', { mime: 'image/webp', width: 550, height: 368 }],
+  ['2.webp', { mime: 'image/webp', width: 550, height: 404 }],
+  ['3.webp', { mime: 'image/webp', width: 1280, height: 720 }],
+  ['4.webp', { mime: 'image/webp', width: 1024, height: 772 }],
+  ['5.webp', { mime: 'image/webp', width: 1024, height: 752 }],
+  // VP8X
+  ['1_webp_a.webp', { mime: 'image/webp', width: 400, height: 301 }],
+  ['2_webp_a.webp', { mime: 'image/webp', width: 386, height: 395 }],
+  ['3_webp_a.webp', { mime: 'image/webp', width: 800, height: 600 }],
+  ['4_webp_a.webp', { mime: 'image/webp', width: 421, height: 163 }],
+  ['5_webp_a.webp', { mime: 'image/webp', width: 300, height: 300 }],
+  // VP8L
+  ['1_webp_ll.webp', { mime: 'image/webp', width: 400, height: 301 }],
+  ['2_webp_ll.webp', { mime: 'image/webp', width: 386, height: 395 }],
+  ['3_webp_ll.webp', { mime: 'image/webp', width: 800, height: 600 }],
+  ['4_webp_ll.webp', { mime: 'image/webp', width: 421, height: 163 }],
+  ['5_webp_ll.webp', { mime: 'image/webp', width: 300, height: 300 }],
+  // some AVIF test images
+  ['fox.profile2.12bpc.yuv444.odd-width.odd-height.avif', { mime: 'image/avif', width: 1203, height: 799 }],
+  ['hato.profile0.8bpc.yuv420.avif', { mime: 'image/avif', width: 3082, height: 2048 }],
+  ['kimono.crop.avif', { mime: 'image/avif', width: 722, height: 1024 }],
 ];
 
 

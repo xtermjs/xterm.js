@@ -435,6 +435,15 @@ test.describe('ImageAddon', () => {
       });
     }
   });
+
+  test.describe('text overwrite removes tiles', () => {
+    test('sixel', async () => {
+      await assertTextClearsTiles(SIXEL_SEQ_0);
+    });
+    test('iip', async () => {
+      await assertTextClearsTiles(TESTDATA_IIP[0][0]);
+    });
+  });
 });
 
 /**
@@ -471,4 +480,21 @@ async function getOrigSize(id: number): Promise<[number, number]> {
 
 async function getImageAtBufferCell(x: number, y: number): Promise<string | undefined> {
   return ctx.page.evaluate<any>(`window.imageAddon.getImageAtBufferCell(${x}, ${y})?.toDataURL('image/png')`);
+}
+
+async function hasTileAtBufferCell(x: number, y: number): Promise<boolean> {
+  return ctx.page.evaluate(`!!window.imageAddon.extractTileAtBufferCell(${x}, ${y})`);
+}
+
+async function assertTextClearsTiles(imageSeq: string): Promise<void> {
+  await ctx.proxy.write('\x1b[H' + imageSeq);
+  await pollFor(ctx.page, '!!window.imageAddon.extractTileAtBufferCell(5, 1)', true);
+  ok(await hasTileAtBufferCell(0, 1));
+  await ctx.proxy.write('\x1b[2;6H#######');
+  for (let x = 5; x < 12; x++) {
+    strictEqual(await hasTileAtBufferCell(x, 1), false);
+  }
+  ok(await hasTileAtBufferCell(0, 1));
+  ok(await hasTileAtBufferCell(13, 1));
+  ok(((await ctx.page.evaluate('window.term.buffer.active.getLine(1).translateToString(true)')) as string).includes('#######'));
 }

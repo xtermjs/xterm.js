@@ -20,6 +20,7 @@ export interface IExtendedAttrs {
   underlineColor: number;
   underlineVariantOffset: number;
   urlId: number;
+  payload: Object | undefined;
   clone(): IExtendedAttrs;
   isEmpty(): boolean;
 }
@@ -131,8 +132,8 @@ export interface IBufferLine {
   resize(cols: number, fill: ICellData): boolean;
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
-  copyFrom(line: IBufferLine): void;
-  clone(): IBufferLine;
+  copyFrom(line: IBufferLine, blank?: boolean): void;
+  clone(blank?: boolean): IBufferLine;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
@@ -146,6 +147,7 @@ export interface IBufferLine {
   getCodePoint(index: number): number;
   isCombined(index: number): number;
   getString(index: number): string;
+  getExtended(index: number): IExtendedAttrs;
 }
 
 export interface IMarker extends IDisposable {

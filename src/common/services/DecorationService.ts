@@ -214,7 +214,7 @@ export class DecorationLineCache extends Disposable {
   }
 
   private _handleBufferLinesTrim(amount: number): void {
-    if (amount <= 0) {
+    if (amount <= 0 || !this._decorationsByLine.size) {
       return;
     }
     const newMap = new Map<number, IInternalDecoration[]>();

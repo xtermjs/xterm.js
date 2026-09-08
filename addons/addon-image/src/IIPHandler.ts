@@ -39,7 +39,6 @@ export class IIPHandler implements IOscHandler, IResetHandler {
   private _header: IHeaderFields = DEFAULT_HEADER;
   private _dec: Base64Decoder;
   private _qoiDec: QoiDecoder;
-  private _metrics = UNSUPPORTED_TYPE;
   private _isMultipart = false;
   private _abortMulti = false;
 
@@ -63,7 +62,6 @@ export class IIPHandler implements IOscHandler, IResetHandler {
 
   public start(): void {
     this._aborted = false;
-    this._metrics  = UNSUPPORTED_TYPE;
     this._hp.reset();
   }
 
@@ -120,14 +118,14 @@ export class IIPHandler implements IOscHandler, IResetHandler {
 
     if (seqType === SequenceType.REPORTCELLSIZE) {
       // OSC 1337 ; ReportCellSize=[height];[width];[scale] ST
-      let width = CELL_SIZE_DEFAULT.width;
-      let height = CELL_SIZE_DEFAULT.height;
+      let w = CELL_SIZE_DEFAULT.width;
+      let h = CELL_SIZE_DEFAULT.height;
       if (this._renderer.dimensions) {
-        width = this._renderer.dimensions.css.canvas.width / this._coreTerminal.cols;
-        height = this._renderer.dimensions.css.canvas.height / this._coreTerminal.rows;
+        w = this._renderer.dimensions.css.canvas.width / this._coreTerminal.cols;
+        h = this._renderer.dimensions.css.canvas.height / this._coreTerminal.rows;
       }
       const scale = this._coreTerminal._core._coreBrowserService?.dpr ?? 1;
-      const report = `\x1b]1337;ReportCellSize=${height.toFixed(3)};${width.toFixed(3)};${scale.toFixed(3)}\x1b\\`;
+      const report = `\x1b]1337;ReportCellSize=${h.toFixed(3)};${w.toFixed(3)};${scale.toFixed(3)}\x1b\\`;
       this._coreTerminal.input(report, false);
       return true;
     }
@@ -154,17 +152,24 @@ export class IIPHandler implements IOscHandler, IResetHandler {
 
     // early exit condition chain
     let cond: number | boolean;
+    let metrics = UNSUPPORTED_TYPE;
     if (cond = success) {
       if (cond = !this._dec.end()) {
-        this._metrics = imageType(this._dec.data8);
-        if (cond = this._metrics.mime !== 'unsupported') {
-          w = this._metrics.width;
-          h = this._metrics.height;
+        metrics = imageType(this._dec.data8);
+        if (cond = metrics.mime !== 'unsupported') {
+          w = metrics.width;
+          h = metrics.height;
           if (cond = w && h && w * h < this._opts.pixelLimit) {
             [w, h] = this._resize(w, h).map(Math.floor);
             cond = w && h && w * h < this._opts.pixelLimit;
+          } else {
+            console.warn(`IIP: image dimension issue ${metrics.width}x${metrics.height}`);
           }
+        } else {
+          console.warn('IIP: unsupported image type');
         }
+      } else {
+        console.warn('IIP: error during BASE64 decoding');
       }
     }
     if (!cond) {
@@ -173,7 +178,7 @@ export class IIPHandler implements IOscHandler, IResetHandler {
     }
 
     let blob: Blob | ImageData;
-    if (this._metrics.mime === 'image/qoi') {
+    if (metrics.mime === 'image/qoi') {
       const data = this._qoiDec.decode(this._dec.data8);
       blob = new ImageData(
         new Uint8ClampedArray(data.buffer, data.byteOffset, data.byteLength),
@@ -190,12 +195,16 @@ export class IIPHandler implements IOscHandler, IResetHandler {
         return true;
       }
     } else {
-      blob = new Blob([this._dec.data8], { type: this._metrics.mime });
+      blob = new Blob([this._dec.data8], { type: metrics.mime });
     }
     this._dec.release();
     return createImageBitmap(blob, { resizeWidth: w, resizeHeight: h })
       .then(bm => {
         this._storage.addImage(bm);
+        return true;
+      })
+      .catch(e => {
+        console.warn(`IIP: decoding error ${metrics.mime} ${metrics.width}x${metrics.height}`, e);
         return true;
       });
   }
