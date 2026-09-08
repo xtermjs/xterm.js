@@ -4,31 +4,22 @@
  */
 
 import { assert } from 'chai';
+import jsdom = require('jsdom');
 import { CompositionHelper } from './CompositionHelper';
 import { MockRenderService } from '../TestUtils.test';
-import { MockCoreService, MockBufferService, MockOptionsService } from '../../common/TestUtils.test';
+import { MockCoreService, MockBufferService, MockOptionsService, MockUnicodeService } from '../../common/TestUtils.test';
 
 describe('CompositionHelper', () => {
   let compositionHelper: CompositionHelper;
   let compositionView: HTMLElement;
   let textarea: HTMLTextAreaElement;
+  let renderService: MockRenderService;
   let handledText: string;
 
   beforeEach(() => {
-    compositionView = {
-      classList: {
-        add: () => {},
-        remove: () => {}
-      },
-      getBoundingClientRect: () => {
-        return { width: 0 };
-      },
-      style: {
-        left: 0,
-        top: 0
-      },
-      textContent: ''
-    } as any;
+    const document = new jsdom.JSDOM('').window.document;
+    compositionView = document.createElement('div');
+    compositionView.getBoundingClientRect = () => ({ width: 0, height: 0 }) as any;
     textarea = {
       value: '',
       style: {
@@ -42,7 +33,8 @@ describe('CompositionHelper', () => {
     };
     handledText = '';
     const bufferService = new MockBufferService(10, 5);
-    compositionHelper = new CompositionHelper(textarea, compositionView, bufferService, new MockOptionsService(), coreService, new MockRenderService());
+    renderService = new MockRenderService();
+    compositionHelper = new CompositionHelper(textarea, compositionView, bufferService, new MockOptionsService(), coreService, renderService, new MockUnicodeService());
   });
 
   describe('Input', () => {
@@ -258,6 +250,62 @@ describe('CompositionHelper', () => {
           done();
         }, 0);
       }, 0);
+    });
+  });
+
+  describe('Composition view layout', () => {
+    function cells(): HTMLElement[] {
+      const text = compositionView.firstElementChild! as HTMLElement;
+      // direction alone has no effect on an inline box, the cells are only kept in logical order
+      // inside the view's direction=rtl by the isolate
+      assert.equal(text.style.direction, 'ltr');
+      assert.equal(text.style.unicodeBidi, 'isolate');
+      return Array.from(text.children) as HTMLElement[];
+    }
+
+    beforeEach(() => {
+      // A cell width the font's own advance width will not agree with, as happens when the webgl
+      // renderer floors the cell width to whole device pixels (see #6161)
+      renderService.dimensions.css.cell.width = 6;
+      compositionHelper.compositionstart();
+    });
+
+    it('should give each cell the renderer\'s cell width', () => {
+      compositionHelper.compositionupdate({ data: 'ab' });
+      assert.deepEqual(cells().map(e => [e.textContent, e.style.width]), [['a', '6px'], ['b', '6px']]);
+    });
+
+    it('should give full width characters two cells worth of width', () => {
+      compositionHelper.compositionupdate({ data: 'あい' });
+      assert.deepEqual(cells().map(e => [e.textContent, e.style.width]), [['あ', '12px'], ['い', '12px']]);
+    });
+
+    it('should keep combining characters in the cell they attach to', () => {
+      compositionHelper.compositionupdate({ data: 'e\u0301a' });
+      assert.deepEqual(cells().map(e => [e.textContent, e.style.width]), [['e\u0301', '6px'], ['a', '6px']]);
+    });
+
+    it('should keep surrogate pairs in a single cell', () => {
+      compositionHelper.compositionupdate({ data: '𠮷' });
+      assert.deepEqual(cells().map(e => [e.textContent, e.style.width]), [['𠮷', '12px']]);
+    });
+
+    it('should re-align the text when the cell width changes', () => {
+      compositionHelper.compositionupdate({ data: 'ab' });
+      renderService.dimensions.css.cell.width = 7;
+      compositionHelper.updateCompositionElements(true);
+      assert.deepEqual(cells().map(e => e.style.width), ['7px', '7px']);
+    });
+
+    it('should not re-align text from a composition that has ended', () => {
+      compositionHelper.compositionupdate({ data: 'ab' });
+      compositionHelper.compositionend();
+      // A cell width change outside of a composition is not picked up until the next composition,
+      // which must not bring the previous text back with it
+      renderService.dimensions.css.cell.width = 7;
+      compositionHelper.compositionstart();
+      compositionHelper.updateCompositionElements(true);
+      assert.equal(compositionView.textContent, '');
     });
   });
 });
