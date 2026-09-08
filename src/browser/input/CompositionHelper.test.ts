@@ -255,8 +255,11 @@ describe('CompositionHelper', () => {
 
   describe('Composition view layout', () => {
     function cells(): HTMLElement[] {
-      const text = compositionView.firstElementChild!;
-      assert.equal((text as HTMLElement).style.direction, 'ltr');
+      const text = compositionView.firstElementChild! as HTMLElement;
+      // direction alone has no effect on an inline box, the cells are only kept in logical order
+      // inside the view's direction=rtl by the isolate
+      assert.equal(text.style.direction, 'ltr');
+      assert.equal(text.style.unicodeBidi, 'isolate');
       return Array.from(text.children) as HTMLElement[];
     }
 
@@ -292,6 +295,17 @@ describe('CompositionHelper', () => {
       renderService.dimensions.css.cell.width = 7;
       compositionHelper.updateCompositionElements(true);
       assert.deepEqual(cells().map(e => e.style.width), ['7px', '7px']);
+    });
+
+    it('should not re-align text from a composition that has ended', () => {
+      compositionHelper.compositionupdate({ data: 'ab' });
+      compositionHelper.compositionend();
+      // A cell width change outside of a composition is not picked up until the next composition,
+      // which must not bring the previous text back with it
+      renderService.dimensions.css.cell.width = 7;
+      compositionHelper.compositionstart();
+      compositionHelper.updateCompositionElements(true);
+      assert.equal(compositionView.textContent, '');
     });
   });
 });
