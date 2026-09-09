@@ -167,7 +167,7 @@ export class Buffer extends Disposable implements IBuffer {
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
-    if (newMaxLength > this.lines.maxLength) {
+    if (newMaxLength > this.lines.maxLength || this.lines.length === 0) {
       this.lines.maxLength = newMaxLength;
     }
 
