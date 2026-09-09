@@ -170,6 +170,24 @@ describe('Buffer', () => {
       });
     });
 
+    describe('row size reduced before the buffer is filled', () => {
+      it('should reduce max length of an empty no-scrollback buffer so it cannot acquire scrollback (#6163)', () => {
+        buffer = new TestBuffer(false, optionsService, bufferService, new MockLogService());
+        assert.equal(buffer.lines.maxLength, INIT_ROWS);
+        buffer.resize(INIT_COLS, INIT_ROWS - 10);
+        assert.equal(buffer.lines.maxLength, INIT_ROWS - 10);
+        buffer.fillViewportRows();
+        assert.equal(buffer.lines.length, INIT_ROWS - 10);
+        assert.isTrue(buffer.lines.isFull);
+      });
+
+      it('should reduce max length of an empty scrollback buffer', () => {
+        assert.equal(buffer.lines.maxLength, INIT_ROWS + INIT_SCROLLBACK);
+        buffer.resize(INIT_COLS, INIT_ROWS - 10);
+        assert.equal(buffer.lines.maxLength, INIT_ROWS - 10 + INIT_SCROLLBACK);
+      });
+    });
+
     describe('row size increased', () => {
       describe('empty buffer', () => {
         it('should add blank lines to end', () => {
