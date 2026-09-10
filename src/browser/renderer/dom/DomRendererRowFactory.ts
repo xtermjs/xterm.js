@@ -379,9 +379,9 @@ export class DomRendererRowFactory {
       // Apply selection
       if (!isTop && isInSelection) {
         // If in the selection, force the element to be above the selection to improve contrast and
-        // support opaque selections. The applies background is not actually needed here as
-        // selection is drawn in a seperate container, the main purpose of this to ensuring minimum
-        // contrast ratio
+        // support opaque selections. The applied background is not actually needed here because
+        // the selection is drawn in a separate container; its main purpose is to ensure the minimum
+        // contrast ratio.
         bgOverride = this._coreBrowserService.isFocused ? colors.selectionBackgroundOpaque : colors.selectionInactiveBackgroundOpaque;
         bg = bgOverride.rgba >> 8 & 0xFFFFFF;
         bgColorMode = Attributes.CM_RGB;
