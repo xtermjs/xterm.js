@@ -1296,6 +1296,13 @@ declare module '@xterm/headless' {
 
   /**
    * Allows hooking into the parser for custom handling of escape sequences.
+   *
+   * Handlers may return a `Promise<boolean>` to pause input processing until
+   * it resolves or rejects. The resolved value controls whether to try a
+   * previous handler, just like a synchronous return value. Input cannot
+   * advance terminal state while paused, but operations such as resize or
+   * reset still take effect. Prefer synchronous handlers where possible to
+   * avoid the throughput cost of asynchronous processing.
    */
   export interface IParser {
     /**
@@ -1310,7 +1317,7 @@ declare module '@xterm/headless' {
      * The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean): IDisposable;
+    registerCsiHandler(id: IFunctionIdentifier, callback: (params: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for DCS escape sequences.
@@ -1329,7 +1336,7 @@ declare module '@xterm/headless' {
      * The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean): IDisposable;
+    registerDcsHandler(id: IFunctionIdentifier, callback: (data: string, param: (number | number[])[]) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for ESC escape sequences.
@@ -1342,7 +1349,7 @@ declare module '@xterm/headless' {
      * The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean): IDisposable;
+    registerEscHandler(id: IFunctionIdentifier, handler: () => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for OSC escape sequences.
@@ -1360,7 +1367,7 @@ declare module '@xterm/headless' {
      * The most recently added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerOscHandler(ident: number, callback: (data: string) => boolean): IDisposable;
+    registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
 
     /**
      * Adds a handler for APC escape sequences.
@@ -1378,7 +1385,7 @@ declare module '@xterm/headless' {
      * added handler is tried first.
      * @returns An IDisposable you can call to remove this handler.
      */
-    registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean): IDisposable;
+    registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   }
 
   /**
