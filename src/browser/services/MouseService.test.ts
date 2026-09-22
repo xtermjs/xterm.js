@@ -444,3 +444,74 @@ describe('MouseService multi-window', () => {
     assert.deepEqual(openDocument.removed, []);
   });
 });
+
+describe('MouseService _consumeWheelEvent', () => {
+  // A cell height that divides the deltas below exactly, so the assertions are not at the mercy
+  // of floating point accumulation.
+  const CELL_HEIGHT = 16;
+
+  let mouseService: MouseService;
+  let originalWheelEvent: unknown;
+
+  before(() => {
+    // Unit tests run in node, where WheelEvent does not exist. Only its delta mode constants are
+    // read by the code under test.
+    originalWheelEvent = (globalThis as any).WheelEvent;
+    (globalThis as any).WheelEvent ??= { DOM_DELTA_PIXEL: 0, DOM_DELTA_LINE: 1, DOM_DELTA_PAGE: 2 };
+  });
+
+  after(() => {
+    (globalThis as any).WheelEvent = originalWheelEvent;
+  });
+
+  beforeEach(() => {
+    mouseService = new MouseService(
+      new MockRenderService(),
+      {
+        getMouseReportCoords: () => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      new MouseStateService(),
+      {
+        triggerDataEvent: () => {},
+        triggerBinaryEvent: () => {},
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      bufferService,
+      optionsService,
+      new MockSelectionService(),
+      logService,
+      new MockCoreBrowserService()
+    );
+  });
+
+  function scroll(deltaY: number): number {
+    return (mouseService as any)._consumeWheelEvent(
+      { deltaY, deltaMode: 0, shiftKey: false } as any,
+      CELL_HEIGHT,
+      1
+    );
+  }
+
+  function travel(deltaY: number, events: number): number {
+    let lines = 0;
+    for (let i = 0; i < events; i++) {
+      lines += scroll(deltaY);
+    }
+    return lines;
+  }
+
+  it('reports a line per cell travelled, however the device splits the travel', () => {
+    // 640px over a 16px cell is 40 lines, whether the device reports it in 4px steps the way a
+    // trackpad does, or in one large step the way a notched wheel does.
+    assert.equal(travel(4, 160), 40);
+    mouseService.reset();
+    assert.equal(travel(640, 1), 40);
+  });
+
+  it('accumulates sub-cell deltas instead of reporting one line per event', () => {
+    assert.equal(scroll(4), 0);
+    assert.equal(scroll(4), 0);
+    assert.equal(scroll(4), 0);
+    assert.equal(scroll(4), 1);
+  });
+});
