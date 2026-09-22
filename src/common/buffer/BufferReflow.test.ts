@@ -7,11 +7,36 @@ import { CircularList } from '../CircularList';
 import { BufferLine } from './BufferLine';
 import { CellData } from './CellData';
 import { NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE } from './Constants';
-import { reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
+import { getWrappedLineTrimmedLength, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
 import { IBufferLine } from './Types';
 
 
 describe('BufferReflow', () => {
+  describe('getWrappedLineTrimmedLength', () => {
+    it('should exclude wrap excess filler cells', () => {
+      const line = new BufferLine(3);
+      line.set(0, [0, '汉', 2, '汉'.charCodeAt(0)]);
+      line.set(1, [0, '', 0, 0]);
+      line.set(2, [0, '', 1, 0]);
+      // the wide char did not fit into the last column, thus the cell is a filler cell
+      line.setWrapExcess(2);
+      const next = new BufferLine(3);
+      next.set(0, [0, '语', 2, '语'.charCodeAt(0)]);
+      next.set(1, [0, '', 0, 0]);
+      assert.equal(getWrappedLineTrimmedLength([line, next], 0, 3), 2);
+    });
+    it('should keep null cells that are real content (issue #3097)', () => {
+      const line = new BufferLine(3);
+      line.set(0, [0, '汉', 2, '汉'.charCodeAt(0)]);
+      // null cells that were never written are content, they must not be dropped
+      line.set(1, [0, '', 1, 0]);
+      line.set(2, [0, '', 1, 0]);
+      const next = new BufferLine(3);
+      next.set(0, [0, '语', 2, '语'.charCodeAt(0)]);
+      next.set(1, [0, '', 0, 0]);
+      assert.equal(getWrappedLineTrimmedLength([line, next], 0, 3), 3);
+    });
+  });
   describe('reflowSmallerGetNewLineLengths', () => {
     it('should return correct line lengths for a small line with wide characters', () => {
       const line = new BufferLine(4);

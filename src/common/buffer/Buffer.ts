@@ -454,6 +454,11 @@ export class Buffer extends Disposable implements IBuffer {
       for (let i = 0; i < wrappedLines.length; i++) {
         if (destLineLengths[i] < newCols) {
           wrappedLines[i].setCell(destLineLengths[i], nullCell);
+          if (i < wrappedLines.length - 1) {
+            // The nulled cell is a filler cell of the early wrapped wide char, mark it so that
+            // reflowing the line back does not count it as content.
+            wrappedLines[i].setWrapExcess(destLineLengths[i]);
+          }
         }
       }
 

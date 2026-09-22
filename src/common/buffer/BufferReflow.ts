@@ -79,8 +79,9 @@ export function reflowLargerGetLinesToRemove(lines: CircularList<IBufferLine>, o
       if (destCol === 0 && destLineIndex !== 0) {
         if (wrappedLines[destLineIndex - 1].getWidth(newCols - 1) === 2) {
           wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[destLineIndex - 1], newCols - 1, destCol++, 1, false);
-          // Null out the end of the last row
+          // Null out the end of the last row and mark the cell as filler of the moved wide char
           wrappedLines[destLineIndex - 1].setCell(newCols - 1, nullCell);
+          wrappedLines[destLineIndex - 1].setWrapExcess(newCols - 1);
         }
       }
     }
@@ -217,13 +218,18 @@ export function getWrappedLineTrimmedLength(lines: BufferLine[], i: number, cols
   if (i === lines.length - 1) {
     return lines[i].getTrimmedLength();
   }
-  // Detect whether the following line starts with a wide character and the end of the current line
-  // is null, if so then we can be pretty sure the null character should be excluded from the line
-  // length]
-  const endsInNull = !(lines[i].hasContent(cols - 1)) && lines[i].getWidth(cols - 1) === 1;
-  const followingLineStartsWithWide = lines[i + 1].getWidth(0) === 2;
-  if (endsInNull && followingLineStartsWithWide) {
-    return cols - 1;
+  // A wide character that does not fit into the last column gets wrapped early onto the next
+  // line, which leaves a filler cell at the end of this line. Those filler cells are explicitly
+  // marked on creation (see Content.IS_WRAP_EXCESS_MASK). Guessing them from "line ends with a
+  // null cell and the next line starts with a wide char" is not reliable, as a null cell at the
+  // line end can also be real content (eg. created by cursor movement or erasing), in which case
+  // the content used to get shifted by one cell on reflow (issue #3097).
+  if (lines[i].isWrapExcess(cols - 1)) {
+    let length = cols - 1;
+    while (length > 0 && lines[i].isWrapExcess(length - 1)) {
+      length--;
+    }
+    return length;
   }
   return cols;
 }
