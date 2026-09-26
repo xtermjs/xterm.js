@@ -90,6 +90,10 @@ export class BufferService extends Disposable implements IBufferService {
         } else {
           buffer.lines.push(newLine.clone(true));
         }
+      } else if (willBufferBeTrimmed) {
+        const recycledLine = buffer.lines.get(0)!;
+        recycledLine.copyFrom(newLine, true);
+        buffer.lines.splice(bottomRow + 1, 0, recycledLine);
       } else {
         buffer.lines.splice(bottomRow + 1, 0, newLine.clone(true));
       }
@@ -112,8 +116,10 @@ export class BufferService extends Disposable implements IBufferService {
       // scrollTop is non-zero which means no line will be going to the
       // scrollback, instead we can just shift them in-place.
       const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
+      const recycledLine = buffer.lines.get(topRow)!;
       buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      buffer.lines.set(bottomRow, newLine.clone(true));
+      recycledLine.copyFrom(newLine, true);
+      buffer.lines.set(bottomRow, recycledLine);
     }
 
     // Move the viewport to the bottom of the buffer unless the user is
