@@ -26,8 +26,11 @@ class TestLinkifier2 extends Linkifier {
 }
 
 describe('Linkifier2', () => {
+  let dom: jsdom.JSDOM;
+  let element: HTMLElement;
   let bufferService: IBufferService;
   let linkifier: TestLinkifier2;
+  let activations: number[];
 
   const link: ILink = {
     text: 'foo',
@@ -41,7 +44,7 @@ describe('Linkifier2', () => {
         y: 1
       }
     },
-    activate: () => { }
+    activate: e => activations.push(e.button)
   };
   const multiLineLink: ILink = {
     text: 'foo',
@@ -59,9 +62,12 @@ describe('Linkifier2', () => {
   };
 
   beforeEach(() => {
-    const dom = new jsdom.JSDOM();
+    dom = new jsdom.JSDOM();
+    element = dom.window.document.createElement('div');
+    activations = [];
     bufferService = new MockBufferService(100, 10);
-    linkifier = new TestLinkifier2(dom.window.document.createElement('div'), null!, null!, bufferService, new LinkProviderService());
+    const mouseCoordsService = { getCoords: () => [link.range.start.x, link.range.start.y] } as any;
+    linkifier = new TestLinkifier2(element, mouseCoordsService, null!, bufferService, new LinkProviderService());
     linkifier.currentLink = {
       link,
       state: {
@@ -198,5 +204,13 @@ describe('Linkifier2', () => {
     const beside = linkRange(6, 1000, 10, 1000);
     const overlap = linkRange(3, 1000, 8, 1000);
     assert.deepEqual(keptLinks(1, [[longLink], [beside, overlap]]), [[longLink], [beside]]);
+  });
+
+  it('only the primary button activates links', () => {
+    for (const button of [0, 1, 2]) {
+      element.dispatchEvent(new dom.window.MouseEvent('mousedown', { button }));
+      element.dispatchEvent(new dom.window.MouseEvent('mouseup', { button }));
+    }
+    assert.deepEqual(activations, [0]);
   });
 });
