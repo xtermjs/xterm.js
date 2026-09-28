@@ -218,7 +218,9 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   }
 
   private _handleMouseUp(event: MouseEvent): void {
-    if (!this._currentLink) {
+    // Only the primary button activates links, other buttons have their own meaning (eg. middle
+    // click paste on Linux)
+    if (event.button !== 0 || !this._currentLink) {
       return;
     }
 
