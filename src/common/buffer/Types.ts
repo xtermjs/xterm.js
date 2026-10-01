@@ -168,6 +168,7 @@ export interface IBuffer {
   scrollTop: number;
   hasScrollback: boolean;
   savedY: number;
+  savedYIsDisplayRelative: boolean;
   savedX: number;
   savedCharset: ICharset | undefined;
   savedCharsets: (ICharset | undefined)[];
