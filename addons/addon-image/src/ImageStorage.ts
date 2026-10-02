@@ -10,12 +10,22 @@ import type {
 } from './Types';
 import type { IBufferLine } from 'common/buffer/Types';
 import { CellData } from 'common/buffer/CellData';
+import { FgFlags } from 'common/buffer/Constants';
+import { decodePlaceholder, IPlaceholderCell, isPlaceholder } from './kitty/KittyPlaceholder';
 
 // fallback default cell size
 export const CELL_SIZE_DEFAULT: ICellSize = {
   width: 7,
   height: 14
 };
+
+interface IDrawCall {
+  imgSpec: IImageSpec;
+  tileId: number;
+  col: number;
+  row: number;
+  count: number;
+}
 
 class ImageTileInfo {
   constructor(
@@ -49,6 +59,11 @@ export class ImageStorage implements IDisposable {
   private _viewportMetrics: { cols: number, rows: number };
   public onImageAdded: (() => void) | undefined;
   public onImageDeleted: ((storageId: number) => void) | undefined;
+  // Maps a placeholder cell (kitty U=1) to the storage id of its virtual image.
+  public resolvePlaceholder: ((imageId: number, placementId: number) => number | undefined) | undefined;
+  private _virtualCount = 0;
+  private _placeholderCell: IPlaceholderCell = { imageId: 0, placementId: 0, row: 0, col: 0 };
+  private _prevPlaceholderCell: IPlaceholderCell = { imageId: 0, placementId: 0, row: 0, col: 0 };
 
   constructor(
     private _terminal: ITerminalExt,
@@ -76,10 +91,15 @@ export class ImageStorage implements IDisposable {
   public reset(): void {
     for (const spec of this._images.values()) {
       spec.marker?.dispose();
+      // virtual images have no marker
+      if (spec.virtual && window.ImageBitmap && spec.orig instanceof ImageBitmap) {
+        spec.orig.close();
+      }
     }
     // NOTE: marker.dispose above already calls ImageBitmap.close
     // therefore we can just wipe the map here
     this._images.clear();
+    this._virtualCount = 0;
     this._renderer.clearAll();
   }
 
@@ -116,6 +136,10 @@ export class ImageStorage implements IDisposable {
     const spec = this._images.get(id);
     if (!spec) return;
     this._images.delete(id);
+    if (spec.virtual) {
+      this._virtualCount--;
+      this._terminal.refresh(0, this._terminal.rows - 1);
+    }
     // FIXME: really ugly workaround to get bitmaps deallocated :(
     if (window.ImageBitmap && spec.orig instanceof ImageBitmap) {
       spec.orig.close();
@@ -226,7 +250,7 @@ export class ImageStorage implements IDisposable {
     // deleted images with zero tile count
     const zero = [];
     for (const [id, spec] of this._images.entries()) {
-      if (spec.tileCount < 1) {
+      if (spec.tileCount < 1 && !spec.virtual) {
         spec.marker?.dispose();
         zero.push(id);
       }
@@ -270,6 +294,72 @@ export class ImageStorage implements IDisposable {
     return imageId;
   }
 
+
+  /**
+   * Add an image that is not written to the buffer. It gets drawn wherever
+   * placeholder cells reference it (kitty unicode placeholders, U=1),
+   * tile `row * cols + col` for the placeholder at (row, col).
+   * @returns The internal image ID assigned to the stored image.
+   */
+  public addVirtualImage(img: HTMLCanvasElement | ImageBitmap, layer: IAddImageOpts['layer'], zIndex: number): number {
+    this._evictOldest(img.width * img.height);
+    let cellSize = this._renderer.cellSize;
+    if (cellSize.width === -1 || cellSize.height === -1) {
+      cellSize = CELL_SIZE_DEFAULT;
+    }
+    const imageId = ++this._lastId;
+    this._images.set(imageId, {
+      orig: img,
+      origCellSize: cellSize,
+      actual: img,
+      actualCellSize: { ...cellSize },
+      marker: undefined,
+      tileCount: 0,
+      bufferType: this._terminal.buffer.active.type,
+      layer,
+      zIndex,
+      virtual: true
+    });
+    this._virtualCount++;
+    // placeholder cells may already be on screen
+    this.hidePlaceholderGlyphs();
+    this._terminal.refresh(0, this._terminal.rows - 1);
+    this.onImageAdded?.();
+    return imageId;
+  }
+
+  /**
+   * Mark placeholder cells (kitty U=1) of the active screen invisible, so the
+   * text renderer draws neither the placeholder glyph nor its diacritics:
+   * the cell shows its background, with the image tile drawn on top.
+   * Called after each parsed write, before the next render.
+   */
+  public hidePlaceholderGlyphs(): void {
+    if (!this._virtualCount || !this.resolvePlaceholder) {
+      return;
+    }
+    const buffer = this._terminal._core.buffer;
+    const cols = this._terminal.cols;
+    const cell = this._workCell;
+    for (let y = 0; y < this._terminal.rows; ++y) {
+      const line = buffer.lines.get(buffer.ybase + y);
+      if (!line) continue;
+      let changed = false;
+      for (let x = 0; x < cols; ++x) {
+        if (isPlaceholder(line, x)) {
+          line.loadCell(x, cell);
+          if (!(cell.fg & FgFlags.INVISIBLE)) {
+            cell.fg |= FgFlags.INVISIBLE;
+            line.setCell(x, cell);
+            changed = true;
+          }
+        }
+      }
+      if (changed) {
+        this._terminal._core._inputHandler._dirtyRowTracker.markDirty(y);
+      }
+    }
+  }
 
   /**
    * Render method. Collects buffer information and triggers
@@ -342,14 +432,28 @@ export class ImageStorage implements IDisposable {
     this._renderer.clearLines(start, end);
 
     // Collect draw calls so we can sort by z-index (lower z drawn first).
-    const drawCalls: { imgSpec: IImageSpec, tileId: number, col: number, row: number, count: number }[] = [];
+    const drawCalls: IDrawCall[] = [];
     const placeholderCalls: { col: number, row: number, count: number }[] = [];
+    const placeholderTiles: IDrawCall[] = [];
+    const placeholders = this._virtualCount > 0 && this.resolvePlaceholder !== undefined;
 
     // walk all cells in viewport and collect tiles found
     for (let row = start; row <= end; ++row) {
       const line = buffer.lines.get(row + buffer.ydisp);
       if (!line) return;
+      let cell = this._placeholderCell;
+      let prevCell: IPlaceholderCell | undefined;
       for (let col = 0; col < cols; ++col) {
+        if (placeholders) {
+          if (decodePlaceholder(line, col, this._workCell, prevCell, cell)) {
+            this._collectPlaceholder(cell, col, row, placeholderTiles);
+            // swap work objects, the decoded cell is the left neighbour of the next one
+            prevCell = cell;
+            cell = cell === this._placeholderCell ? this._prevPlaceholderCell : this._placeholderCell;
+            continue;
+          }
+          prevCell = undefined;
+        }
         const e = line.getExtended(col)?.payload;
         if (e instanceof ImageTileInfo) {
           const imageId = e.imageId;
@@ -388,6 +492,10 @@ export class ImageStorage implements IDisposable {
       }
     }
 
+    for (const call of placeholderTiles) {
+      drawCalls.push(call);
+    }
+
     // Sort by z-index so lower z draws first (higher z renders on top)
     drawCalls.sort((a, b) => a.imgSpec.zIndex - b.imgSpec.zIndex);
 
@@ -400,6 +508,32 @@ export class ImageStorage implements IDisposable {
     for (const call of drawCalls) {
       this._renderer.draw(call.imgSpec, call.tileId, call.col, call.row, call.count);
     }
+  }
+
+  /**
+   * Queue the tile a placeholder cell references, merged with the call to its left
+   * when it continues the same image row.
+   */
+  private _collectPlaceholder(cell: IPlaceholderCell, col: number, row: number, calls: IDrawCall[]): void {
+    const storageId = this.resolvePlaceholder!(cell.imageId, cell.placementId);
+    const imgSpec = storageId !== undefined ? this._images.get(storageId) : undefined;
+    if (!imgSpec?.orig) {
+      return;
+    }
+    const tileCols = Math.ceil(imgSpec.orig.width / imgSpec.origCellSize.width);
+    const tileRows = Math.ceil(imgSpec.orig.height / imgSpec.origCellSize.height);
+    if (cell.col >= tileCols || cell.row >= tileRows) {
+      return;
+    }
+    const tileId = cell.row * tileCols + cell.col;
+    const last = calls[calls.length - 1];
+    if (last && last.imgSpec === imgSpec && last.row === row && last.col + last.count === col
+      && last.tileId + last.count === tileId && cell.col > 0) {
+      last.count++;
+    } else {
+      calls.push({ imgSpec, tileId, col, row, count: 1 });
+    }
+    this._fullyCleared = false;
   }
 
   public viewportResize(metrics: { cols: number, rows: number }): void {
@@ -571,7 +705,7 @@ export class ImageStorage implements IDisposable {
     // deleted images with zero tile count
     const zero = [];
     for (const [id, spec] of this._images.entries()) {
-      if (spec.bufferType === 'alternate' && !spec.tileCount) {
+      if (spec.bufferType === 'alternate' && !spec.tileCount && !spec.virtual) {
         spec.marker?.dispose();
         zero.push(id);
       }
