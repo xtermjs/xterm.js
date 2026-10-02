@@ -128,7 +128,7 @@ describe('WriteBuffer', () => {
         done();
       });
     });
-    it('flushSync after a yield does not repeat parsed chunks or callbacks', done => {
+    it('flushSync after a yield does not repeat parsed chunks or callbacks', async () => {
       const buffer = new TestWriteBuffer(data => { stack.push(data); });
       wb = buffer;
       wb.write('a', () => { cbStack.push('a'); });
@@ -141,12 +141,29 @@ describe('WriteBuffer', () => {
       wb.flushSync();
       assert.deepEqual(stack, ['a', toBytes('b'), 'c']);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
-      // A later write also exercises the continuation scheduled before the flush.
-      wb.write('d', () => {
-        assert.deepEqual(stack, ['a', toBytes('b'), 'c', 'd']);
-        assert.deepEqual(cbStack, ['a', 'b', 'c']);
-        done();
+      // Let the previously scheduled continuation run before a new write can replace it.
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      assert.deepEqual(stack, ['a', toBytes('b'), 'c']);
+      assert.deepEqual(cbStack, ['a', 'b', 'c']);
+      await new Promise<void>(resolve => wb.write('d', resolve));
+      assert.deepEqual(stack, ['a', toBytes('b'), 'c', 'd']);
+      assert.deepEqual(cbStack, ['a', 'b', 'c']);
+    });
+    it('flushSync from a write callback does not repeat parsed chunks or callbacks', async () => {
+      await new Promise<void>(resolve => {
+        wb.write('a', () => {
+          cbStack.push('a');
+          wb.flushSync();
+        });
+        wb.write('b', () => {
+          cbStack.push('b');
+          resolve();
+        });
       });
+      assert.deepEqual(stack, ['a', 'b']);
+      assert.deepEqual(cbStack, ['a', 'b']);
+      await new Promise<void>(resolve => wb.write('c', resolve));
+      assert.deepEqual(stack, ['a', 'b', 'c']);
     });
     it('flushSync processes empty chunks and their callbacks', () => {
       wb.write('a', () => { cbStack.push('a'); });

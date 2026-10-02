@@ -286,10 +286,11 @@ export class WriteBuffer extends Disposable {
         return;
       }
 
+      // Retire the chunk before its callback can synchronously flush the remaining queue.
       const cb = this._callbacks[this._bufferOffset];
-      if (cb) cb();
       this._bufferOffset++;
       this._pendingData -= data.length;
+      if (cb) cb();
 
       if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
         break;
