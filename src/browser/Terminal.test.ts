@@ -136,6 +136,23 @@ describe('Terminal', () => {
     });
   });
 
+  describe('_keyDownSeen gate (IME insertText ordering)', () => {
+    beforeEach(() => {
+      term.clearSelection = () => { };
+      (term as any).textarea = { value: '' };
+    });
+    it('should not arm the gate on a modifier-only keydown, keeping the first IME insertText deliverable', () => {
+      // macOS IMEs deliver insertText before the character keydown while Shift is held (#5887,
+      // #6144): if the modifier's keydown arms the gate, the first press is dropped.
+      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 16, key: 'Shift' } as KeyboardEvent);
+      assert.equal(term.inputEvent({ data: '？', inputType: 'insertText', composed: true } as InputEvent), true);
+    });
+    it('should still arm the gate on a character keydown so regular insertText stays deduped', () => {
+      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 65, key: 'a' } as KeyboardEvent);
+      assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false);
+    });
+  });
+
   describe('attachCustomKeyEventHandler', () => {
     const evKeyDown = {
       preventDefault: () => { },
