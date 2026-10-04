@@ -463,7 +463,14 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
       if (cursorMoved) {
         moveDown(realCursorRow - this._lastCursorRow);
-        moveRight(realCursorCol - this._lastCursorCol);
+        if (this._lastCursorCol >= this._terminal.cols) {
+          // The replayed stream ended in the pending wrap sentinel column (x === cols).
+          // A relative CUB/CUF collapses that sentinel first and lands one column off,
+          // so set the column absolutely instead.
+          content += `\u001b[${realCursorCol + 1}G`;
+        } else {
+          moveRight(realCursorCol - this._lastCursorCol);
+        }
       }
     }
 
