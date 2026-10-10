@@ -229,12 +229,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       return true;
     }
 
-    // No semicolon = no payload (delete, capability query)
-    if (this._inControlData) {
-      return this._handleNoPayloadCommand(cmd);
-    }
-
-    // Delete action was handled by skipping payload - just execute
+    // Delete action doesn't need payload - just execute
     if (cmd.action === KittyAction.DELETE) {
       return this._handleDelete(cmd);
     }
@@ -243,6 +238,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const pendingKey = cmd.id ?? this._lastPendingKey ?? 0;
     const isMoreComing = cmd.more === 1;
     const pending = this._pendingTransmissions.get(pendingKey);
+
+    // No semicolon = no payload (capability query, placement), unless it's a chunk
+    const isChunk = isMoreComing || pending !== undefined;
+    if (this._inControlData && !isChunk) {
+      return this._handleNoPayloadCommand(cmd);
+    }
 
     if (isMoreComing) {
       // On decode error _streamPayload() already dropped the transmission
@@ -327,8 +328,6 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const action = cmd.action ?? 't';
 
     switch (action) {
-      case KittyAction.DELETE:
-        return this._handleDelete(cmd);
       case KittyAction.QUERY:
         this._sendResponse(cmd.id ?? 0, 'OK', cmd.quiet ?? 0);
         return true;

@@ -352,6 +352,69 @@ test.describe('Kitty Graphics Protocol', () => {
       await timeout(100);
       strictEqual(await getImageStorageLength(), 1);
     });
+
+    test('first chunk without semicolon keeps its control data', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,m=1\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 1);
+
+      await ctx.proxy.write(`\x1b_Gm=0;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+    });
+
+    test('final chunk without semicolon completes the transfer', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,m=1;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(50);
+      strictEqual(await getImageStorageLength(), 0);
+
+      await ctx.proxy.write(`\x1b_Gm=0\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+      // A leftover pending transfer would swallow the next image sent without i=
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 0);
+    });
+
+    test('chunked transfer with keys, data and end marker in separate chunks', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(half);
+
+      // Shape of chafa's kitty output - only the middle chunks carry payload
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=406,m=1\x1b\\`);
+      await ctx.proxy.write(`\x1b_Gm=1;${part1}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Gm=1;${part2}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Gm=0\x1b\\`);
+      await timeout(100);
+
+      const storedData = await ctx.page.evaluate(async () => {
+        const blob = (window as any).imageAddon._handlers.get('kitty').images.get(406).data;
+        const buffer = await blob.arrayBuffer();
+        return Array.from(new Uint8Array(buffer));
+      });
+      deepStrictEqual(storedData, KITTY_BLACK_1X1_BYTES);
+    });
+
+    test('command without payload for another image does not end a pending transfer', async () => {
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+      const part2 = KITTY_BLACK_1X1_BASE64.substring(half);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=407,m=1;${part1}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=p,i=9999\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.has(407)`), true);
+
+      await ctx.proxy.write(`\x1b_Gm=0;${part2}\x1b\\`);
+      await timeout(100);
+
+      const storedData = await ctx.page.evaluate(async () => {
+        const blob = (window as any).imageAddon._handlers.get('kitty').images.get(407).data;
+        const buffer = await blob.arrayBuffer();
+        return Array.from(new Uint8Array(buffer));
+      });
+      deepStrictEqual(storedData, KITTY_BLACK_1X1_BYTES);
+    });
   });
 
   test.describe('Delete commands', () => {
