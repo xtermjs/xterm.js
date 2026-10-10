@@ -14,6 +14,7 @@ import { TextureAtlas } from './TextureAtlas';
 import type { ITextureAtlas, ITextureAtlasPage } from './Types';
 import { DirtyCellUploadTracker, planAtlasUploads, type IBufferUploadPlan } from './UploadPlanner';
 import { alignBufferSize, createBlendState, GPU_BUFFER_USAGE, GPU_SHADER_STAGE, GPU_TEXTURE_USAGE } from './WebgpuUtils';
+import type { SharedDevice } from './DeviceManager';
 
 export const PACKED_CELL_WORDS = 5;
 export const PACKED_CELL_BYTES = PACKED_CELL_WORDS * Uint32Array.BYTES_PER_ELEMENT;
@@ -173,6 +174,7 @@ export function unpackI16(value: number): number {
 }
 
 export class GlyphRenderer extends Disposable {
+  private readonly _device: GPUDevice;
   private readonly _backgroundPipeline: GPURenderPipeline;
   private readonly _glyphPipeline: GPURenderPipeline;
   private readonly _cellBindGroupLayout: GPUBindGroupLayout;
@@ -213,7 +215,7 @@ export class GlyphRenderer extends Disposable {
 
   constructor(
     private readonly _terminal: Terminal,
-    private readonly _device: GPUDevice,
+    sharedDevice: SharedDevice,
     private readonly _canvasFormat: GPUTextureFormat,
     private _dimensions: IRenderDimensions,
     private readonly _optionsService: IOptionsService,
@@ -221,41 +223,51 @@ export class GlyphRenderer extends Disposable {
     private readonly _logService: ILogService
   ) {
     super();
+    this._device = sharedDevice.device;
     if (TextureAtlas.maxAtlasPages === undefined) {
       TextureAtlas.maxAtlasPages = Math.min(32, this._device.limits.maxSampledTexturesPerShaderStage);
       TextureAtlas.maxTextureSize = this._device.limits.maxTextureDimension2D;
     }
-    const shaderModule = this._device.createShaderModule({ label: 'xterm packed cell shader', code: createShaderSource(TextureAtlas.maxAtlasPages) });
-    this._cellBindGroupLayout = this._device.createBindGroupLayout({
-      label: 'xterm packed cell layout',
-      entries: [
-        { binding: 0, visibility: GPU_SHADER_STAGE.VERTEX, buffer: { type: 'read-only-storage' } },
-        { binding: 1, visibility: GPU_SHADER_STAGE.VERTEX, buffer: { type: 'uniform' } },
-        { binding: 2, visibility: GPU_SHADER_STAGE.VERTEX, buffer: { type: 'uniform' } }
-      ]
+    const maxAtlasPages = TextureAtlas.maxAtlasPages;
+    const resources = sharedDevice.getResources(`glyph:${this._canvasFormat}:${maxAtlasPages}`, () => {
+      const shaderModule = sharedDevice.getResources(`glyph-shader:${maxAtlasPages}`, () => this._device.createShaderModule({ label: 'xterm packed cell shader', code: createShaderSource(maxAtlasPages) }));
+      const cellBindGroupLayout = this._device.createBindGroupLayout({
+        label: 'xterm packed cell layout',
+        entries: [
+          { binding: 0, visibility: GPU_SHADER_STAGE.VERTEX, buffer: { type: 'read-only-storage' } },
+          { binding: 1, visibility: GPU_SHADER_STAGE.VERTEX, buffer: { type: 'uniform' } },
+          { binding: 2, visibility: GPU_SHADER_STAGE.VERTEX, buffer: { type: 'uniform' } }
+        ]
+      });
+      const textureEntries: GPUBindGroupLayoutEntry[] = [{ binding: 0, visibility: GPU_SHADER_STAGE.VERTEX | GPU_SHADER_STAGE.FRAGMENT, sampler: { type: 'filtering' } }];
+      for (let i = 0; i < maxAtlasPages; i++) {
+        textureEntries.push({ binding: i + 1, visibility: GPU_SHADER_STAGE.VERTEX | GPU_SHADER_STAGE.FRAGMENT, texture: { sampleType: 'float', viewDimension: '2d' } });
+      }
+      const textureBindGroupLayout = this._device.createBindGroupLayout({ label: 'xterm atlas layout', entries: textureEntries });
+      const pipelineLayout = this._device.createPipelineLayout({ label: 'xterm packed cell pipeline layout', bindGroupLayouts: [cellBindGroupLayout, textureBindGroupLayout] });
+      const backgroundPipeline = this._device.createRenderPipeline({
+        label: 'xterm cell background pipeline', layout: pipelineLayout,
+        vertex: { module: shaderModule, entryPoint: 'backgroundVertex' },
+        fragment: { module: shaderModule, entryPoint: 'backgroundFragment', targets: [{ format: this._canvasFormat, blend: createBlendState() }] },
+        primitive: { topology: 'triangle-strip' }
+      });
+      const glyphPipeline = this._device.createRenderPipeline({
+        label: 'xterm cell glyph pipeline', layout: pipelineLayout,
+        vertex: { module: shaderModule, entryPoint: 'glyphVertex' },
+        fragment: { module: shaderModule, entryPoint: 'glyphFragment', targets: [{ format: this._canvasFormat, blend: createBlendState() }] },
+        primitive: { topology: 'triangle-strip' }
+      });
+      const sampler = this._device.createSampler({ label: 'xterm glyph sampler', addressModeU: 'clamp-to-edge', addressModeV: 'clamp-to-edge', magFilter: 'linear', minFilter: 'linear' });
+      return { cellBindGroupLayout, textureBindGroupLayout, backgroundPipeline, glyphPipeline, sampler };
     });
-    const textureEntries: GPUBindGroupLayoutEntry[] = [{ binding: 0, visibility: GPU_SHADER_STAGE.VERTEX | GPU_SHADER_STAGE.FRAGMENT, sampler: { type: 'filtering' } }];
-    for (let i = 0; i < TextureAtlas.maxAtlasPages; i++) {
-      textureEntries.push({ binding: i + 1, visibility: GPU_SHADER_STAGE.VERTEX | GPU_SHADER_STAGE.FRAGMENT, texture: { sampleType: 'float', viewDimension: '2d' } });
-    }
-    this._textureBindGroupLayout = this._device.createBindGroupLayout({ label: 'xterm atlas layout', entries: textureEntries });
-    const pipelineLayout = this._device.createPipelineLayout({ label: 'xterm packed cell pipeline layout', bindGroupLayouts: [this._cellBindGroupLayout, this._textureBindGroupLayout] });
-    this._backgroundPipeline = this._device.createRenderPipeline({
-      label: 'xterm cell background pipeline', layout: pipelineLayout,
-      vertex: { module: shaderModule, entryPoint: 'backgroundVertex' },
-      fragment: { module: shaderModule, entryPoint: 'backgroundFragment', targets: [{ format: this._canvasFormat, blend: createBlendState() }] },
-      primitive: { topology: 'triangle-strip' }
-    });
-    this._glyphPipeline = this._device.createRenderPipeline({
-      label: 'xterm cell glyph pipeline', layout: pipelineLayout,
-      vertex: { module: shaderModule, entryPoint: 'glyphVertex' },
-      fragment: { module: shaderModule, entryPoint: 'glyphFragment', targets: [{ format: this._canvasFormat, blend: createBlendState() }] },
-      primitive: { topology: 'triangle-strip' }
-    });
+    this._cellBindGroupLayout = resources.cellBindGroupLayout;
+    this._textureBindGroupLayout = resources.textureBindGroupLayout;
+    this._backgroundPipeline = resources.backgroundPipeline;
+    this._glyphPipeline = resources.glyphPipeline;
+    this._sampler = resources.sampler;
     this._uniformBuffer = this._device.createBuffer({ label: 'xterm grid uniforms', size: 32, usage: GPU_BUFFER_USAGE.UNIFORM | GPU_BUFFER_USAGE.COPY_DST });
     this._colorBuffer = this._device.createBuffer({ label: 'xterm color palette', size: COLOR_COUNT * 4 * Float32Array.BYTES_PER_ELEMENT, usage: GPU_BUFFER_USAGE.UNIFORM | GPU_BUFFER_USAGE.COPY_DST });
     this._cellBuffer = this._device.createBuffer({ label: 'xterm packed cells', size: this._cellBufferSize, usage: GPU_BUFFER_USAGE.STORAGE | GPU_BUFFER_USAGE.COPY_DST });
-    this._sampler = this._device.createSampler({ label: 'xterm glyph sampler', addressModeU: 'clamp-to-edge', addressModeV: 'clamp-to-edge', magFilter: 'linear', minFilter: 'linear' });
     for (let i = 0; i < TextureAtlas.maxAtlasPages; i++) {
       this._atlasTextures.push(this._createPlaceholderTexture());
     }

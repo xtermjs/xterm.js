@@ -11,6 +11,7 @@ import { Terminal } from '@xterm/xterm';
 import { ICursorRenderModel, IRenderModel } from './Types';
 import { createBlendState, GPU_BUFFER_USAGE } from './WebgpuUtils';
 import type { ILogService } from 'common/services/Services';
+import type { SharedDevice } from './DeviceManager';
 
 const MAX_CURSOR_RECTANGLES = 4;
 const FLOATS_PER_RECTANGLE = 8;
@@ -57,6 +58,7 @@ fn fragmentMain(input: VertexOutput) -> @location(0) vec4f {
 }`;
 
 export class RectangleRenderer extends Disposable {
+  private readonly _device: GPUDevice;
   private readonly _cursorBuffer: GPUBuffer;
   private readonly _cursorBindGroup: GPUBindGroup;
   private readonly _cursorBundle: GPURenderBundle;
@@ -71,24 +73,27 @@ export class RectangleRenderer extends Disposable {
 
   constructor(
     _terminal: Terminal,
-    private readonly _device: GPUDevice,
+    sharedDevice: SharedDevice,
     canvasFormat: GPUTextureFormat,
     private _dimensions: IRenderDimensions,
     themeService: IThemeService,
     _logService: ILogService
   ) {
     super();
-    const shaderModule = this._device.createShaderModule({ label: 'xterm cursor shader', code: shaderSource });
-    const pipeline = this._device.createRenderPipeline({
-      label: 'xterm cursor pipeline',
-      layout: 'auto',
-      vertex: { module: shaderModule, entryPoint: 'vertexMain' },
-      fragment: {
-        module: shaderModule,
-        entryPoint: 'fragmentMain',
-        targets: [{ format: canvasFormat, blend: createBlendState() }]
-      },
-      primitive: { topology: 'triangle-strip' }
+    this._device = sharedDevice.device;
+    const pipeline = sharedDevice.getResources(`cursor:${canvasFormat}`, () => {
+      const shaderModule = sharedDevice.getResources('cursor-shader', () => this._device.createShaderModule({ label: 'xterm cursor shader', code: shaderSource }));
+      return this._device.createRenderPipeline({
+        label: 'xterm cursor pipeline',
+        layout: 'auto',
+        vertex: { module: shaderModule, entryPoint: 'vertexMain' },
+        fragment: {
+          module: shaderModule,
+          entryPoint: 'fragmentMain',
+          targets: [{ format: canvasFormat, blend: createBlendState() }]
+        },
+        primitive: { topology: 'triangle-strip' }
+      });
     });
     this._cursorBuffer = this._device.createBuffer({
       label: 'xterm cursor uniforms',

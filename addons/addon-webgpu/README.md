@@ -29,7 +29,11 @@ See the full [API](https://github.com/xtermjs/xterm.js/blob/master/addons/addon-
 
 ### Handling Device Loss
 
-WebGPU devices can be lost after suspension, driver resets, or GPU failures. The addon restores xterm.js's default renderer and emits `onDeviceLoss`. Create and load a new addon instance to retry.
+Terminal instances using the same navigator's WebGPU entry point share one adapter/device acquisition, including concurrent initialization. Shader modules, pipelines, layouts and samplers are cached per device and compatible configuration. Each renderer retains its own canvas context, buffers, bind groups and GPU atlas textures, so terminal contents and sizing remain independent.
+
+Disposing one terminal releases only its reference and renderer resources. The device is destroyed when the last reference is released. Independent windows with different WebGPU entry points use separate devices.
+
+WebGPU devices can be lost after suspension, driver resets, or GPU failures. Device loss restores xterm.js's default renderer and emits `onDeviceLoss` for every terminal sharing that device. The lost device is removed from the cache before notification. Create and load new addon instances to retry; they will share a newly acquired device. Uncaptured device errors are also reported to all attached renderers because the shared device cannot attribute them to a specific terminal.
 
 ```ts
 addon.onDeviceLoss(event => {

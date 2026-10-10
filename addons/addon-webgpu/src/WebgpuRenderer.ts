@@ -28,13 +28,14 @@ import { addDisposableListener } from 'browser/Dom';
 import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { toError } from './WebgpuUtils';
+import { acquireDevice, type IDeviceReference } from './DeviceManager';
 
 const enum Constants {
   MERGE_RETRY_LIMIT = 32
 }
 
 export class WebgpuRenderer extends Disposable implements IRenderer {
-  private _renderLayers: IRenderLayer[];
+  private _renderLayers: IRenderLayer[] = [];
   private _cursorBlinkStateManager: MutableDisposable<CursorBlinkStateManager> = this._register(new MutableDisposable());
   private _textBlinkStateManager: TextBlinkStateManager;
   private _charAtlasDisposable = this._register(new MutableDisposable());
@@ -92,18 +93,14 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
     if (!gpu) {
       throw new Error('WebGPU is not supported in this browser or context');
     }
-    const adapter = await gpu.requestAdapter();
-    if (!adapter) {
-      throw new Error('WebGPU did not provide a compatible GPU adapter');
-    }
-    const device = await adapter.requestDevice();
-    const canvas = coreBrowserService.mainDocument.createElement('canvas');
-    const context = canvas.getContext('webgpu') as GPUCanvasContext | null;
-    if (!context) {
-      device.destroy();
-      throw new Error('Could not create a WebGPU canvas context');
-    }
+    const deviceReference = await acquireDevice(gpu);
+    let context: GPUCanvasContext | null = null;
     try {
+      const canvas = coreBrowserService.mainDocument.createElement('canvas');
+      context = canvas.getContext('webgpu') as GPUCanvasContext | null;
+      if (!context) {
+        throw new Error('Could not create a WebGPU canvas context');
+      }
       return new WebgpuRenderer(
         terminal,
         characterJoinerService,
@@ -117,12 +114,12 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
         customGlyphs,
         canvas,
         context,
-        device,
+        deviceReference,
         gpu.getPreferredCanvasFormat()
       );
     } catch (error) {
-      context.unconfigure();
-      device.destroy();
+      context?.unconfigure();
+      deviceReference.dispose();
       throw error;
     }
   }
@@ -140,90 +137,90 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
     private readonly _customGlyphs: boolean = true,
     canvas: HTMLCanvasElement,
     private readonly _context: GPUCanvasContext,
-    private readonly _device: GPUDevice,
+    private readonly _deviceReference: IDeviceReference,
     private readonly _canvasFormat: GPUTextureFormat
   ) {
     super();
     this._canvas = canvas;
-    this._context.configure({
-      device: this._device,
-      format: this._canvasFormat,
-      alphaMode: 'premultiplied'
-    });
-    this._colorAttachment = {
-      view: this._context.getCurrentTexture().createView(),
-      clearValue: { r: 0, g: 0, b: 0, a: 0 },
-      loadOp: 'clear',
-      storeOp: 'store'
-    };
-    this._renderPassDescriptor = {
-      label: 'xterm render pass',
-      colorAttachments: [this._colorAttachment]
-    };
-
-    this._register(this._themeService.onChangeColors(() => this._handleColorChange()));
-
-    this._cellColorResolver = new CellColorResolver(this._terminal, this._optionsService, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
-
-    this._core = (this._terminal as any)._core;
-
-    this._renderLayers = [
-      new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier!, this._coreBrowserService, _optionsService, this._themeService)
-    ];
-    this.dimensions = createRenderDimensions();
-    this._devicePixelRatio = this._coreBrowserService.dpr;
-    this._updateDimensions();
-    this._updateCursorBlink();
-    this._register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
-    this._textBlinkStateManager = this._register(new TextBlinkStateManager(
-      () => this._requestRedrawViewport(),
-      this._coreBrowserService,
-      this._optionsService
-    ));
-    this._resetBlinkingRowState();
-
-    this._deviceMaxTextureSize = this._device.limits.maxTextureDimension2D;
-
-    const uncapturedErrorListener = (event: GPUUncapturedErrorEvent): void => {
-      const error = new Error(event.error.message);
-      this._logService.error(`WebGPU uncaptured error: ${error.message}`);
-      this._onRendererError.fire(error);
-    };
-    this._device.addEventListener('uncapturederror', uncapturedErrorListener);
-    this._register(toDisposable(() => this._device.removeEventListener('uncapturederror', uncapturedErrorListener)));
-    void this._device.lost.then(info => {
-      if (this._isDisposed || info.reason === 'destroyed') {
-        return;
-      }
-      this._logService.warn(`WebGPU device lost: ${info.message}`);
-      this._deviceLoss = {
-        reason: 'unknown',
-        message: info.message
-      };
-      this._onDeviceLoss.fire(this._deviceLoss);
-    });
-
-    this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
-    this._register(this._coreBrowserService.onWindowChange(w => {
-      this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
-    }));
-
-    this._register(addDisposableListener(this._coreBrowserService.mainDocument, 'mousedown', () => this._cursorBlinkStateManager.value?.restartBlinkAnimation()));
-
-    [this._rectangleRenderer.value, this._glyphRenderer.value] = this._initializeWebGPUState();
-
-    this._isAttached = false;
-
     this._register(toDisposable(() => {
       this._isDisposed = true;
       for (const l of this._renderLayers) {
         l.dispose();
       }
       this._context.unconfigure();
-      this._device.destroy();
       this._canvas.parentElement?.removeChild(this._canvas);
       removeTerminalFromCache(this._terminal);
     }));
+    try {
+      this._context.configure({
+        device: this._device,
+        format: this._canvasFormat,
+        alphaMode: 'premultiplied'
+      });
+      this._colorAttachment = {
+        view: this._context.getCurrentTexture().createView(),
+        clearValue: { r: 0, g: 0, b: 0, a: 0 },
+        loadOp: 'clear',
+        storeOp: 'store'
+      };
+      this._renderPassDescriptor = {
+        label: 'xterm render pass',
+        colorAttachments: [this._colorAttachment]
+      };
+
+      this._register(this._themeService.onChangeColors(() => this._handleColorChange()));
+
+      this._cellColorResolver = new CellColorResolver(this._terminal, this._optionsService, this._model.selection, this._decorationService, this._coreBrowserService, this._themeService);
+
+      this._core = (this._terminal as any)._core;
+
+      this._renderLayers = [
+        new LinkRenderLayer(this._core.screenElement!, 2, this._terminal, this._core.linkifier!, this._coreBrowserService, _optionsService, this._themeService)
+      ];
+      this.dimensions = createRenderDimensions();
+      this._devicePixelRatio = this._coreBrowserService.dpr;
+      this._updateDimensions();
+      this._updateCursorBlink();
+      this._register(_optionsService.onOptionChange(() => this._handleOptionsChanged()));
+      this._textBlinkStateManager = this._register(new TextBlinkStateManager(
+        () => this._requestRedrawViewport(),
+        this._coreBrowserService,
+        this._optionsService
+      ));
+      this._resetBlinkingRowState();
+
+      this._deviceMaxTextureSize = this._device.limits.maxTextureDimension2D;
+
+      this._register(this._deviceReference.value.onUncapturedError(error => {
+        this._logService.error(`WebGPU uncaptured error: ${error.message}`);
+        this._onRendererError.fire(error);
+      }));
+      this._register(this._deviceReference.value.onDeviceLoss(info => {
+        if (this._isDisposed) {
+          return;
+        }
+        this._logService.warn(`WebGPU device lost: ${info.message}`);
+        this._deviceLoss = info;
+        this._onDeviceLoss.fire(this._deviceLoss);
+      }));
+
+      this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, this._coreBrowserService.window, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+      this._register(this._coreBrowserService.onWindowChange(w => {
+        this._observerDisposable.value = observeDevicePixelDimensions(this._canvas, w, (w, h) => this._setCanvasDevicePixelDimensions(w, h));
+      }));
+
+      this._register(addDisposableListener(this._coreBrowserService.mainDocument, 'mousedown', () => this._cursorBlinkStateManager.value?.restartBlinkAnimation()));
+
+      [this._rectangleRenderer.value, this._glyphRenderer.value] = this._initializeWebGPUState();
+
+      this._isAttached = false;
+
+      // Release after all renderer-owned resources and listeners have been disposed.
+      this._register(this._deviceReference);
+    } catch (error) {
+      this.dispose();
+      throw error;
+    }
   }
 
   public get textureAtlas(): HTMLCanvasElement | undefined {
@@ -231,7 +228,11 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
   }
 
   public get deviceLoss(): IWebgpuDeviceLostEvent | undefined {
-    return this._deviceLoss;
+    return this._deviceLoss ?? this._deviceReference.value.deviceLoss;
+  }
+
+  private get _device(): GPUDevice {
+    return this._deviceReference.value.device;
   }
 
   /** Internal diagnostics consumed by the local renderer benchmark. */
@@ -364,8 +365,8 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
    * Initializes members dependent on WebGPU context state.
    */
   private _initializeWebGPUState(): [RectangleRenderer, GlyphRenderer] {
-    this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._device, this._canvasFormat, this.dimensions, this._themeService, this._logService);
-    this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._device, this._canvasFormat, this.dimensions, this._optionsService, this._themeService, this._logService);
+    this._rectangleRenderer.value = new RectangleRenderer(this._terminal, this._deviceReference.value, this._canvasFormat, this.dimensions, this._themeService, this._logService);
+    this._glyphRenderer.value = new GlyphRenderer(this._terminal, this._deviceReference.value, this._canvasFormat, this.dimensions, this._optionsService, this._themeService, this._logService);
 
     // Update dimensions and acquire char atlas
     this.handleCharSizeChanged();
