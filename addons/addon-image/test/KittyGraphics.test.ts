@@ -341,6 +341,17 @@ test.describe('Kitty Graphics Protocol', () => {
       response = await ctx.page.evaluate('window.kittyResponse');
       strictEqual(response, '\x1b_Gi=405;OK\x1b\\');
     });
+
+    test('first chunk with empty payload keeps its control data', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,m=1;\x1b\\`);
+      await timeout(50);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 1);
+
+      // a=T is only on the first chunk - no display unless its keys were kept
+      await ctx.proxy.write(`\x1b_Gm=0;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+    });
   });
 
   test.describe('Delete commands', () => {

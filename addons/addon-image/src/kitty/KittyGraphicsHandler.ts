@@ -169,6 +169,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     }
   }
 
+  private _createDecoder(): Base64Decoder {
+    const decoder = new Base64Decoder(Constants.DECODER_KEEP_DATA, this._maxEncodedBytes, this._initialEncodedBytes);
+    decoder.init();
+    return decoder;
+  }
+
   // Stream payload bytes into the base64 decoder.
   private _streamPayload(data: Uint32Array, start: number, end: number): void {
     if (this._aborted) return;
@@ -199,10 +205,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     if (pending?.decoder && !this._activeDecoder) {
       this._activeDecoder = pending.decoder;
     }
-    if (!this._activeDecoder) {
-      this._activeDecoder = new Base64Decoder(Constants.DECODER_KEEP_DATA, this._maxEncodedBytes, this._initialEncodedBytes);
-      this._activeDecoder.init();
-    }
+    this._activeDecoder ??= this._createDecoder();
 
     if (this._activeDecoder.put(data.subarray(start, end)) !== DECODER_OK) {
       this._activeDecoder.release();
@@ -242,14 +245,16 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const pending = this._pendingTransmissions.get(pendingKey);
 
     if (isMoreComing) {
-      if (this._activeDecoder) {
+      // On decode error _streamPayload() already dropped the transmission
+      if (!this._decodeError) {
         if (pending) {
           pending.totalEncodedSize += this._totalEncodedSize;
           pending.decodeError = pending.decodeError || this._decodeError;
         } else {
           this._pendingTransmissions.set(pendingKey, {
             cmd: { ...cmd },
-            decoder: this._activeDecoder,
+            // No decoder yet if the first chunk had no payload
+            decoder: this._activeDecoder ?? this._createDecoder(),
             totalEncodedSize: this._totalEncodedSize,
             decodeError: this._decodeError
           });
