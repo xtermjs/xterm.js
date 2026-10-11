@@ -78,12 +78,6 @@ export class BufferLine implements IBufferLine {
   public get isWrapped(): boolean {
     return this._isWrapped;
   }
-  /**
-   * @internal
-   */
-  public setWrapped(isWrapped: boolean): void {
-    this._isWrapped = isWrapped;
-  }
 
   /** line text cache */
   protected _cacheValid = false;
