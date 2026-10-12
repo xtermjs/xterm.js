@@ -13,7 +13,8 @@ import { createCellData, NULL_CELL_DATA, extendedAttributes } from '../TestUtils
 
 class TestBufferLine extends BufferLine {
   constructor(cols: number, fillCellData?: ICellData, isWrapped: boolean = false) {
-    super(cols, fillCellData, isWrapped);
+    super(cols, isWrapped);
+    if (fillCellData) this.fill(fillCellData);
   }
 
   public get combined(): {[index: number]: string} {
@@ -259,18 +260,6 @@ describe('BufferLine', function(): void {
       [123, 'z', 1, 'z'.charCodeAt(0)]
     ]);
   });
-  it('clone', function(): void {
-    const line = new TestBufferLine(5, undefined, true);
-    line.setCell(0, createCellData(1, 'a', 1));
-    line.setCell(1, createCellData(2, 'b', 1));
-    line.setCell(2, createCellData(3, 'c', 1));
-    line.setCell(3, createCellData(4, 'd', 1));
-    line.setCell(4, createCellData(5, 'e', 1));
-    const line2 = line.clone();
-    assert.deepEqual(TestBufferLine.prototype.toArray.apply(line2), line.toArray());
-    assert.equal(line2.length, line.length);
-    assert.equal(line2.isWrapped, line.isWrapped);
-  });
   it('copyFrom', function(): void {
     const line = new TestBufferLine(5);
     line.setCell(0, createCellData(1, 'a', 1));
@@ -293,8 +282,6 @@ describe('BufferLine', function(): void {
     const line2 = new TestBufferLine(5, createCellData(1, 'a', 1), true);
     line2.copyFrom(line);
     assert.deepEqual(line2.toArray(), line.toArray());
-    const line3 = line.clone();
-    assert.deepEqual(TestBufferLine.prototype.toArray.apply(line3), line.toArray());
   });
   describe('resize', function(): void {
     it('enlarge(false)', function(): void {
@@ -762,37 +749,6 @@ describe('BufferLine', function(): void {
       assert.equal(extendedAttributes(line, 2)?.underlineStyle, UnderlineStyle.DOUBLE);
       assert.equal(extendedAttributes(line, 3)?.underlineStyle, UnderlineStyle.CURLY);
       assert.equal(extendedAttributes(line, 4)?.underlineStyle, UnderlineStyle.CURLY);
-    });
-    it('clone', () => {
-      const line = new TestBufferLine(5);
-      const cell = createCellData(1, 'a', 1);
-      // no eAttrs
-      line.setCell(0, cell);
-
-      // some underline style
-      cell.extended.underlineStyle = UnderlineStyle.CURLY;
-      cell.bg |= BgFlags.HAS_EXTENDED;
-      line.setCell(1, cell);
-
-      // same eAttr, different codepoint
-      cell.content = 65;  // 'A'
-      line.setCell(2, cell);
-
-      // different eAttr
-      cell.extended = cell.extended.clone();
-      cell.extended.underlineStyle = UnderlineStyle.DOTTED;
-      line.setCell(3, cell);
-
-      // no eAttrs again
-      cell.bg &= ~BgFlags.HAS_EXTENDED;
-      line.setCell(4, cell);
-
-      const nLine = line.clone();
-      assert.equal(extendedAttributes(nLine, 0), extendedAttributes(line, 0));
-      assert.equal(extendedAttributes(nLine, 1), extendedAttributes(line, 1));
-      assert.equal(extendedAttributes(nLine, 2), extendedAttributes(line, 2));
-      assert.equal(extendedAttributes(nLine, 3), extendedAttributes(line, 3));
-      assert.equal(extendedAttributes(nLine, 4), extendedAttributes(line, 4));
     });
     it('copyFrom', () => {
       const initial = new TestBufferLine(5);

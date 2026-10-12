@@ -585,7 +585,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._activeBuffer.y++;
           if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
             this._activeBuffer.y--;
-            this._bufferService.scroll(this._eraseAttrData(), true);
+            this._bufferService.scroll(this._curBg(), true);
           } else {
             if (this._activeBuffer.y >= this._bufferService.rows) {
               this._activeBuffer.y = this._bufferService.rows - 1;
@@ -747,7 +747,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.y++;
     if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
       this._activeBuffer.y--;
-      this._bufferService.scroll(this._eraseAttrData());
+      this._bufferService.scroll(this._curBg());
     } else if (this._activeBuffer.y >= this._bufferService.rows) {
       this._activeBuffer.y = this._bufferService.rows - 1;
     } else {
@@ -1196,7 +1196,11 @@ export class InputHandler extends Disposable implements IInputHandler {
   private _resetBufferLine(y: number, respectProtect: boolean = false): void {
     const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y);
     if (line) {
-      line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
+      if (respectProtect) {
+        line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
+      } else {
+        line.fillWithNull(this._curBg());
+      }
       this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
       line.isWrapped = false;
     }
@@ -1267,7 +1271,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             }
           }
           for (; j >= 0; j--) {
-            this._bufferService.scroll(this._eraseAttrData());
+            this._bufferService.scroll(this._curBg());
           }
         }
         else {
@@ -1363,7 +1367,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1L\e[0m'
       // blankLine(true) - xterm/linux behavior
       this._activeBuffer.lines.splice(scrollBottomAbsolute - 1, 1);
-      this._activeBuffer.lines.splice(row, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
+      this._activeBuffer.lines.splice(row, 0, this._activeBuffer.getBlankLine(this._curBg()));
     }
 
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
@@ -1397,7 +1401,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // test: echo -e '\e[44m\e[1M\e[0m'
       // blankLine(true) - xterm/linux behavior
       this._activeBuffer.lines.splice(row, 1);
-      this._activeBuffer.lines.splice(j, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
+      this._activeBuffer.lines.splice(j, 0, this._activeBuffer.getBlankLine(this._curBg()));
     }
 
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.y, this._activeBuffer.scrollBottom);
@@ -1470,7 +1474,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     while (param--) {
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 1);
-      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 0, this._activeBuffer.getBlankLine(this._eraseAttrData()));
+      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 0, this._activeBuffer.getBlankLine(this._curBg()));
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -1486,7 +1490,7 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     while (param--) {
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 1);
-      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 0, this._activeBuffer.getBlankLine(DEFAULT_ATTR_DATA));
+      this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 0, this._activeBuffer.getBlankLine());
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -2024,7 +2028,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             state.mainFlags = state.flags;
             state.flags = state.altFlags;
           }
-          this._bufferService.buffers.activateAltBuffer(this._eraseAttrData());
+          this._bufferService.buffers.activateAltBuffer(this._curBg());
           this._coreService.isCursorInitialized = true;
           this._onRequestRefreshRows.fire(undefined);
           this._onRequestSyncScrollBar.fire();
@@ -3368,7 +3372,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.y++;
     if (this._activeBuffer.y === this._activeBuffer.scrollBottom + 1) {
       this._activeBuffer.y--;
-      this._bufferService.scroll(this._eraseAttrData());
+      this._bufferService.scroll(this._curBg());
     } else if (this._activeBuffer.y >= this._bufferService.rows) {
       this._activeBuffer.y = this._bufferService.rows - 1;
     }
@@ -3408,7 +3412,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // blankLine(true) is xterm/linux behavior
       const scrollRegionHeight = this._activeBuffer.scrollBottom - this._activeBuffer.scrollTop;
       this._activeBuffer.lines.shiftElements(this._activeBuffer.ybase + this._activeBuffer.y, scrollRegionHeight, 1);
-      this._activeBuffer.lines.set(this._activeBuffer.ybase + this._activeBuffer.y, this._activeBuffer.getBlankLine(this._eraseAttrData()));
+      this._activeBuffer.lines.set(this._activeBuffer.ybase + this._activeBuffer.y, this._activeBuffer.getBlankLine(this._curBg()));
       this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     } else {
       this._activeBuffer.y--;
@@ -3440,8 +3444,12 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   private _eraseAttrData(): IAttributeData {
     this._eraseAttrDataInternal.bg &= ~(Attributes.CM_MASK | 0xFFFFFF);
-    this._eraseAttrDataInternal.bg |= this._curAttrData.bg & ~0xFC000000;
+    this._eraseAttrDataInternal.bg |= this._curBg();
     return this._eraseAttrDataInternal;
+  }
+
+  private _curBg(): number {
+    return this._curAttrData.bg & ~0xFC000000;
   }
 
   /**

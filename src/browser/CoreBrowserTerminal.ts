@@ -47,7 +47,6 @@ import { channels, color, rgb } from '../common/Color';
 import { CoreTerminal } from '../common/CoreTerminal';
 import * as Browser from '../common/Platform';
 import { ColorRequestType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from '../common/Types';
-import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
 import { IBuffer } from '../common/buffer/Types';
 import { C0, C1ESCAPED } from '../common/data/EscapeSequences';
 import { toRgbString } from '../common/input/XParseColor';
@@ -1080,7 +1079,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this.buffer.ybase = 0;
     this.buffer.y = 0;
     for (let i = 1; i < this.rows; i++) {
-      this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
+      this.buffer.lines.push(this.buffer.getBlankLine());
     }
     // IMPORTANT: Fire scroll event before viewport is reset. This ensures embedders get the clear
     // scroll event and that the viewport's state will be valid for immediate writes.

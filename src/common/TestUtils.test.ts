@@ -55,7 +55,7 @@ export class MockBufferService implements IBufferService {
   public scrollToLine(line: number): void {
     throw new Error('Method not implemented.');
   }
-  public scroll(eraseAttr: IAttributeData, isWrapped: boolean): void {
+  public scroll(bg: number, isWrapped: boolean): void {
     throw new Error('Method not implemented.');
   }
   public scrollToBottom(): void {

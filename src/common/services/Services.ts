@@ -5,7 +5,7 @@
 
 import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
 import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from '../Types';
-import { IAttributeData, IBuffer, IBufferSet } from '../buffer/Types';
+import { IBuffer, IBufferSet } from '../buffer/Types';
 import { createDecorator, IServiceIdentifier } from './ServiceRegistry';
 import type { Emitter, IEvent } from '../Event';
 
@@ -20,7 +20,7 @@ export interface IBufferService {
   isUserScrolling: boolean;
   onResize: IEvent<IBufferResizeEvent>;
   onScroll: IEvent<number>;
-  scroll(eraseAttr: IAttributeData, isWrapped?: boolean): void;
+  scroll(bg?: number, isWrapped?: boolean): void;
   scrollLines(disp: number, suppressScrollEvent?: boolean): void;
   resize(cols: number, rows: number): void;
   reset(): void;

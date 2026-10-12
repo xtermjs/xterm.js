@@ -27,7 +27,7 @@ import { LogService } from './services/LogService';
 import { BufferService, BufferServiceConstants } from './services/BufferService';
 import { OptionsService } from './services/OptionsService';
 import { IDisposable, IScrollEvent, ITerminalOptions, IParams } from './Types';
-import { IAttributeData, IBufferSet } from './buffer/Types';
+import { IBufferSet } from './buffer/Types';
 import { CoreService } from './services/CoreService';
 import { MouseStateService } from './services/MouseStateService';
 import { UnicodeV6 } from './input/UnicodeV6';
@@ -201,11 +201,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
   /**
    * Scroll the terminal down 1 row, creating a blank line.
-   * @param eraseAttr The attribute data to use the for blank line.
+   * @param bg The background colot for the blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
-  public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
-    this._bufferService.scroll(eraseAttr, isWrapped);
+  public scroll(bg: number = 0, isWrapped: boolean = false): void {
+    this._bufferService.scroll(bg, isWrapped);
   }
 
   /**

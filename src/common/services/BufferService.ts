@@ -4,8 +4,9 @@
  */
 
 import { Disposable } from '../Lifecycle';
-import { IAttributeData, IBuffer, IBufferLine, IBufferSet } from '../buffer/Types';
+import { IBuffer, IBufferLine, IBufferSet } from '../buffer/Types';
 import { BufferSet } from '../buffer/BufferSet';
+import { BufferLine } from '../buffer/BufferLine';
 import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from './Services';
 import { Emitter } from '../Event';
 
@@ -62,20 +63,11 @@ export class BufferService extends Disposable implements IBufferService {
 
   /**
    * Scroll the terminal down 1 row, creating a blank line.
-   * @param eraseAttr The attribute data to use the for blank line.
+   * @param bg Background color for the blank line.
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
-  public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
+  public scroll(bg: number = 0, isWrapped: boolean = false): void {
     const buffer = this.buffer;
-
-    let newLine: IBufferLine | undefined;
-    newLine = this._cachedBlankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
-      newLine = buffer.getBlankLine(eraseAttr, isWrapped);
-      this._cachedBlankLine = newLine;
-    }
-    newLine.isWrapped = isWrapped;
-
     const topRow = buffer.ybase + buffer.scrollTop;
     const bottomRow = buffer.ybase + buffer.scrollBottom;
 
@@ -86,12 +78,13 @@ export class BufferService extends Disposable implements IBufferService {
       // Insert the line using the fastest method
       if (bottomRow === buffer.lines.length - 1) {
         if (willBufferBeTrimmed) {
-          buffer.lines.recycle().copyFrom(newLine, true);
+          (buffer.lines.recycle() as BufferLine).fillWithNull(bg);
         } else {
-          buffer.lines.push(newLine.clone(true));
+          // buffer.lines.push(newLine.clone(true));
+          buffer.lines.push(buffer.getBlankLine(bg, isWrapped));
         }
       } else {
-        buffer.lines.splice(bottomRow + 1, 0, newLine.clone(true));
+        buffer.lines.splice(bottomRow + 1, 0, buffer.getBlankLine(bg, isWrapped));
       }
 
       // Only adjust ybase and ydisp when the buffer is not trimmed
@@ -113,7 +106,7 @@ export class BufferService extends Disposable implements IBufferService {
       // scrollback, instead we can just shift them in-place.
       const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
       buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      buffer.lines.set(bottomRow, newLine.clone(true));
+      buffer.lines.set(bottomRow, buffer.getBlankLine(bg, isWrapped));
     }
 
     // Move the viewport to the bottom of the buffer unless the user is

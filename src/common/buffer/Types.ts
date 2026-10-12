@@ -132,8 +132,8 @@ export interface IBufferLine {
   resize(cols: number, fill: ICellData): boolean;
   cleanupMemory(): number;
   fill(fillCellData: ICellData, respectProtect?: boolean): void;
+  fillWithNull(bg?: number): void;
   copyFrom(line: IBufferLine, blank?: boolean): void;
-  clone(blank?: boolean): IBufferLine;
   getTrimmedLength(): number;
   getNoBgTrimmedLength(): number;
   translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string;
@@ -181,7 +181,7 @@ export interface IBuffer {
   getWrappedRangeForLine(y: number): { first: number, last: number };
   nextStop(x?: number): number;
   prevStop(x?: number): number;
-  getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine;
+  getBlankLine(bg?: number, isWrapped?: boolean): IBufferLine;
   getNullCell(attr?: IAttributeData): ICellData;
   getWhitespaceCell(attr?: IAttributeData): ICellData;
   addMarker(y: number): IMarker;
@@ -197,7 +197,7 @@ export interface IBufferSet extends IDisposable {
   onBufferActivate: IEvent<{ activeBuffer: IBuffer, inactiveBuffer: IBuffer }>;
 
   activateNormalBuffer(): void;
-  activateAltBuffer(fillAttr?: IAttributeData): void;
+  activateAltBuffer(bg?: number): void;
   reset(): void;
   resize(newCols: number, newRows: number): void;
   setupTabStops(i?: number): void;

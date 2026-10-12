@@ -6,7 +6,7 @@
 import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from './Types';
 import { AttributeData } from './AttributeData';
 import { CellData } from './CellData';
-import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from './Constants';
+import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from './Constants';
 import { stringFromCodePoint } from '../input/TextDecoder';
 
 // Buffer memory layout:
@@ -81,14 +81,9 @@ export class BufferLine implements IBufferLine {
 
   constructor(
     cols: number,
-    fillCellData?: ICellData,
     public isWrapped: boolean = false
   ) {
     this._data = new Uint32Array(cols * Constants.CELL_INDICIES);
-    const cell = fillCellData ?? CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
-    for (let i = 0; i < cols; ++i) {
-      this.setCell(i, cell);
-    }
     this.length = cols;
   }
 
@@ -200,7 +195,12 @@ export class BufferLine implements IBufferLine {
    */
   public loadCell(index: number, cell: ICellData): ICellData {
     $startIndex = index * Constants.CELL_INDICIES;
-    cell.content = this._data[$startIndex + Cell.CONTENT];
+    let content = this._data[$startIndex + Cell.CONTENT];
+    if ((content & Content.HAS_CONTENT_MASK) === 0) {
+      const followsWide = index > 0 && this.getWidth(index -1) > 1;
+      content = (content & ~Content.WIDTH_MASK) | ((followsWide ? 0 : NULL_CELL_WIDTH) << Content.WIDTH_SHIFT);
+    }
+    cell.content = content;
     cell.fg = this._data[$startIndex + Cell.FG];
     cell.bg = this._data[$startIndex + Cell.BG];
     if (cell.content & Content.IS_COMBINED_MASK) {
@@ -446,6 +446,21 @@ export class BufferLine implements IBufferLine {
     return 0;
   }
 
+  public fillWithNull(bg: number = 0): void {
+    if (bg === 0) {
+      this._data.fill(0);
+    } else {
+      for (let i = Constants.CELL_INDICIES * this.length; (i -= Constants.CELL_INDICIES) >= 0; ) {
+        this._data[i + Cell.CONTENT] = 0;
+        this._data[i + Cell.FG] = 0;
+        this._data[i + Cell.BG] = bg;
+      }
+    }
+    this._cacheValid = false;
+    this._combined = {};
+    this._extendedAttrs = {};
+  }
+
   /** fill a line with fillCharData */
   public fill(fillCellData: ICellData, respectProtect: boolean = false): void {
     this._cacheValid = false;
@@ -485,20 +500,6 @@ export class BufferLine implements IBufferLine {
     this._cache = '';
     this._cacheValid = false;
     this.isWrapped = line.isWrapped;
-  }
-
-  /** create a new clone */
-  public clone(blank?: boolean): IBufferLine {
-    const newLine = new BufferLine(0, undefined, false);
-    newLine._data = new Uint32Array(this._data);
-    newLine.length = this.length;
-    if (!blank) {
-      // a blank line may never hold combined or extended attrs,
-      // thus we can skip handling them
-      newLine._copySparseMapsFrom(this);
-    }
-    newLine.isWrapped = this.isWrapped;
-    return newLine;
   }
 
   public getTrimmedLength(): number {

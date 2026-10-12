@@ -180,7 +180,7 @@ describe('DecorationService', () => {
       const decoration = service.registerDecoration({ marker, width: 10, height: 3 });
       assert.ok(decoration);
 
-      buffer.lines.splice(5, 0, buffer.getBlankLine(DEFAULT_ATTR_DATA));
+      buffer.lines.splice(5, 0, buffer.getBlankLine());
       await new Promise<void>(resolve => queueMicrotask(resolve));
 
       const foundOnSpan: typeof decoration[] = [];

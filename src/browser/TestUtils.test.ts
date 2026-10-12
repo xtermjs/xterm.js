@@ -256,7 +256,7 @@ export class MockBuffer implements IBuffer {
   public setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
   }
-  public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
+  public getBlankLine(bg?: number, isWrapped?: boolean): IBufferLine {
     return Buffer.prototype.getBlankLine.apply(this, arguments as any);
   }
   public getNullCell(attr?: IAttributeData): ICellData {
