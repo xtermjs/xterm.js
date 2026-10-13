@@ -36,6 +36,7 @@ export class Buffer extends Disposable implements IBuffer {
   public scrollTop: number;
   public tabs: { [column: number]: boolean | undefined } = {};
   public savedY: number = 0;
+  public savedYIsDisplayRelative: boolean = false;
   public savedX: number = 0;
   public savedCurAttrData = DEFAULT_ATTR_DATA.clone();
   public savedCharset: ICharset | undefined = DEFAULT_CHARSET;
@@ -242,7 +243,9 @@ export class Buffer extends Disposable implements IBuffer {
           this.lines.trimStart(amountToTrim);
           this.ybase = Math.max(this.ybase - amountToTrim, 0);
           this.ydisp = Math.max(this.ydisp - amountToTrim, 0);
-          this.savedY = Math.max(this.savedY - amountToTrim, 0);
+          if (!this.savedYIsDisplayRelative) {
+            this.savedY = Math.max(this.savedY - amountToTrim, 0);
+          }
         }
         this.lines.maxLength = newMaxLength;
       }
@@ -363,7 +366,9 @@ export class Buffer extends Disposable implements IBuffer {
         this.ybase--;
       }
     }
-    this.savedY = Math.max(this.savedY - countRemoved, 0);
+    if (!this.savedYIsDisplayRelative) {
+      this.savedY = Math.max(this.savedY - countRemoved, 0);
+    }
   }
 
   private _reflowSmaller(newCols: number, newRows: number): void {
@@ -483,7 +488,9 @@ export class Buffer extends Disposable implements IBuffer {
           }
         }
       }
-      this.savedY = Math.min(this.savedY + linesToAdd, this.ybase + newRows - 1);
+      if (!this.savedYIsDisplayRelative) {
+        this.savedY = Math.min(this.savedY + linesToAdd, this.ybase + newRows - 1);
+      }
     }
 
     // Rearrange lines in the buffer if there are any insertions, this is done at the end rather

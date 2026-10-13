@@ -234,6 +234,7 @@ export class MockBuffer implements IBuffer {
   public scrollBottom!: number;
   public scrollTop!: number;
   public savedY!: number;
+  public savedYIsDisplayRelative: boolean = false;
   public savedX!: number;
   public savedCharset: ICharset | undefined;
   public savedCharsets: (ICharset | undefined)[] = [];
