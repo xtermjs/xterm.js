@@ -73,8 +73,12 @@ export class Viewport extends Disposable {
     }));
 
     this._scrollableElement.setScrollDimensions({ height: 0, scrollHeight: 0 });
+    const viewportElement = element.classList.contains('xterm-viewport')
+      ? element
+      : (element.querySelector('.xterm-viewport') as HTMLElement | null) ?? element;
     this._register(EventUtils.runAndSubscribe(themeService.onChangeColors, () => {
       element.style.backgroundColor = themeService.colors.background.css;
+      viewportElement.style.backgroundColor = themeService.colors.background.css;
       this._scrollableElement.getDomNode().style.backgroundColor = themeService.colors.background.css;
     }));
     element.appendChild(this._scrollableElement.getDomNode());
