@@ -35,6 +35,7 @@ export class AccessibilityManager extends Disposable {
 
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
+  private _liveRegionLineLength: number = 0;
   private _liveRegionDebouncer: IRenderDebouncer;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
@@ -150,8 +151,12 @@ export class AccessibilityManager extends Disposable {
         this._charsToAnnounce += char;
       }
 
-      if (char === '\n') {
+      // A row's worth of characters also counts as a line, otherwise output that positions the
+      // cursor instead of using line feeds (eg. a TUI redrawing the viewport) is never limited
+      // and grows the live region without bound
+      if (char === '\n' || ++this._liveRegionLineLength >= this._terminal.cols) {
         this._liveRegionLineCount++;
+        this._liveRegionLineLength = 0;
         if (this._liveRegionLineCount === Constants.MAX_ROWS_TO_READ + 1) {
           this._liveRegion.textContent = Strings.tooMuchOutput.get();
         }
@@ -162,6 +167,7 @@ export class AccessibilityManager extends Disposable {
   private _clearLiveRegion(): void {
     this._liveRegion.textContent = '';
     this._liveRegionLineCount = 0;
+    this._liveRegionLineLength = 0;
   }
 
   private _handleKey(keyChar: string): void {
