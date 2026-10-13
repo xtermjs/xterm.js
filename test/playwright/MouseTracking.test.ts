@@ -1424,6 +1424,24 @@ test.describe('Mouse Tracking Tests', () => {
       ]);
     });
   });
+
+  test('should report horizontal wheel input', async () => {
+    const encoding = 'SGR';
+    await resetMouseModes();
+    await mouseMove(43, 24);
+    await ctx.proxy.write('\x1b[?1000h\x1b[?1006h');
+
+    await ctx.page.mouse.wheel(-100, 0);
+    await pollFor(ctx.page, () => getReports(encoding), [
+      { col: 44, row: 25, state: { action: 'left', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }
+    ]);
+
+    await ctx.page.mouse.wheel(100, 0);
+    await pollFor(ctx.page, () => getReports(encoding), [
+      { col: 44, row: 25, state: { action: 'right', button: 'wheel', modifier: { control: false, shift: false, meta: false } } }
+    ]);
+  });
+
   /**
    * move tests with multiple buttons pressed:
    * currently not possible due to a limitation of the playwright mouse interface
