@@ -203,8 +203,57 @@ describe('MouseService _triggerMouseEvent', () => {
     });
   });
 
+  it('AUX buttons encoding', () => {
+    mouseStateService.activeProtocol = 'ANY';
+
+    // 1. DEFAULT encoding
+    mouseStateService.activeEncoding = 'DEFAULT';
+    // Down actions
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX1, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX2, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX3, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX4, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX5, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX6, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX7, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX8, action: CoreMouseAction.DOWN }), true);
+    assert.deepEqual(reports, [
+      '\x1b[M\u00a0!!', '\x1b[M\u00a1!!', '\x1b[M\u00a2!!', '\x1b[M\u00a3!!',
+      '\x1b[M\u00e0!!', '\x1b[M\u00e1!!', '\x1b[M\u00e2!!', '\x1b[M\u00e3!!'
+    ]);
+    reports = [];
+
+    // Up actions (always reports release code 3 in DEFAULT encoding)
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX1, action: CoreMouseAction.UP }), true);
+    assert.deepEqual(reports, ['\x1b[M\u00a3!!']);
+    reports = [];
+
+    // 2. SGR encoding
+    mouseStateService.activeEncoding = 'SGR';
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX1, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX1, action: CoreMouseAction.UP }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX5, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 0, y: 0, button: CoreMouseButton.AUX5, action: CoreMouseAction.UP }), true);
+    assert.deepEqual(reports, [
+      '\x1b[<128;1;1M',
+      '\x1b[<128;1;1m',
+      '\x1b[<192;1;1M',
+      '\x1b[<192;1;1m'
+    ]);
+    reports = [];
+
+    // 3. SGR_PIXELS encoding
+    mouseStateService.activeEncoding = 'SGR_PIXELS';
+    assert.equal(trigger({ col: 0, row: 0, x: 10, y: 20, button: CoreMouseButton.AUX1, action: CoreMouseAction.DOWN }), true);
+    assert.equal(trigger({ col: 0, row: 0, x: 10, y: 20, button: CoreMouseButton.AUX1, action: CoreMouseAction.UP }), true);
+    assert.deepEqual(reports, [
+      '\x1b[<128;10;20M',
+      '\x1b[<128;10;20m'
+    ]);
+    reports = [];
+  });
+
   it('eventCodes with modifiers (DEFAULT encoding)', () => {
-    // TODO: implement AUX button tests
     mouseStateService.activeProtocol = 'ANY';
     mouseStateService.activeEncoding = 'DEFAULT';
     // all buttons + down + no modifer
