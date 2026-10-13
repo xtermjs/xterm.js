@@ -88,7 +88,7 @@ export class WebglAddon extends Disposable implements ITerminalAddon, IWebglApi 
     renderService.setRenderer(this._renderer);
 
     this._register(toDisposable(() => {
-      if ((this._terminal as any)._core._store._isDisposed) {
+      if ((this._terminal as any)._core._store?._isDisposed) {
         return;
       }
       const renderService: IRenderService = (this._terminal as any)._core._renderService;
