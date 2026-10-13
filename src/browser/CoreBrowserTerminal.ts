@@ -1137,13 +1137,13 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     switch (type) {
       case WindowsOptionsReportType.GET_WIN_SIZE_PIXELS:
-        const canvasWidth = this._renderService.dimensions.css.canvas.width.toFixed(0);
-        const canvasHeight = this._renderService.dimensions.css.canvas.height.toFixed(0);
+        const canvasWidth = this._renderService.dimensions.device.canvas.width.toFixed(0);
+        const canvasHeight = this._renderService.dimensions.device.canvas.height.toFixed(0);
         this.coreService.triggerDataEvent(`${C0.ESC}[4;${canvasHeight};${canvasWidth}t`);
         break;
       case WindowsOptionsReportType.GET_CELL_SIZE_PIXELS:
-        const cellWidth = this._renderService.dimensions.css.cell.width.toFixed(0);
-        const cellHeight = this._renderService.dimensions.css.cell.height.toFixed(0);
+        const cellWidth = this._renderService.dimensions.device.cell.width.toFixed(0);
+        const cellHeight = this._renderService.dimensions.device.cell.height.toFixed(0);
         this.coreService.triggerDataEvent(`${C0.ESC}[6;${cellHeight};${cellWidth}t`);
         break;
     }

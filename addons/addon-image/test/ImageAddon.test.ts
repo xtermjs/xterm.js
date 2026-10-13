@@ -294,10 +294,10 @@ test.describe('ImageAddon', () => {
     test('size params is optional/informative', async () => {
       // too small size param
       await ctx.proxy.write(`\x1b]1337;File=inline=1;size=5:${PALETTE_PNG_BASE64}\x07`);
-      deepStrictEqual(await getOrigSize(1), [640, 80]);
+      deepStrictEqual(await getImageSize(1), [640, 80]);
       // no size aparm at all
       await ctx.proxy.write(`\x1b[10H\x1b]1337;File=inline=1:${PALETTE_QOI_BASE64}\x07`);
-      deepStrictEqual(await getOrigSize(2), [640, 80]);
+      deepStrictEqual(await getImageSize(2), [640, 80]);
     });
     test.skip('FilePart support - bytewise', async () => {
       // opener
@@ -308,7 +308,7 @@ test.describe('ImageAddon', () => {
       }
       // finalizer
       await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
-      deepStrictEqual(await getOrigSize(1), [640, 80]);
+      deepStrictEqual(await getImageSize(1), [640, 80]);
     });
     test('FilePart support - chunks', async () => {
       // opener
@@ -319,7 +319,7 @@ test.describe('ImageAddon', () => {
       }
       // finalizer
       await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
-      deepStrictEqual(await getOrigSize(1), [640, 80]);
+      deepStrictEqual(await getImageSize(1), [640, 80]);
     });
     test('FilePart support - edgecases', async () => {
       // multiple opener do not harm
@@ -347,39 +347,39 @@ test.describe('ImageAddon', () => {
       // finalizer skipped
       // write spinfox.png
       await ctx.proxy.write(TESTDATA_IIP[1][0]);
-      deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[1][1]);
+      deepStrictEqual(await getImageSize(1), TESTDATA_IIP[1][1]);
     });
   });
 
   test.describe('IIP support - testimages', () => {
     test('palette.png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[0][0]);
-      deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[0][1]);
+      deepStrictEqual(await getImageSize(1), TESTDATA_IIP[0][1]);
     });
     test('spinfox.png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[1][0]);
-      deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[1][1]);
+      deepStrictEqual(await getImageSize(1), TESTDATA_IIP[1][1]);
     });
     test('w3c gif', async () => {
       await ctx.proxy.write(TESTDATA_IIP[2][0]);
-      deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[2][1]);
+      deepStrictEqual(await getImageSize(1), TESTDATA_IIP[2][1]);
     });
     test('w3c jpeg', async () => {
       await ctx.proxy.write(TESTDATA_IIP[3][0]);
-      deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[3][1]);
+      deepStrictEqual(await getImageSize(1), TESTDATA_IIP[3][1]);
     });
     test('w3c png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[4][0]);
-      deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[4][1]);
+      deepStrictEqual(await getImageSize(1), TESTDATA_IIP[4][1]);
     });
   });
 
   test.describe('IIP - QOI support', () => {
     test('palette should yield same bytes from PNG and QOI', async () => {
       await ctx.proxy.write(`\x1b]1337;File=inline=1;size=525:${PALETTE_PNG_BASE64}\x07`);
-      deepStrictEqual(await getOrigSize(1), [640, 80]);
+      deepStrictEqual(await getImageSize(1), [640, 80]);
       await ctx.proxy.write(`\x1b[10H\x1b]1337;File=inline=1;size=${qoiData.length}:${PALETTE_QOI_BASE64}\x07`);
-      deepStrictEqual(await getOrigSize(2), [640, 80]);
+      deepStrictEqual(await getImageSize(2), [640, 80]);
       const pngScrape = await getImageAtBufferCell(0, 0);
       const qoiScrape = await getImageAtBufferCell(0, 11);
       deepStrictEqual(qoiScrape, pngScrape);
@@ -406,20 +406,20 @@ test.describe('ImageAddon', () => {
         const header = 'width=20;height=5;preserveAspectRatio=0';
         await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header}:${payload}\x07`);
         const dim = await getDimensions();
-        deepStrictEqual(await getOrigSize(1), [dim.cellWidth * 20, dim.cellHeight * 5]);
+        deepStrictEqual(await getImageSize(1), [dim.cellWidth * 20, dim.cellHeight * 5]);
       });
       test(name + ': Npx --> width=320px height=160px preserveAspectRatio=0', async () => {
         // pixel based resize
         const header = 'width=320px;height=160px;preserveAspectRatio=0';
         await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header}:${payload}\x07`);
-        deepStrictEqual(await getOrigSize(1), [320, 160]);
+        deepStrictEqual(await getImageSize(1), [320, 160]);
       });
       test(name + ': N% --> width=50% height=30% preserveAspectRatio=0', async () => {
         // % of viewport resize
         const header = 'width=50%;height=30%;preserveAspectRatio=0';
         await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header}:${payload}\x07`);
         const dim = await getDimensions();
-        deepStrictEqual(await getOrigSize(1), [Math.floor(dim.width * 0.5), Math.floor(dim.height * 0.3)]);
+        deepStrictEqual(await getImageSize(1), [Math.floor(dim.width * 0.5), Math.floor(dim.height * 0.3)]);
       });
       test(name + ': ommitted dimension assumes preserveAspectRatio=1', async () => {
         // width provided in percent
@@ -427,11 +427,11 @@ test.describe('ImageAddon', () => {
         await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header}:${payload}\x07`);
         const dim = await getDimensions();
         const width = Math.floor(dim.width * 0.5);
-        deepStrictEqual(await getOrigSize(1), [width, Math.floor(width * 80 / 640)]);
+        deepStrictEqual(await getImageSize(1), [width, Math.floor(width * 80 / 640)]);
         // height provided in pixel
         const header2 = 'height=200px';
         await ctx.proxy.write(`\x1b]1337;File=inline=1;size=${size};${header2}:${payload}\x07`);
-        deepStrictEqual(await getOrigSize(2), [Math.floor(200 * 640 / 80), 200]);
+        deepStrictEqual(await getImageSize(2), [Math.floor(200 * 640 / 80), 200]);
       });
     }
   });
@@ -452,10 +452,10 @@ test.describe('ImageAddon', () => {
 async function getDimensions(): Promise<IDimensions> {
   const dimensions: any = await ctx.page.evaluate(`term.dimensions`);
   return {
-    cellWidth: Math.round(dimensions.css.cell.width),
-    cellHeight: Math.round(dimensions.css.cell.height),
-    width: Math.round(dimensions.css.canvas.width),
-    height: Math.round(dimensions.css.canvas.height)
+    cellWidth: Math.round(dimensions.device.cell.width),
+    cellHeight: Math.round(dimensions.device.cell.height),
+    width: Math.round(dimensions.device.canvas.width),
+    height: Math.round(dimensions.device.canvas.height)
   };
 }
 
@@ -471,11 +471,11 @@ async function getScrollbackPlusRows(): Promise<number> {
   return ctx.page.evaluate('window.term.options.scrollback + window.term.rows');
 }
 
-async function getOrigSize(id: number): Promise<[number, number]> {
+async function getImageSize(id: number): Promise<[number, number]> {
   return ctx.page.evaluate<any>(`[
-    window.imageAddon._storage._images.get(${id}).orig.width,
-    window.imageAddon._storage._images.get(${id}).orig.height
-  ]`);
+    window.imageAddon._storage._images.get(${id}).src.width * window.imageAddon._storage._images.get(${id}).prescaleX,
+    window.imageAddon._storage._images.get(${id}).src.height * window.imageAddon._storage._images.get(${id}).prescaleY
+  ]`).then(r => r.map(Math.floor));
 }
 
 async function getImageAtBufferCell(x: number, y: number): Promise<string | undefined> {
@@ -483,12 +483,12 @@ async function getImageAtBufferCell(x: number, y: number): Promise<string | unde
 }
 
 async function hasTileAtBufferCell(x: number, y: number): Promise<boolean> {
-  return ctx.page.evaluate(`!!window.imageAddon.extractTileAtBufferCell(${x}, ${y})`);
+  return ctx.page.evaluate(`!!window.imageAddon.getImageAtBufferCell(${x}, ${y})`);
 }
 
 async function assertTextClearsTiles(imageSeq: string): Promise<void> {
   await ctx.proxy.write('\x1b[H' + imageSeq);
-  await pollFor(ctx.page, '!!window.imageAddon.extractTileAtBufferCell(5, 1)', true);
+  await pollFor(ctx.page, '!!window.imageAddon.getImageAtBufferCell(5, 1)', true);
   ok(await hasTileAtBufferCell(0, 1));
   await ctx.proxy.write('\x1b[2;6H#######');
   for (let x = 5; x < 12; x++) {
