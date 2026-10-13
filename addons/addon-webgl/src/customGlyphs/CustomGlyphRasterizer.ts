@@ -134,17 +134,64 @@ function drawBlockVectorChar(
   deviceCellWidth: number,
   deviceCellHeight: number
 ): void {
+  const xEighth = deviceCellWidth / 8;
+  const yEighth = deviceCellHeight / 8;
+  const snapX = canSnapBlockVectorAxis(charDefinition, xOffset, xEighth, 'x', 'w');
+  const snapY = canSnapBlockVectorAxis(charDefinition, yOffset, yEighth, 'y', 'h');
   for (let i = 0; i < charDefinition.length; i++) {
     const box = charDefinition[i];
-    const xEighth = deviceCellWidth / 8;
-    const yEighth = deviceCellHeight / 8;
+    let left = xOffset + box.x * xEighth;
+    let top = yOffset + box.y * yEighth;
+    let right = xOffset + (box.x + box.w) * xEighth;
+    let bottom = yOffset + (box.y + box.h) * yEighth;
+    // Use shared pixel boundaries to avoid antialiasing seams without expanding adjacent boxes.
+    // Preserve fractional coverage when snapping would collapse a used boundary.
+    if (snapX) {
+      left = Math.round(left);
+      right = Math.round(right);
+    }
+    if (snapY) {
+      top = Math.round(top);
+      bottom = Math.round(bottom);
+    }
     ctx.fillRect(
-      xOffset + box.x * xEighth,
-      yOffset + box.y * yEighth,
-      box.w * xEighth,
-      box.h * yEighth
+      left,
+      top,
+      right - left,
+      bottom - top
     );
   }
+}
+
+function canSnapBlockVectorAxis(
+  charDefinition: ICustomGlyphSolidOctantBlockVector[],
+  offset: number,
+  eighth: number,
+  startKey: 'x' | 'y',
+  sizeKey: 'w' | 'h'
+): boolean {
+  if (eighth >= 1) {
+    return true;
+  }
+
+  let boundaryMask = 0;
+  for (let i = 0; i < charDefinition.length; i++) {
+    const box = charDefinition[i];
+    boundaryMask |= 1 << box[startKey];
+    boundaryMask |= 1 << (box[startKey] + box[sizeKey]);
+  }
+
+  let previous = Number.NEGATIVE_INFINITY;
+  for (let i = 0; i <= 8; i++) {
+    if (boundaryMask & (1 << i)) {
+      const current = Math.round(offset + i * eighth);
+      if (current <= previous) {
+        return false;
+      }
+      previous = current;
+    }
+  }
+  return true;
 }
 
 /**
