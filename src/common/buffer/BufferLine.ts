@@ -73,7 +73,10 @@ export class BufferLine implements IBufferLine {
   /** Sparse cache; only read when `HAS_EXTENDED` is set in `_data`. */
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
   public length: number;
-  private _isWrapped: boolean;
+
+  // INTERNAL - if modifying, use Buffer.setWrapped.
+  // WARNING - this field is likely to be removed or made private
+  public _isWrapped: boolean;
 
   public get isWrapped(): boolean {
     return this._isWrapped;

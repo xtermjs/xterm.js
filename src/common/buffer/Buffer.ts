@@ -127,7 +127,7 @@ export class Buffer extends Disposable implements IBuffer {
 
   public setWrapped(absrow: number, value: boolean): void {
     const line = this.lines.get(absrow);
-    (line as any)._isWrapped = value;
+    if (line) (line as BufferLine)._isWrapped = value;
   }
 
   /**
