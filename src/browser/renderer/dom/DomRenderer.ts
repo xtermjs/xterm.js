@@ -353,7 +353,9 @@ export class DomRenderer extends Disposable implements IRenderer {
   public handleResize(cols: number, rows: number): void {
     this._refreshRowElements(cols, rows);
     this._updateDimensions();
-    this.handleSelectionChanged(this._selectionRenderModel.selectionStart, this._selectionRenderModel.selectionEnd, this._selectionRenderModel.columnSelectMode);
+    // Re-draw the selection after resize using the last known selection state
+    // (_lastSelection* survives resize; _selectionRenderModel may have been cleared).
+    this.handleSelectionChanged(this._lastSelectionStart, this._lastSelectionEnd, this._lastSelectionColumnMode);
   }
 
   public handleCharSizeChanged(): void {
