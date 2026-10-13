@@ -27,6 +27,7 @@ const commonOptions = {
   sourcemap: true,
   treeShaking: true,
   logLevel: 'warning',
+  packages: 'external'
 };
 
 /** @type {esbuild.BuildOptions} */
