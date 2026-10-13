@@ -74,6 +74,14 @@ export class BufferLine implements IBufferLine {
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
   public length: number;
 
+  // INTERNAL - if modifying, use Buffer.setWrapped.
+  // WARNING - this field is likely to be removed or made private
+  public _isWrapped: boolean;
+
+  public get isWrapped(): boolean {
+    return this._isWrapped;
+  }
+
   /** line text cache */
   protected _cacheValid = false;
   protected _cache: string = '';
@@ -81,10 +89,11 @@ export class BufferLine implements IBufferLine {
 
   constructor(
     cols: number,
-    public isWrapped: boolean = false
+    isWrapped: boolean = false
   ) {
     this._data = new Uint32Array(cols * Constants.CELL_INDICIES);
     this.length = cols;
+    this._isWrapped = isWrapped;
   }
 
   /**
@@ -210,6 +219,21 @@ export class BufferLine implements IBufferLine {
     }
     cell.extended = this.getExtended(index);
     return cell;
+  }
+
+  /**
+   * Convenience wrapper around loadCell, used by public API.
+   */
+  public getCell(x: number, cell?: ICellData): ICellData | undefined {
+    if (x < 0 || x >= this.length) {
+      return undefined;
+    }
+
+    if (cell) {
+      this.loadCell(x, cell);
+      return cell;
+    }
+    return this.loadCell(x, new CellData());
   }
 
   public getExtended(index: number): IExtendedAttrs {
@@ -499,7 +523,7 @@ export class BufferLine implements IBufferLine {
     }
     this._cache = '';
     this._cacheValid = false;
-    this.isWrapped = line.isWrapped;
+    this._isWrapped = line._isWrapped;
   }
 
   public getTrimmedLength(): number {
