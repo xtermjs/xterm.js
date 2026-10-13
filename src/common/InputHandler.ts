@@ -13,7 +13,7 @@ import { Disposable } from './Lifecycle';
 import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from './input/TextDecoder';
 import { BufferLine, DEFAULT_ATTR_DATA } from './buffer/BufferLine';
 import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from './parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from './buffer/Constants';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, UnderlineStyle } from './buffer/Constants';
 import { CellData } from './buffer/CellData';
 import { AttributeData } from './buffer/AttributeData';
 import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from './services/Services';
@@ -3479,7 +3479,7 @@ export class InputHandler extends Disposable implements IInputHandler {
   public screenAlignmentPattern(): boolean {
     // prepare cell data
     const cell = new CellData();
-    cell.content = 1 << Content.WIDTH_SHIFT | 'E'.charCodeAt(0);
+    cell.content = 'E'.charCodeAt(0);
     cell.fg = this._curAttrData.fg;
     cell.bg = this._curAttrData.bg;
 

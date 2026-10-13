@@ -20,6 +20,10 @@ export const CHAR_DATA_CODE_INDEX = 3;
 export const NULL_CELL_CHAR = '';
 export const NULL_CELL_WIDTH = 1;
 export const NULL_CELL_CODE = 0;
+/**
+ * Value of content property for a null cell.
+ */
+export const NULL_CELL_CONTENT = 0;
 
 /**
  * Whitespace cell.
@@ -60,17 +64,10 @@ export const enum Content {
   HAS_CONTENT_MASK = 0x3FFFFF,
 
   /**
-   * bit 23..24   wcwidth value of cell, takes 2 bits (ranges from 0..2)
-   *              read:   `width = (content & Content.WIDTH_MASK) >> Content.WIDTH_SHIFT;`
-   *                      `hasWidth = content & Content.WIDTH_MASK;`
-   *                      as long as wcwidth is highest value in `content`:
-   *                      `width = content >> Content.WIDTH_SHIFT;`
-   *              write:  `content |= (width << Content.WIDTH_SHIFT) & Content.WIDTH_MASK;`
-   *                      shortcut if precondition `0 <= width <= 3` is met:
-   *                      `content |= width << Content.WIDTH_SHIFT;`
+   * bit 31       set if part of a wide character (i.e. wcwidth > 1)
+   *              The HAS_CONTENT_MASK is non-zero for the 1st cell, and zero for following cells.
    */
-  WIDTH_MASK = 0xC00000,   // 3 << 22
-  WIDTH_SHIFT = 22
+  IS_WIDE_MASK = 0x80000000 // 1 << 31
 }
 
 export const enum Attributes {

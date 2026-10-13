@@ -31,8 +31,11 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** Width of the cell. */
   public getWidth(): number {
-    return this.content >> Content.WIDTH_SHIFT;
+    const content = this.content;
+    return (content & Content.IS_WIDE_MASK) === 0 ? 1
+      : (content & Content.HAS_CONTENT_MASK) ? 2 : 0;
   }
+
   /** JS string of the content. */
   public getChars(): string {
     if (this.content & Content.IS_COMBINED_MASK) {
@@ -59,6 +62,7 @@ export class CellData extends AttributeData implements ICellData {
     this.fg = value[CHAR_DATA_ATTR_INDEX];
     this.bg = 0;
     let combined = false;
+    const cwidth = value[CHAR_DATA_WIDTH_INDEX] === 1 ? 0 : Content.IS_WIDE_MASK;
     // surrogates and combined strings need special treatment
     if (value[CHAR_DATA_CHAR_INDEX].length > 2) {
       combined = true;
@@ -70,7 +74,7 @@ export class CellData extends AttributeData implements ICellData {
       if (0xD800 <= code && code <= 0xDBFF) {
         const second = value[CHAR_DATA_CHAR_INDEX].charCodeAt(1);
         if (0xDC00 <= second && second <= 0xDFFF) {
-          this.content = ((code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+          this.content = ((code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000) | cwidth;
         }
         else {
           combined = true;
@@ -81,11 +85,11 @@ export class CellData extends AttributeData implements ICellData {
       }
     }
     else {
-      this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+      this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | cwidth;
     }
     if (combined) {
       this.combinedData = value[CHAR_DATA_CHAR_INDEX];
-      this.content = Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+      this.content = Content.IS_COMBINED_MASK | cwidth;
     }
   }
   /** Get data as CharData. */

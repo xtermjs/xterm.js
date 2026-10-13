@@ -6,7 +6,7 @@
 import { CharData, IAttributeData, IBufferLine, ICellData, IExtendedAttrs } from './Types';
 import { AttributeData } from './AttributeData';
 import { CellData } from './CellData';
-import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR } from './Constants';
+import { Attributes, BgFlags, CHAR_DATA_ATTR_INDEX, CHAR_DATA_CHAR_INDEX, CHAR_DATA_WIDTH_INDEX, Content, WHITESPACE_CELL_CHAR } from './Constants';
 import { stringFromCodePoint } from '../input/TextDecoder';
 
 // Buffer memory layout:
@@ -108,7 +108,7 @@ export class BufferLine implements IBufferLine {
       (content & Content.IS_COMBINED_MASK)
         ? this._combined[index]
         : (cp) ? stringFromCodePoint(cp) : '',
-      content >> Content.WIDTH_SHIFT,
+      this.getWidth(index),
       (content & Content.IS_COMBINED_MASK)
         ? this._combined[index].charCodeAt(this._combined[index].length - 1)
         : cp
@@ -122,25 +122,33 @@ export class BufferLine implements IBufferLine {
   public set(index: number, value: CharData): void {
     this._cacheValid = false;
     this._data[index * Constants.CELL_INDICIES + Cell.FG] = value[CHAR_DATA_ATTR_INDEX];
+    const width = value[CHAR_DATA_WIDTH_INDEX];
+    const cwidth = (width === 1 ? 0 : Content.IS_WIDE_MASK);
     if (value[CHAR_DATA_CHAR_INDEX].length > 1) {
       this._combined[index] = value[1];
-      this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = index | Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+      this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = index | Content.IS_COMBINED_MASK | cwidth;
     } else {
-      this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+      this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | cwidth;
     }
   }
 
   /**
    * primitive getters
-   * use these when only one value is needed, otherwise use `loadCell`
+   * use these when only one value fs needed, otherwise use `loadCell`
    */
   public getWidth(index: number): number {
-    return this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] >> Content.WIDTH_SHIFT;
+    // This implementation assumes wide characters are 2 cells wide.
+    // To handle 3-cell or wider characters you have to count how many
+    // following cells have IS_WIDE_MASK but not HAS_CONTENT_MASK.
+    const content = this._data[index * Constants.CELL_INDICIES + Cell.CONTENT];
+    return (content & Content.IS_WIDE_MASK) === 0 ? 1
+      : (content & Content.HAS_CONTENT_MASK) ? 2 : 0;
   }
 
   /** Test whether content has width. */
   public hasWidth(index: number): number {
-    return this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] & Content.WIDTH_MASK;
+    const content = this._data[index * Constants.CELL_INDICIES + Cell.CONTENT];
+    return (content & Content.HAS_CONTENT_MASK) | ((content & Content.IS_WIDE_MASK) ? 0 : 1);
   }
 
   /** Get FG cell component. */
@@ -204,12 +212,7 @@ export class BufferLine implements IBufferLine {
    */
   public loadCell(index: number, cell: ICellData): ICellData {
     $startIndex = index * Constants.CELL_INDICIES;
-    let content = this._data[$startIndex + Cell.CONTENT];
-    if ((content & Content.HAS_CONTENT_MASK) === 0) {
-      const followsWide = index > 0 && this.getWidth(index -1) > 1;
-      content = (content & ~Content.WIDTH_MASK) | ((followsWide ? 0 : NULL_CELL_WIDTH) << Content.WIDTH_SHIFT);
-    }
-    cell.content = content;
+    cell.content = this._data[$startIndex + Cell.CONTENT];
     cell.fg = this._data[$startIndex + Cell.FG];
     cell.bg = this._data[$startIndex + Cell.BG];
     if (cell.content & Content.IS_COMBINED_MASK) {
@@ -278,7 +281,13 @@ export class BufferLine implements IBufferLine {
       this._extendedAttrs[index] = attrs.extended;
     }
     const $idx = index * Constants.CELL_INDICIES;
-    this._data[$idx + Cell.CONTENT] = codePoint | (width << Content.WIDTH_SHIFT);
+    let content = codePoint;
+    if (codePoint === 0) {
+      if (width === 0) content |= Content.IS_WIDE_MASK;
+    } else {
+      if (width > 1) content |= Content.IS_WIDE_MASK;
+    }
+    this._data[$idx + Cell.CONTENT] = content;
     this._data[$idx + Cell.FG] = attrs.fg;
     this._data[$idx + Cell.BG] = attrs.bg;
   }
@@ -306,12 +315,11 @@ export class BufferLine implements IBufferLine {
       } else {
         // should not happen - we actually have no data in the cell yet
         // simply set the data in the cell buffer with a width of 1
-        content = codePoint | (1 << Content.WIDTH_SHIFT);
+        content = codePoint;
       }
     }
-    if (width) {
-      content &= ~Content.WIDTH_MASK;
-      content |= width << Content.WIDTH_SHIFT;
+    if (width > 1) {
+      content |= Content.IS_WIDE_MASK;
     }
     this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] = content;
   }
@@ -323,6 +331,7 @@ export class BufferLine implements IBufferLine {
     // handle fullwidth at pos: reset cell one to the left if pos is second cell of a wide char
     if (pos && this.getWidth(pos - 1) === 2) {
       this.setCellFromCodepoint(pos - 1, 0, 1, fillCellData);
+      this.setCellFromCodepoint(pos, 0, 1, fillCellData);
     }
 
     if (n < this.length - pos) {
@@ -528,8 +537,9 @@ export class BufferLine implements IBufferLine {
 
   public getTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
-      if ((this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] & Content.HAS_CONTENT_MASK)) {
-        return i + (this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] >> Content.WIDTH_SHIFT);
+      const content = this._data[i * Constants.CELL_INDICIES + Cell.CONTENT];
+      if (content & (Content.HAS_CONTENT_MASK|Content.IS_WIDE_MASK)) {
+        return i + 1;
       }
     }
     return 0;
@@ -537,8 +547,8 @@ export class BufferLine implements IBufferLine {
 
   public getNoBgTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
-      if ((this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] & Content.HAS_CONTENT_MASK) || (this._data[i * Constants.CELL_INDICIES + Cell.BG] & Attributes.CM_MASK)) {
-        return i + (this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] >> Content.WIDTH_SHIFT);
+      if ((this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] & (Content.HAS_CONTENT_MASK|Content.IS_WIDE_MASK)) || (this._data[i * Constants.CELL_INDICIES + Cell.BG] & Attributes.CM_MASK)) {
+        return i + 1;
       }
     }
     return 0;
@@ -607,7 +617,7 @@ export class BufferLine implements IBufferLine {
           outColumns.push(startCol);
         }
       }
-      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by at least 1
+      startCol += (content & Content.IS_WIDE_MASK) ? 2 : 1; // always advance by at least 1
     }
     if (outColumns) {
       outColumns.push(startCol);
