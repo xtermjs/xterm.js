@@ -48,6 +48,14 @@ export class CompositionHelper {
   private _dataAlreadySent: string;
 
   /**
+   * The committed string reported by the last compositionend event, or undefined when no such event
+   * was provided (eg. the keydown-driven early finalize, or a direct API call). This is the DOM's
+   * authoritative result and is preferred over slicing the textarea, which breaks when a TSF IME
+   * replaces the whole textarea value. An empty string is a valid "nothing committed" result.
+   */
+  private _compositionEndData: string | undefined;
+
+  /**
    * The pending textarea change timer, if any.
    */
   private _textareaChangeTimer?: number;
@@ -65,6 +73,7 @@ export class CompositionHelper {
     this._compositionPosition = { start: 0, end: 0 };
     this._compositionSuffix = '';
     this._dataAlreadySent = '';
+    this._compositionEndData = undefined;
   }
 
   /**
@@ -81,6 +90,7 @@ export class CompositionHelper {
     this._compositionSuffix = this._textarea.value.substring(this._compositionPosition.end);
     this._compositionView.textContent = '';
     this._dataAlreadySent = '';
+    this._compositionEndData = undefined;
     this._compositionView.classList.add('active');
   }
 
@@ -102,8 +112,12 @@ export class CompositionHelper {
   /**
    * Handles the compositionend event, hiding the composition view and sending the composition to
    * the handler.
+   * @param ev The event. When provided, its `data` is the DOM's authoritative committed string and
+   *   is emitted verbatim; when omitted (eg. a direct API call) the committed string is instead
+   *   recovered by slicing the textarea.
    */
-  public compositionend(): void {
+  public compositionend(ev?: CompositionEvent): void {
+    this._compositionEndData = ev?.data;
     this._finalizeComposition(true);
   }
 
@@ -163,12 +177,17 @@ export class CompositionHelper {
         end: this._compositionPosition.end
       };
       const currentCompositionSuffix = this._compositionSuffix;
+      // Capture the compositionend data now too, as a new composition may reset it before the
+      // setTimeout executes.
+      const currentCompositionEndData = this._compositionEndData;
 
       // Since composition* events happen before the changes take place in the textarea on most
       // browsers, use a setTimeout with 0ms time to allow the native compositionend event to
       // complete. This ensures the correct character is retrieved.
-      // This solution was used because:
-      // - The compositionend event's data property is unreliable, at least on Chromium
+      // The captured compositionend data is preferred as the committed string; slicing the textarea
+      // is kept as a fallback for callers that do not supply the event. Slicing was originally the
+      // only path because:
+      // - The compositionend event's data property was unreliable, at least on Chromium
       // - The last compositionupdate event's data property does not always accurately describe
       //   the character, a counter example being Korean where an ending consonsant can move to
       //   the following character if the following input is a vowel.
@@ -178,22 +197,32 @@ export class CompositionHelper {
         if (this._isSendingComposition) {
           this._isSendingComposition = false;
           let input;
-          // Add length of data already sent due to keydown event,
-          // otherwise input characters can be duplicated. (Issue #3191)
-          currentCompositionPosition.start += this._dataAlreadySent.length;
-          if (this._isComposing) {
-            // Use the start position of the new composition to get the string
-            // if a new composition has started.
-            input = this._textarea.value.substring(currentCompositionPosition.start, this._compositionPosition.start);
+          if (currentCompositionEndData !== undefined) {
+            // Prefer the committed string reported by compositionend. Unlike slicing the textarea
+            // from the offset recorded at compositionstart, it is immune to the replaced range's
+            // geometry: TSF IMEs (eg. Microsoft Pinyin on Windows) apply the composition as a
+            // whole-value replacement that absorbs pre-existing text, leaving that offset stale and
+            // dropping the leading part of the commit. An empty string means nothing was committed.
+            // (Issue #6049)
+            input = currentCompositionEndData;
           } else {
-            // Keep support for non-composition characters typed immediately after composition end
-            // while avoiding re-sending the trailing text that was already present
-            // before composition started.
-            const value = this._textarea.value;
-            const valueEnd = currentCompositionSuffix.length > 0 && value.endsWith(currentCompositionSuffix)
-              ? value.length - currentCompositionSuffix.length
-              : value.length;
-            input = value.substring(currentCompositionPosition.start, Math.max(currentCompositionPosition.start, valueEnd));
+            // Add length of data already sent due to keydown event,
+            // otherwise input characters can be duplicated. (Issue #3191)
+            currentCompositionPosition.start += this._dataAlreadySent.length;
+            if (this._isComposing) {
+              // Use the start position of the new composition to get the string
+              // if a new composition has started.
+              input = this._textarea.value.substring(currentCompositionPosition.start, this._compositionPosition.start);
+            } else {
+              // Keep support for non-composition characters typed immediately after composition end
+              // while avoiding re-sending the trailing text that was already present
+              // before composition started.
+              const value = this._textarea.value;
+              const valueEnd = currentCompositionSuffix.length > 0 && value.endsWith(currentCompositionSuffix)
+                ? value.length - currentCompositionSuffix.length
+                : value.length;
+              input = value.substring(currentCompositionPosition.start, Math.max(currentCompositionPosition.start, valueEnd));
+            }
           }
           if (input.length > 0) {
             this._coreService.triggerDataEvent(input, true);
