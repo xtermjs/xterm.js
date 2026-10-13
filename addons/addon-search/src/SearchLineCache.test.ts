@@ -112,25 +112,22 @@ describe('SearchLineCache', () => {
   describe('translateBufferLineToStringWithWrap', () => {
     it('should translate a single line without wrapping', async () => {
       await writeP(terminal, 'Hello World');
-      const result = cache.translateBufferLineToStringWithWrap(0, true);
+      const result = cache.translateBufferLineToStringWithWrap(0);
       assert.equal(result[0], 'Hello World');
       assert.deepEqual(result[1], [0]);
     });
 
     it('should handle trimRight parameter', async () => {
       await writeP(terminal, 'Hello World   ');
-      const resultTrimmed = cache.translateBufferLineToStringWithWrap(0, true);
-      const resultNotTrimmed = cache.translateBufferLineToStringWithWrap(0, false);
+      const resultTrimmed = cache.translateBufferLineToStringWithWrap(0);
 
       assert.equal(resultTrimmed[0].trimEnd(), 'Hello World');
-      assert.isTrue(resultNotTrimmed[0].startsWith('Hello World   '));
-      assert.isTrue(resultNotTrimmed[0].length > resultTrimmed[0].length, 'non-trimmed result should be longer');
     });
 
     it('should handle wrapped lines', async () => {
       const longText = 'A'.repeat(200);
       await writeP(terminal, longText);
-      const result = cache.translateBufferLineToStringWithWrap(0, true);
+      const result = cache.translateBufferLineToStringWithWrap(0);
       assert.equal(result[0], longText);
       assert.isTrue(result[1].length > 1, 'should have multiple offsets due to wrapping');
       assert.equal(result[1][0], 0, 'first offset should be 0');
@@ -138,19 +135,19 @@ describe('SearchLineCache', () => {
 
     it('should handle wide characters', async () => {
       await writeP(terminal, 'Hello 世界');
-      const result = cache.translateBufferLineToStringWithWrap(0, true);
+      const result = cache.translateBufferLineToStringWithWrap(0);
       assert.equal(result[0], 'Hello 世界');
       assert.deepEqual(result[1], [0]);
     });
 
     it('should handle empty lines', () => {
-      const result = cache.translateBufferLineToStringWithWrap(0, true);
+      const result = cache.translateBufferLineToStringWithWrap(0);
       assert.equal(result[0], '');
       assert.deepEqual(result[1], [0]);
     });
 
     it('should handle lines beyond buffer', () => {
-      const result = cache.translateBufferLineToStringWithWrap(1000, true);
+      const result = cache.translateBufferLineToStringWithWrap(1000);
       assert.equal(result[0], '');
       assert.deepEqual(result[1], [0]);
     });
@@ -160,9 +157,9 @@ describe('SearchLineCache', () => {
       await writeP(terminal, 'Line 2 with some longer content that might wrap\r\n');
       await writeP(terminal, 'Line 3');
 
-      const result1 = cache.translateBufferLineToStringWithWrap(0, true);
-      const result2 = cache.translateBufferLineToStringWithWrap(1, true);
-      const result3 = cache.translateBufferLineToStringWithWrap(2, true);
+      const result1 = cache.translateBufferLineToStringWithWrap(0);
+      const result2 = cache.translateBufferLineToStringWithWrap(1);
+      const result3 = cache.translateBufferLineToStringWithWrap(2);
 
       assert.equal(result1[0], 'Line 1');
       assert.equal(result2[0], 'Line 2 with some longer content that might wrap');
@@ -262,7 +259,7 @@ describe('SearchLineCache', () => {
   describe('integration with real terminal content', () => {
     it('should correctly translate real buffer content', async () => {
       await writeP(terminal, 'Hello World');
-      const cached = cache.translateBufferLineToStringWithWrap(0, true);
+      const cached = cache.translateBufferLineToStringWithWrap(0);
       const directTranslation = terminal.buffer.active.getLine(0)?.translateToString(true) || '';
 
       assert.equal(cached[0], directTranslation);
@@ -271,14 +268,14 @@ describe('SearchLineCache', () => {
     it('should handle real wrapped content correctly', async () => {
       const longContent = 'This is a very long line that will definitely wrap around in an 80 column terminal and should be handled correctly by the cache';
       await writeP(terminal, longContent);
-      const result = cache.translateBufferLineToStringWithWrap(0, true);
+      const result = cache.translateBufferLineToStringWithWrap(0);
       assert.equal(result[0], longContent);
       assert.isTrue(result[1].length > 1, 'should have wrapped');
     });
 
     it('should work with real escape sequences', async () => {
       await writeP(terminal, 'Before\x1b[31mRed Text\x1b[0mAfter');
-      const result = cache.translateBufferLineToStringWithWrap(0, true);
+      const result = cache.translateBufferLineToStringWithWrap(0);
       assert.include(result[0], 'Before');
       assert.include(result[0], 'Red Text');
       assert.include(result[0], 'After');

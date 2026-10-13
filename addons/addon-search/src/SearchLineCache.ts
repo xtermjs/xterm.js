@@ -104,16 +104,15 @@ export class SearchLineCache extends Disposable {
    * function is useful for getting the actual text underneath the raw selection
    * position.
    * @param lineIndex The index of the line being translated.
-   * @param trimRight Whether to trim whitespace to the right.
    */
-  public translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): LineCacheEntry {
+  public translateBufferLineToStringWithWrap(lineIndex: number): LineCacheEntry {
     const strings = [];
     const lineOffsets = [0];
     let line = this._terminal.buffer.active.getLine(lineIndex);
     while (line) {
       const nextLine = this._terminal.buffer.active.getLine(lineIndex + 1);
       const lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
-      let string = line.translateToString(!lineWrapsToNext && trimRight);
+      let string = line.translateToString(!lineWrapsToNext);
       if (lineWrapsToNext && nextLine) {
         const lastCell = line.getCell(line.length - 1);
         const lastCellIsNull = lastCell && lastCell.getCode() === 0 && lastCell.getWidth() === 1;

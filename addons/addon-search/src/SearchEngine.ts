@@ -250,11 +250,11 @@ export class SearchEngine {
    * @returns The search result if it was found.
    */
   private _findInLine(term: string, searchPosition: ISearchPosition, searchOptions: ISearchOptions = {}, isReverseSearch: boolean = false): ISearchResult | undefined {
-    const row = searchPosition.startRow;
-    const col = searchPosition.startCol;
+    let row = searchPosition.startRow;
+    let col = searchPosition.startCol;
 
     // Ignore wrapped lines, only consider on unwrapped line (first row of command string).
-    const firstLine = this._terminal.buffer.active.getLine(row);
+    let firstLine = this._terminal.buffer.active.getLine(row);
     if (firstLine?.isWrapped) {
       if (isReverseSearch) {
         searchPosition.startCol += this._terminal.cols;
@@ -263,13 +263,17 @@ export class SearchEngine {
 
       // This will iterate until we find the line start.
       // When we find it, we will search using the calculated start column.
-      searchPosition.startRow--;
-      searchPosition.startCol += this._terminal.cols;
-      return this._findInLine(term, searchPosition, searchOptions);
+      do {
+        row--;
+        col += this._terminal.cols;
+        firstLine = this._terminal.buffer.active.getLine(row);
+      } while (firstLine?.isWrapped);
+      searchPosition.startRow = row;
+      searchPosition.startCol = col;
     }
     let cache = this._lineCache.getLineFromCache(row);
     if (!cache) {
-      cache = this._lineCache.translateBufferLineToStringWithWrap(row, true);
+      cache = this._lineCache.translateBufferLineToStringWithWrap(row);
       this._lineCache.setLineInCache(row, cache);
     }
     const [stringLine, offsets] = cache;
