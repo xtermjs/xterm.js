@@ -20,6 +20,8 @@ interface ITestTextureAtlasConstructor {
 
 interface ITestAtlasPage {
   canvas: HTMLCanvasElement;
+  glyphs: ReadonlyArray<unknown>;
+  percentageUsed: number;
 }
 
 interface ITestTextureAtlas {
@@ -86,6 +88,8 @@ interface IAtlasLimits {
 
 interface IAtlasState {
   pages: number;
+  glyphs: number;
+  usedPixels: number;
   atlasTextures: number;
   pageLayoutVersion: number;
   overflowPageCreated: boolean;
@@ -234,6 +238,8 @@ async function getAtlasState(ctx: ITestContext): Promise<IAtlasState> {
     }
     return {
       pages: atlas.pages.length,
+      glyphs: atlas.pages.reduce((total, page) => total + page.glyphs.length, 0),
+      usedPixels: atlas.pages.reduce((total, page) => total + page.percentageUsed * page.canvas.width * page.canvas.height, 0),
       atlasTextures: glyphRenderer._atlasTextures.length,
       pageLayoutVersion: atlas.pageLayoutVersion,
       overflowPageCreated: !!atlas._overflowSizePage,
@@ -471,6 +477,73 @@ test.describe('atlas page overflow (#6038)', () => {
       const wideAfterRefresh = await captureRowSignatures(ctx, TERM_SELECTOR, 160, 1, sampleCols, 'atlas-overflow-wide-refreshed');
       for (let i = 0; i < sampleCols.length; i++) {
         expectSignatureMatches(wideAfterRefresh[i], wideSignatures[i], `wide glyph col ${sampleCols[i]} changed after refresh`);
+      }
+    } finally {
+      ctx.page.off('pageerror', onError);
+      await restoreAtlasLimits(ctx, limits).catch(() => {});
+      await ctx.page.close();
+    }
+  });
+
+  test('releases cleared glyphs and can merge pages after a clear', async ({ browser }) => {
+    const ctx = await createTestContext(browser);
+    const errors: string[] = [];
+    const onError = (error: Error): void => { errors.push(error.message); };
+    let limits: IAtlasLimits | undefined;
+    ctx.page.on('pageerror', onError);
+    try {
+      await openTerminal(ctx, { cols: 80, rows: 24 });
+      await loadWebglStrict(ctx);
+      await installAtlasEventStats(ctx);
+
+      const singlePageGlyphs = generateUniqueGlyphFlood(40, 80, 0);
+      await writeAndWaitForRender(ctx, singlePageGlyphs);
+      expect((await getAtlasState(ctx)).glyphs).toBeGreaterThan(20);
+      await ctx.page.evaluate(() => {
+        const w = window as unknown as ITestWindow;
+        w.addon?.clearTextureAtlas();
+      });
+      await refreshAndWaitForRender(ctx, 'term');
+      const singlePageState = await getAtlasState(ctx);
+      for (let cycle = 0; cycle < 3; cycle++) {
+        await ctx.page.evaluate(() => {
+          const w = window as unknown as ITestWindow;
+          w.addon?.clearTextureAtlas();
+        });
+        await refreshAndWaitForRender(ctx, 'term');
+        const state = await getAtlasState(ctx);
+        expect(state.glyphs, `single-page glyph entries must remain stable after clear cycle ${cycle + 1}`).toBe(singlePageState.glyphs);
+        expect(Math.abs(state.usedPixels - singlePageState.usedPixels), `single-page pixel accounting must reset after clear cycle ${cycle + 1}`).toBeLessThan(0.001);
+      }
+
+      limits = await configureAtlasLimits(ctx);
+      const glyphsPerChunk = 23 * 40 - 1;
+      const fillAtlas = async (): Promise<void> => {
+        for (let chunk = 0; chunk < 12; chunk++) {
+          await writeAndWaitForRender(ctx, '\x1b[H\x1b[2J' + generateUniqueGlyphFlood(glyphsPerChunk, 80, chunk * glyphsPerChunk));
+        }
+      };
+      await fillAtlas();
+
+      const filledState = await getAtlasState(ctx);
+      expect(filledState.glyphs, 'the flood must exercise cached atlas glyphs').toBeGreaterThan(1000);
+      expect(filledState.removals, 'the flood must exercise atlas page merging').toBeGreaterThan(0);
+      expect(errors, `renderer must not fail while filling pages: ${errors[0] ?? ''}`).toEqual([]);
+
+      let previousState = filledState;
+      for (let cycle = 0; cycle < 3; cycle++) {
+        await ctx.page.evaluate(() => {
+          const w = window as unknown as ITestWindow;
+          w.addon?.clearTextureAtlas();
+        });
+        await refreshAndWaitForRender(ctx, 'term');
+        await fillAtlas();
+        const state = await getAtlasState(ctx);
+        expect(state.glyphs, `glyph entries must be reclaimed after clear cycle ${cycle + 1}`).toBe(filledState.glyphs);
+        expect(Math.abs(state.usedPixels - filledState.usedPixels), `pixel accounting must reset after clear cycle ${cycle + 1}`).toBeLessThan(0.001);
+        expect(state.removals, `page merging must still work after clear cycle ${cycle + 1}`).toBeGreaterThan(previousState.removals);
+        expect(errors, `renderer must not fail after clear cycle ${cycle + 1}: ${errors[0] ?? ''}`).toEqual([]);
+        previousState = state;
       }
     } finally {
       ctx.page.off('pageerror', onError);

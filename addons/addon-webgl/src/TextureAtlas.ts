@@ -136,7 +136,7 @@ export class TextureAtlas implements ITextureAtlas {
   public get pageLayoutVersion(): number { return this._pageLayoutVersion; }
 
   public clearTexture(): void {
-    if (this._pages[0].currentRow.x === 0 && this._pages[0].currentRow.y === 0) {
+    if (this._pages.every(page => page.glyphs.length === 0)) {
       return;
     }
     for (const page of this._pages) {
@@ -194,7 +194,7 @@ export class TextureAtlas implements ITextureAtlas {
         return newPage;
       }
 
-      const sortedMergingPagesIndexes = mergingPages.map(e => e.glyphs[0].texturePage).sort((a, b) => a - b);
+      const sortedMergingPagesIndexes = mergingPages.map(e => this._pages.indexOf(e)).sort((a, b) => a - b);
       const mergedPageIndex = this.pages.length - mergingPages.length;
 
       // Merge into the new page
@@ -1139,6 +1139,8 @@ class AtlasPage {
     this.currentRow.y = 0;
     this.currentRow.height = 0;
     this.fixedRows.length = 0;
+    this._glyphs.length = 0;
+    this._usedPixels = 0;
     this.version = ++AtlasPage.nextVersion;
   }
 }
