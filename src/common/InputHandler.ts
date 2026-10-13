@@ -606,8 +606,12 @@ export class InputHandler extends Disposable implements IInputHandler {
               oldCol, 0, oldWidth, false);
           }
           // clear left over cells to the right
+          // NOTE: Those cells are filler cells caused by the early wrapped wide char. They are
+          // not part of the line content, thus mark them to keep reflow from counting them.
           while (oldCol < cols) {
-            oldRow.setCellFromCodepoint(oldCol++, 0, 1, curAttr);
+            oldRow.setCellFromCodepoint(oldCol, 0, 1, curAttr);
+            oldRow.setWrapExcess(oldCol);
+            oldCol++;
           }
         } else {
           this._activeBuffer.x = cols - 1;
