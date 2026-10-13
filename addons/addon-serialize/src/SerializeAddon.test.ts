@@ -222,6 +222,33 @@ describe('SerializeAddon', () => {
         assert.equal(terminal2.modes.showCursor, false);
       });
     });
+
+    describe('cursor position', () => {
+      it('should restore the cursor column after a full row was written and the cursor moved back to the last column', async () => {
+        // A full row leaves the cursor in the pending-wrap sentinel column (x === cols).
+        // Restoring with a relative CUB from there collapses the sentinel first and lands
+        // one column short, so the cursor and all following output shift left.
+        await writeP(terminal, '\x1b[?1049hABCDEFGHIJ\x1b[1;10H');
+        const serialized = serializeAddon.serialize();
+
+        const terminal2 = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
+        terminal2.loadAddon(new SerializeAddon());
+        await writeP(terminal2, serialized);
+
+        assert.equal(terminal2.buffer.active.cursorX, terminal.buffer.active.cursorX, 'cursor column after restore');
+
+        // subsequent output must land in exactly the same cells
+        await writeP(terminal, 'XY');
+        await writeP(terminal2, 'XY');
+        for (let y = 0; y < terminal.rows; y++) {
+          assert.equal(
+            terminal2.buffer.active.getLine(y)!.translateToString(true),
+            terminal.buffer.active.getLine(y)!.translateToString(true),
+            `row ${y} after writing XY`
+          );
+        }
+      });
+    });
   });
 
   describe('html', () => {
