@@ -177,7 +177,7 @@ const ENC = {
 }
 
 function printMenu() {
-  console.log('\x1b[2J\x1b\[HTest mouse reports [Ctrl-C to exit]');
+  console.log('\x1b[2J\x1b[HTest mouse reports [Ctrl-C to exit]');
   console.log();
   console.log('  Selected protocol [Ctrl-A to switch]');
   const protocols = Object.keys(PROTOCOLS);

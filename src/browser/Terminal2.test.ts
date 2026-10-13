@@ -7,14 +7,14 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 import * as pty from 'node-pty';
-import { CoreBrowserTerminal } from 'browser/CoreBrowserTerminal';
+import { CoreBrowserTerminal } from './CoreBrowserTerminal';
 import { IDisposable } from '@xterm/xterm';
 
 // all test files expect terminal in 80x25
 const COLS = 80;
 const ROWS = 25;
 
-const escapeSequenceFilesDir = path.join(__dirname, '../../fixtures/escape_sequence_files');
+const escapeSequenceFilesDir = path.join(__dirname, '../../test/fixtures/escape_sequence_files');
 const TESTFILES = fs.readdirSync(escapeSequenceFilesDir)
   .filter(f => f.endsWith('.in'))
   .map(f => path.join(escapeSequenceFilesDir, f));
@@ -125,7 +125,7 @@ function formatError(input: string, output: string, expected: string): string {
 // simple debug output of terminal cells
 function terminalToString(term: CoreBrowserTerminal): string {
   let result = '';
-  let lineText = '';
+  let lineText: string;
   for (let line = term.buffer.ybase; line < term.buffer.ybase + term.rows; line++) {
     lineText = term.buffer.lines.get(line)!.translateToString(true);
     // rtrim empty cells as xterm does

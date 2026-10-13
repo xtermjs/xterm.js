@@ -4,9 +4,8 @@
  */
 
 import { IBuffer as IBufferApi, IBufferLine as IBufferLineApi, IBufferCell as IBufferCellApi } from '@xterm/xterm';
-import { IBuffer } from 'common/buffer/Types';
-import { BufferLineApiView } from 'common/public/BufferLineApiView';
-import { CellData } from 'common/buffer/CellData';
+import { IBuffer } from '../buffer/Types';
+import { CellData } from '../buffer/CellData';
 
 export class BufferApiView implements IBufferApi {
   constructor(
@@ -26,10 +25,7 @@ export class BufferApiView implements IBufferApi {
   public get length(): number { return this._buffer.lines.length; }
   public getLine(y: number): IBufferLineApi | undefined {
     const line = this._buffer.lines.get(y);
-    if (!line) {
-      return undefined;
-    }
-    return new BufferLineApiView(line);
+    return line && line as unknown as IBufferLineApi;
   }
   public getNullCell(): IBufferCellApi { return new CellData(); }
 }

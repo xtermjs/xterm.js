@@ -3,20 +3,26 @@
  * @license MIT
  */
 
-import { addDisposableListener } from 'browser/Dom';
-import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptionsService } from 'common/services/Services';
-import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent, IDisposable } from 'common/Types';
-import { C0 } from 'common/data/EscapeSequences';
-import { toDisposable } from 'common/Lifecycle';
+import { addDisposableListener } from '../Dom';
+import { IBufferService, IMouseStateService, ICoreService, ILogService, IOptionsService } from '../../common/services/Services';
+import { CoreMouseAction, CoreMouseButton, CoreMouseEventType, ICoreMouseEvent, IDisposable } from '../../common/Types';
+import { C0 } from '../../common/data/EscapeSequences';
+import { DisposableStore, MutableDisposable } from '../../common/Lifecycle';
 import { ICoreBrowserService, IMouseCoordsService, IMouseService, IMouseServiceTarget, IRenderService, ISelectionService } from './Services';
-import { Gesture, EventType as GestureEventType, IGestureEvent } from 'browser/scrollable/touch';
+import { Gesture, EventType as GestureEventType, IGestureEvent } from '../scrollable/touch';
 
 type RequestedMouseEvents = Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener | null>;
+
+export const enum MouseEventCssClasses {
+  ENABLE_MOUSE_EVENTS = 'enable-mouse-events'
+}
 
 interface IMouseBindContext {
   readonly target: IMouseServiceTarget;
   readonly focus: () => void;
   readonly requestedEvents: RequestedMouseEvents;
+  readonly mouseupListener: MutableDisposable<IDisposable>;
+  readonly mousedragListener: MutableDisposable<IDisposable>;
 }
 
 export class MouseService implements IMouseService {
@@ -25,6 +31,7 @@ export class MouseService implements IMouseService {
   private _lastEvent: ICoreMouseEvent | null = null;
   private _wheelPartialScroll: number = 0;
   private _touchScrollAccumulator: number = 0;
+  private _altMouseCursor: AltMouseCursorController | undefined;
 
   constructor(
     @IRenderService private readonly _renderService: IRenderService,
@@ -56,28 +63,33 @@ export class MouseService implements IMouseService {
       mousedrag: null,
       mousemove: null
     };
-    const ctx: IMouseBindContext = { target, focus, requestedEvents };
+    const mouseupListener = new MutableDisposable<IDisposable>();
+    const mousedragListener = new MutableDisposable<IDisposable>();
+    register(mouseupListener);
+    register(mousedragListener);
+    const ctx: IMouseBindContext = { target, focus, requestedEvents, mouseupListener, mousedragListener };
     const eventListeners: Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener> = {
       mouseup: (ev: Event) => this._handleMouseUp(ctx, ev as MouseEvent),
       wheel: (ev: Event) => this._handleWheel(ctx, ev as WheelEvent),
       mousedrag: (ev: Event) => this._handleMouseDrag(ctx, ev as MouseEvent),
       mousemove: (ev: Event) => this._handleMouseMove(ctx, ev as MouseEvent)
     };
+    this._altMouseCursor = new AltMouseCursorController(
+      element,
+      document,
+      () => this._mouseStateService.areMouseEventsActive
+        && !!this._optionsService.rawOptions.mouseEventsRequireAlt
+    );
+    register(this._altMouseCursor);
     register(this._mouseStateService.onProtocolChange(events => {
       this._handleProtocolChange(ctx, eventListeners, events);
     }));
+    register(this._optionsService.onSpecificOptionChange('mouseEventsRequireAlt', () => {
+      this._syncMouseModeState(element);
+      this._altMouseCursor?.sync();
+    }));
     // force initial onProtocolChange so we dont miss early mouse requests
     this._mouseStateService.activeProtocol = this._mouseStateService.activeProtocol;
-
-    // Ensure document-level listeners are removed on dispose
-    register(toDisposable(() => {
-      if (requestedEvents.mouseup) {
-        document.removeEventListener('mouseup', requestedEvents.mouseup);
-      }
-      if (requestedEvents.mousedrag) {
-        document.removeEventListener('mousemove', requestedEvents.mousedrag);
-      }
-    }));
 
     /**
      * "Always on" event listeners.
@@ -153,6 +165,19 @@ export class MouseService implements IMouseService {
       return false;
     }
 
+    if (but !== CoreMouseButton.WHEEL
+      && this._optionsService.rawOptions.mouseEventsRequireAlt
+      && this._mouseStateService.areMouseEventsActive
+      && !ev.altKey) {
+      return false;
+    }
+
+    // Alt is only used locally to gate mouse passthrough; do not forward it to the
+    // application (e.g. tmux ignores alt-modified mouse reports).
+    const stripAltFromReport = but !== CoreMouseButton.WHEEL
+      && this._optionsService.rawOptions.mouseEventsRequireAlt
+      && this._mouseStateService.areMouseEventsActive;
+
     return this._triggerMouseEvent({
       col: pos.col,
       row: pos.row,
@@ -161,7 +186,7 @@ export class MouseService implements IMouseService {
       button: but,
       action,
       ctrl: ev.ctrlKey,
-      alt: ev.altKey,
+      alt: stripAltFromReport ? false : ev.altKey,
       shift: ev.shiftKey
     });
   }
@@ -170,12 +195,8 @@ export class MouseService implements IMouseService {
     this._sendEvent(ctx, ev);
     if (!ev.buttons) {
       // if no other button is held remove global handlers
-      if (ctx.requestedEvents.mouseup) {
-        ctx.target.document.removeEventListener('mouseup', ctx.requestedEvents.mouseup);
-      }
-      if (ctx.requestedEvents.mousedrag) {
-        ctx.target.document.removeEventListener('mousemove', ctx.requestedEvents.mousedrag);
-      }
+      ctx.mouseupListener.clear();
+      ctx.mousedragListener.clear();
     }
   }
 
@@ -217,11 +238,14 @@ export class MouseService implements IMouseService {
     // of the terminal element.
     // Note: Other emulators also do this for 'mousedown' while a button
     // is held, we currently limit 'mousedown' to the terminal only.
+    // Use the element's current document in case it moved to another window after open.
+    const { element, document: targetDocument } = ctx.target;
+    const listenerDocument = element.ownerDocument ?? targetDocument;
     if (ctx.requestedEvents.mouseup) {
-      ctx.target.document.addEventListener('mouseup', ctx.requestedEvents.mouseup);
+      ctx.mouseupListener.value = addDisposableListener(listenerDocument, 'mouseup', ctx.requestedEvents.mouseup);
     }
     if (ctx.requestedEvents.mousedrag) {
-      ctx.target.document.addEventListener('mousemove', ctx.requestedEvents.mousedrag);
+      ctx.mousedragListener.value = addDisposableListener(listenerDocument, 'mousemove', ctx.requestedEvents.mousedrag);
     }
   }
 
@@ -353,21 +377,34 @@ export class MouseService implements IMouseService {
     this._touchScrollAccumulator = 0;
   }
 
+  private _syncMouseModeState(element: HTMLElement): void {
+    if (this._mouseStateService.areMouseEventsActive) {
+      if (this._optionsService.rawOptions.mouseEventsRequireAlt) {
+        this._altMouseCursor?.resetClass();
+        this._selectionService.enable();
+      } else {
+        element.classList.add(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
+        this._selectionService.disable();
+      }
+    } else {
+      element.classList.remove(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
+      this._selectionService.enable();
+    }
+  }
+
   private _handleProtocolChange(ctx: IMouseBindContext, eventListeners: Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener>, events: CoreMouseEventType): void {
-    const { element, document } = ctx.target;
+    const { element } = ctx.target;
     const { requestedEvents } = ctx;
     // apply global changes on events
     if (events) {
       if (this._optionsService.rawOptions.logLevel === 'debug') {
         this._logService.debug('Binding to mouse events:', this._explainEvents(events));
       }
-      element.classList.add('enable-mouse-events');
-      this._selectionService.disable();
     } else {
       this._logService.debug('Unbinding from mouse events.');
-      element.classList.remove('enable-mouse-events');
-      this._selectionService.enable();
     }
+    this._syncMouseModeState(element);
+    this._altMouseCursor?.sync();
 
     // add/remove handlers from requestedEvents
     if (!(events & CoreMouseEventType.MOVE)) {
@@ -391,18 +428,14 @@ export class MouseService implements IMouseService {
     }
 
     if (!(events & CoreMouseEventType.UP)) {
-      if (requestedEvents.mouseup) {
-        document.removeEventListener('mouseup', requestedEvents.mouseup);
-      }
+      ctx.mouseupListener.clear();
       requestedEvents.mouseup = null;
     } else {
       requestedEvents.mouseup ??= eventListeners.mouseup;
     }
 
     if (!(events & CoreMouseEventType.DRAG)) {
-      if (requestedEvents.mousedrag) {
-        document.removeEventListener('mousemove', requestedEvents.mousedrag);
-      }
+      ctx.mousedragListener.clear();
       requestedEvents.mousedrag = null;
     } else {
       requestedEvents.mousedrag ??= eventListeners.mousedrag;
@@ -536,4 +569,65 @@ export class MouseService implements IMouseService {
     return true;
   }
 
+}
+
+/**
+ * Toggles MouseEventCssClasses.ENABLE_MOUSE_EVENTS on the terminal element while alt is held when
+ * `mouseEventsRequireAlt` is active. DOM listeners are only registered while active.
+ */
+export class AltMouseCursorController implements IDisposable {
+  private readonly _listeners = new MutableDisposable<IDisposable>();
+
+  constructor(
+    private readonly _element: HTMLElement,
+    private readonly _document: Document,
+    private readonly _isActive: () => boolean
+  ) {
+  }
+
+  public dispose(): void {
+    this._listeners.dispose();
+  }
+
+  public sync(): void {
+    this._listeners.clear();
+
+    if (!this._isActive()) {
+      return;
+    }
+
+    const store = new DisposableStore();
+    const syncFromModifier = (ev: KeyboardEvent | MouseEvent): void => this.syncFromModifier(ev);
+    store.add(addDisposableListener(this._document, 'keydown', syncFromModifier));
+    store.add(addDisposableListener(this._document, 'keyup', syncFromModifier));
+    store.add(addDisposableListener(this._element, 'mousemove', syncFromModifier));
+    const targetWindow = this._element.ownerDocument?.defaultView;
+    if (targetWindow) {
+      store.add(addDisposableListener(targetWindow, 'blur', () => {
+        if (this._isActive()) {
+          this.resetClass();
+        }
+      }));
+    }
+    this._listeners.value = store;
+  }
+
+  public resetClass(): void {
+    this._updateClass(false);
+  }
+
+  public syncFromModifier(ev: KeyboardEvent | MouseEvent): void {
+    if (!this._isActive()) {
+      return;
+    }
+    this._updateClass(ev.getModifierState('Alt'));
+  }
+
+  private _updateClass(altHeld: boolean): void {
+    if (altHeld) {
+      this._element.classList.add(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
+    } else {
+      this._element.classList.remove(MouseEventCssClasses.ENABLE_MOUSE_EVENTS);
+    }
+  }
 }

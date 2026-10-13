@@ -3,8 +3,8 @@
  * @license MIT
  */
 
-import { ISelectionService } from 'browser/services/Services';
-import { ICoreService, IOptionsService } from 'common/services/Services';
+import { ISelectionService } from './services/Services';
+import { ICoreService, IOptionsService } from '../common/services/Services';
 
 /**
  * Prepares text to be pasted into the terminal by normalizing the line endings

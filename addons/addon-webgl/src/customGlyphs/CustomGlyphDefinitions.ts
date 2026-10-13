@@ -5,7 +5,7 @@
 
 import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphCharacterDefinition, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition } from './Types';
 
-/* eslint-disable max-len */
+/* oxlint-disable @stylistic/max-len -- generated glyph path data */
 
 const enum Shapes {
   /** │ */ TOP_TO_BOTTOM = 'M.5,0 L.5,1',

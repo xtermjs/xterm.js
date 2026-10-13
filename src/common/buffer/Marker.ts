@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IDisposable, IMarker } from 'common/Types';
-import { Emitter } from 'common/Event';
-import { dispose } from 'common/Lifecycle';
+import { dispose, IDisposable } from '../Lifecycle';
+import { IMarker } from './Types';
+import { Emitter } from '../Event';
 
 export class Marker implements IMarker {
   private static _nextId = 1;
@@ -30,7 +30,7 @@ export class Marker implements IMarker {
     }
     this.isDisposed = true;
     this.line = -1;
-    // Emit before super.dispose such that dispose listeners get a change to react
+    // Emit before super.dispose such that dispose listeners get a chance to react
     this._onDispose.fire();
     dispose(this._disposables);
     this._disposables.length = 0;

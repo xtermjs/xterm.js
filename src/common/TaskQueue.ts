@@ -3,12 +3,12 @@
  * @license MIT
  */
 
-import type { ILogService } from 'common/services/Services';
+import type { ILogService } from './services/Services';
 
 interface ITaskQueue {
   /**
    * Adds a task to the queue which will run in a future idle callback.
-   * To avoid perceivable stalls on the mainthread, tasks with heavy workload
+   * To avoid perceivable stalls on the main thread, tasks with heavy workload
    * should split their work into smaller pieces and return `true` to get
    * called again until the work is done (on falsy return value).
    */
@@ -74,10 +74,10 @@ abstract class TaskQueue implements ITaskQueue {
 
   private _process(deadline: ITaskDeadline): void {
     this._idleCallback = undefined;
-    let taskDuration = 0;
+    let taskDuration: number;
     let longestTask = 0;
     let lastDeadlineRemaining = deadline.timeRemaining();
-    let deadlineRemaining = 0;
+    let deadlineRemaining: number;
     while (this._i < this._tasks.length) {
       taskDuration = performance.now();
       if (!this._tasks[this._i]()) {

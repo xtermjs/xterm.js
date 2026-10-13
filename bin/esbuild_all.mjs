@@ -19,14 +19,17 @@ for (const addon of addons) {
 // Demo job - This requires the others to be built so it's not included when building all
 // jobs.push(createJob('demo-client', [`--demo-client`]));
 
-await Promise.all(jobs.map((job, i) => {
+const codes = await Promise.all(jobs.map(job => {
   return new Promise(r => {
     job.cp.on('exit', code => {
       log(`Finished \x1b[32m${job.name}\x1b[0m${code ? ' \x1b[31mwith errors\x1b[0m' : ''}`);
-      r(code);
+      r(code ?? 1);
     });
   });
 }));
+if (codes.some(code => code !== 0)) {
+  process.exit(1);
+}
 
 /**
  * @param {string} message

@@ -248,7 +248,7 @@ test.describe('Parser Integration Tests', () => {
       await ctx.proxy.evaluate(([term]) => {
         window.customApcHandlerCallStack = [];
         // APC uses first character as identifier (e.g., 0x41 = 'A')
-        window.disposable = term.parser.registerApcHandler(0x41, data => {
+        window.disposable = term.parser.registerApcHandler({ final: 'A' }, data => {
           window.customApcHandlerCallStack!.push(['handler', data]);
           return true;
         });
@@ -263,7 +263,7 @@ test.describe('Parser Integration Tests', () => {
     test('should handle short data', async () => {
       await ctx.proxy.evaluate(([term]) => {
         window.customApcHandlerCallStack = [];
-        window.disposable = term.parser.registerApcHandler(0x42, data => {
+        window.disposable = term.parser.registerApcHandler({ final: 'B' }, data => {
           window.customApcHandlerCallStack!.push(['handler', data]);
           return true;
         });
@@ -278,15 +278,15 @@ test.describe('Parser Integration Tests', () => {
       await ctx.proxy.evaluate(([term]) => {
         window.customApcHandlerCallStack = [];
         window.disposables = [
-          term.parser.registerApcHandler(0x43, data => {
+          term.parser.registerApcHandler({ final: 'C' }, data => {
             window.customApcHandlerCallStack!.push(['A', data]);
             return false;
           }),
-          term.parser.registerApcHandler(0x43, data => {
+          term.parser.registerApcHandler({ final: 'C' }, data => {
             window.customApcHandlerCallStack!.push(['B', data]);
             return true;
           }),
-          term.parser.registerApcHandler(0x43, data => {
+          term.parser.registerApcHandler({ final: 'C' }, data => {
             window.customApcHandlerCallStack!.push(['C', data]);
             return false;
           })
@@ -302,17 +302,17 @@ test.describe('Parser Integration Tests', () => {
       await ctx.proxy.evaluate(([term]) => {
         window.customApcHandlerCallStack = [];
         window.disposables = [
-          term.parser.registerApcHandler(0x44, data => {
+          term.parser.registerApcHandler({ final: 'D' }, data => {
             window.customApcHandlerCallStack!.push(['A', data]);
             return false;
           }),
-          term.parser.registerApcHandler(0x44, data => {
+          term.parser.registerApcHandler({ final: 'D' }, data => {
             return new Promise(res => setTimeout(res, 50)).then(() => {
               window.customApcHandlerCallStack!.push(['B', data]);
               return false;
             });
           }),
-          term.parser.registerApcHandler(0x44, data => {
+          term.parser.registerApcHandler({ final: 'D' }, data => {
             window.customApcHandlerCallStack!.push(['C', data]);
             return false;
           })
@@ -330,11 +330,11 @@ test.describe('Parser Integration Tests', () => {
       await ctx.proxy.evaluate(([term]) => {
         window.customApcHandlerCallStack = [];
         window.disposables = [
-          term.parser.registerApcHandler(0x46, data => { // 'F'
+          term.parser.registerApcHandler({ final: 'F' }, data => {
             window.customApcHandlerCallStack!.push(['F', data]);
             return true;
           }),
-          term.parser.registerApcHandler(0x58, data => { // 'X'
+          term.parser.registerApcHandler({ final: 'X' }, data => {
             window.customApcHandlerCallStack!.push(['X', data]);
             return true;
           })

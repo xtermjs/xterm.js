@@ -39,7 +39,7 @@ The preferred way to report bugs or request features is to use
 
 It's pretty common for maintainers of large open source projects to suffer from burnout, especially when needing to triage a large number of incoming issues instead of actually building things. Here are some of the steps we take to try mitigate this:
 
-- Support questions live in [GH discussions](https://github.com/xtermjs/xterm.js/discussions), issues may be transfered there without further comment and core maintainers may or may not participate in discussions.
+- Support questions live in [GH discussions](https://github.com/xtermjs/xterm.js/discussions), issues may be transferred there without further comment and core maintainers may or may not participate in discussions.
 - Issues are strictly for well defined features or bugs that are _actionable_.
 - Sometimes features are out of scope. A common example of this is a niche feature that the pricipal implementation ([VS Code](https://code.visualstudio.com/)) won't leverage and therefore would be difficult to maintain and likely suffer from bitrot. The reporter may not agree with this, but you could always create an addon if that works or maintain your own fork if it comes to that.
 - If a feature does not have a clear way forward or needs more discussion it may be closed ro moved to a discussion.

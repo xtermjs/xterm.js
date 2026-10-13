@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import { FastDomNode } from './fastDomNode';
-import { TimeoutTimer } from 'common/Async';
-import { Disposable } from 'common/Lifecycle';
+import { TimeoutTimer } from '../../common/Async';
+import { Disposable } from '../../common/Lifecycle';
 import { ScrollbarVisibility } from './scrollable';
 
 export class ScrollbarVisibilityController extends Disposable {

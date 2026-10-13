@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { ICoreService } from 'common/services/Services';
-import { CoreService } from 'common/services/CoreService';
-import { MockBufferService, MockLogService, MockOptionsService } from 'common/TestUtils.test';
+import { ICoreService } from './Services';
+import { CoreService } from './CoreService';
+import { MockBufferService, MockLogService, MockOptionsService } from '../TestUtils.test';
 import { assert } from 'chai';
 
 describe('CoreService', () => {

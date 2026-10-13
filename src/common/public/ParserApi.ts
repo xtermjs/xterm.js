@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IParams } from 'common/parser/Types';
+import { IParams } from '../parser/Types';
 import { IDisposable, IFunctionIdentifier, IParser } from '@xterm/xterm';
-import { ICoreTerminal } from 'common/Types';
+import { ICoreTerminal } from '../CoreTerminal';
 
 export class ParserApi implements IParser {
   constructor(private _core: ICoreTerminal) { }
@@ -34,7 +34,7 @@ export class ParserApi implements IParser {
   public addOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this.registerOscHandler(ident, callback);
   }
-  public registerApcHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
-    return this._core.registerApcHandler(ident, callback);
+  public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
+    return this._core.registerApcHandler(id, callback);
   }
 }

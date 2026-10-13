@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { CompositionHelper } from 'browser/input/CompositionHelper';
-import { MockCompositionHelper, MockRenderer, MockRenderService, MockViewport, TestTerminal } from 'browser/TestUtils.test';
-import type { IBrowser } from 'browser/Types';
+import { CompositionHelper } from './input/CompositionHelper';
+import { MockCompositionHelper, MockRenderer, MockRenderService, MockViewport, TestTerminal } from './TestUtils.test';
+import type { IBrowser } from './Types';
 import { assert } from 'chai';
-import { DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { CellData } from 'common/buffer/CellData';
-import { MockBufferService, MockOptionsService, MockUnicodeService, createCellData } from 'common/TestUtils.test';
-import { IMarker } from 'common/Types';
+import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
+import { CellData } from '../common/buffer/CellData';
+import { MockBufferService, MockOptionsService, MockUnicodeService, createCellData } from '../common/TestUtils.test';
+import { IMarker } from '../common/buffer/Types';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;

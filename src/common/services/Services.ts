@@ -4,10 +4,10 @@
  */
 
 import type { IDecoration, IDecorationOptions, ILinkHandler, ILogger, IWindowsPty, IOverviewRulerOptions } from '@xterm/xterm';
-import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, IAttributeData, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from 'common/Types';
-import { IBuffer, IBufferSet } from 'common/buffer/Types';
-import { createDecorator } from 'common/services/ServiceRegistry';
-import type { Emitter, IEvent } from 'common/Event';
+import { CoreMouseEncoding, CoreMouseEventType, CursorInactiveStyle, CursorStyle, ICharset, IColor, ICoreMouseEvent, ICoreMouseProtocol, IDecPrivateModes, IDisposable, IKittyKeyboardState, IModes, IOscLinkData, IWindowOptions } from '../Types';
+import { IAttributeData, IBuffer, IBufferSet } from '../buffer/Types';
+import { createDecorator, IServiceIdentifier } from './ServiceRegistry';
+import type { Emitter, IEvent } from '../Event';
 
 export const IBufferService = createDecorator<IBufferService>('BufferService');
 export interface IBufferService {
@@ -119,12 +119,6 @@ export interface ICharsetService {
   setgCharset(g: number, charset: ICharset | undefined): void;
 }
 
-export interface IServiceIdentifier<T> {
-  (...args: any[]): void;
-  type: T;
-  _id: string;
-}
-
 export interface IBrandedService {
   serviceBrand: undefined;
 }
@@ -234,6 +228,7 @@ export interface ITerminalOptions {
   macOptionIsMeta?: boolean;
   macOptionClickForcesSelection?: boolean;
   minimumContrastRatio?: number;
+  mouseEventsRequireAlt?: boolean;
   reflowCursorLine?: boolean;
   rescaleOverlappingGlyphs?: boolean;
   rightClickSelectsWord?: boolean;
@@ -349,13 +344,13 @@ export type UnicodeCharWidth = 0 | 1 | 2;
 export const IUnicodeService = createDecorator<IUnicodeService>('UnicodeService');
 export interface IUnicodeService {
   serviceBrand: undefined;
-  /** Register an Unicode version provider. */
+  /** Register a Unicode version provider. */
   register(provider: IUnicodeVersionProvider): void;
   /** Registered Unicode versions. */
   readonly versions: string[];
   /** Currently active version. */
   activeVersion: string;
-  /** Event triggered, when activate version changed. */
+  /** Event triggered when the active version changes. */
   readonly onChange: IEvent<string>;
 
   /**
@@ -396,4 +391,6 @@ export interface IInternalDecoration extends IDecoration {
   readonly backgroundColorRGB: IColor | undefined;
   readonly foregroundColorRGB: IColor | undefined;
   readonly onRenderEmitter: Emitter<HTMLElement>;
+  /** @internal Start line for line-index removal; kept in sync on buffer line shifts. */
+  _indexedStartLine: number;
 }

@@ -44,7 +44,6 @@ export default function mergeRange(ranges: [number, number][], newRangeStart: nu
         // current range
         ranges[i - 1][1] = Math.max(newRangeEnd, range[1]);
         ranges.splice(i, 1);
-        inRange = false;
         return ranges;
       }
       // Case 7: New range extends from previous range past the

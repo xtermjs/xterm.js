@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { UnicodeV6 } from 'common/input/UnicodeV6';
+import { UnicodeV6 } from './UnicodeV6';
 
 it('wcwidth should match all values from the old implementation', function(): void {
   // new implementation

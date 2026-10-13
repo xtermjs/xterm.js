@@ -21,7 +21,7 @@ const CACHE_SIZE = 100000;
 
 /**
  * Enable ligature support for the provided Terminal instance. To function
- * properly, this must be called after `open()` is called on the therminal. If
+ * properly, this must be called after `open()` is called on the terminal. If
  * the font currently in use supports ligatures, the terminal will automatically
  * start to render them.
  * @param term Terminal instance from xterm.js

@@ -5,7 +5,7 @@ import { spawnSync } from 'node:child_process';
 import { basename, dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const nodeModulesPath = resolve(repoRoot, 'node_modules');
 const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
@@ -13,7 +13,7 @@ const npmExecutable = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 
 /** @param {string} message */
 function log(message) {
-  console.info(`[setup-fast] ${message}`);
+  console.info(`[setup-full] ${message}`);
 }
 
 /** @param {string[]} args */

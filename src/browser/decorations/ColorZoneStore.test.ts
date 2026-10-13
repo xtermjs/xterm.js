@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { ColorZoneStore } from 'browser/decorations/ColorZoneStore';
+import { ColorZoneStore } from './ColorZoneStore';
 
 const optionsRedFull = {
   overviewRulerOptions: {

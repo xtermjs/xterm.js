@@ -4,12 +4,12 @@
  */
 
 import { assert } from 'chai';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { BufferService } from 'common/services/BufferService';
-import { OptionsService } from 'common/services/OptionsService';
-import { OscLinkService } from 'common/services/OscLinkService';
-import { IBufferService, IOptionsService, IOscLinkService } from 'common/services/Services';
-import { MockLogService } from 'common/TestUtils.test';
+import { AttributeData } from '../buffer/AttributeData';
+import { BufferService } from './BufferService';
+import { OptionsService } from './OptionsService';
+import { OscLinkService } from './OscLinkService';
+import { IBufferService, IOptionsService, IOscLinkService } from './Services';
+import { MockLogService } from '../TestUtils.test';
 
 describe('OscLinkService', () => {
   describe('constructor', () => {

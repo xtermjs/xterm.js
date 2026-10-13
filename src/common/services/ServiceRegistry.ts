@@ -9,15 +9,21 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IServiceIdentifier } from 'common/services/Services';
+export interface IServiceIdentifier<T> {
+  (...args: any[]): void;
+  type: T;
+  _id: string;
+}
 
-const DI_TARGET = 'di$target';
-const DI_DEPENDENCIES = 'di$dependencies';
+const enum Constants {
+  DI_TARGET = 'di$target',
+  DI_DEPENDENCIES = 'di$dependencies'
+}
 
 export const serviceRegistry: Map<string, IServiceIdentifier<any>> = new Map();
 
 export function getServiceDependencies(ctor: any): { id: IServiceIdentifier<any>, index: number, optional: boolean }[] {
-  return ctor[DI_DEPENDENCIES] || [];
+  return ctor[Constants.DI_DEPENDENCIES] || [];
 }
 
 export function createDecorator<T>(id: string): IServiceIdentifier<T> {
@@ -40,10 +46,10 @@ export function createDecorator<T>(id: string): IServiceIdentifier<T> {
 }
 
 function storeServiceDependency(id: Function, target: Function, index: number): void {
-  if ((target as any)[DI_TARGET] === target) {
-    (target as any)[DI_DEPENDENCIES].push({ id, index });
+  if ((target as any)[Constants.DI_TARGET] === target) {
+    (target as any)[Constants.DI_DEPENDENCIES].push({ id, index });
   } else {
-    (target as any)[DI_DEPENDENCIES] = [{ id, index }];
-    (target as any)[DI_TARGET] = target;
+    (target as any)[Constants.DI_DEPENDENCIES] = [{ id, index }];
+    (target as any)[Constants.DI_TARGET] = target;
   }
 }

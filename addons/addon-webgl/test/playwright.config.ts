@@ -7,7 +7,10 @@ const config: PlaywrightTestConfig = {
     {
       name: 'Chromium',
       use: {
-        browserName: 'chromium'
+        browserName: 'chromium',
+        launchOptions: {
+          args: ['--enable-unsafe-swiftshader']
+        }
       }
     },
     {

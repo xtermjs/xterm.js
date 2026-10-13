@@ -37,12 +37,13 @@ export default tseslint.config(
       '@stylistic/comma-spacing': ['warn', { before: false, after: true }],
       '@stylistic/indent': ['warn', 2],
       '@stylistic/semi': ['warn', 'always'],
-      '@stylistic/quotes': ['warn', 'single', { allowTemplateLiterals: true }],
+      '@stylistic/quotes': ['warn', 'single', { allowTemplateLiterals: 'always' }],
       '@stylistic/member-delimiter-style': ['warn', {
         multiline: { delimiter: 'semi', requireLast: true },
         singleline: { delimiter: 'comma', requireLast: false }
       }],
       '@stylistic/type-annotation-spacing': 'warn',
+      '@stylistic/space-unary-ops': 'warn',
 
       '@typescript-eslint/array-type': ['warn', { default: 'array', readonly: 'generic' }],
       '@typescript-eslint/consistent-type-assertions': 'warn',
@@ -85,6 +86,7 @@ export default tseslint.config(
       'eqeqeq': ['warn', 'always'],
       'jsdoc/check-alignment': 'warn',
       'jsdoc/check-param-names': 'warn',
+      'jsdoc/multiline-blocks': 'warn',
       'jsdoc/no-multi-asterisks': 'warn',
       'keyword-spacing': 'warn',
       'max-len': ['warn', {

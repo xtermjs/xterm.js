@@ -91,7 +91,7 @@ export class SixelHandler implements IDcsHandler, IResetHandler {
     const height = this._dec.height;
 
     // partial fix for https://github.com/jerch/xterm-addon-image/issues/37
-    if (!width || ! height) {
+    if (!width || !height) {
       if (height) {
         this._storage.advanceCursor(height);
       }

@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IRenderService } from 'browser/services/Services';
-import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
-import { C0 } from 'common/data/EscapeSequences';
+import { IRenderService } from '../services/Services';
+import { IBufferService, ICoreService, IOptionsService } from '../../common/services/Services';
+import { C0 } from '../../common/data/EscapeSequences';
 
 interface IPosition {
   start: number;

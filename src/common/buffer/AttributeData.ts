@@ -3,8 +3,9 @@
  * @license MIT
  */
 
-import { IAttributeData, IColorRGB, IExtendedAttrs } from 'common/Types';
-import { Attributes, FgFlags, BgFlags, UnderlineStyle, ExtFlags } from 'common/buffer/Constants';
+import { IColorRGB } from '../Types';
+import { IAttributeData, IExtendedAttrs } from './Types';
+import { Attributes, FgFlags, BgFlags, UnderlineStyle, ExtFlags } from './Constants';
 
 export class AttributeData implements IAttributeData {
   public static toColorRGB(value: number): IColorRGB {
@@ -138,6 +139,7 @@ export class AttributeData implements IAttributeData {
  */
 export class ExtendedAttrs implements IExtendedAttrs {
   private _ext: number = 0;
+  public payload: Object | undefined;
   public get ext(): number {
     if (this._urlId) {
       return (
@@ -206,6 +208,6 @@ export class ExtendedAttrs implements IExtendedAttrs {
    * that needs to be persistant in the buffer.
    */
   public isEmpty(): boolean {
-    return this.underlineStyle === UnderlineStyle.NONE && this._urlId === 0;
+    return this.underlineStyle === UnderlineStyle.NONE && this._urlId === 0 && this.payload === undefined;
   }
 }

@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { getRangeLength } from 'common/buffer/BufferRange';
+import { getRangeLength } from './BufferRange';
 import { IBufferRange } from '@xterm/xterm';
 
 describe('BufferRange', () => {

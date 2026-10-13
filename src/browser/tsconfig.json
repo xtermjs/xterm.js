@@ -9,17 +9,15 @@
     "types": [
       "../../node_modules/@types/mocha"
     ],
-    "skipLibCheck": true,
-    "paths": {
-      "common/*": [ "./../common/*" ],
-      "*": [ "./../*" ]
-    }
+    "skipLibCheck": true
   },
   "include": [
     "./**/*",
     "../../typings/xterm.d.ts"
   ],
   "references": [
-    { "path": "../common" }
+    {
+      "path": "../common"
+    }
   ]
 }

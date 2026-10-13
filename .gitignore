@@ -17,10 +17,15 @@ docs/
 npm-debug.log
 /.idea/
 .env
+mise.toml
 build/
 .DS_Store
 yarn.lock
 test-results/
+
+# Tracing/debug files
+.cursor/nal-trace/
+.cursor/*.log
 
 # Keep bundled code out of Git
 dist/

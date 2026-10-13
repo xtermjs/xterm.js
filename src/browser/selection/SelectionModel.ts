@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { IBufferService } from 'common/services/Services';
+import { IBufferService } from '../../common/services/Services';
 
 /**
  * Represents a selection within the buffer. This model only cares about column
@@ -135,9 +135,10 @@ export class SelectionModel {
       return true;
     }
 
-    // If the selection start is trimmed, ensure the start column is 0.
+    // If the selection start row is trimmed away, reset to the buffer origin.
     if (this.selectionStart && this.selectionStart[1] < 0) {
-      this.selectionStart[1] = 0;
+      this.selectionStart = [0, 0];
+      return true;
     }
     return false;
   }

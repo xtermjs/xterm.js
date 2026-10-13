@@ -1,0 +1,120 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "options": {
+    "maxWarnings": 0
+  },
+  "env": {
+    "builtin": true
+  },
+  "overrides": [
+    {
+      "files": [
+        "typings/**/*.d.ts"
+      ],
+      "plugins": [
+        "typescript"
+      ],
+      "jsPlugins": [
+        "@stylistic/eslint-plugin",
+        {
+          "name": "jsdoc-js",
+          "specifier": "eslint-plugin-jsdoc"
+        },
+        "oxlint-plugin-eslint"
+      ],
+      "rules": {
+        "@stylistic/indent": [
+          "warn",
+          2
+        ],
+        "@stylistic/semi": [
+          "warn",
+          "always"
+        ],
+        "@stylistic/quotes": [
+          "warn",
+          "single",
+          {
+            "allowTemplateLiterals": "always"
+          }
+        ],
+        "@stylistic/member-delimiter-style": [
+          "warn",
+          {
+            "multiline": {
+              "delimiter": "semi",
+              "requireLast": true
+            },
+            "singleline": {
+              "delimiter": "comma",
+              "requireLast": false
+            }
+          }
+        ],
+        "@stylistic/type-annotation-spacing": "warn",
+        "@stylistic/keyword-spacing": "warn",
+        "@stylistic/max-len": [
+          "warn",
+          {
+            "code": 1000,
+            "comments": 80,
+            "ignoreUrls": true,
+            "ignorePattern": "^ *(?<ps_description>\\* Ps=)"
+          }
+        ],
+        "@stylistic/no-extra-semi": "error",
+        "@stylistic/no-trailing-spaces": "warn",
+        "eslint-js/object-curly-spacing": [
+          "warn",
+          "always"
+        ],
+        "@stylistic/spaced-comment": [
+          "warn",
+          "always",
+          {
+            "markers": [
+              "/"
+            ],
+            "exceptions": [
+              "-"
+            ]
+          }
+        ],
+        "@stylistic/comma-dangle": [
+          "warn",
+          {
+            "objects": "never",
+            "arrays": "never",
+            "functions": "never"
+          }
+        ],
+        "@stylistic/eol-last": "warn",
+        "curly": [
+          "warn",
+          "multi-line"
+        ],
+        "eqeqeq": [
+          "warn",
+          "always"
+        ],
+        "jsdoc-js/check-alignment": "warn",
+        "jsdoc-js/check-param-names": "warn",
+        "no-irregular-whitespace": "warn",
+        "typescript/array-type": [
+          "warn",
+          {
+            "default": "array",
+            "readonly": "generic"
+          }
+        ],
+        "typescript/explicit-function-return-type": [
+          "warn",
+          {
+            "allowExpressions": true
+          }
+        ],
+        "typescript/prefer-namespace-keyword": "warn"
+      }
+    }
+  ]
+}

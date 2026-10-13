@@ -3,16 +3,18 @@
  * @license MIT
  */
 
-import * as Strings from 'browser/LocalizableStrings';
-import { ITerminal, IRenderDebouncer } from 'browser/Types';
-import { TimeBasedDebouncer } from 'browser/TimeBasedDebouncer';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { IBuffer } from 'common/buffer/Types';
-import { IInstantiationService } from 'common/services/Services';
-import { addDisposableListener } from 'browser/Dom';
+import * as Strings from './LocalizableStrings';
+import { ITerminal, IRenderDebouncer } from './Types';
+import { TimeBasedDebouncer } from './TimeBasedDebouncer';
+import { Disposable, toDisposable } from '../common/Lifecycle';
+import { ICoreBrowserService, IRenderService } from './services/Services';
+import { IBuffer } from '../common/buffer/Types';
+import { IInstantiationService } from '../common/services/Services';
+import { addDisposableListener } from './Dom';
 
-const MAX_ROWS_TO_READ = 20;
+const enum Constants {
+  MAX_ROWS_TO_READ = 20
+}
 
 const enum BoundaryPosition {
   TOP,
@@ -137,7 +139,7 @@ export class AccessibilityManager extends Disposable {
   }
 
   private _handleChar(char: string): void {
-    if (this._liveRegionLineCount < MAX_ROWS_TO_READ + 1) {
+    if (this._liveRegionLineCount < Constants.MAX_ROWS_TO_READ + 1) {
       if (this._charsToConsume.length > 0) {
         // Have the screen reader ignore the char if it was just input
         const shiftedChar = this._charsToConsume.shift();
@@ -150,7 +152,7 @@ export class AccessibilityManager extends Disposable {
 
       if (char === '\n') {
         this._liveRegionLineCount++;
-        if (this._liveRegionLineCount === MAX_ROWS_TO_READ + 1) {
+        if (this._liveRegionLineCount === Constants.MAX_ROWS_TO_READ + 1) {
           this._liveRegion.textContent = Strings.tooMuchOutput.get();
         }
       }

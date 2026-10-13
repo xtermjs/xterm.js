@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { IColorContrastCache } from 'browser/Types';
-import { IColor } from 'common/Types';
-import { TwoKeyMap } from 'common/MultiKeyMap';
+import { IColorContrastCache } from './Types';
+import { IColor } from '../common/Types';
+import { TwoKeyMap } from '../common/MultiKeyMap';
 
 export class ColorContrastCache implements IColorContrastCache {
   private _color: TwoKeyMap</* bg */number, /* fg */number, IColor | null> = new TwoKeyMap();

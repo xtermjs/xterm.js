@@ -3,9 +3,9 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { ICoreBrowserService, IRenderService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import { IBufferService, IDecorationService, IInternalDecoration } from 'common/services/Services';
+import { ICoreBrowserService, IRenderService } from '../services/Services';
+import { Disposable, toDisposable } from '../../common/Lifecycle';
+import { IBufferService, IDecorationService, IInternalDecoration } from '../../common/services/Services';
 
 export class BufferDecorationRenderer extends Disposable {
   private readonly _container: HTMLElement;
