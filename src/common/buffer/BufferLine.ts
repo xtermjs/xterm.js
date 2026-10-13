@@ -74,6 +74,14 @@ export class BufferLine implements IBufferLine {
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
   public length: number;
 
+  // INTERNAL - if modifying, use Buffer.setWrapped.
+  // WARNING - this field is likely to be removed or made private
+  public _isWrapped: boolean;
+
+  public get isWrapped(): boolean {
+    return this._isWrapped;
+  }
+
   /** line text cache */
   protected _cacheValid = false;
   protected _cache: string = '';
@@ -82,7 +90,7 @@ export class BufferLine implements IBufferLine {
   constructor(
     cols: number,
     fillCellData?: ICellData,
-    public isWrapped: boolean = false
+    isWrapped: boolean = false
   ) {
     this._data = new Uint32Array(cols * Constants.CELL_INDICIES);
     const cell = fillCellData ?? CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
@@ -90,6 +98,7 @@ export class BufferLine implements IBufferLine {
       this.setCell(i, cell);
     }
     this.length = cols;
+    this._isWrapped = isWrapped;
   }
 
   /**
@@ -499,7 +508,7 @@ export class BufferLine implements IBufferLine {
     }
     this._cache = '';
     this._cacheValid = false;
-    this.isWrapped = line.isWrapped;
+    this._isWrapped = line._isWrapped;
   }
 
   /** create a new clone */
@@ -512,7 +521,7 @@ export class BufferLine implements IBufferLine {
       // thus we can skip handling them
       newLine._copySparseMapsFrom(this);
     }
-    newLine.isWrapped = this.isWrapped;
+    newLine._isWrapped = this._isWrapped;
     return newLine;
   }
 
