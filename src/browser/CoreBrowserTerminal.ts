@@ -845,7 +845,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    */
   protected _keyDown(event: KeyboardEvent): boolean | undefined {
     this._keyDownHandled = false;
-    this._keyDownSeen = true;
+    // A modifier-only keydown never produces text, so it must not arm the _keyDownSeen gate of
+    // _inputEvent. On macOS (WebKit/WKWebView as well as Safari), an IME's direct-commit of a
+    // shifted character (e.g. full-width `？` from Shift+/ with Chinese Pinyin) delivers
+    // beforeinput/input before the character's own keydown. With Shift held down, its keydown
+    // had already armed the gate, so the first insertText is wrongly deduped and dropped — the
+    // user has to press the key twice (#5887, #6144). Keyup of the character resets the flag,
+    // which is why only the first press is affected.
+    this._keyDownSeen = !wasModifierKeyOnlyEvent(event);
 
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
