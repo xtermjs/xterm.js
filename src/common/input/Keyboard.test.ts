@@ -361,5 +361,31 @@ describe('Keyboard', () => {
       assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, shiftKey: true, keyCode: 189, code: 'Minus', key: '_' }).key, '\x1f');
     });
 
+    // Under a CJK IME (Korean/Japanese/Chinese on Windows) every claimed key is
+    // delivered with keyCode 229; recover control inputs from `code` so they are
+    // not silently dropped. https://github.com/xtermjs/xterm.js/issues/153
+    describe('CJK IME keyCode 229 recovery', () => {
+      it('should encode ctrl+j (LF) from code when keyCode is 229', () => {
+        assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, keyCode: 229, code: 'KeyJ', key: 'Process' }).key, '\n');
+      });
+      it('should encode ctrl+c (ETX) from code when keyCode is 229', () => {
+        assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, keyCode: 229, code: 'KeyC', key: 'Process' }).key, '\x03');
+      });
+      it('should encode ctrl+space (NUL) from code when keyCode is 229', () => {
+        assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, keyCode: 229, code: 'Space', key: 'Process' }).key, '\x00');
+      });
+      it('should encode escape from code when keyCode is 229', () => {
+        assert.equal(testEvaluateKeyboardEvent({ keyCode: 229, code: 'Escape', key: 'Process' }).key, '\x1b');
+      });
+      it('should not synthesize a key for a plain composable key at keyCode 229', () => {
+        // A composing letter with no control modifier must be left to the
+        // composition/input path, not encoded here.
+        assert.equal(testEvaluateKeyboardEvent({ keyCode: 229, code: 'KeyJ', key: 'Process' }).key, undefined);
+      });
+      it('should be unaffected when keyCode is the real value', () => {
+        assert.equal(testEvaluateKeyboardEvent({ ctrlKey: true, keyCode: 74, code: 'KeyJ', key: 'j' }).key, '\n');
+      });
+    });
+
   });
 });
