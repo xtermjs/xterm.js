@@ -261,6 +261,7 @@ Xterm.js is used in many world-class applications to provide great terminal expe
 - [**Codeman**](https://github.com/Ark0N/Codeman): Self-hosted mission control for AI coding agents, streaming live tmux sessions to browser and phone.
 - [**JSVIsion**](https://github.com/blendsdk/jsvision): A Turbo Vision-Style TUI SDK for TypeScript. We use xterm.js in our docs to show live JSVision examples running in a web terminal.
 - [**BitFun**](https://github.com/GCWing/BitFun): Open-source desktop AI agent whose integrated terminals and read-only terminal output views use xterm.js with the Fit, Web Links, and WebGL addons.
+- [**Swallow**](https://github.com/CloudsLetter/swallow): Cross-platform desktop terminal client for SSH, SFTP, Telnet, local shell, serial and MOSH, plus VNC and RDP remote desktops — with ProxyJump, local/remote/SOCKS5 port forwarding, dual-pane file transfer and agentless server monitoring over SSH.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
 Do you use xterm.js in your application as well? Please [open a Pull Request](https://github.com/sourcelair/xterm.js/pulls) to include it here. We would love to have it on our list. Please add any new contributions to the end of the list.
