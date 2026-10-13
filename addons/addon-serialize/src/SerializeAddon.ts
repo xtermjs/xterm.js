@@ -87,10 +87,10 @@ function equalBg(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boole
 function equalUnderline(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
   // If neither cell has underline, consider them equal regardless of internal underline color
   // values
-  if (!cell1.isUnderline() && !cell2.isUnderline()) {
+  if (!hasUnderline(cell1) && !hasUnderline(cell2)) {
     return true;
   }
-  if (cell1.getUnderlineStyle() !== cell2.getUnderlineStyle()) {
+  if (getRealUnderlineStyle(cell1) !== getRealUnderlineStyle(cell2)) {
     return false;
   }
   const cell1Default = cell1.isUnderlineColorDefault();
@@ -108,7 +108,7 @@ function equalUnderline(cell1: IBufferCell | IAttributeData, cell2: IBufferCell)
 function equalFlags(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
   return cell1.isInverse() === cell2.isInverse()
     && cell1.isBold() === cell2.isBold()
-    && cell1.isUnderline() === cell2.isUnderline()
+    && hasUnderline(cell1) === hasUnderline(cell2)
     && equalUnderline(cell1, cell2)
     && cell1.isOverline() === cell2.isOverline()
     && cell1.isBlink() === cell2.isBlink()
@@ -118,14 +118,52 @@ function equalFlags(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): bo
     && cell1.isStrikethrough() === cell2.isStrikethrough();
 }
 
+/** Whether the cell belongs to a hyperlink. */
+function isHyperlinkCell(cell: IBufferCell | IAttributeData): boolean {
+  return !!(cell as IAttributeData).extended?.urlId;
+}
+
 function attributesEquals(cell1: IBufferCell | IAttributeData, cell2: IBufferCell): boolean {
+  // `CellData.attributesEquals` is a fast path that compares the hyperlink render hint as if it
+  // were a real attribute, so it reports two hyperlink cells as equal even when their real
+  // underline styles differ. Fall back to the detailed comparison whenever a hyperlink is
+  // involved; cells without a hyperlink keep using the fast path.
   const cell1AsBufferCell = cell1 as IBufferCell;
-  if (typeof cell1AsBufferCell.attributesEquals === 'function') {
+  if (!isHyperlinkCell(cell1) && !isHyperlinkCell(cell2)
+    && typeof cell1AsBufferCell.attributesEquals === 'function') {
     return cell1AsBufferCell.attributesEquals(cell2);
   }
   return equalFg(cell1, cell2)
     && equalBg(cell1, cell2)
     && equalFlags(cell1, cell2);
+}
+
+/**
+ * Returns the underline style a cell actually has.
+ *
+ * `ExtendedAttrs.underlineStyle` reports `DASHED` whenever the cell belongs to a hyperlink so the
+ * renderers draw links with a dashed underline. That hint is not part of the cell's real
+ * attributes, but it leaks through the `IBufferCell` getters, which made the serializer emit
+ * `SGR 4:5` for an underlined link regardless of its real style. Clearing the link id on a copy of
+ * the extended attributes restores the real value. Cells without a link take the untouched path,
+ * so their behaviour is unchanged.
+ */
+function getRealUnderlineStyle(cell: IBufferCell | IAttributeData): UnderlineStyle {
+  const extended = (cell as IAttributeData).extended;
+  if (!extended || !extended.urlId) {
+    return cell.getUnderlineStyle();
+  }
+  const withoutUrlHint = extended.clone();
+  withoutUrlHint.urlId = 0;
+  return withoutUrlHint.underlineStyle;
+}
+
+/**
+ * Whether the cell actually has the underline attribute set. `IBufferCell.isUnderline` reports
+ * `true` for every hyperlink cell because of the render hint described above.
+ */
+function hasUnderline(cell: IBufferCell | IAttributeData): boolean {
+  return getRealUnderlineStyle(cell) !== UnderlineStyle.NONE;
 }
 
 class StringSerializeHandler extends BaseSerializeHandler {
@@ -312,7 +350,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
           if (cell.isInverse() !== oldCell.isInverse()) { sgrSeq.push(cell.isInverse() ? 7 : 27); }
           if (cell.isBold() !== oldCell.isBold()) { sgrSeq.push(cell.isBold() ? 1 : 22); }
           if (!equalUnderline(cell, oldCell)) {
-            const style = cell.getUnderlineStyle();
+            const style = getRealUnderlineStyle(cell);
             if (style === UnderlineStyle.NONE) {
               sgrSeq.push(24);
             } else if (style === UnderlineStyle.SINGLE && cell.isUnderlineColorDefault()) {
@@ -330,8 +368,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
                 }
               }
             }
-          } else if (cell.isUnderline() !== oldCell.isUnderline()) {
-            sgrSeq.push(cell.isUnderline() ? 4 : 24);
+          } else if (hasUnderline(cell) !== hasUnderline(oldCell)) {
+            sgrSeq.push(hasUnderline(cell) ? 4 : 24);
           }
           if (cell.isOverline() !== oldCell.isOverline()) { sgrSeq.push(cell.isOverline() ? 53 : 55); }
           if (cell.isBlink() !== oldCell.isBlink()) { sgrSeq.push(cell.isBlink() ? 5 : 25); }
@@ -715,7 +753,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
   }
 
   private _getUnderlineStyle(cell: IBufferCell): string {
-    switch (cell.getUnderlineStyle()) {
+    switch (getRealUnderlineStyle(cell)) {
       case UnderlineStyle.SINGLE:
         return 'underline';
       case UnderlineStyle.DOUBLE:
@@ -758,7 +796,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
       // Handle text-decoration (underline, overline, strikethrough, blink)
       const decorations: string[] = [];
-      if (cell.isUnderline()) {
+      if (hasUnderline(cell)) {
         decorations.push(this._getUnderlineStyle(cell));
       }
       if (cell.isOverline()) {
@@ -775,7 +813,7 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
       }
 
       // Handle underline color
-      if (cell.isUnderline()) {
+      if (hasUnderline(cell)) {
         const underlineColor = this._getUnderlineColor(cell);
         if (underlineColor) {
           content.push('text-decoration-color: ' + underlineColor + ';');
