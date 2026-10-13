@@ -44,6 +44,8 @@ export interface ICompositionHelper {
   compositionend(): void;
   updateCompositionElements(dontRecurse?: boolean): void;
   keydown(ev: KeyboardEvent): boolean;
+  keypress(text: string): boolean;
+  input(text: string): boolean;
 }
 
 export interface IBrowser {

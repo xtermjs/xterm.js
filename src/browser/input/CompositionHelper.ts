@@ -12,6 +12,15 @@ interface IPosition {
   end: number;
 }
 
+interface IPendingComposition {
+  position: IPosition;
+  suffix: string;
+  dataAlreadySent: string;
+  inputData: string;
+  keypressData: string;
+  nextCompositionStart?: number;
+}
+
 /**
  * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
  * events, displaying the in-progress composition to the UI and forwarding the final composition
@@ -36,11 +45,9 @@ export class CompositionHelper {
    */
   private _compositionSuffix: string;
 
-  /**
-   * Whether a composition is in the process of being sent, setting this to false will cancel any
-   * in-progress composition.
-   */
-  private _isSendingComposition: boolean;
+  private _pendingComposition: IPendingComposition | undefined;
+
+  private _isAwaitingCompositionEnd: boolean;
 
   /**
    * Data already sent due to keydown event.
@@ -61,7 +68,7 @@ export class CompositionHelper {
     @IRenderService private readonly _renderService: IRenderService
   ) {
     this._isComposing = false;
-    this._isSendingComposition = false;
+    this._isAwaitingCompositionEnd = false;
     this._compositionPosition = { start: 0, end: 0 };
     this._compositionSuffix = '';
     this._dataAlreadySent = '';
@@ -71,13 +78,20 @@ export class CompositionHelper {
    * Handles the compositionstart event, activating the composition view.
    */
   public compositionstart(): void {
-    this._isComposing = true;
     // It's important to use the selection here instead of textarea length to avoid conflicts with
     // screen reader mode
     const start = this._textarea.selectionStart ?? this._textarea.value.length;
     const end = this._textarea.selectionEnd ?? start;
-    this._compositionPosition.start = Math.min(start, end);
-    this._compositionPosition.end = Math.max(start, end);
+    const compositionStart = Math.min(start, end);
+    if (this._pendingComposition) {
+      this._pendingComposition.nextCompositionStart = compositionStart;
+    }
+    this._isComposing = true;
+    this._isAwaitingCompositionEnd = true;
+    this._compositionPosition = {
+      start: compositionStart,
+      end: Math.max(start, end)
+    };
     this._compositionSuffix = this._textarea.value.substring(this._compositionPosition.end);
     this._compositionView.textContent = '';
     this._dataAlreadySent = '';
@@ -93,9 +107,10 @@ export class CompositionHelper {
     // compositions
     this._compositionView.textContent = `\u200E${ev.data}\u200E`;
     this.updateCompositionElements();
+    const compositionPosition = this._compositionPosition;
     setTimeout(() => {
       const end = this._textarea.selectionEnd ?? this._textarea.value.length;
-      this._compositionPosition.end = Math.max( this._compositionPosition.start, end);
+      compositionPosition.end = Math.max(compositionPosition.start, end);
     }, 0);
   }
 
@@ -104,6 +119,10 @@ export class CompositionHelper {
    * the handler.
    */
   public compositionend(): void {
+    if (!this._isAwaitingCompositionEnd) {
+      return;
+    }
+    this._isAwaitingCompositionEnd = false;
     this._finalizeComposition(true);
   }
 
@@ -113,7 +132,7 @@ export class CompositionHelper {
    * @returns Whether the Terminal should continue processing the keydown event.
    */
   public keydown(ev: KeyboardEvent): boolean {
-    if (this._isComposing || this._isSendingComposition) {
+    if (this._isComposing || this._pendingComposition) {
       if (ev.keyCode === 20 || ev.keyCode === 229) {
         // 20 is CapsLock, 229 is Enter
         // Continue composing if the keyCode is the "composition character"
@@ -139,6 +158,28 @@ export class CompositionHelper {
   }
 
   /**
+   * Defers keypress text until the preceding composition commit is resolved.
+   */
+  public keypress(text: string): boolean {
+    if (!this._pendingComposition) {
+      return false;
+    }
+    this._pendingComposition.keypressData += text;
+    return true;
+  }
+
+  /**
+   * Defers insertText data until the preceding composition commit is resolved.
+   */
+  public input(text: string): boolean {
+    if (!this._pendingComposition) {
+      return false;
+    }
+    this._pendingComposition.inputData += text;
+    return true;
+  }
+
+  /**
    * Finalizes the composition, resuming regular input actions. This is called when a composition
    * is ending.
    * @param waitForPropagation Whether to wait for events to propagate before sending
@@ -147,22 +188,34 @@ export class CompositionHelper {
    *   the command is executed.
    */
   private _finalizeComposition(waitForPropagation: boolean): void {
+    const wasComposing = this._isComposing;
     this._compositionView.classList.remove('active');
     this._isComposing = false;
 
     if (!waitForPropagation) {
-      // Cancel any delayed composition send requests and send the input immediately.
-      this._isSendingComposition = false;
+      if (this._pendingComposition) {
+        this._sendPendingComposition(this._pendingComposition);
+        if (!wasComposing) {
+          return;
+        }
+      }
       const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
-      this._coreService.triggerDataEvent(input, true);
+      this._dataAlreadySent = input;
+      this._sendCompositionInput(input, '');
     } else {
-      // Make a deep copy of the composition position here as a new compositionstart event may
-      // fire before the setTimeout executes.
-      const currentCompositionPosition = {
-        start: this._compositionPosition.start,
-        end: this._compositionPosition.end
+      if (this._pendingComposition) {
+        this._sendPendingComposition(this._pendingComposition);
+      }
+      const pendingComposition: IPendingComposition = {
+        position: {
+          start: this._compositionPosition.start,
+          end: this._compositionPosition.end
+        },
+        suffix: this._compositionSuffix,
+        dataAlreadySent: this._dataAlreadySent,
+        inputData: '',
+        keypressData: ''
       };
-      const currentCompositionSuffix = this._compositionSuffix;
 
       // Since composition* events happen before the changes take place in the textarea on most
       // browsers, use a setTimeout with 0ms time to allow the native compositionend event to
@@ -172,35 +225,69 @@ export class CompositionHelper {
       // - The last compositionupdate event's data property does not always accurately describe
       //   the character, a counter example being Korean where an ending consonsant can move to
       //   the following character if the following input is a vowel.
-      this._isSendingComposition = true;
+      this._pendingComposition = pendingComposition;
       setTimeout(() => {
-        // Ensure that the input has not already been sent
-        if (this._isSendingComposition) {
-          this._isSendingComposition = false;
-          let input;
-          // Add length of data already sent due to keydown event,
-          // otherwise input characters can be duplicated. (Issue #3191)
-          currentCompositionPosition.start += this._dataAlreadySent.length;
-          if (this._isComposing) {
-            // Use the start position of the new composition to get the string
-            // if a new composition has started.
-            input = this._textarea.value.substring(currentCompositionPosition.start, this._compositionPosition.start);
-          } else {
-            // Keep support for non-composition characters typed immediately after composition end
-            // while avoiding re-sending the trailing text that was already present
-            // before composition started.
-            const value = this._textarea.value;
-            const valueEnd = currentCompositionSuffix.length > 0 && value.endsWith(currentCompositionSuffix)
-              ? value.length - currentCompositionSuffix.length
-              : value.length;
-            input = value.substring(currentCompositionPosition.start, Math.max(currentCompositionPosition.start, valueEnd));
-          }
-          if (input.length > 0) {
-            this._coreService.triggerDataEvent(input, true);
-          }
+        if (this._pendingComposition === pendingComposition) {
+          this._sendPendingComposition(pendingComposition);
         }
       }, 0);
     }
+  }
+
+  private _sendPendingComposition(pendingComposition: IPendingComposition): void {
+    if (this._pendingComposition === pendingComposition) {
+      this._pendingComposition = undefined;
+    }
+    const textareaInput = this._getTextareaInput(pendingComposition);
+    let input = textareaInput;
+    if (pendingComposition.inputData.length > 0) {
+      const inputData = this._removeAlreadySentData(pendingComposition.inputData, pendingComposition.dataAlreadySent);
+      // A matching keypress identifies insertText as following input, not a replacement commit.
+      input = inputData === pendingComposition.keypressData
+        ? this._mergeObservedData(textareaInput, inputData)
+        : inputData;
+    }
+    this._sendCompositionInput(input, pendingComposition.keypressData, pendingComposition.nextCompositionStart !== undefined);
+  }
+
+  private _getTextareaInput(pendingComposition: IPendingComposition): string {
+    const value = this._textarea.value;
+    const start = pendingComposition.position.start + pendingComposition.dataAlreadySent.length;
+    if (pendingComposition.nextCompositionStart !== undefined) {
+      return value.substring(start, Math.max(start, pendingComposition.nextCompositionStart));
+    }
+    const valueEnd = pendingComposition.suffix.length > 0 && value.endsWith(pendingComposition.suffix)
+      ? value.length - pendingComposition.suffix.length
+      : value.length;
+    return value.substring(start, Math.max(start, valueEnd));
+  }
+
+  private _removeAlreadySentData(input: string, dataAlreadySent: string): string {
+    if (dataAlreadySent.length === 0) {
+      return input;
+    }
+    if (input.startsWith(dataAlreadySent)) {
+      return input.substring(dataAlreadySent.length);
+    }
+    return dataAlreadySent.includes(input) ? '' : input;
+  }
+
+  private _sendCompositionInput(input: string, keypressData: string, hasNextComposition: boolean = false): void {
+    // A new preedit consumes unmatched keypress data during Hangul final-consonant transfer.
+    if (keypressData.length > 0 && !input.includes(keypressData) && !hasNextComposition) {
+      input = this._mergeObservedData(input, keypressData);
+    }
+    if (input.length > 0) {
+      this._coreService.triggerDataEvent(input, true);
+    }
+  }
+
+  private _mergeObservedData(first: string, second: string): string {
+    let overlap = Math.min(first.length, second.length);
+    while (overlap > 0 && !first.endsWith(second.substring(0, overlap))) {
+      overlap--;
+    }
+    return first + second.substring(overlap);
   }
 
   /**
