@@ -415,6 +415,16 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(addDisposableListener(this.textarea!, 'keydown', (ev: KeyboardEvent) => this._keyDown(ev), true));
     this._register(addDisposableListener(this.textarea!, 'keypress', (ev: KeyboardEvent) => this._keyPress(ev), true));
     this._register(addDisposableListener(this.textarea!, 'compositionstart', () => {
+      // Scroll to the bottom on the first composition event, mirroring the scrollOnUserInput
+      // behavior in _keyDown. A keydown (keyCode 229) normally handles this, but it is not
+      // guaranteed to fire before compositionstart (event order varies across browsers, and
+      // embedders may consume it via customKeyEventHandler). Without this, _syncTextArea below is
+      // blocked by its isCursorInViewport guard when composition starts while scrolled into the
+      // scrollback, leaving the textarea (and with it the IME candidate window) frozen at a stale
+      // position.
+      if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
+        this.scrollToBottom(true);
+      }
       // Ensure the textarea is synced to the latest cursor location before composition begins. This
       // is to workaround a problem where highly dynamic TUIs like agentic CLIs reprint agressively
       // would cause the IME to appear in the wrong position. The theory is that when the IME is
@@ -424,7 +434,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._compositionHelper!.compositionstart();
       this._compositionHelper!.updateCompositionElements();
     }));
-    this._register(addDisposableListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
+    this._register(addDisposableListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => {
+      // Scroll to the bottom when composition updates while scrolled into the scrollback, for the
+      // same reason as above: updateCompositionElements is a no-op when the cursor is outside the
+      // viewport, which would freeze the textarea at a stale position until the composition ends.
+      if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
+        this.scrollToBottom(true);
+      }
+      this._compositionHelper!.compositionupdate(e);
+    }));
     this._register(addDisposableListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
     this._register(addDisposableListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this._register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
