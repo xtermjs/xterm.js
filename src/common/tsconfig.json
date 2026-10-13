@@ -10,11 +10,7 @@
     "outDir": "../../out",
     "types": [
       "../../node_modules/@types/mocha"
-    ],
-    "paths": {
-      "common/*": [ "./../common/*" ],
-      "*": [ "./../*" ]
-    }
+    ]
   },
   "include": [
     "./**/*",

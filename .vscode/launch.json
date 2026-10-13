@@ -15,9 +15,6 @@
         "--recursive",
         "${workspaceRoot}/out/**/*.test.js"
       ],
-      "env": {
-        "NODE_PATH": "${workspaceRoot}/out"
-      },
       "sourceMaps": true,
       "outFiles": [ "${workspaceRoot}/out/**/*.js" ],
       "internalConsoleOptions": "openOnSessionStart"

@@ -14,6 +14,7 @@ import { RenderModelConstants } from './RenderModel';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject } from './Types';
 import { createProgram, expandFloat32Array, PROJECTION_MATRIX } from './WebglUtils';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import type { ILogService } from 'common/services/Services';
 
 const enum VertexAttribLocations {
   POSITION = 0,
@@ -89,21 +90,23 @@ export class RectangleRenderer extends Disposable {
     private _terminal: Terminal,
     private _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions,
-    private readonly _themeService: IThemeService
+    private readonly _themeService: IThemeService,
+    private readonly _logService: ILogService
   ) {
     super();
 
     const gl = this._gl;
 
-    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource));
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, fragmentShaderSource, this._logService));
     this._register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
     this._projectionLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_projection'));
 
     // Create and set the vertex array object
-    this._vertexArrayObject = gl.createVertexArray();
-    gl.bindVertexArray(this._vertexArrayObject);
+    const vertexArrayObject = this._vertexArrayObject = gl.createVertexArray();
+    this._register(toDisposable(() => gl.deleteVertexArray(vertexArrayObject)));
+    gl.bindVertexArray(vertexArrayObject);
 
     // Setup a_unitquad, this defines the 4 vertices of a rectangle
     const unitQuadVertices = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
@@ -336,8 +339,9 @@ export class RectangleRenderer extends Disposable {
       }
     }
 
-    if (vertices.attributes.length < offset + 4) {
-      vertices.attributes = expandFloat32Array(vertices.attributes, this._terminal.rows * this._terminal.cols * INDICES_PER_RECTANGLE);
+    if (vertices.attributes.length < offset + INDICES_PER_RECTANGLE) {
+      // +1 for the viewport-clear rectangle at offset 0.
+      vertices.attributes = expandFloat32Array(vertices.attributes, (this._terminal.rows * this._terminal.cols + 1) * INDICES_PER_RECTANGLE);
     }
     $x1 = startX * this._dimensions.device.cell.width;
     $y1 = y * this._dimensions.device.cell.height;

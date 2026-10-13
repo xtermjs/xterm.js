@@ -137,11 +137,6 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
 
     // enable size reports
     if (this._opts.enableSizeReports) {
-      // const windowOptions = terminal.getOption('windowOptions');
-      // windowOptions.getWinSizePixels = true;
-      // windowOptions.getCellSizePixels = true;
-      // windowOptions.getWinSizeChars = true;
-      // terminal.setOption('windowOptions', windowOptions);
       const windowOps = terminal.options.windowOptions ?? {};
       windowOps.getWinSizePixels = true;
       windowOps.getCellSizePixels = true;
@@ -260,7 +255,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
   }
 
   private _report(s: string): void {
-    this._terminal?._core.coreService.triggerDataEvent(s);
+    this._terminal?._core.input(s, false);
   }
 
   private _decset(params: (number | number[])[]): boolean {

@@ -4,10 +4,10 @@
     "rootDir": "..",
     "outDir": "../out-benchmark",
     "types": ["../../../node_modules/@types/node"],
-    "moduleResolution": "node",
+    "moduleResolution": "nodenext",
     "strict": false,
     "target": "es2015",
-    "module": "commonjs",
+    "module": "nodenext",
     "paths": {
       "common/*": ["../../../src/common/*"],
       "browser/*": ["../../../src/browser/*"],

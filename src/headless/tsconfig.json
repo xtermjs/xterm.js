@@ -10,11 +10,7 @@
     "types": [
       "../../node_modules/@types/mocha",
       "../../node_modules/@types/node"
-    ],
-    "paths": {
-      "common/*": [ "./../common/*" ],
-      "*": [ "./../*" ]
-    }
+    ]
   },
   "include": [
     "./**/*",

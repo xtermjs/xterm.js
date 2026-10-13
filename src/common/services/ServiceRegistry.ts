@@ -9,7 +9,11 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IServiceIdentifier } from 'common/services/Services';
+export interface IServiceIdentifier<T> {
+  (...args: any[]): void;
+  type: T;
+  _id: string;
+}
 
 const enum Constants {
   DI_TARGET = 'di$target',

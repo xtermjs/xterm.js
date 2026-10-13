@@ -4,7 +4,7 @@
  */
 
 import { deepStrictEqual, strictEqual, throws } from 'assert';
-import { Terminal } from 'headless/public/Terminal';
+import { Terminal } from './Terminal';
 import { ITerminalOptions } from '@xterm/headless';
 
 let term: Terminal;
@@ -112,6 +112,29 @@ describe('Headless API Tests', function (): void {
     for (let i = 1; i < 5; i++) {
       lineEquals(i, '');
     }
+  });
+
+  it('clear disposes markers', async () => {
+    term = new Terminal({ rows: 5, allowProposedApi: true });
+    for (let i = 0; i < 10; i++) {
+      await writeSync('\n\rtest' + i);
+    }
+    const markers = [
+      term.registerMarker(1),
+      term.registerMarker(2),
+      term.registerMarker(3),
+      term.registerMarker(4)
+    ];
+    let disposeCount = 0;
+    for (const marker of markers) {
+      marker.onDispose(() => disposeCount++);
+    }
+    term.clear();
+    strictEqual(disposeCount, markers.length);
+    for (const marker of markers) {
+      strictEqual(marker.isDisposed, true);
+    }
+    strictEqual(term.markers.length, 0);
   });
 
   describe('options', () => {
@@ -395,6 +418,15 @@ describe('Headless API Tests', function (): void {
       strictEqual(term.buffer.active.getLine(0)!.translateToString(), 'norm ');
       strictEqual(term.buffer.normal.getLine(0)!.translateToString(), 'norm ');
       strictEqual(term.buffer.alternate.getLine(0), undefined);
+    });
+
+    it('registerMarker on alternate buffer', async () => {
+      term = new Terminal({ cols: 5, allowProposedApi: true });
+      await writeSync('\x1b[?47h');
+      const marker = term.registerMarker(0);
+      strictEqual(term.buffer.active.type, 'alternate');
+      strictEqual(term.markers.length, 1);
+      strictEqual(term.markers[0], marker);
     });
   });
 

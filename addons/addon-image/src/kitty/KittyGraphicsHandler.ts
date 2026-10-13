@@ -533,8 +533,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
 
   private _sendResponse(id: number, message: string, quiet: number, placementId?: number): void {
     const isOk = message === 'OK';
-    if (isOk && quiet === 1) return;
-    if (!isOk && quiet === 2) return;
+    if (isOk && quiet >= 1) return;
+    if (!isOk && quiet >= 2) return;
 
     const pPart = placementId ? `,p=${placementId}` : '';
     const response = `\x1b_Gi=${id}${pPart};${message}\x1b\\`;

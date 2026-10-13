@@ -4,28 +4,18 @@
  */
 
 import { assert } from 'chai';
-import { Buffer } from 'common/buffer/Buffer';
-import { CircularList } from 'common/CircularList';
-import { MockOptionsService, MockBufferService, MockLogService, createCellData } from 'common/TestUtils.test';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { BufferLineStringCache } from 'common/buffer/BufferLineStringCache';
-import { CellData } from 'common/buffer/CellData';
-import { ExtendedAttrs } from 'common/buffer/AttributeData';
+import { Buffer } from './Buffer';
+import { CircularList } from '../CircularList';
+import { MockOptionsService, MockBufferService, MockLogService, createCellData } from '../TestUtils.test';
+import { BufferLine, DEFAULT_ATTR_DATA } from './BufferLine';
+import { CellData } from './CellData';
+
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
 const INIT_SCROLLBACK = 1000;
-const TEST_STRING_CACHE = new BufferLineStringCache();
 
-class TestBuffer extends Buffer {
-  public getStringCache(): BufferLineStringCache {
-    return (this as unknown as { _stringCache: BufferLineStringCache })._stringCache;
-  }
-
-  public getStringCacheClearTimeout(): unknown {
-    return (this.getStringCache() as unknown as { _clearTimeout: { value: unknown } })._clearTimeout.value;
-  }
-}
+class TestBuffer extends Buffer {}
 
 describe('Buffer', () => {
   let optionsService: MockOptionsService;
@@ -80,40 +70,40 @@ describe('Buffer', () => {
     describe('wrapped', () => {
       it('should return a range for the first row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(0), { first: 0, last: 1 });
       });
       it('should return a range for a middle row wrapping upwards', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(12)!.isWrapped = true;
+        buffer.setWrapped(12, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 11, last: 12 });
       });
       it('should return a range for a middle row wrapping downwards', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(13)!.isWrapped = true;
+        buffer.setWrapped(13, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 12, last: 13 });
       });
       it('should return a range for a middle row wrapping both ways', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(11)!.isWrapped = true;
-        buffer.lines.get(12)!.isWrapped = true;
-        buffer.lines.get(13)!.isWrapped = true;
-        buffer.lines.get(14)!.isWrapped = true;
+        buffer.setWrapped(11, true);
+        buffer.setWrapped(12, true);
+        buffer.setWrapped(13, true);
+        buffer.setWrapped(14, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 10, last: 14 });
       });
       it('should return a range for the last row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(23)!.isWrapped = true;
+        buffer.setWrapped(23, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 1), { first: 22, last: 23 });
       });
       it('should return a range for a row that wraps upward to first row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(1), { first: 0, last: 1 });
       });
       it('should return a range for a row that wraps downward to last row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(buffer.lines.length - 1)!.isWrapped = true;
+        buffer.setWrapped(buffer.lines.length - 1, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 2), { first: 22, last: 23 });
       });
     });
@@ -233,6 +223,27 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.length, INIT_ROWS + 10);
         });
       });
+
+      describe('Windows ConPTY', () => {
+        beforeEach(() => {
+          optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 19000 };
+        });
+
+        it('should not adjust ybase or ydisp when growing rows', () => {
+          buffer.fillViewportRows();
+          for (let i = 0; i < 10; i++) {
+            buffer.lines.push(buffer.getBlankLine(DEFAULT_ATTR_DATA));
+          }
+          buffer.y = INIT_ROWS - 1;
+          buffer.ybase = 10;
+          buffer.ydisp = 10;
+          const linesBefore = buffer.lines.length;
+          buffer.resize(INIT_COLS, INIT_ROWS + 5);
+          assert.equal(buffer.ybase, 10);
+          assert.equal(buffer.ydisp, 10);
+          assert.equal(buffer.lines.length, linesBefore + 5);
+        });
+      });
     });
 
     describe('row and column increased', () => {
@@ -304,6 +315,71 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(7)!.translateToString(), '     ');
         assert.equal(buffer.lines.get(8)!.translateToString(), '     ');
         assert.equal(buffer.lines.get(9)!.translateToString(), '     ');
+      });
+      it('should gate reflow on ConPTY buildNumber 21376', () => {
+        const prepareWrappedShrink = () => {
+          buffer.fillViewportRows();
+          buffer.resize(5, 10);
+          const firstLine = buffer.lines.get(0)!;
+          for (let i = 0; i < 5; i++) {
+            const code = 'a'.charCodeAt(0) + i;
+            firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+          }
+          buffer.y = 1;
+          buffer.resize(1, 10);
+        };
+
+        optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 21375 };
+        prepareWrappedShrink();
+        assert.equal(buffer.lines.get(1)!.translateToString().trim(), '');
+
+        buffer = new TestBuffer(true, optionsService, bufferService, new MockLogService());
+        optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 21376 };
+        prepareWrappedShrink();
+        assert.equal(buffer.lines.get(1)!.translateToString().trim(), 'b');
+        assert.ok(buffer.lines.get(1)!.isWrapped);
+      });
+      it('should unwrap lines on ConPTY builds with reflow support', () => {
+        optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 21376 };
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        const firstLine = buffer.lines.get(0)!;
+        for (let i = 0; i < 5; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+        }
+        buffer.y = 1;
+        buffer.resize(1, 10);
+        buffer.resize(5, 10);
+        assert.equal(buffer.lines.get(0)!.translateToString(), 'abcde');
+        assert.equal(buffer.lines.get(1)!.translateToString(), '     ');
+      });
+      it('should reflow wrapped lines containing the cursor when reflowCursorLine is enabled', () => {
+        optionsService.options.reflowCursorLine = true;
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        const firstLine = buffer.lines.get(0)!;
+        for (let i = 0; i < 5; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+        }
+        buffer.resize(1, 10);
+        buffer.y = 2;
+        buffer.resize(5, 10);
+        assert.equal(buffer.lines.get(0)!.translateToString(), 'abcde');
+      });
+      it('should not reflow wrapped lines containing the cursor by default', () => {
+        buffer.fillViewportRows();
+        buffer.resize(5, 10);
+        const firstLine = buffer.lines.get(0)!;
+        for (let i = 0; i < 5; i++) {
+          const code = 'a'.charCodeAt(0) + i;
+          firstLine.set(i, [0, String.fromCharCode(code), 1, code]);
+        }
+        buffer.resize(1, 10);
+        buffer.y = 2;
+        buffer.resize(5, 10);
+        assert.notEqual(buffer.lines.get(0)!.translateToString(), 'abcde');
       });
       it('should discard parts of wrapped lines that go out of the scrollback', () => {
         buffer.fillViewportRows();
@@ -538,7 +614,7 @@ describe('Buffer', () => {
         buffer.lines.get(0)!.set(1, [0, 'b', 1, 'b'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // "ab  " (wrapped)
         // "cd"
@@ -569,7 +645,7 @@ describe('Buffer', () => {
           buffer.lines.get(0)!.set(i, [0, '', 0, 0]);
           buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
         }
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // 汉语汉语汉语 (wrapped)
         // 汉语汉语汉语
@@ -596,7 +672,7 @@ describe('Buffer', () => {
         buffer.lines.get(0)!.set(1, [0, 'b', 1, 'b'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // "ab  " (wrapped)
         // "cd"
@@ -630,7 +706,7 @@ describe('Buffer', () => {
           buffer.lines.get(0)!.set(i, [0, '', 0, 0]);
           buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
         }
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // 汉语汉语汉语 (wrapped)
         // 汉语汉语汉语
@@ -685,17 +761,17 @@ describe('Buffer', () => {
           buffer.lines.get(0)!.set(1, [0, 'b', 1, 'b'.charCodeAt(0)]);
           buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
           buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
-          buffer.lines.get(1)!.isWrapped = true;
+          buffer.setWrapped(1, true);
           buffer.lines.get(2)!.set(0, [0, 'e', 1, 'e'.charCodeAt(0)]);
           buffer.lines.get(2)!.set(1, [0, 'f', 1, 'f'.charCodeAt(0)]);
           buffer.lines.get(3)!.set(0, [0, 'g', 1, 'g'.charCodeAt(0)]);
           buffer.lines.get(3)!.set(1, [0, 'h', 1, 'h'.charCodeAt(0)]);
-          buffer.lines.get(3)!.isWrapped = true;
+          buffer.setWrapped(3, true);
           buffer.lines.get(4)!.set(0, [0, 'i', 1, 'i'.charCodeAt(0)]);
           buffer.lines.get(4)!.set(1, [0, 'j', 1, 'j'.charCodeAt(0)]);
           buffer.lines.get(5)!.set(0, [0, 'k', 1, 'k'.charCodeAt(0)]);
           buffer.lines.get(5)!.set(1, [0, 'l', 1, 'l'.charCodeAt(0)]);
-          buffer.lines.get(5)!.isWrapped = true;
+          buffer.setWrapped(5, true);
         });
         describe('viewport not yet filled', () => {
           it('should move the cursor up and add empty lines', () => {
@@ -1116,7 +1192,7 @@ describe('Buffer', () => {
 
   describe ('translateBufferLineToString', () => {
     it('should handle selecting a section of ascii text', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 4);
+      const line = new BufferLine(4);
       line.setCell(0, createCellData(0, 'a', 1));
       line.setCell(1, createCellData(0, 'b', 1));
       line.setCell(2, createCellData(0, 'c', 1));
@@ -1128,7 +1204,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a cut-off double width character by including it', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 3);
+      const line = new BufferLine(3);
       line.setCell(0, createCellData(0, '語', 2));
       line.setCell(1, createCellData(0, '', 0));
       line.setCell(2, createCellData(0, 'a', 1));
@@ -1139,7 +1215,7 @@ describe('Buffer', () => {
     });
 
     it('should handle a zero width character in the middle of the string by not including it', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 3);
+      const line = new BufferLine(3);
       line.setCell(0, createCellData(0, '語', 2));
       line.setCell(1, createCellData(0, '', 0));
       line.setCell(2, createCellData(0, 'a', 1));
@@ -1156,7 +1232,7 @@ describe('Buffer', () => {
     });
 
     it('should handle single width emojis', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 2);
+      const line = new BufferLine(2);
       line.setCell(0, createCellData(0, '😁', 1));
       line.setCell(1, createCellData(0, 'a', 1));
       buffer.lines.set(0, line);
@@ -1169,7 +1245,7 @@ describe('Buffer', () => {
     });
 
     it('should handle double width emojis', () => {
-      const line = new BufferLine(TEST_STRING_CACHE, 2);
+      const line = new BufferLine(2);
       line.setCell(0, createCellData(0, '😁', 2));
       line.setCell(1, createCellData(0, '', 0));
       buffer.lines.set(0, line);
@@ -1180,7 +1256,7 @@ describe('Buffer', () => {
       const str2 = buffer.translateBufferLineToString(0, true, 0, 2);
       assert.equal(str2, '😁');
 
-      const line2 = new BufferLine(TEST_STRING_CACHE, 3);
+      const line2 = new BufferLine(3);
       line2.setCell(0, createCellData(0, '😁', 2));
       line2.setCell(1, createCellData(0, '', 0));
       line2.setCell(2, createCellData(0, 'a', 1));
@@ -1188,99 +1264,6 @@ describe('Buffer', () => {
 
       const str3 = buffer.translateBufferLineToString(0, true, 0, 3);
       assert.equal(str3, '😁a');
-    });
-  });
-
-  describe('line string cache cleanup', () => {
-    it('should clear shared cache entries with a single timer', () => {
-      const originalSetTimeout = globalThis.setTimeout;
-      const originalClearTimeout = globalThis.clearTimeout;
-      const originalDateNow = Date.now;
-      let timeoutId = 0;
-      let now = 0;
-      const clearedTimeouts: number[] = [];
-      const scheduledTimeouts = new Map<number, { delay: number, fire: () => void }>();
-      (globalThis as any).setTimeout = ((handler: (...args: any[]) => void, timeout?: number) => {
-        const id = ++timeoutId;
-        scheduledTimeouts.set(id, {
-          delay: timeout ?? 0,
-          fire: () => {
-            scheduledTimeouts.delete(id);
-            handler();
-          }
-        });
-        return id as ReturnType<typeof setTimeout>;
-      }) as typeof setTimeout;
-      (globalThis as any).clearTimeout = ((id: ReturnType<typeof setTimeout>) => {
-        const numericId = id as unknown as number;
-        clearedTimeouts.push(numericId);
-        scheduledTimeouts.delete(numericId);
-      }) as typeof clearTimeout;
-      Date.now = () => now;
-      try {
-        buffer.fillViewportRows();
-        buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
-        buffer.lines.get(1)!.setCell(0, createCellData(0, 'b', 1));
-
-        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-        assert.equal(buffer.translateBufferLineToString(1, false), `b${' '.repeat(INIT_COLS - 1)}`);
-
-        const cache = buffer.getStringCache();
-        assert.equal(cache.entries.size, 2);
-        assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
-        assert.equal(scheduledTimeouts.size, 1);
-        assert.equal([...scheduledTimeouts.values()][0].delay, 15000);
-        const initialTimerCreationCount = timeoutId;
-
-        now = 5000;
-        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-        assert.equal(timeoutId, initialTimerCreationCount);
-        assert.equal(scheduledTimeouts.size, 1);
-        assert.deepEqual(clearedTimeouts, []);
-
-        now = 15000;
-        [...scheduledTimeouts.values()][0].fire();
-        assert.equal(timeoutId, initialTimerCreationCount + 1);
-        assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
-        assert.equal(scheduledTimeouts.size, 1);
-        assert.equal([...scheduledTimeouts.values()][0].delay, 5000);
-
-        now = 20000;
-        [...scheduledTimeouts.values()][0].fire();
-
-        assert.equal(cache.entries.size, 0);
-        assert.equal(buffer.getStringCacheClearTimeout(), undefined);
-
-        assert.equal(buffer.translateBufferLineToString(0, false), `a${' '.repeat(INIT_COLS - 1)}`);
-        assert.equal(cache.entries.size, 1);
-      } finally {
-        Date.now = originalDateNow;
-        globalThis.setTimeout = originalSetTimeout;
-        globalThis.clearTimeout = originalClearTimeout;
-      }
-    });
-
-    it('should reset line string cache state on clear and resize', () => {
-      buffer.fillViewportRows();
-      buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 1));
-      buffer.translateBufferLineToString(0, false);
-
-      const cache = buffer.getStringCache();
-      assert.equal(cache.entries.size, 1);
-      assert.ok(buffer.getStringCacheClearTimeout() !== undefined);
-
-      buffer.clear();
-      assert.equal(cache.entries.size, 0);
-      assert.equal(buffer.getStringCacheClearTimeout(), undefined);
-
-      buffer.fillViewportRows();
-      buffer.lines.get(0)!.setCell(0, createCellData(0, 'b', 1));
-      buffer.translateBufferLineToString(0, false);
-      assert.equal(cache.entries.size, 1);
-
-      buffer.resize(INIT_COLS - 1, INIT_ROWS);
-      assert.equal(cache.entries.size, 0);
-      assert.equal(buffer.getStringCacheClearTimeout(), undefined);
     });
   });
 

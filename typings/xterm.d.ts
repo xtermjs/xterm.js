@@ -207,6 +207,17 @@ declare module '@xterm/xterm' {
     minimumContrastRatio?: number;
 
     /**
+     * When enabled and the terminal is in mouse events mode, mouse click, drag,
+     * and move events are only sent to the underlying application when the alt
+     * key is held. The alt key is not included in the mouse reports sent to the
+     * application. Wheel events are not affected. This allows normal text
+     * selection by default while still supporting application mouse interaction
+     * and scrolling when holding alt. When enabled, this takes precedence over
+     * `macOptionClickForcesSelection`.
+     */
+    mouseEventsRequireAlt?: boolean;
+
+    /**
      * Control various quirks features that are either non-standard or standard
      * in but generally rejected in modern terminals.
      */

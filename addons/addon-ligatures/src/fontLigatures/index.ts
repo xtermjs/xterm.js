@@ -1,5 +1,5 @@
 import * as opentype from 'opentype.js';
-import LRUCache = require('lru-cache');
+import { LRUCache } from 'lru-cache';
 
 import { IFont, ILigatureData, IFlattenedLookupTree, ILookupTree, IOptions } from './types';
 import mergeTrees from './merge';
@@ -23,8 +23,8 @@ class FontImpl implements IFont {
 
     if (options.cacheSize > 0) {
       this._cache = new LRUCache({
-        max: options.cacheSize,
-        length: ((val: ILigatureData | [number, number][], key: string) => key.length) as any
+        maxSize: options.cacheSize,
+        sizeCalculation: ((val: ILigatureData | [number, number][], key: string) => key.length) as any
       });
     }
 

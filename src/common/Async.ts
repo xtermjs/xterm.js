@@ -5,7 +5,7 @@
  * Minimal async helpers for xterm.js core.
  */
 
-import { DisposableStore, IDisposable, toDisposable } from 'common/Lifecycle';
+import { DisposableStore, IDisposable, toDisposable } from './Lifecycle';
 
 export function timeout(millis: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, millis));
@@ -70,6 +70,42 @@ export class TimeoutTimer implements IDisposable {
       this._token = -1;
       runner();
     }, timeout);
+  }
+}
+
+/**
+ * Schedules a single runner on the microtask queue. Unlike {@link TimeoutTimer}, a scheduled
+ * microtask cannot be unqueued; {@link cancel} prevents the runner from executing if it has not
+ * run yet.
+ */
+export class MicrotaskTimer implements IDisposable {
+  private _isScheduled = false;
+  private _isDisposed = false;
+
+  public dispose(): void {
+    this.cancel();
+    this._isDisposed = true;
+  }
+
+  public cancel(): void {
+    this._isScheduled = false;
+  }
+
+  public set(runner: () => void): void {
+    if (this._isDisposed) {
+      throw new Error('Calling set on a disposed MicrotaskTimer');
+    }
+    if (this._isScheduled) {
+      return;
+    }
+    this._isScheduled = true;
+    queueMicrotask(() => {
+      if (!this._isScheduled) {
+        return;
+      }
+      this._isScheduled = false;
+      runner();
+    });
   }
 }
 

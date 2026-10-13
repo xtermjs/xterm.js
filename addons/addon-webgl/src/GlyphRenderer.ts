@@ -9,7 +9,7 @@ import { Disposable, toDisposable } from 'common/Lifecycle';
 import { Terminal } from '@xterm/xterm';
 import { IRenderModel, IWebGL2RenderingContext, IWebGLVertexArrayObject, type IRasterizedGlyph, type ITextureAtlas } from './Types';
 import { createProgram, GLTexture, PROJECTION_MATRIX } from './WebglUtils';
-import type { IOptionsService } from 'common/services/Services';
+import type { ILogService, IOptionsService } from 'common/services/Services';
 import { allowRescaling, throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 
 interface IVertices {
@@ -100,6 +100,8 @@ export class GlyphRenderer extends Disposable {
   private readonly _attributesBuffer: WebGLBuffer;
 
   private _atlas: ITextureAtlas | undefined;
+  private _lastSeenPageLayoutVersion: number = -1;
+  private _pageOverflowWarned: boolean = false;
   private _activeBuffer: number = 0;
   private readonly _vertices: IVertices = {
     count: 0,
@@ -114,7 +116,8 @@ export class GlyphRenderer extends Disposable {
     private readonly _terminal: Terminal,
     private readonly _gl: IWebGL2RenderingContext,
     private _dimensions: IRenderDimensions,
-    private readonly _optionsService: IOptionsService
+    private readonly _optionsService: IOptionsService,
+    private readonly _logService: ILogService
   ) {
     super();
 
@@ -127,7 +130,7 @@ export class GlyphRenderer extends Disposable {
       TextureAtlas.maxTextureSize = throwIfFalsy(gl.getParameter(gl.MAX_TEXTURE_SIZE) as number | null);
     }
 
-    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(TextureAtlas.maxAtlasPages)));
+    this._program = throwIfFalsy(createProgram(gl, vertexShaderSource, createFragmentShaderSource(TextureAtlas.maxAtlasPages), this._logService));
     this._register(toDisposable(() => gl.deleteProgram(this._program)));
 
     // Uniform locations
@@ -136,8 +139,9 @@ export class GlyphRenderer extends Disposable {
     this._textureLocation = throwIfFalsy(gl.getUniformLocation(this._program, 'u_texture'));
 
     // Create and set the vertex array object
-    this._vertexArrayObject = gl.createVertexArray();
-    gl.bindVertexArray(this._vertexArrayObject);
+    const vertexArrayObject = this._vertexArrayObject = gl.createVertexArray();
+    this._register(toDisposable(() => gl.deleteVertexArray(vertexArrayObject)));
+    gl.bindVertexArray(vertexArrayObject);
 
     // Setup a_unitquad, this defines the 4 vertices of a rectangle
     const unitQuadVertices = new Float32Array([0, 0, 1, 0, 0, 1, 1, 1]);
@@ -211,14 +215,25 @@ export class GlyphRenderer extends Disposable {
     this.handleResize();
   }
 
+  /**
+   * Call when a frame is being drawn. Returns whether the full model must be rebuilt before
+   * rendering this frame because the atlas page layout changed since this renderer last drew.
+   */
   public beginFrame(): boolean {
-    return this._atlas ? this._atlas.beginFrame() : true;
+    if (!this._atlas) {
+      return true;
+    }
+    if (this._atlas.pageLayoutVersion !== this._lastSeenPageLayoutVersion) {
+      this._lastSeenPageLayoutVersion = this._atlas.pageLayoutVersion;
+      return true;
+    }
+    return false;
   }
 
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
     // Since this function is called for every cell (`rows*cols`), it must be very optimized. It
     // should not instantiate any variables unless a new glyph is drawn to the cache where the
-    // slight slowdown is acceptable for the developer ergonomics provided as it's a once of for
+    // slight slowdown is acceptable for the developer ergonomics provided as it's a one-off for
     // each glyph.
     this._updateCell(this._vertices.attributes, x, y, code, bg, fg, ext, chars, width, lastBg);
   }
@@ -358,8 +373,16 @@ export class GlyphRenderer extends Disposable {
     gl.bindBuffer(gl.ARRAY_BUFFER, this._attributesBuffer);
     gl.bufferData(gl.ARRAY_BUFFER, activeBuffer.subarray(0, bufferLength), gl.STREAM_DRAW);
 
-    // Bind the atlas page texture if they have changed
-    for (let i = 0; i < this._atlas.pages.length; i++) {
+    // Bind the atlas page texture if they have changed. AtlasPage.version is globally
+    // monotonic, so a page object swap at the same index (which happens after a page merge)
+    // is detected by the same comparison.
+    // Clamp defensively in case the atlas unexpectedly exceeds texture capacity.
+    const pageCount = Math.min(this._atlas.pages.length, this._atlasTextures.length);
+    if (this._atlas.pages.length > this._atlasTextures.length && !this._pageOverflowWarned) {
+      this._pageOverflowWarned = true;
+      this._logService.warn(`Atlas page count (${this._atlas.pages.length}) exceeds the renderer's texture capacity (${this._atlasTextures.length}), some glyphs will not render correctly`);
+    }
+    for (let i = 0; i < pageCount; i++) {
       if (this._atlas.pages[i].version !== this._atlasTextures[i].version) {
         this._bindAtlasPageTexture(gl, this._atlas, i);
       }
@@ -371,6 +394,11 @@ export class GlyphRenderer extends Disposable {
 
   public setAtlas(atlas: ITextureAtlas): void {
     this._atlas = atlas;
+    this._lastSeenPageLayoutVersion = -1;
+    this.invalidateAtlasTextures();
+  }
+
+  public invalidateAtlasTextures(): void {
     for (const glTexture of this._atlasTextures) {
       glTexture.version = -1;
     }
@@ -381,8 +409,9 @@ export class GlyphRenderer extends Disposable {
     gl.bindTexture(gl.TEXTURE_2D, this._atlasTextures[i].texture);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, atlas.pages[i].canvas);
-    gl.generateMipmap(gl.TEXTURE_2D);
     this._atlasTextures[i].version = atlas.pages[i].version;
   }
 

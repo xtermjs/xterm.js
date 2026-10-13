@@ -3,20 +3,20 @@
  * @license MIT
  */
 
-import { IBufferRange, ILinkifier2 } from 'browser/Types';
-import { getCoordsRelativeToElement } from 'browser/input/Mouse';
-import { moveToCellSequence } from 'browser/input/MoveToCell';
-import { SelectionModel } from 'browser/selection/SelectionModel';
-import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from 'browser/selection/Types';
-import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from 'browser/services/Services';
-import { Disposable, toDisposable } from 'common/Lifecycle';
-import * as Browser from 'common/Platform';
-import { IBufferLine, ICellData, IDisposable } from 'common/Types';
-import { getRangeLength } from 'common/buffer/BufferRange';
-import { CellData } from 'common/buffer/CellData';
-import { IBuffer } from 'common/buffer/Types';
-import { IBufferService, ICoreService, IOptionsService } from 'common/services/Services';
-import { Emitter } from 'common/Event';
+import { IBufferRange, ILinkifier2 } from '../Types';
+import { getCoordsRelativeToElement } from '../input/Mouse';
+import { moveToCellSequence } from '../input/MoveToCell';
+import { SelectionModel } from '../selection/SelectionModel';
+import { ISelectionRedrawRequestEvent, ISelectionRequestScrollLinesEvent } from '../selection/Types';
+import { ICoreBrowserService, IMouseCoordsService, IRenderService, ISelectionService } from './Services';
+import { Disposable, MutableDisposable, toDisposable } from '../../common/Lifecycle';
+import * as Browser from '../../common/Platform';
+import { IDisposable } from '../../common/Types';
+import { IBuffer, IBufferLine, ICellData } from '../../common/buffer/Types';
+import { getRangeLength } from '../../common/buffer/BufferRange';
+import { CellData } from '../../common/buffer/CellData';
+import { IBufferService, ICoreService, IMouseStateService, IOptionsService } from '../../common/services/Services';
+import { Emitter } from '../../common/Event';
 
 const enum Constants {
   /**
@@ -102,7 +102,7 @@ export class SelectionService extends Disposable implements ISelectionService {
 
   private _mouseMoveListener: EventListener;
   private _mouseUpListener: EventListener;
-  private _trimListener: IDisposable;
+  private readonly _trimListener = this._register(new MutableDisposable<IDisposable>());
   private _workCell: CellData = new CellData();
 
   private _mouseDownTimeStamp: number = 0;
@@ -127,6 +127,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     @ICoreService private readonly _coreService: ICoreService,
     @IMouseCoordsService private readonly _mouseCoordsService: IMouseCoordsService,
     @IOptionsService private readonly _optionsService: IOptionsService,
+    @IMouseStateService private readonly _mouseStateService: IMouseStateService,
     @IRenderService private readonly _renderService: IRenderService,
     @ICoreBrowserService private readonly _coreBrowserService: ICoreBrowserService
   ) {
@@ -140,7 +141,7 @@ export class SelectionService extends Disposable implements ISelectionService {
         this.clearSelection();
       }
     });
-    this._trimListener = this._bufferService.buffer.lines.onTrim(amount => this._handleTrim(amount));
+    this._trimListener.value = this._bufferService.buffer.lines.onTrim(amount => this._handleTrim(amount));
     this._register(this._bufferService.buffers.onBufferActivate(e => this._handleBufferActivate(e)));
 
     this.enable();
@@ -434,6 +435,10 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event The mouse event.
    */
   public shouldForceSelection(event: MouseEvent): boolean {
+    if (this._optionsService.rawOptions.mouseEventsRequireAlt && this._mouseStateService.areMouseEventsActive) {
+      return !event.altKey;
+    }
+
     if (Browser.isMac) {
       return event.altKey && this._optionsService.rawOptions.macOptionClickForcesSelection;
     }
@@ -455,6 +460,10 @@ export class SelectionService extends Disposable implements ISelectionService {
 
     // Only action the primary button
     if (event.button !== 0) {
+      return;
+    }
+
+    if (this._optionsService.rawOptions.mouseEventsRequireAlt && this._mouseStateService.areMouseEventsActive && event.altKey) {
       return;
     }
 
@@ -596,6 +605,9 @@ export class SelectionService extends Disposable implements ISelectionService {
    * @param event the mouse or keyboard event
    */
   public shouldColumnSelect(event: KeyboardEvent | MouseEvent): boolean {
+    if (this._optionsService.rawOptions.mouseEventsRequireAlt && this._mouseStateService.areMouseEventsActive) {
+      return false;
+    }
     return event.altKey && !(Browser.isMac && this._optionsService.rawOptions.macOptionClickForcesSelection);
   }
 
@@ -692,7 +704,7 @@ export class SelectionService extends Disposable implements ISelectionService {
         if (this._activeSelectionMode !== SelectionMode.COLUMN) {
           this._model.selectionEnd[0] = this._bufferService.cols;
         }
-        this._model.selectionEnd[1] = Math.min(buffer.ydisp + this._bufferService.rows, buffer.lines.length - 1);
+        this._model.selectionEnd[1] = Math.min(buffer.ydisp + this._bufferService.rows - 1, buffer.lines.length - 1);
       } else {
         if (this._activeSelectionMode !== SelectionMode.COLUMN) {
           this._model.selectionEnd[0] = 0;
@@ -769,8 +781,7 @@ export class SelectionService extends Disposable implements ISelectionService {
     // reverseIndex) and delete in a splice is only ever used when the same
     // number of elements was just added. Given this is could actually be
     // beneficial to leave the selection as is for these cases.
-    this._trimListener.dispose();
-    this._trimListener = e.activeBuffer.lines.onTrim(amount => this._handleTrim(amount));
+    this._trimListener.value = e.activeBuffer.lines.onTrim(amount => this._handleTrim(amount));
   }
 
   /**
@@ -919,10 +930,10 @@ export class SelectionService extends Disposable implements ISelectionService {
     // Calculate the start _column_, converting the the string indexes back to
     // column coordinates.
     let start =
-        startIndex // The index of the selection's start char in the line string
-        + charOffset // The difference between the initial char's column and index
-        - leftWideCharCount // The number of wide chars left of the initial char
-        + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
+      startIndex // The index of the selection's start char in the line string
+      + charOffset // The difference between the initial char's column and index
+      - leftWideCharCount // The number of wide chars left of the initial char
+      + leftLongCharOffset; // The number of additional chars left of the initial char added by columns with strings longer than 1 (emojis)
 
     // Calculate the length in _columns_, converting the the string indexes back
     // to column coordinates.

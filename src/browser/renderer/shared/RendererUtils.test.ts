@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { computeNextVariantOffset } from 'browser/renderer/shared/RendererUtils';
+import { computeNextVariantOffset } from './RendererUtils';
 import { assert } from 'chai';
 
 describe('RendererUtils', () => {

@@ -4,8 +4,32 @@
  */
 
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
+import type { ILogService } from 'common/services/Services';
 import { customGlyphDefinitions } from './CustomGlyphDefinitions';
 import { CustomGlyphDefinitionType, CustomGlyphScaleType, CustomGlyphVectorType, type CustomGlyphDefinitionPart, type CustomGlyphPathDrawFunctionDefinition, type CustomGlyphPatternDefinition, type ICustomGlyphSolidOctantBlockVector, type ICustomGlyphVectorShape } from './Types';
+
+type PatternCanvas = HTMLCanvasElement | OffscreenCanvas;
+type PatternCanvasFactory = (width: number, height: number) => PatternCanvas;
+
+const createOffscreenPatternCanvas: PatternCanvasFactory | undefined = typeof OffscreenCanvas === 'undefined'
+  ? undefined
+  : (width, height) => new OffscreenCanvas(width, height);
+
+const createDomPatternCanvas: PatternCanvasFactory = (width, height) => {
+  const canvas = document.createElement('canvas');
+  canvas.width = width;
+  canvas.height = height;
+  return canvas;
+};
+
+export function createPatternCanvas(
+  width: number,
+  height: number,
+  offscreenCanvasFactory: PatternCanvasFactory | undefined = createOffscreenPatternCanvas,
+  domCanvasFactory: PatternCanvasFactory = createDomPatternCanvas
+): PatternCanvas {
+  return offscreenCanvasFactory?.(width, height) ?? domCanvasFactory(width, height);
+}
 
 /**
  * Try drawing a custom block element or box drawing character, returning whether it was
@@ -22,6 +46,7 @@ export function tryDrawCustomGlyph(
   deviceCharHeight: number,
   fontSize: number,
   devicePixelRatio: number,
+  logService: ILogService,
   backgroundColor?: string,
   variantOffset: number = 0
 ): boolean {
@@ -30,7 +55,7 @@ export function tryDrawCustomGlyph(
     // Normalize to array for uniform handling
     const parts = Array.isArray(unifiedCharDefinition) ? unifiedCharDefinition : [unifiedCharDefinition];
     for (const part of parts) {
-      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, fontSize, devicePixelRatio, backgroundColor, variantOffset);
+      drawDefinitionPart(ctx, part, xOffset, yOffset, deviceCellWidth, deviceCellHeight, deviceCharWidth, deviceCharHeight, fontSize, devicePixelRatio, logService, backgroundColor, variantOffset);
     }
     return true;
   }
@@ -49,6 +74,7 @@ function drawDefinitionPart(
   deviceCharHeight: number,
   fontSize: number,
   devicePixelRatio: number,
+  logService: ILogService,
   backgroundColor?: string,
   variantOffset: number = 0
 ): void {
@@ -79,7 +105,7 @@ function drawDefinitionPart(
       drawPatternChar(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, variantOffset);
       break;
     case CustomGlyphDefinitionType.PATH_FUNCTION:
-      drawPathFunctionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, part.strokeWidth);
+      drawPathFunctionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, logService, part.strokeWidth);
       break;
     case CustomGlyphDefinitionType.PATH:
       drawPathDefinitionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, part.strokeWidth);
@@ -88,7 +114,7 @@ function drawDefinitionPart(
       drawPathNegativeDefinitionCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, devicePixelRatio, backgroundColor);
       break;
     case CustomGlyphDefinitionType.VECTOR_SHAPE:
-      drawVectorShape(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, fontSize, devicePixelRatio);
+      drawVectorShape(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight, fontSize, devicePixelRatio, logService);
       break;
     case CustomGlyphDefinitionType.BRAILLE:
       drawBrailleCharacter(ctx, part.data, drawXOffset, drawYOffset, drawWidth, drawHeight);
@@ -218,8 +244,8 @@ function drawPathDefinitionCharacter(
       const rx = parseFloat(args[0]) * deviceCellWidth;
       const ry = parseFloat(args[1]) * deviceCellHeight;
       const xAxisRotation = parseFloat(args[2]) * Math.PI / 180;
-      const largeArcFlag = parseInt(args[3]);
-      const sweepFlag = parseInt(args[4]);
+      const largeArcFlag = parseInt(args[3], 10);
+      const sweepFlag = parseInt(args[4], 10);
       const x = xOffset + parseFloat(args[5]) * deviceCellWidth;
       const y = yOffset + parseFloat(args[6]) * deviceCellHeight;
       drawSvgArc(ctx, currentX, currentY, rx, ry, xAxisRotation, largeArcFlag, sweepFlag, x, y);
@@ -455,9 +481,9 @@ function drawPatternChar(
   if (!pattern) {
     const width = charDefinition[0].length;
     const height = charDefinition.length;
-    const tmpCanvas = ctx.canvas.ownerDocument.createElement('canvas');
-    tmpCanvas.width = width;
-    tmpCanvas.height = height;
+    // The atlas canvas can be adopted into another document, so temporary resources must not use
+    // its mutable ownerDocument.
+    const tmpCanvas = createPatternCanvas(width, height);
     const tmpCtx = throwIfFalsy(tmpCanvas.getContext('2d'));
     const imageData = new ImageData(width, height);
 
@@ -510,6 +536,7 @@ function drawPathFunctionCharacter(
   deviceCellWidth: number,
   deviceCellHeight: number,
   devicePixelRatio: number,
+  logService: ILogService,
   strokeWidth?: number
 ): void {
   ctx.save();
@@ -536,7 +563,7 @@ function drawPathFunctionCharacter(
     }
     const f = svgToCanvasInstructionMap[type];
     if (!f) {
-      console.error(`Could not find drawing instructions for "${type}"`);
+      logService.error(`Could not find drawing instructions for "${type}"`);
       continue;
     }
     const args: string[] = instruction.substring(1).split(',');
@@ -598,7 +625,8 @@ function drawVectorShape(
   deviceCellWidth: number,
   deviceCellHeight: number,
   fontSize: number,
-  devicePixelRatio: number
+  devicePixelRatio: number,
+  logService: ILogService
 ): void {
   // Clip the cell to make sure drawing doesn't occur beyond bounds
   const clipRegion = new Path2D();
@@ -619,7 +647,7 @@ function drawVectorShape(
     }
     const f = svgToCanvasInstructionMap[type];
     if (!f) {
-      console.error(`Could not find drawing instructions for "${type}"`);
+      logService.error(`Could not find drawing instructions for "${type}"`);
       continue;
     }
     const args: string[] = instruction.substring(1).split(',');

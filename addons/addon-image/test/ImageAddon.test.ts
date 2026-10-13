@@ -290,6 +290,67 @@ test.describe('ImageAddon', () => {
     });
   });
 
+  test.describe('IIP support', () => {
+    test('size params is optional/informative', async () => {
+      // too small size param
+      await ctx.proxy.write(`\x1b]1337;File=inline=1;size=5:${PALETTE_PNG_BASE64}\x07`);
+      deepStrictEqual(await getOrigSize(1), [640, 80]);
+      // no size aparm at all
+      await ctx.proxy.write(`\x1b[10H\x1b]1337;File=inline=1:${PALETTE_QOI_BASE64}\x07`);
+      deepStrictEqual(await getOrigSize(2), [640, 80]);
+    });
+    test.skip('FilePart support - bytewise', async () => {
+      // opener
+      await ctx.proxy.write(`\x1b]1337;MultipartFile=inline=1\x07`);
+      // byte-wise
+      for (let i = 0; i < PALETTE_PNG_BASE64.length; ++i) {
+        await ctx.proxy.write(`\x1b]1337;FilePart=${PALETTE_PNG_BASE64[i]}\x07`);
+      }
+      // finalizer
+      await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
+      deepStrictEqual(await getOrigSize(1), [640, 80]);
+    });
+    test('FilePart support - chunks', async () => {
+      // opener
+      await ctx.proxy.write(`\x1b]1337;MultipartFile=inline=1\x07`);
+      // chunks
+      for (let i = 0; i < PALETTE_PNG_BASE64.length; i += 256) {
+        await ctx.proxy.write(`\x1b]1337;FilePart=${PALETTE_PNG_BASE64.slice(i, i + 256)}\x07`);
+      }
+      // finalizer
+      await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
+      deepStrictEqual(await getOrigSize(1), [640, 80]);
+    });
+    test('FilePart support - edgecases', async () => {
+      // multiple opener do not harm
+      for (let i = 0; i < 10; ++i) {
+        await ctx.proxy.write(`\x1b]1337;MultipartFile=inline=1\x07`);
+      }
+      // multiple finalizer do not harm
+      for (let i = 0; i < 5; ++i) {
+        await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
+      }
+      // chunks w'o opener are ignored
+      for (let i = 0; i < PALETTE_PNG_BASE64.length; i += 256) {
+        await ctx.proxy.write(`\x1b]1337;FilePart=${PALETTE_PNG_BASE64.slice(i, i + 256)}\x07`);
+      }
+      await ctx.proxy.write(`\x1b]1337;FileEnd\x07`);
+      pollFor(ctx.page, 'window.imageAddon._storage._images.size', 0);
+    });
+    test('FilePart support - other IIP sequence cancels chunked image', async () => {
+      // opener
+      await ctx.proxy.write(`\x1b]1337;MultipartFile=inline=1\x07`);
+      // chunks
+      for (let i = 0; i < PALETTE_PNG_BASE64.length; i += 256) {
+        await ctx.proxy.write(`\x1b]1337;FilePart=${PALETTE_PNG_BASE64.slice(i, i + 256)}\x07`);
+      }
+      // finalizer skipped
+      // write spinfox.png
+      await ctx.proxy.write(TESTDATA_IIP[1][0]);
+      deepStrictEqual(await getOrigSize(1), TESTDATA_IIP[1][1]);
+    });
+  });
+
   test.describe('IIP support - testimages', () => {
     test('palette.png', async () => {
       await ctx.proxy.write(TESTDATA_IIP[0][0]);
@@ -374,6 +435,15 @@ test.describe('ImageAddon', () => {
       });
     }
   });
+
+  test.describe('text overwrite removes tiles', () => {
+    test('sixel', async () => {
+      await assertTextClearsTiles(SIXEL_SEQ_0);
+    });
+    test('iip', async () => {
+      await assertTextClearsTiles(TESTDATA_IIP[0][0]);
+    });
+  });
 });
 
 /**
@@ -410,4 +480,21 @@ async function getOrigSize(id: number): Promise<[number, number]> {
 
 async function getImageAtBufferCell(x: number, y: number): Promise<string | undefined> {
   return ctx.page.evaluate<any>(`window.imageAddon.getImageAtBufferCell(${x}, ${y})?.toDataURL('image/png')`);
+}
+
+async function hasTileAtBufferCell(x: number, y: number): Promise<boolean> {
+  return ctx.page.evaluate(`!!window.imageAddon.extractTileAtBufferCell(${x}, ${y})`);
+}
+
+async function assertTextClearsTiles(imageSeq: string): Promise<void> {
+  await ctx.proxy.write('\x1b[H' + imageSeq);
+  await pollFor(ctx.page, '!!window.imageAddon.extractTileAtBufferCell(5, 1)', true);
+  ok(await hasTileAtBufferCell(0, 1));
+  await ctx.proxy.write('\x1b[2;6H#######');
+  for (let x = 5; x < 12; x++) {
+    strictEqual(await hasTileAtBufferCell(x, 1), false);
+  }
+  ok(await hasTileAtBufferCell(0, 1));
+  ok(await hasTileAtBufferCell(13, 1));
+  ok(((await ctx.page.evaluate('window.term.buffer.active.getLine(1).translateToString(true)')) as string).includes('#######'));
 }

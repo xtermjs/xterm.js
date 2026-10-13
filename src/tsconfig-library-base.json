@@ -4,7 +4,6 @@
     "composite": true,
     "strict": true,
     "declarationMap": true,
-    "experimentalDecorators": true,
-    "downlevelIteration": true
+    "experimentalDecorators": true
   }
 }

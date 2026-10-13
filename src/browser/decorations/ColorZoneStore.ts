@@ -3,7 +3,7 @@
  *  Licensed under the MIT License. See License.txt in the project root for license information.
  *--------------------------------------------------------------------------------------------*/
 
-import { IInternalDecoration } from 'common/services/Services';
+import { IInternalDecoration } from '../../common/services/Services';
 
 export interface IColorZoneStore {
   readonly zones: IColorZone[];

@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { parseColor, toRgbString } from 'common/input/XParseColor';
+import { parseColor, toRgbString } from './XParseColor';
 
 describe('XParseColor', () => {
   describe('parseColor', () => {

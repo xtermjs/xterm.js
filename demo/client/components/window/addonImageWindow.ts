@@ -65,7 +65,10 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
     const dtIip = document.createElement('dt');
     dtIip.textContent = 'IIP (iTerm)';
     dlIip.appendChild(dtIip);
-    this._addDdWithButton(dlIip, 'image-demo3', 'palette');
+    this._addDdWithButton(dlIip, 'image-demo3', 'palette (png File)');
+    this._addDdWithButton(dlIip, 'image-demo4', 'dice (qoi MultipartFile)');
+    this._addDdWithButton(dlIip, 'image-demo5', 'rose (webp File)');
+    this._addDdWithButton(dlIip, 'image-demo6', 'kimono (avif MultipartFile)');
     container.appendChild(dlIip);
 
     // Kitty demos
@@ -141,6 +144,21 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
         this._terminal.write(`\x1b]1337;File=inline=1;size=${data.length}:${btoa(sdata)}\x1b\\`);
       });
 
+    const iipDemoMulti = (url: string) => () => fetch(url)
+      .then(resp => resp.arrayBuffer())
+      .then(buffer => {
+        const data = new Uint8Array(buffer);
+        let sdata = '';
+        for (let i = 0; i < data.length; ++i) sdata += String.fromCharCode(data[i]);
+        const encoded = btoa(sdata);
+        this._terminal.write('\r\n');
+        this._terminal.write(`\x1b]1337;MultipartFile=inline=1\x1b\\`);
+        for (let i = 0; i < encoded.length; i += 100) {
+          this._terminal.write(`\x1b]1337;FilePart=${encoded.slice(i, i + 100)}\x1b\\`);
+        }
+        this._terminal.write(`\x1b]1337;FileEnd\x1b\\`);
+      });
+
     const kittyDemo = (url: string) => () => fetch(url)
       .then(resp => resp.arrayBuffer())
       .then(buffer => {
@@ -157,9 +175,15 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
     document.getElementById('image-demo2')!.addEventListener('click',
       sixelDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/testfiles/test2.sixel'));
     document.getElementById('image-demo3')!.addEventListener('click',
-      iipDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
+      iipDemo('https://raw.githubusercontent.com/xtermjs/xterm.js/master/addons/addon-image/fixture/palette.png'));
+    document.getElementById('image-demo4')!.addEventListener('click',
+      iipDemoMulti('https://raw.githubusercontent.com/xtermjs/xterm.js/master/addons/addon-image/fixture/testimages/dice.qoi'));
+    document.getElementById('image-demo5')!.addEventListener('click',
+      iipDemo('https://raw.githubusercontent.com/xtermjs/xterm.js/master/addons/addon-image/fixture/testimages/1_webp_a.webp'));
+    document.getElementById('image-demo6')!.addEventListener('click',
+      iipDemoMulti('https://raw.githubusercontent.com/xtermjs/xterm.js/master/addons/addon-image/fixture/testimages/kimono.crop.avif'));
     document.getElementById('image-demo-kitty1')!.addEventListener('click',
-      kittyDemo('https://raw.githubusercontent.com/jerch/node-sixel/master/palette.png'));
+      kittyDemo('https://raw.githubusercontent.com/xtermjs/xterm.js/master/addons/addon-image/fixture/palette.png'));
 
     // demo for image retrieval API
     this._terminal.element!.addEventListener('click', (ev: MouseEvent) => {
@@ -176,7 +200,7 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
       //   }
       // }
 
-      const pos = (this._terminal as any)._core._mouseService!.getCoords(ev, (this._terminal as any)._core.screenElement!, this._terminal.cols, this._terminal.rows);
+      const pos = (this._terminal as any)._core._mouseCoordsService!.getCoords(ev, (this._terminal as any)._core.screenElement!, this._terminal.cols, this._terminal.rows);
       const x = pos[0] - 1;
       const y = pos[1] - 1;
       const canvas = ev.shiftKey

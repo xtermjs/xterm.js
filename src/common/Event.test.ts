@@ -4,7 +4,7 @@
  */
 
 import { assert } from 'chai';
-import { Emitter } from 'common/Event';
+import { Emitter } from './Event';
 
 describe('Emitter', () => {
   it('should fire with 0 listeners without error', () => {

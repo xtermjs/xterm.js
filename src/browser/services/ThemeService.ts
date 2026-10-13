@@ -3,14 +3,14 @@
  * @license MIT
  */
 
-import { ColorContrastCache } from 'browser/ColorContrastCache';
-import { IThemeService } from 'browser/services/Services';
-import { DEFAULT_ANSI_COLORS, IColorContrastCache, IColorSet, ReadonlyColorSet } from 'browser/Types';
-import { color, css, NULL_COLOR } from 'common/Color';
-import { Disposable } from 'common/Lifecycle';
-import { IOptionsService, ITheme } from 'common/services/Services';
-import { AllColorIndex, IColor, SpecialColorIndex } from 'common/Types';
-import { Emitter } from 'common/Event';
+import { ColorContrastCache } from '../ColorContrastCache';
+import { IThemeService } from './Services';
+import { DEFAULT_ANSI_COLORS, IColorContrastCache, IColorSet, ReadonlyColorSet } from '../Types';
+import { color, css, NULL_COLOR } from '../../common/Color';
+import { Disposable } from '../../common/Lifecycle';
+import { IOptionsService, ITheme } from '../../common/services/Services';
+import { AllColorIndex, IColor, SpecialColorIndex } from '../../common/Types';
+import { Emitter } from '../../common/Event';
 
 interface IRestoreColorSet {
   foreground: IColor;
@@ -132,7 +132,7 @@ export class ThemeService extends Disposable implements IThemeService {
         colors.ansi[i + 16] = parseColor(theme.extendedAnsi[i], DEFAULT_ANSI_COLORS[i + 16]);
       }
     }
-    // Clear our the cache
+    // Clear the cache
     this._contrastCache.clear();
     this._halfContrastCache.clear();
     this._updateRestoreColors();

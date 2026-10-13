@@ -14,8 +14,8 @@
  *   Rc: Repeat count (usually 1)
  */
 
-import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from 'common/Types';
-import { C0 } from 'common/data/EscapeSequences';
+import { IKeyboardEvent, IKeyboardResult, KeyboardResultType } from '../Types';
+import { C0 } from '../data/EscapeSequences';
 
 /**
  * Win32 control key state flags (from Windows API).

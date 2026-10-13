@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { BufferLine } from 'common/buffer/BufferLine';
-import { CircularList } from 'common/CircularList';
-import { IBufferLine, ICellData } from 'common/Types';
+import { BufferLine } from './BufferLine';
+import { CircularList } from '../CircularList';
+import { IBufferLine, ICellData } from './Types';
 
 export interface INewLayoutResult {
   layout: number[];
@@ -178,7 +178,10 @@ export function reflowLargerApplyNewLayout(lines: CircularList<IBufferLine>, new
  */
 export function reflowSmallerGetNewLineLengths(wrappedLines: BufferLine[], oldCols: number, newCols: number): number[] {
   const newLineLengths: number[] = [];
-  const cellsNeeded = wrappedLines.map((l, i) => getWrappedLineTrimmedLength(wrappedLines, i, oldCols)).reduce((p, c) => p + c);
+  let cellsNeeded = 0;
+  for (let i = 0; i < wrappedLines.length; i++) {
+    cellsNeeded += getWrappedLineTrimmedLength(wrappedLines, i, oldCols);
+  }
 
   // Use srcCol and srcLine to find the new wrapping point, use that to get the cellsAvailable and
   // linesNeeded

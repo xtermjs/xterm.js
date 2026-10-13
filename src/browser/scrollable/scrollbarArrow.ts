@@ -5,7 +5,7 @@
 
 import { GlobalPointerMoveMonitor } from './globalPointerMoveMonitor';
 import { Widget } from './widget';
-import { TimeoutTimer } from 'common/Async';
+import { TimeoutTimer } from '../../common/Async';
 import * as dom from '../Dom';
 
 export interface IScrollbarArrowOptions {

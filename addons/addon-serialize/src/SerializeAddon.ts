@@ -7,7 +7,8 @@
 
 import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
-import { IAttributeData, IColor } from 'common/Types';
+import { IColor } from 'common/Types';
+import { IAttributeData } from 'common/buffer/Types';
 import { DEFAULT_ANSI_COLORS } from 'browser/Types';
 import { UnderlineStyle } from 'common/buffer/Constants';
 
@@ -172,7 +173,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _thisRowLastSecondChar: IBufferCell = this._buffer.getNullCell();
   private _nextRowFirstChar: IBufferCell = this._buffer.getNullCell();
   protected _rowEnd(row: number, isLastRow: boolean): void {
-    // if there is colorful empty cell at line end, whe must pad it back, or the the color block
+    // if there is colorful empty cell at line end, we must pad it back, or the color block
     // will missing
     if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
       // use clear right to set background.
@@ -220,7 +221,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
             // you can't use control sequence to move cursor to (x === row)
             (thisRowLastChar.getChars() || thisRowLastChar.getWidth() === 0) &&
             // change background of the first wrapped cell also affects BCE
-            // so we mark it as invalid to simply the process to determine line separator
+            // so we mark it as invalid to simplify the process to determine line separator
             equalBg(thisRowLastChar, nextRowFirstChar)
           ) {
             isValid = true;
@@ -232,7 +233,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
             isNextRowFirstCharDoubleWidth &&
             (thisRowLastSecondChar.getChars() || thisRowLastSecondChar.getWidth() === 0) &&
             // change background of the first wrapped cell also affects BCE
-            // so we mark it as invalid to simply the process to determine line separator
+            // so we mark it as invalid to simplify the process to determine line separator
             equalBg(thisRowLastChar, nextRowFirstChar) &&
             equalBg(thisRowLastSecondChar, nextRowFirstChar)
           ) {

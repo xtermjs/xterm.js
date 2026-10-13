@@ -4,26 +4,26 @@
  * @license MIT
  */
 
-import { IInputHandler, IAttributeData, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from 'common/Types';
-import { C0, C1 } from 'common/data/EscapeSequences';
-import { CHARSETS, DEFAULT_CHARSET } from 'common/data/Charsets';
-import { EscapeSequenceParser } from 'common/parser/EscapeSequenceParser';
-import { Disposable } from 'common/Lifecycle';
-import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from 'common/input/TextDecoder';
-import { BufferLine, DEFAULT_ATTR_DATA } from 'common/buffer/BufferLine';
-import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from 'common/parser/Types';
-import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from 'common/buffer/Constants';
-import { CellData } from 'common/buffer/CellData';
-import { AttributeData } from 'common/buffer/AttributeData';
-import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from 'common/services/Services';
-import { UnicodeService } from 'common/services/UnicodeService';
-import { OscHandler } from 'common/parser/OscParser';
-import { DcsHandler } from 'common/parser/DcsParser';
-import { ApcHandler } from 'common/parser/ApcParser';
-import { IBuffer } from 'common/buffer/Types';
-import { parseColor } from 'common/input/XParseColor';
-import { Emitter } from 'common/Event';
-import { XTERM_VERSION } from 'common/Version';
+import { IInputHandler, IDisposable, IWindowOptions, IColorEvent, IParseStack, ColorIndex, ColorRequestType, SpecialColorIndex } from './Types';
+import { IAttributeData, IBuffer } from './buffer/Types';
+import { C0, C1 } from './data/EscapeSequences';
+import { CHARSETS, DEFAULT_CHARSET } from './data/Charsets';
+import { EscapeSequenceParser } from './parser/EscapeSequenceParser';
+import { Disposable } from './Lifecycle';
+import { StringToUtf32, stringFromCodePoint, Utf8ToUtf32 } from './input/TextDecoder';
+import { BufferLine, DEFAULT_ATTR_DATA } from './buffer/BufferLine';
+import { IParsingState, IEscapeSequenceParser, IParams, IFunctionIdentifier } from './parser/Types';
+import { NULL_CELL_CODE, NULL_CELL_WIDTH, Attributes, FgFlags, BgFlags, Content, UnderlineStyle } from './buffer/Constants';
+import { CellData } from './buffer/CellData';
+import { AttributeData } from './buffer/AttributeData';
+import { ICoreService, IBufferService, IOptionsService, ILogService, IMouseStateService, ICharsetService, IUnicodeService, LogLevelEnum, IOscLinkService } from './services/Services';
+import { UnicodeService } from './services/UnicodeService';
+import { OscHandler } from './parser/OscParser';
+import { DcsHandler } from './parser/DcsParser';
+import { ApcHandler } from './parser/ApcParser';
+import { parseColor } from './input/XParseColor';
+import { Emitter } from './Event';
+import { XTERM_VERSION } from './Version';
 
 /**
  * Map collect to glevel. Used in `selectCharset`.
@@ -567,8 +567,9 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (screenReaderMode) {
         this._onA11yChar.fire(stringFromCodePoint(code));
       }
-      if (this._getCurrentLinkId()) {
-        this._oscLinkService.addLineToLink(this._getCurrentLinkId(), this._activeBuffer.ybase + this._activeBuffer.y);
+      const linkId = this._getCurrentLinkId();
+      if (linkId) {
+        this._oscLinkService.addLineToLink(linkId, this._activeBuffer.ybase + this._activeBuffer.y);
       }
 
       // goto next line if ch would overflow
@@ -591,7 +592,7 @@ export class InputHandler extends Disposable implements IInputHandler {
             }
             // The line already exists (eg. the initial viewport), mark it as a
             // wrapped line
-            this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = true;
+            this._activeBuffer.setWrapped(this._activeBuffer.ybase + this._activeBuffer.y, true);
           }
           // row changed, get it again
           bufferRow = this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y);
@@ -755,7 +756,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       // reprint is common, especially on resize. Note that the windowsMode wrapped line heuristics
       // can mess with this so windowsMode should be disabled, which is recommended on Windows build
       // 21376 and above.
-      this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
+      this._activeBuffer.setWrapped(this._activeBuffer.ybase + this._activeBuffer.y, false);
     }
     // If the end of the line is hit, prevent this action from wrapping around to the next line.
     if (this._activeBuffer.x >= this._bufferService.cols) {
@@ -819,7 +820,7 @@ export class InputHandler extends Disposable implements IInputHandler {
         && this._activeBuffer.y > this._activeBuffer.scrollTop
         && this._activeBuffer.y <= this._activeBuffer.scrollBottom
         && this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)?.isWrapped) {
-        this._activeBuffer.lines.get(this._activeBuffer.ybase + this._activeBuffer.y)!.isWrapped = false;
+        this._activeBuffer.setWrapped(this._activeBuffer.ybase + this._activeBuffer.y, false);
         this._activeBuffer.y--;
         this._activeBuffer.x = this._bufferService.cols - 1;
         // find last taken cell - last cell can have 3 different states:
@@ -1185,14 +1186,11 @@ export class InputHandler extends Disposable implements IInputHandler {
       respectProtect
     );
     if (start === 0) {
-      line.isWrapped = false;
+      this._activeBuffer.setWrapped(this._activeBuffer.ybase + y, false);
     }
     if (end >= this._bufferService.cols) {
       // Deleted entire previous line. This next line can no longer be wrapped.
-      const nextLine = this._activeBuffer.lines.get(yAbs + 1);
-      if (nextLine) {
-        nextLine.isWrapped = false;
-      }
+      this._activeBuffer.setWrapped(yAbs + 1, false);
     }
   }
 
@@ -1206,7 +1204,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (line) {
       line.fill(this._activeBuffer.getNullCell(this._eraseAttrData()), respectProtect);
       this._bufferService.buffer.clearMarkers(this._activeBuffer.ybase + y);
-      line.isWrapped = false;
+      this._activeBuffer.setWrapped(this._activeBuffer.ybase + y, false);
     }
   }
 
@@ -1287,6 +1285,11 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._activeBuffer.lines.trimStart(scrollBackSize);
           this._activeBuffer.ybase = Math.max(this._activeBuffer.ybase - scrollBackSize, 0);
           this._activeBuffer.ydisp = Math.max(this._activeBuffer.ydisp - scrollBackSize, 0);
+          // isUserScrolling tracks the normal buffer's viewport, so ED3 on the alt
+          // screen must not touch it
+          if (this._activeBuffer === this._bufferService.buffers.normal) {
+            this._bufferService.isUserScrolling = false;
+          }
           // Force a scroll event to refresh viewport
           this._onScroll.fire(0);
         }
@@ -1512,9 +1515,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
-      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      const row = this._activeBuffer.ybase + y;
+      const line = this._activeBuffer.lines.get(row)!;
       line.deleteCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      line.isWrapped = false;
+      this._activeBuffer.setWrapped(row, false);
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -1545,9 +1549,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
-      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      const row = this._activeBuffer.ybase + y;
+      const line = this._activeBuffer.lines.get(row)!;
+      this._activeBuffer.setWrapped(row, false);
       line.insertCells(0, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      line.isWrapped = false;
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -1568,9 +1573,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
-      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      const row = this._activeBuffer.ybase + y;
+      this._activeBuffer.setWrapped(row, false);
+      const line = this._activeBuffer.lines.get(row)!;
       line.insertCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      line.isWrapped = false;
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -1591,9 +1597,10 @@ export class InputHandler extends Disposable implements IInputHandler {
     }
     const param = params.params[0] || 1;
     for (let y = this._activeBuffer.scrollTop; y <= this._activeBuffer.scrollBottom; ++y) {
-      const line = this._activeBuffer.lines.get(this._activeBuffer.ybase + y)!;
+      const row = this._activeBuffer.ybase + y;
+      const line = this._activeBuffer.lines.get(row)!;
+      this._activeBuffer.setWrapped(row, false);
       line.deleteCells(this._activeBuffer.x, param, this._activeBuffer.getNullCell(this._eraseAttrData()));
-      line.isWrapped = false;
     }
     this._dirtyRowTracker.markRangeDirty(this._activeBuffer.scrollTop, this._activeBuffer.scrollBottom);
     return true;
@@ -2592,10 +2599,6 @@ export class InputHandler extends Disposable implements IInputHandler {
    * | 3      | CMY color.                                                    | #N      |
    * | 4      | CMYK color.                                                   | #N      |
    * | 5      | Indexed (256 colors) as `Ps ; 5 ; INDEX` or `Ps : 5 : INDEX`. | #Y      |
-   *
-   *
-   * FIXME: blinking is implemented in attrs, but not working in renderers?
-   * FIXME: remove dead branch for p=100
    */
   public charAttributes(params: IParams): boolean {
     // Optimize a single SGR0.
@@ -3070,7 +3073,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       const idx = slots.shift() as string;
       const spec = slots.shift() as string;
       if (/^\d+$/.exec(idx)) {
-        const index = parseInt(idx);
+        const index = parseInt(idx, 10);
         if (isValidColorIndex(index)) {
           if (spec === '?') {
             event.push({ type: ColorRequestType.REPORT, index });
@@ -3233,7 +3236,7 @@ export class InputHandler extends Disposable implements IInputHandler {
     const slots = data.split(';');
     for (let i = 0; i < slots.length; ++i) {
       if (/^\d+$/.exec(slots[i])) {
-        const index = parseInt(slots[i]);
+        const index = parseInt(slots[i], 10);
         if (isValidColorIndex(index)) {
           event.push({ type: ColorRequestType.RESTORE, index });
         }
@@ -3478,11 +3481,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._setCursor(0, 0);
     for (let yOffset = 0; yOffset < this._bufferService.rows; ++yOffset) {
       const row = this._activeBuffer.ybase + this._activeBuffer.y + yOffset;
-      const line = this._activeBuffer.lines.get(row);
-      if (line) {
-        line.fill(cell);
-        line.isWrapped = false;
-      }
+      this._activeBuffer.setWrapped(row, false);
+      this._activeBuffer.lines.get(row)?.fill(cell);
     }
     this._dirtyRowTracker.markAllDirty();
     this._setCursor(0, 0);

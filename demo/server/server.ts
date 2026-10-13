@@ -118,7 +118,7 @@ function startServer(): void {
   });
 
   appWs.ws('/terminals/:pid', function (ws, req) {
-    const term = terminals[parseInt(req.params.pid)];
+    const term = terminals[parseInt(Array.isArray(req.params.pid) ? req.params.pid[0] : req.params.pid)];
     console.log('Connected to terminal ' + term.pid);
     temporaryDisposable[term.pid].dispose();
     delete temporaryDisposable[term.pid];

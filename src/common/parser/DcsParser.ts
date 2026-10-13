@@ -3,11 +3,12 @@
  * @license MIT
  */
 
-import { IDisposable } from 'common/Types';
-import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from 'common/parser/Types';
-import { utf32ToString } from 'common/input/TextDecoder';
-import { Params } from 'common/parser/Params';
-import { ParserConstants } from 'common/parser/Constants';
+import { IDisposable } from '../Types';
+import { IDcsHandler, IParams, IHandlerCollection, IDcsParser, DcsFallbackHandlerType, ISubParserStackState } from './Types';
+import { utf32ToString } from '../input/TextDecoder';
+import { Params } from './Params';
+import { ParserConstants } from './Constants';
+import { LimitedStringBuilder } from '../StringBuilder';
 
 const EMPTY_HANDLERS: IDcsHandler[] = [];
 
@@ -140,7 +141,7 @@ EMPTY_PARAMS.addParam(0);
 export class DcsHandler implements IDcsHandler {
   private static _payloadLimit = ParserConstants.PAYLOAD_LIMIT;
 
-  private _data = '';
+  private _data = new LimitedStringBuilder(DcsHandler._payloadLimit);
   private _params: IParams = EMPTY_PARAMS;
   private _hitLimit: boolean = false;
 
@@ -152,7 +153,7 @@ export class DcsHandler implements IDcsHandler {
     // perf optimization:
     // clone only, if we have non empty params, otherwise stick with default
     this._params = (params.length > 1 || params.params[0]) ? params.clone() : EMPTY_PARAMS;
-    this._data = '';
+    this._data.reset();
     this._hitLimit = false;
   }
 
@@ -160,9 +161,7 @@ export class DcsHandler implements IDcsHandler {
     if (this._hitLimit) {
       return;
     }
-    this._data += utf32ToString(data, start, end);
-    if (this._data.length > DcsHandler._payloadLimit) {
-      this._data = '';
+    if (this._data.append(utf32ToString(data, start, end))) {
       this._hitLimit = true;
     }
   }
@@ -172,20 +171,20 @@ export class DcsHandler implements IDcsHandler {
     if (this._hitLimit) {
       ret = false;
     } else if (success) {
-      ret = this._handler(this._data, this._params);
+      ret = this._handler(this._data.toString(), this._params);
       if (ret instanceof Promise) {
         // need to hold data and params until `ret` got resolved
         // dont care for errors, data will be freed anyway on next start
         return ret.then(res => {
           this._params = EMPTY_PARAMS;
-          this._data = '';
+          this._data.reset();
           this._hitLimit = false;
           return res;
         });
       }
     }
     this._params = EMPTY_PARAMS;
-    this._data = '';
+    this._data.reset();
     this._hitLimit = false;
     return ret;
   }

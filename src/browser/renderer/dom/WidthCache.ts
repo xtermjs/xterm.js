@@ -3,9 +3,9 @@
  * @license MIT
  */
 
-import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
-import { IDisposable } from 'common/Types';
-import { FontWeight } from 'common/services/Services';
+import { throwIfFalsy } from '../shared/RendererUtils';
+import { IDisposable } from '../../../common/Types';
+import { FontWeight } from '../../../common/services/Services';
 
 
 export const enum WidthCacheSettings {
@@ -110,7 +110,7 @@ export class WidthCache implements IDisposable {
    * `variant` denotes the font variant to be used.
    */
   public get(c: string, bold: boolean | number, italic: boolean | number): number {
-    let cp = 0;
+    let cp: number;
     if (!bold && !italic && c.length === 1 && (cp = c.charCodeAt(0)) < WidthCacheSettings.FLAT_SIZE) {
       if (this._flat[cp] !== WidthCacheSettings.FLAT_UNSET) {
         return this._flat[cp];
