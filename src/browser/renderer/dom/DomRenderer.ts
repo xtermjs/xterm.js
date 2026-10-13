@@ -399,43 +399,42 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Determine new selection viewport band and create overlays
     let newViewportStart = 0;
     let newViewportEnd = -1;
-    if (!start || !end) {
-      return;
-    }
-    this._selectionRenderModel.update(this._terminal, start, end, columnSelectMode);
-    if (this._selectionRenderModel.hasSelection) {
-      const viewportStartRow = this._selectionRenderModel.viewportStartRow;
-      const viewportEndRow = this._selectionRenderModel.viewportEndRow;
-      const viewportCappedStartRow = this._selectionRenderModel.viewportCappedStartRow;
-      const viewportCappedEndRow = this._selectionRenderModel.viewportCappedEndRow;
+    if (start && end) {
+      this._selectionRenderModel.update(this._terminal, start, end, columnSelectMode);
+      if (this._selectionRenderModel.hasSelection) {
+        const viewportStartRow = this._selectionRenderModel.viewportStartRow;
+        const viewportEndRow = this._selectionRenderModel.viewportEndRow;
+        const viewportCappedStartRow = this._selectionRenderModel.viewportCappedStartRow;
+        const viewportCappedEndRow = this._selectionRenderModel.viewportCappedEndRow;
 
-      newViewportStart = viewportCappedStartRow;
-      newViewportEnd = viewportCappedEndRow;
+        newViewportStart = viewportCappedStartRow;
+        newViewportEnd = viewportCappedEndRow;
 
-      // Create the selections
-      const documentFragment = this._document.createDocumentFragment();
+        // Create the selections
+        const documentFragment = this._document.createDocumentFragment();
 
-      if (columnSelectMode) {
-        const isXFlipped = start[0] > end[0];
-        documentFragment.appendChild(
-          this._createSelectionElement(viewportCappedStartRow, isXFlipped ? end[0] : start[0], isXFlipped ? start[0] : end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
-        );
-      } else {
-        // Draw first row
-        const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
-        const endCol = viewportCappedStartRow === viewportEndRow ? end[0] : this._bufferService.cols;
-        documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
-        // Draw middle rows
-        const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
-        documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._bufferService.cols, middleRowsCount));
-        // Draw final row
-        if (viewportCappedStartRow !== viewportCappedEndRow) {
-          // Only draw viewportEndRow if it's not the same as viewporttartRow
-          const finalEndCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
-          documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, finalEndCol));
+        if (columnSelectMode) {
+          const isXFlipped = start[0] > end[0];
+          documentFragment.appendChild(
+            this._createSelectionElement(viewportCappedStartRow, isXFlipped ? end[0] : start[0], isXFlipped ? start[0] : end[0], viewportCappedEndRow - viewportCappedStartRow + 1)
+          );
+        } else {
+          // Draw first row
+          const startCol = viewportStartRow === viewportCappedStartRow ? start[0] : 0;
+          const endCol = viewportCappedStartRow === viewportEndRow ? end[0] : this._bufferService.cols;
+          documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow, startCol, endCol));
+          // Draw middle rows
+          const middleRowsCount = viewportCappedEndRow - viewportCappedStartRow - 1;
+          documentFragment.appendChild(this._createSelectionElement(viewportCappedStartRow + 1, 0, this._bufferService.cols, middleRowsCount));
+          // Draw final row
+          if (viewportCappedStartRow !== viewportCappedEndRow) {
+            // Only draw viewportEndRow if it's not the same as viewporttartRow
+            const finalEndCol = viewportEndRow === viewportCappedEndRow ? end[0] : this._bufferService.cols;
+            documentFragment.appendChild(this._createSelectionElement(viewportCappedEndRow, 0, finalEndCol));
+          }
         }
+        this._selectionContainer.appendChild(documentFragment);
       }
-      this._selectionContainer.appendChild(documentFragment);
     }
 
     // Compute minimal row range to redraw
