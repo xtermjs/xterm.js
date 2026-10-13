@@ -67,6 +67,117 @@ describe('Headless API Tests', function (): void {
     strictEqual(result, 'ABC');
   });
 
+  describe('parser', () => {
+    it('should pause queued UTF8 writes before falling through to a built-in CSI handler', async () => {
+      let resume!: (handled: boolean) => void;
+      const paused = new Promise<boolean>(resolve => { resume = resolve; });
+      let onHandlerEntered!: () => void;
+      const handlerEntered = new Promise<void>(resolve => { onHandlerEntered = resolve; });
+      const calls: (number | number[])[][] = [];
+      const callbacks: string[] = [];
+      const disposable = term.parser.registerCsiHandler({ final: 'H' }, params => {
+        calls.push(params);
+        onHandlerEntered();
+        return paused;
+      });
+      const input = new TextEncoder().encode('A\x1b[2;3HX文Z');
+      // Split 文 after its first UTF-8 byte.
+      const split = input.length - 3;
+      const written = new Promise<void>(resolve => {
+        term.write(input.subarray(0, split), () => { callbacks.push('A'); });
+        term.write(input.subarray(split), () => { callbacks.push('B'); resolve(); });
+      });
+
+      try {
+        await handlerEntered;
+        await new Promise<void>(resolve => setTimeout(resolve, 0));
+        deepStrictEqual(calls, [[2, 3]]);
+        deepStrictEqual(callbacks, []);
+        lineEquals(0, 'A');
+        lineEquals(1, '');
+        strictEqual(term.buffer.active.cursorX, 1);
+        strictEqual(term.buffer.active.cursorY, 0);
+
+        resume(false);
+        await written;
+        deepStrictEqual(calls, [[2, 3]]);
+        deepStrictEqual(callbacks, ['A', 'B']);
+        lineEquals(0, 'A');
+        lineEquals(1, '  X文Z');
+        strictEqual(term.buffer.active.cursorX, 6);
+        strictEqual(term.buffer.active.cursorY, 1);
+      } finally {
+        resume(false);
+        disposable.dispose();
+        term.dispose();
+      }
+    });
+
+    it('should suppress built-in SGR when a custom CSI handler returns true', async () => {
+      const calls: (number | number[])[][] = [];
+      const disposable = term.parser.registerCsiHandler({ final: 'm' }, params => {
+        calls.push(params);
+        return true;
+      });
+
+      try {
+        await writeSync('\x1b[31mA');
+        deepStrictEqual(calls, [[31]]);
+        strictEqual(term.buffer.active.getLine(0)!.getCell(0)!.isFgDefault(), true);
+
+        disposable.dispose();
+        await writeSync('\x1b[31mB');
+        deepStrictEqual(calls, [[31]]);
+        lineEquals(0, 'AB');
+        strictEqual(term.buffer.active.getLine(0)!.getCell(1)!.isFgPalette(), true);
+        strictEqual(term.buffer.active.getLine(0)!.getCell(1)!.getFgColor(), 1);
+      } finally {
+        disposable.dispose();
+        term.dispose();
+      }
+    });
+
+    for (const { name, sequence, register } of [
+      {
+        name: 'OSC', sequence: '\x1b]1234;payload\x07',
+        register: (handler: () => Promise<boolean>) => term.parser.registerOscHandler(1234, handler)
+      },
+      {
+        name: 'DCS', sequence: '\x1bP1;2+qpayload\x1b\\',
+        register: (handler: () => Promise<boolean>) => term.parser.registerDcsHandler({ intermediates: '+', final: 'q' }, handler)
+      },
+      {
+        name: 'ESC', sequence: '\x1b(Z',
+        register: (handler: () => Promise<boolean>) => term.parser.registerEscHandler({ intermediates: '(', final: 'Z' }, handler)
+      },
+      {
+        name: 'APC', sequence: '\x1b_Xpayload\x1b\\',
+        register: (handler: () => Promise<boolean>) => term.parser.registerApcHandler({ final: 'X' }, handler)
+      }
+    ]) {
+      it(`should await an async ${name} handler before processing following input`, async () => {
+        let calls = 0;
+        let lineWhilePaused: string | undefined;
+        const disposable = register(async () => {
+          calls++;
+          await Promise.resolve();
+          lineWhilePaused = term.buffer.active.getLine(0)!.translateToString(true);
+          return true;
+        });
+
+        try {
+          await writeSync(`A${sequence}B`);
+          strictEqual(calls, 1);
+          strictEqual(lineWhilePaused, 'A');
+          lineEquals(0, 'AB');
+        } finally {
+          disposable.dispose();
+          term.dispose();
+        }
+      });
+    }
+  });
+
   it('writeln', async () => {
     await writelnSync('foo');
     await writelnSync('bar');
