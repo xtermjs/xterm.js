@@ -6,7 +6,6 @@
 import { assert } from 'chai';
 import { DecorationManager } from './DecorationManager';
 import { SearchEngine } from './SearchEngine';
-import { SearchLineCache } from './SearchLineCache';
 import { Terminal } from 'browser/public/Terminal';
 import type { ISearchDecorationOptions } from '@xterm/addon-search';
 import type { IDecorationOptions } from '@xterm/xterm';
@@ -29,7 +28,7 @@ describe('DecorationManager', () => {
 
   it('should split highlight decorations for a wrapped match', async () => {
     await writeP(terminal, '0123456789abcde');
-    const searchEngine = new SearchEngine(terminal, store.add(new SearchLineCache(terminal)));
+    const searchEngine = new SearchEngine(terminal);
     const match = searchEngine.find('9abc', 0, 0);
     assert.ok(match);
 

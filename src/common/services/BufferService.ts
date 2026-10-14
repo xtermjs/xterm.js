@@ -5,8 +5,10 @@
 
 import { Disposable } from '../Lifecycle';
 import { IAttributeData, IBuffer, IBufferLine, IBufferSet } from '../buffer/Types';
-import { BufferLine } from '../buffer/BufferLine';
+import { BufferLine, LogicalLine } from '../buffer/BufferLine';
 import { BufferSet } from '../buffer/BufferSet';
+import { Buffer } from '../buffer/Buffer';
+import { Attributes } from '../buffer/Constants';
 import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from './Services';
 import { Emitter } from '../Event';
 
@@ -67,33 +69,57 @@ export class BufferService extends Disposable implements IBufferService {
    * @param isWrapped Whether the new line is wrapped from the previous line.
    */
   public scroll(eraseAttr: IAttributeData, isWrapped: boolean = false): void {
-    const buffer = this.buffer;
-
-    let newLine: IBufferLine | undefined;
-    newLine = this._cachedBlankLine;
-    if (!newLine || newLine.length !== this.cols || newLine.getFg(0) !== eraseAttr.fg || newLine.getBg(0) !== eraseAttr.bg) {
-      newLine = buffer.getBlankLine(eraseAttr, isWrapped);
-      this._cachedBlankLine = newLine;
-    } else {
-      (newLine as BufferLine)._isWrapped = isWrapped;
-    }
-
+    const buffer = this.buffer as Buffer;
     const topRow = buffer.ybase + buffer.scrollTop;
     const bottomRow = buffer.ybase + buffer.scrollBottom;
+    const atBottom = bottomRow === buffer.lines.length - 1;
+    if (!atBottom) {
+      buffer.setWrapped(bottomRow + 1, false);
+    }
+    const oldLine = buffer.lines.get(bottomRow) as BufferLine;
+    // Determine whether the buffer is going to be trimmed after insertion.
+    const willBufferBeTrimmed = buffer.lines.isFull;
+
+    let lline: LogicalLine = oldLine.logical();
+    const recycledLine = buffer.scrollTop === 0 && atBottom && willBufferBeTrimmed
+      && buffer.lines.recycle() as BufferLine;
+    if (isWrapped) {
+    } else if (buffer.allocateBigBlock() > 0) {
+      // In this case we try to use a large block for many lines.
+      // Grab the rest of the block
+      const data = lline._data;
+      const dbuffer = data.buffer;
+      const newStart = data.byteOffset + 3 * 4 * lline.trimmedLength;
+      const newLength = data.length - 3 * lline.trimmedLength;
+      lline._data = new Uint32Array(dbuffer, data.byteOffset, 3 * lline.trimmedLength);
+      const nbuffer = new Uint32Array(dbuffer, newStart, newLength);
+      // Perhaps should also re-use recycledLine.logical().
+      // However, that seems to be slightly slower - unclear why.
+      lline = new LogicalLine(0, nbuffer);
+    } else {
+      lline = new LogicalLine(this.cols);
+    }
+    let newLine;
+    if (recycledLine) {
+      recycledLine.reinit(this.cols, lline);
+      newLine = recycledLine;
+    } else {
+      newLine = buffer.getBlankLine(eraseAttr, lline) as BufferLine;
+    }
+    if (isWrapped && oldLine) {
+      oldLine.nextBufferLine = newLine;
+      newLine.startColumn = lline.trimmedLength;
+    }
+    lline.backgroundColor = eraseAttr.bg & Attributes.COLOR_MASK;
 
     if (buffer.scrollTop === 0) {
-      // Determine whether the buffer is going to be trimmed after insertion.
-      const willBufferBeTrimmed = buffer.lines.isFull;
-
       // Insert the line using the fastest method
-      if (bottomRow === buffer.lines.length - 1) {
-        if (willBufferBeTrimmed) {
-          buffer.lines.recycle().copyFrom(newLine, true);
-        } else {
-          buffer.lines.push(newLine.clone(true));
+      if (atBottom) {
+        if (!willBufferBeTrimmed) {
+          buffer.lines.push(newLine);
         }
       } else {
-        buffer.lines.splice(bottomRow + 1, 0, newLine.clone(true));
+        buffer.lines.splice(bottomRow + 1, 0, newLine);
       }
 
       // Only adjust ybase and ydisp when the buffer is not trimmed
@@ -115,7 +141,7 @@ export class BufferService extends Disposable implements IBufferService {
       // scrollback, instead we can just shift them in-place.
       const scrollRegionHeight = bottomRow - topRow + 1 /* as it's zero-based */;
       buffer.lines.shiftElements(topRow + 1, scrollRegionHeight - 1, -1);
-      buffer.lines.set(bottomRow, newLine.clone(true));
+      buffer.lines.set(bottomRow, newLine);
     }
 
     // Move the viewport to the bottom of the buffer unless the user is

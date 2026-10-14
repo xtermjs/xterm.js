@@ -24,7 +24,14 @@ export class CellData extends AttributeData implements ICellData {
   public fg = 0;
   public bg = 0;
   public extended: IExtendedAttrs = new ExtendedAttrs();
-  public combinedData = '';
+  /**
+   * Base string value of cell.
+   * Only valid if STORED_IN_CHARS_MASK is set in content field.
+   */
+  public _string: string  = '';
+  public get combinedData(): string {
+    return this.isCombined() ? this.getChars() : '';
+  }
   /** Whether cell contains a combined string. */
   public isCombined(): number {
     return this.content & Content.IS_COMBINED_MASK;
@@ -35,14 +42,22 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** JS string of the content. */
   public getChars(): string {
-    if (this.content & Content.IS_COMBINED_MASK) {
-      return this.combinedData;
+    const content = this.content;
+    if (content & Content.STORED_IN_CHARS_MASK) {
+      const start = (content & Content.START_IN_CHARS_MASK) >>> Content.START_IN_CHARS_SHIFT;
+      const length = (content & Content.LENGTH_IN_CHARS_MASK) >>> Content.LENGTH_IN_CHARS_SHIFT;
+      const str = this._string;
+      return start === 0 && length === str.length ? str
+        : str.substring(start, start + length);
     }
-    if (this.content & Content.CODEPOINT_MASK) {
+    const codePoint = this.content & Content.CODEPOINT_MASK;
+    if (codePoint) {
+      // FIXME maybe cache value in _string field?
       return stringFromCodePoint(this.content & Content.CODEPOINT_MASK);
     }
     return '';
   }
+
   /**
    * Codepoint of cell
    * Note this returns the UTF32 codepoint of single chars,
@@ -50,25 +65,35 @@ export class CellData extends AttributeData implements ICellData {
    * of the last char in string to be in line with code in CharData.
    */
   public getCode(): number {
-    return (this.isCombined())
-      ? this.combinedData.charCodeAt(this.combinedData.length - 1)
-      : this.content & Content.CODEPOINT_MASK;
+    const content = this.content;
+    if (content & Content.STORED_IN_CHARS_MASK) {
+      const start = (content & Content.START_IN_CHARS_MASK) >>> Content.START_IN_CHARS_SHIFT;
+      const length = (content & Content.LENGTH_IN_CHARS_MASK) >>> Content.LENGTH_IN_CHARS_SHIFT;
+      const code = length ? this._string.charCodeAt(start + length - 1) : 0;
+      return !code ? 0
+        : code < 0xDC000 || code > 0xDFFF || length < 2 ? code
+          : this._string.codePointAt(start + length - 2) || code;
+      return code;
+    }
+    return content & Content.CODEPOINT_MASK;
   }
+
   /** Set data from CharData */
   public setFromCharData(value: CharData): void {
     this.fg = value[CHAR_DATA_ATTR_INDEX];
     this.bg = 0;
     let combined = false;
+    const str = value[CHAR_DATA_CHAR_INDEX];
     // surrogates and combined strings need special treatment
-    if (value[CHAR_DATA_CHAR_INDEX].length > 2) {
+    if (str.length > 2) {
       combined = true;
     }
-    else if (value[CHAR_DATA_CHAR_INDEX].length === 2) {
-      const code = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0);
+    else if (str.length === 2) {
+      const code = str.charCodeAt(0);
       // if the 2-char string is a surrogate create single codepoint
       // everything else is combined
       if (0xD800 <= code && code <= 0xDBFF) {
-        const second = value[CHAR_DATA_CHAR_INDEX].charCodeAt(1);
+        const second = str.charCodeAt(1);
         if (0xDC00 <= second && second <= 0xDFFF) {
           this.content = ((code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
         }
@@ -81,14 +106,19 @@ export class CellData extends AttributeData implements ICellData {
       }
     }
     else {
-      this.content = value[CHAR_DATA_CHAR_INDEX].charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+      this.content = str.charCodeAt(0) | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
     }
     if (combined) {
-      this.combinedData = value[CHAR_DATA_CHAR_INDEX];
-      this.content = Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT);
+      this._string = str;
+      this.content = encodeRange(Content.IS_COMBINED_MASK | (value[CHAR_DATA_WIDTH_INDEX] << Content.WIDTH_SHIFT),
+        0, str.length);
+    } else {
+      this._string = '';
     }
   }
-  /** Get data as CharData. */
+  /** Get data as CharData.
+   * @deprecated
+   */
   public getAsCharData(): CharData {
     return [this.fg, this.getChars(), this.getWidth(), this.getCode()];
   }
@@ -148,4 +178,10 @@ export class CellData extends AttributeData implements ICellData {
     return true;
   }
 
+}
+
+export function encodeRange(content: number, start: number, length: number): number {
+  content &= ~(Content.START_IN_CHARS_MASK | Content.LENGTH_IN_CHARS_MASK);
+  content |= (start << Content.START_IN_CHARS_SHIFT) | (length << Content.LENGTH_IN_CHARS_SHIFT) | Content.STORED_IN_CHARS_MASK;
+  return content;
 }

@@ -11,6 +11,7 @@ import { IAttributeData, IBuffer, IBufferLine, IBufferSet, ICellData } from '../
 import { ICircularList } from '../common/CircularList';
 import { XtermListener, ICharset, ITerminalOptions, ColorIndex } from '../common/Types';
 import { Buffer } from '../common/buffer/Buffer';
+import { LogicalLine } from '../common/buffer/BufferLine';
 import * as Browser from '../common/Platform';
 import { CoreBrowserTerminal } from './CoreBrowserTerminal';
 import { IUnicodeService, IOptionsService, ICoreService, IMouseStateService } from '../common/services/Services';
@@ -256,8 +257,8 @@ export class MockBuffer implements IBuffer {
   public setLines(lines: ICircularList<IBufferLine>): void {
     this.lines = lines;
   }
-  public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
-    return Buffer.prototype.getBlankLine.apply(this, arguments as any);
+  public getBlankLine(attr: IAttributeData, logicalLine?: LogicalLine): IBufferLine {
+    return Buffer.prototype.getBlankLine(attr, logicalLine);
   }
   public getNullCell(attr?: IAttributeData): ICellData {
     throw new Error('Method not implemented.');
