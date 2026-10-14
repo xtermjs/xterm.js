@@ -222,6 +222,49 @@ describe('SerializeAddon', () => {
         assert.equal(terminal2.modes.showCursor, false);
       });
     });
+
+    describe('lines longer than cols', () => {
+      // A column shrink on the alt buffer leaves its lines at the old length, see
+      // https://github.com/xtermjs/xterm.js/issues/6228
+      let longLineTerminal: Terminal;
+      let longLineAddon: SerializeAddon;
+
+      beforeEach(async () => {
+        longLineTerminal = new Terminal({ cols: 20, rows: 4, allowProposedApi: true });
+        longLineAddon = new SerializeAddon();
+        longLineTerminal.loadAddon(longLineAddon);
+        await writeP(longLineTerminal, '\x1b[?1049h\x1b[1;1Hwide row zero\x1b[2;1Hwide row one\x1b[3;1Hwide row two\x1b[4;1Hwide row three');
+        longLineTerminal.resize(10, 4);
+      });
+
+      async function replay(): Promise<Terminal> {
+        const replayTerminal = new Terminal({ cols: 10, rows: 4, allowProposedApi: true });
+        await writeP(replayTerminal, longLineAddon.serialize());
+        return replayTerminal;
+      }
+
+      function getRows(target: Terminal): string[] {
+        const rows: string[] = [];
+        for (let y = 0; y < target.rows; y++) {
+          rows.push(target.buffer.active.getLine(target.buffer.active.viewportY + y)!.translateToString(false, 0, target.cols));
+        }
+        return rows;
+      }
+
+      it('should not serialize cells past cols', async () => {
+        await writeP(longLineTerminal, '\x1b[H' + 'row0 text ' + 'row1\x1b[K\r\n' + 'row2 more ' + 'row3\x1b[K');
+        const replayTerminal = await replay();
+        assert.deepEqual(getRows(replayTerminal), ['row0 text ', 'row1      ', 'row2 more ', 'row3      ']);
+      });
+
+      it('should erase the forced wrap filler within cols', async () => {
+        // Row 0 ends in empty cells and row 1 continues it by autowrap
+        await writeP(longLineTerminal, '\x1b[H' + 'abcdefghij' + 'k\x1b[K' + '\x1b[1;6H\x1b[K');
+        const replayTerminal = await replay();
+        assert.deepEqual(getRows(replayTerminal), ['abcde     ', 'k         ', 'wide row t', 'wide row t']);
+        assert.equal(replayTerminal.buffer.active.getLine(1)!.isWrapped, true);
+      });
+    });
   });
 
   describe('html', () => {
@@ -236,6 +279,17 @@ describe('SerializeAddon', () => {
         onlySelection: true
       });
       assert.equal(output, '');
+    });
+
+    it('line longer than cols', async () => {
+      // A column shrink on the alt buffer leaves its lines at the old length, see
+      // https://github.com/xtermjs/xterm.js/issues/6228
+      terminal.resize(20, 2);
+      await writeP(terminal, '\x1b[?1049hwide row zero');
+      terminal.resize(10, 2);
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.equal((output.match(/<div><span>wide row z<\/span><\/div>/g) ?? []).length, 1, output);
     });
 
     it('basic terminal with selection', async () => {
