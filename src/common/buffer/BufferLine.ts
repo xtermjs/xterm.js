@@ -489,6 +489,7 @@ export class BufferLine implements IBufferLine {
         this._data[i + Cell.BG] = bg;
       }
     }
+    this._cache = '';
     this._cacheValid = false;
     this._combined = {};
     this._extendedAttrs = {};

@@ -5,8 +5,8 @@
 
 import { Disposable } from '../Lifecycle';
 import { IBuffer, IBufferLine, IBufferSet } from '../buffer/Types';
-import { BufferSet } from '../buffer/BufferSet';
 import { BufferLine } from '../buffer/BufferLine';
+import { BufferSet } from '../buffer/BufferSet';
 import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from './Services';
 import { Emitter } from '../Event';
 
@@ -80,7 +80,6 @@ export class BufferService extends Disposable implements IBufferService {
         if (willBufferBeTrimmed) {
           (buffer.lines.recycle() as BufferLine).fillWithNull(bg);
         } else {
-          // buffer.lines.push(newLine.clone(true));
           buffer.lines.push(buffer.getBlankLine(bg, isWrapped));
         }
       } else {
