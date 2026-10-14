@@ -5,7 +5,7 @@
 
 import { Disposable, MutableDisposable } from '../Lifecycle';
 import { Buffer } from './Buffer';
-import { IAttributeData, IBuffer, IBufferSet } from './Types';
+import { IBuffer, IBufferSet } from './Types';
 import { IBufferService, ILogService, IOptionsService } from '../services/Services';
 import { Emitter } from '../Event';
 
@@ -100,13 +100,13 @@ export class BufferSet extends Disposable implements IBufferSet {
   /**
    * Sets the alt Buffer of the BufferSet as its currently active Buffer
    */
-  public activateAltBuffer(fillAttr?: IAttributeData): void {
+  public activateAltBuffer(bg: number = 0): void {
     if (this._activeBuffer === this._alt) {
       return;
     }
     // Since the alt buffer is always cleared when the normal buffer is
     // activated, we want to fill it when switching to it.
-    this._alt.fillViewportRows(fillAttr);
+    this._alt.fillViewportRows(bg);
     this._alt.x = this._normal.x;
     this._alt.y = this._normal.y;
     this._activeBuffer = this._alt;

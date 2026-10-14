@@ -96,10 +96,11 @@ export class Buffer extends Disposable implements IBuffer {
     return this._whitespaceCell;
   }
 
-  public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
-    return new BufferLine(this._bufferService.cols, this.getNullCell(attr), isWrapped);
+  public getBlankLine(bg: number = 0, isWrapped?: boolean): IBufferLine {
+    const line = new BufferLine(this._bufferService.cols, isWrapped);
+    if (bg) line.fillWithNull(bg);
+    return line;
   }
-
   public get hasScrollback(): boolean {
     return this._hasScrollback && this.lines.maxLength > this._rows;
   }
@@ -133,12 +134,10 @@ export class Buffer extends Disposable implements IBuffer {
   /**
    * Fills the buffer's viewport with blank lines.
    */
-  public fillViewportRows(fillAttr?: IAttributeData): void {
+  public fillViewportRows(bg: number = 0): void {
     if (this.lines.length === 0) {
-      fillAttr ??= DEFAULT_ATTR_DATA;
-      let i = this._rows;
-      while (i--) {
-        this.lines.push(this.getBlankLine(fillAttr));
+      for (let i = this._rows; i--; ) {
+        this.lines.push(this.getBlankLine(bg));
       }
     }
   }
@@ -199,7 +198,7 @@ export class Buffer extends Disposable implements IBuffer {
             if (this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
               // Just add the new missing rows on Windows as conpty reprints the screen with its
               // view of the world. Once a line enters scrollback for conpty it remains there
-              this.lines.push(new BufferLine(newCols, nullCell, false));
+              this.lines.push(new BufferLine(newCols, false));
             } else {
               if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
                 // There is room above the buffer and there are no empty elements below the line,
@@ -213,7 +212,7 @@ export class Buffer extends Disposable implements IBuffer {
               } else {
                 // Add a blank line if there is no buffer left at the top to scroll to, or if there
                 // are blank lines after the cursor
-                this.lines.push(new BufferLine(newCols, nullCell, false));
+                this.lines.push(new BufferLine(newCols, false));
               }
             }
           }
@@ -344,7 +343,6 @@ export class Buffer extends Disposable implements IBuffer {
   }
 
   private _reflowLargerAdjustViewport(newCols: number, newRows: number, countRemoved: number): void {
-    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
     // Adjust viewport based on number of items removed
     let viewportAdjustments = countRemoved;
     while (viewportAdjustments-- > 0) {
@@ -354,7 +352,7 @@ export class Buffer extends Disposable implements IBuffer {
         }
         if (this.lines.length < newRows) {
           // Add an extra row at the bottom of the viewport
-          this.lines.push(new BufferLine(newCols, nullCell, false));
+          this.lines.push(new BufferLine(newCols, false));
         }
       } else {
         if (this.ydisp === this.ybase) {
@@ -411,7 +409,7 @@ export class Buffer extends Disposable implements IBuffer {
       // Add the new lines
       const newLines: BufferLine[] = [];
       for (let i = 0; i < linesToAdd; i++) {
-        const newLine = this.getBlankLine(DEFAULT_ATTR_DATA, true) as BufferLine;
+        const newLine = this.getBlankLine(0, true) as BufferLine;
         newLines.push(newLine);
       }
       if (newLines.length > 0) {

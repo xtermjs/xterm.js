@@ -21,7 +21,6 @@
  *   http://linux.die.net/man/7/urxvt
  */
 
-import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
 import { IBuffer, IMarker } from '../common/buffer/Types';
 import { CoreTerminal } from '../common/CoreTerminal';
 import { ITerminalOptions } from '../common/Types';
@@ -106,7 +105,7 @@ export class Terminal extends CoreTerminal {
     this.buffer.ybase = 0;
     this.buffer.y = 0;
     for (let i = 1; i < this.rows; i++) {
-      this.buffer.lines.push(this.buffer.getBlankLine(DEFAULT_ATTR_DATA));
+      this.buffer.lines.push(this.buffer.getBlankLine());
     }
     this._onScroll.fire({ position: this.buffer.ydisp });
   }

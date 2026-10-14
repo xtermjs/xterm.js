@@ -33,7 +33,7 @@ describe('OscLinkService', () => {
       bufferService.buffers.activateAltBuffer();
       const linkId = oscLinkService.registerLink({ id: 'foo', uri: 'bar' });
       assert.ok(linkId);
-      bufferService.scroll(new AttributeData());
+      bufferService.scroll();
       assert.notStrictEqual(oscLinkService.registerLink({ id: 'foo', uri: 'bar' }), linkId);
     });
 

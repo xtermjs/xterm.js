@@ -67,7 +67,7 @@ describe('BufferReflow', () => {
       line1.set(3, [0, '语', 2, '语'.charCodeAt(0)]);
       line1.set(4, [0, '', 0, 0]);
       line1.set(5, [0, 'b', 1, 'b'.charCodeAt(0)]);
-      const line2 = new BufferLine(6, undefined, true);
+      const line2 = new BufferLine(6, true);
       line2.set(0, [0, 'a', 1, 'a'.charCodeAt(0)]);
       line2.set(1, [0, '汉', 2, '汉'.charCodeAt(0)]);
       line2.set(2, [0, '', 0, 0]);
@@ -100,7 +100,7 @@ describe('BufferReflow', () => {
     function createWrappedLines(chars: string): CircularList<IBufferLine> {
       const lines = new CircularList<IBufferLine>(chars.length);
       for (let i = 0; i < chars.length; i++) {
-        const line = new BufferLine(1, undefined, i > 0);
+        const line = new BufferLine(1, i > 0);
         line.set(0, [0, chars[i], 1, chars.charCodeAt(i)]);
         lines.push(line);
       }

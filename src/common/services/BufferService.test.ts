@@ -19,7 +19,7 @@ describe('BufferService', () => {
       const buffer = bufferService.buffer;
 
       while (!buffer.lines.isFull) {
-        bufferService.scroll(eraseAttr);
+        bufferService.scroll();
       }
       assert.strictEqual(buffer.lines.length, 5);
 
@@ -27,7 +27,7 @@ describe('BufferService', () => {
       buffer.ydisp = 2;
       const ybaseBefore = buffer.ybase;
 
-      bufferService.scroll(eraseAttr);
+      bufferService.scroll();
 
       assert.strictEqual(buffer.ybase, ybaseBefore);
       assert.strictEqual(buffer.ydisp, 1);
@@ -42,7 +42,7 @@ describe('BufferService', () => {
       buffer.ydisp = 0;
       const ybaseBefore = buffer.ybase;
 
-      bufferService.scroll(eraseAttr);
+      bufferService.scroll();
 
       assert.strictEqual(buffer.ybase, ybaseBefore + 1);
       assert.strictEqual(buffer.ydisp, 0);
@@ -54,11 +54,11 @@ describe('BufferService', () => {
       const buffer = bufferService.buffer;
 
       while (!buffer.lines.isFull) {
-        bufferService.scroll(eraseAttr);
+        bufferService.scroll();
       }
 
       bufferService.isUserScrolling = false;
-      bufferService.scroll(eraseAttr);
+      bufferService.scroll();
 
       assert.strictEqual(buffer.ydisp, buffer.ybase);
     });
@@ -79,7 +79,7 @@ describe('BufferService', () => {
       buffer.scrollTop = 1;
       buffer.scrollBottom = 3;
 
-      bufferService.scroll(eraseAttr);
+      bufferService.scroll();
 
       assert.strictEqual(buffer.lines.get(buffer.ybase + 0)!.translateToString().trim(), 'A');
       assert.strictEqual(buffer.lines.get(buffer.ybase + 1)!.translateToString().trim(), 'C');

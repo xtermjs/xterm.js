@@ -6,7 +6,6 @@
 import { MockCompositionHelper, MockRenderer, MockViewport, TestTerminal } from './TestUtils.test';
 import type { IBrowser } from './Types';
 import { assert } from 'chai';
-import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
 import { CellData } from '../common/buffer/CellData';
 import { MockUnicodeService, createCellData } from '../common/TestUtils.test';
 import { IMarker } from '../common/buffer/Types';
@@ -119,7 +118,7 @@ describe('Terminal', () => {
         assert.equal(typeof e, 'number');
         done();
       });
-      term.scroll(DEFAULT_ATTR_DATA.clone());
+      term.scroll();
     });
     it('should fire the onTitleChange event', (done) => {
       term.onTitleChange(e => {
@@ -185,7 +184,7 @@ describe('Terminal', () => {
       assert.equal(term.buffer.lines.length, term.rows);
       assert.deepEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
+        assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine());
       }
     });
     it('should clear a buffer larger than rows', async () => {
@@ -200,7 +199,7 @@ describe('Terminal', () => {
       assert.equal(term.buffer.lines.length, term.rows);
       assert.deepEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
+        assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine());
       }
     });
     it('should not break the prompt when cleared twice', () => {
@@ -213,7 +212,7 @@ describe('Terminal', () => {
       assert.equal(term.buffer.lines.length, term.rows);
       assert.deepEqual(term.buffer.lines.get(0), promptLine);
       for (let i = 1; i < term.rows; i++) {
-        assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine(DEFAULT_ATTR_DATA));
+        assert.deepEqual(term.buffer.lines.get(i), term.buffer.getBlankLine());
       }
     });
   });
@@ -443,7 +442,7 @@ describe('Terminal', () => {
           term.buffer.lines.get(0)!.setCell(0, createCellData(0, 'a', 0));
           term.buffer.lines.get(INIT_ROWS - 1)!.setCell(0, createCellData(0, 'b', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
-          term.scroll(DEFAULT_ATTR_DATA.clone());
+          term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
           assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
           assert.equal(term.buffer.lines.get(INIT_ROWS - 1)!.loadCell(0, new CellData()).getChars(), 'b');
@@ -456,7 +455,7 @@ describe('Terminal', () => {
           term.buffer.lines.get(2)!.setCell(0, createCellData(0, 'c', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
-          term.scroll(DEFAULT_ATTR_DATA.clone());
+          term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
           assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c');
@@ -470,7 +469,7 @@ describe('Terminal', () => {
           term.buffer.lines.get(4)!.setCell(0, createCellData(0, 'e', 0));
           term.buffer.y = 3;
           term.buffer.scrollBottom = 3;
-          term.scroll(DEFAULT_ATTR_DATA.clone());
+          term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS + 1);
           assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a', '\'a\' should be pushed to the scrollback');
           assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'b');
@@ -489,7 +488,7 @@ describe('Terminal', () => {
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.buffer.scrollBottom = 3;
-          term.scroll(DEFAULT_ATTR_DATA.clone());
+          term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
           assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c', '\'b\' should be removed from the buffer');
@@ -511,7 +510,7 @@ describe('Terminal', () => {
           term.buffer.lines.get(INIT_ROWS - 1)!.setCell(0, createCellData(0, 'c', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           assert.equal(term.buffer.lines.length, INIT_ROWS);
-          term.scroll(DEFAULT_ATTR_DATA.clone());
+          term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           // 'a' gets pushed out of buffer
           assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'b');
@@ -526,7 +525,7 @@ describe('Terminal', () => {
           term.buffer.lines.get(2)!.setCell(0, createCellData(0, 'c', 0));
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
-          term.scroll(DEFAULT_ATTR_DATA.clone());
+          term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
           assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c');
@@ -540,7 +539,7 @@ describe('Terminal', () => {
           term.buffer.lines.get(4)!.setCell(0, createCellData(0, 'e', 0));
           term.buffer.y = 3;
           term.buffer.scrollBottom = 3;
-          term.scroll(DEFAULT_ATTR_DATA.clone());
+          term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'b');
           assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c');
@@ -558,7 +557,7 @@ describe('Terminal', () => {
           term.buffer.y = INIT_ROWS - 1; // Move cursor to last line
           term.buffer.scrollTop = 1;
           term.buffer.scrollBottom = 3;
-          term.scroll(DEFAULT_ATTR_DATA.clone());
+          term.scroll();
           assert.equal(term.buffer.lines.length, INIT_ROWS);
           assert.equal(term.buffer.lines.get(0)!.loadCell(0, new CellData()).getChars(), 'a');
           assert.equal(term.buffer.lines.get(1)!.loadCell(0, new CellData()).getChars(), 'c', '\'b\' should be removed from the buffer');
