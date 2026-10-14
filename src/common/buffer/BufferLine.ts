@@ -546,6 +546,7 @@ export class BufferLine implements IBufferLine {
     this.length = cols;
     logicalLine.firstBufferLine ??= this;
   }
+
   public reinit(cols: number,
     logicalLine: LogicalLine): void {
     this._logicalLine = logicalLine;

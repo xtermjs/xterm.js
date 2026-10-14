@@ -5,12 +5,12 @@
 
 import { Disposable } from '../Lifecycle';
 import { IAttributeData, IBuffer, IBufferLine, IBufferSet } from '../buffer/Types';
+import { BufferLine, LogicalLine } from '../buffer/BufferLine';
 import { BufferSet } from '../buffer/BufferSet';
 import { Buffer } from '../buffer/Buffer';
 import { Attributes } from '../buffer/Constants';
 import { IBufferService, ILogService, IOptionsService, type IBufferResizeEvent } from './Services';
 import { Emitter } from '../Event';
-import { BufferLine, LogicalLine } from '../buffer/BufferLine';
 
 export const enum BufferServiceConstants {
   MINIMUM_COLS = 2, // Less than 2 can mess with wide chars
