@@ -375,7 +375,9 @@ export class BufferLine implements IBufferLine {
       this.setCellFromCodepoint(end, 0, 1, fillCellData);
     }
 
-    this._fillCells(start, Math.min(end, this.length), fillCellData);
+    while (start < end  && start < this.length) {
+      this.setCell(start++, fillCellData);
+    }
   }
 
   /**
@@ -458,28 +460,8 @@ export class BufferLine implements IBufferLine {
     }
     this._combined = {};
     this._extendedAttrs = {};
-    this._fillCells(0, this.length, fillCellData);
-  }
-
-  /** Fill a range after the caller has invalidated the string cache. */
-  private _fillCells(start: number, end: number, cell: ICellData): void {
-    const content = cell.content;
-    const fg = cell.fg;
-    const bg = cell.bg;
-    if ((content & Content.IS_COMBINED_MASK) || (bg & BgFlags.HAS_EXTENDED)) {
-      for (let i = start; i < end; i++) {
-        this.setCell(i, cell);
-      }
-      return;
-    }
-    // Erases dominate screen-redrawing applications. Hoist the invariant
-    // attributes and sparse-map checks out of this common packed-cell loop.
-    const data = this._data;
-    const limit = end * Constants.CELL_INDICIES;
-    for (let i = start * Constants.CELL_INDICIES; i < limit; i += Constants.CELL_INDICIES) {
-      data[i + Cell.CONTENT] = content;
-      data[i + Cell.FG] = fg;
-      data[i + Cell.BG] = bg;
+    for (let i = 0; i < this.length; ++i) {
+      this.setCell(i, fillCellData);
     }
   }
 

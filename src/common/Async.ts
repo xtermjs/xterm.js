@@ -73,55 +73,6 @@ export class TimeoutTimer implements IDisposable {
   }
 }
 
-interface ITaskScheduler {
-  postTask(callback: () => void, options: { signal: AbortSignal, priority: 'user-visible' }): Promise<void>;
-}
-
-/** A cancellable macrotask, without the nested timer clamp where postTask is available. */
-export class MacrotaskTimer implements IDisposable {
-  private readonly _timer = new TimeoutTimer();
-  private _controller: AbortController | undefined;
-  private _isDisposed = false;
-
-  public dispose(): void {
-    this.cancel();
-    this._timer.dispose();
-    this._isDisposed = true;
-  }
-
-  public cancel(): void {
-    this._controller?.abort();
-    this._controller = undefined;
-    this._timer.cancel();
-  }
-
-  public cancelAndSet(runner: () => void): void {
-    if (this._isDisposed) {
-      throw new Error('Calling cancelAndSet on a disposed MacrotaskTimer');
-    }
-    this.cancel();
-    const scheduler = (globalThis as typeof globalThis & { scheduler?: ITaskScheduler }).scheduler;
-    if (!scheduler?.postTask) {
-      this._timer.cancelAndSet(runner, 0);
-      return;
-    }
-    const controller = this._controller = new AbortController();
-    let started = false;
-    // Keep user-visible priority: input and rendering must still get opportunities
-    // to run between slices. Microtasks would starve both.
-    scheduler.postTask(() => {
-      started = true;
-      this._controller = undefined;
-      runner();
-    }, { signal: controller.signal, priority: 'user-visible' }).catch(error => {
-      if (started || !controller.signal.aborted) {
-        // Match timer callbacks: report real callback failures as uncaught errors.
-        queueMicrotask(() => { throw error; });
-      }
-    });
-  }
-}
-
 /**
  * Schedules a single runner on the microtask queue. Unlike {@link TimeoutTimer}, a scheduled
  * microtask cannot be unqueued; {@link cancel} prevents the runner from executing if it has not

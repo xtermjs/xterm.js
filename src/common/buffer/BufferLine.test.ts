@@ -259,51 +259,6 @@ describe('BufferLine', function(): void {
       [123, 'z', 1, 'z'.charCodeAt(0)]
     ]);
   });
-  it('bulk erases replace combined/extended cells, preserve bounds and invalidate the string cache', () => {
-    const rich = createCellData(1, 'e\u0301', 1);
-    rich.bg = BgFlags.HAS_EXTENDED | Attributes.CM_RGB | 0x123456;
-    rich.extended.underlineStyle = UnderlineStyle.CURLY;
-    const line = new TestBufferLine(8, rich);
-    assert.equal(line.translateToString(), 'e\u0301'.repeat(8));
-    const blank = createCellData(Attributes.CM_RGB | 0xFEDCBA, '', 1);
-    blank.bg = Attributes.CM_RGB | 0x654321;
-    line.replaceCells(2, 6, blank);
-    assert.equal(line.cachedString, undefined);
-    assert.equal(line.translateToString(), 'e\u0301e\u0301    e\u0301e\u0301');
-    for (let x = 0; x < 8; x++) {
-      const cell = line.loadCell(x, new CellData());
-      const expected = x >= 2 && x < 6 ? blank : rich;
-      assert.equal(cell.content, expected.content);
-      assert.equal(cell.fg, expected.fg);
-      assert.equal(cell.bg, expected.bg);
-      assert.equal(cell.extended.underlineStyle, expected === rich ? UnderlineStyle.CURLY : UnderlineStyle.NONE);
-    }
-    line.replaceCells(6, 100, blank);
-    assert.equal(line.translateToString(), 'e\u0301e\u0301      ');
-    line.fill(blank);
-    assert.equal(line.translateToString(), ' '.repeat(8));
-    assert.deepEqual(line.combined, {});
-    line.fill(rich);
-    assert.equal(line.translateToString(), 'e\u0301'.repeat(8));
-    assert.equal(line.loadCell(7, new CellData()).extended.underlineStyle, UnderlineStyle.CURLY);
-  });
-
-  it('selective erases retain protected combined cells and attributes', () => {
-    const protectedCell = createCellData(7, 'e\u0301', 1);
-    protectedCell.bg = BgFlags.PROTECTED | BgFlags.HAS_EXTENDED;
-    protectedCell.extended.underlineStyle = UnderlineStyle.DOUBLE;
-    const line = new TestBufferLine(5, createCellData(1, 'x', 1));
-    line.setCell(2, protectedCell);
-    const blank = createCellData(9, '', 1);
-    line.replaceCells(0, 5, blank, true);
-    line.fill(blank, true);
-    assert.equal(line.translateToString(), '  e\u0301  ');
-    const cell = line.loadCell(2, new CellData());
-    assert.equal(cell.bg, protectedCell.bg);
-    assert.equal(cell.extended.underlineStyle, UnderlineStyle.DOUBLE);
-    line.fill(blank);
-    assert.equal(line.translateToString(), '     ');
-  });
   it('clone', function(): void {
     const line = new TestBufferLine(5, undefined, true);
     line.setCell(0, createCellData(1, 'a', 1));

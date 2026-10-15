@@ -4,14 +4,9 @@
  */
 
 import { assert } from 'chai';
-import { PACKED_CELL_BYTES, PACKED_CELL_WORDS, packI16Pair, packU16Pair, unpackI16 } from './GlyphRenderer';
+import { packI16Pair, packU16Pair, unpackI16 } from './GlyphRenderer';
 
 describe('GlyphRenderer packed cells', () => {
-  it('uses a compact five-word cell record', () => {
-    assert.equal(PACKED_CELL_WORDS, 5);
-    assert.equal(PACKED_CELL_BYTES, 20);
-  });
-
   it('round trips signed glyph offsets', () => {
     const packed = packI16Pair(-32768, 32767);
     assert.equal(unpackI16(packed), -32768);
