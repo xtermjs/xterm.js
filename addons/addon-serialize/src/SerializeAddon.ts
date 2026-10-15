@@ -214,7 +214,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
         if (
           // you must output character to cause overflow, control sequence can't do this
           nextRowFirstChar.getChars() &&
-            isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0
+          (isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0)
         ) {
           if (
             // the last character can't be null,
