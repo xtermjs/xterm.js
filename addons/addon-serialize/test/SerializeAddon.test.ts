@@ -550,6 +550,21 @@ test.describe('SerializeAddon', () => {
     await testNormalScreenEqual(ctx.page, lines.join(''));
   });
 
+  test('handle wrapped row starting with empty cell', async () => {
+    const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
+    const MOVE_TO = (row: number, col: number): string => `\u001b[${row};${col}H`;
+
+    // The wrap only happens when a character is printed, so the empty first
+    // cell of the wrapped row can't be written as a cursor move.
+    const segments = [
+      'abcdefghijXYZ',
+      MOVE_TO(2, 1),
+      CLEAR_RIGHT(1)
+    ];
+
+    await testNormalScreenEqual(ctx.page, segments.join(''));
+  });
+
   test.describe('handle modes', () => {
     test('applicationCursorKeysMode', async () => {
       await testSerializeEquals('test\u001b[?1h', 'test\u001b[?1h');
