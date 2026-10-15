@@ -53,7 +53,8 @@ const addonPackageDirs = [
   path.resolve(__dirname, '../addons/addon-unicode-graphemes'),
   path.resolve(__dirname, '../addons/addon-web-fonts'),
   path.resolve(__dirname, '../addons/addon-web-links'),
-  path.resolve(__dirname, '../addons/addon-webgl')
+  path.resolve(__dirname, '../addons/addon-webgl'),
+  path.resolve(__dirname, '../addons/addon-webgpu')
 ];
 log(`Checking if addons need to be published`, 'green');
 for (const p of addonPackageDirs) {
