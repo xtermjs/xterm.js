@@ -30,20 +30,20 @@ describe('DirtyCellUploadTracker', () => {
   });
 
   it('merges nearby ranges but preserves distant ranges', () => {
-    const tracker = new DirtyCellUploadTracker(32, 1, 20);
+    const tracker = new DirtyCellUploadTracker(64, 1, 20);
     tracker.mark(0, 0);
-    tracker.mark(13, 0);
-    tracker.mark(31, 0);
+    tracker.mark(26, 0);
+    tracker.mark(63, 0);
     assert.deepEqual(tracker.plan(), {
       ranges: [
-        { byteOffset: 0, byteLength: 280 },
-        { byteOffset: 620, byteLength: 20 }
+        { byteOffset: 0, byteLength: 540 },
+        { byteOffset: 1260, byteLength: 20 }
       ],
       sourceRangeCount: 2,
       dirtyCellCount: 3,
-      sourceUploadByteLength: 300,
-      uploadByteLength: 300,
-      overfetchByteLength: 240
+      sourceUploadByteLength: 560,
+      uploadByteLength: 560,
+      overfetchByteLength: 500
     });
   });
 
@@ -77,14 +77,14 @@ describe('DirtyCellUploadTracker', () => {
   });
 
   it('keeps ranges beyond the fixed merge gap separate', () => {
-    const tracker = new DirtyCellUploadTracker(120, 1, 20);
+    const tracker = new DirtyCellUploadTracker(140, 1, 20);
     for (let x = 0; x < 50; x++) tracker.mark(x, 0);
-    for (let x = 65; x < 115; x++) tracker.mark(x, 0);
+    for (let x = 80; x < 130; x++) tracker.mark(x, 0);
     const plan = tracker.plan();
     assert.equal(plan.sourceRangeCount, 2);
     assert.deepEqual(plan.ranges, [
       { byteOffset: 0, byteLength: 1000 },
-      { byteOffset: 1300, byteLength: 1000 }
+      { byteOffset: 1600, byteLength: 1000 }
     ]);
     assert.equal(plan.sourceUploadByteLength, 2000);
     assert.equal(plan.overfetchByteLength, 0);

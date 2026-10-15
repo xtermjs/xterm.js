@@ -6,7 +6,9 @@
 import type { ITextureAtlasDirtyRect } from './Types';
 
 export const enum UploadPlannerConstants {
-  BUFFER_MERGE_GAP_BYTES = 256,
+  // Coalesce small gaps within a row (for example a progress bar and its
+  // percentage), while avoiding uploads across long unchanged row tails.
+  BUFFER_MERGE_GAP_BYTES = 512,
   ATLAS_COPY_CALL_PIXEL_COST = 4096
 }
 

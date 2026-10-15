@@ -4,7 +4,7 @@
  * @license MIT
  */
 
-import { TimeoutTimer } from '../Async';
+import { MacrotaskTimer } from '../Async';
 import { Disposable, toDisposable } from '../Lifecycle';
 import { Emitter } from '../Event';
 
@@ -20,7 +20,7 @@ const enum Constants {
   DISCARD_WATERMARK = 50000000, // ~50 MB
   /**
    * The max number of ms to spend on writes before allowing the renderer to
-   * catch up with a 0ms setTimeout. A value of < 33 to keep us close to
+   * catch up with a macrotask. A value of < 33 to keep us close to
    * 30fps, and a value of < 16 to try to run at 60fps. Of course, the real FPS
    * depends on the time it takes for the renderer to draw the frame.
    */
@@ -42,7 +42,7 @@ export class WriteBuffer extends Disposable {
   private _syncCalls = 0;
   private _didUserInput = false;
 
-  private readonly _innerWriteTimer = this._register(new TimeoutTimer());
+  private readonly _innerWriteTimer = this._register(new MacrotaskTimer());
   private readonly _onWriteParsed = this._register(new Emitter<void>());
   public readonly onWriteParsed = this._onWriteParsed.event;
 
@@ -213,7 +213,7 @@ export class WriteBuffer extends Disposable {
     if (this._store.isDisposed) {
       return;
     }
-    this._innerWriteTimer.cancelAndSet(() => this._innerWrite(lastTime, promiseResult), 0);
+    this._innerWriteTimer.cancelAndSet(() => this._innerWrite(lastTime, promiseResult));
   }
 
   protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
@@ -242,7 +242,7 @@ export class WriteBuffer extends Disposable {
          */
 
         /**
-         * If a promise takes long to resolve, we should schedule continuation behind setTimeout.
+         * If a promise takes long to resolve, schedule continuation as a macrotask.
          * This might already be too late, if our .then enters really late (executor + prev thens
          * took very long). This cannot be solved here for the handler itself (it is the handlers
          * responsibility to slice hard work), but we can at least schedule a screen update as we

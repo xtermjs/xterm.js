@@ -10,10 +10,10 @@ import { CursorBlinkStateManager } from './CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from './DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IThemeService } from 'browser/services/Services';
-import { CharData, IBufferLine, ICellData } from 'common/buffer/Types';
+import { CharData, IBuffer, IBufferLine, ICellData } from 'common/buffer/Types';
 import { AttributeData } from 'common/buffer/AttributeData';
 import { CellData } from 'common/buffer/CellData';
-import { Attributes, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
+import { Attributes, BgFlags, Content, FgFlags, NULL_CELL_CHAR, NULL_CELL_CODE } from 'common/buffer/Constants';
 import { TextBlinkStateManager } from 'browser/renderer/shared/TextBlinkStateManager';
 import { ICoreService, IDecorationService, ILogService, IOptionsService } from 'common/services/Services';
 import { Terminal } from '@xterm/xterm';
@@ -29,6 +29,7 @@ import { combinedDisposable, Disposable, MutableDisposable, toDisposable } from 
 import { createRenderDimensions } from 'browser/renderer/shared/RendererUtils';
 import { toError } from './WebgpuUtils';
 import { acquireDevice, type IDeviceReference } from './DeviceManager';
+import { blockPatternCodepoints } from './customGlyphs/CustomGlyphDefinitions';
 
 const enum Constants {
   MERGE_RETRY_LIMIT = 32
@@ -49,6 +50,10 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
   private _rowHasBlinkingCellsCount: number = 0;
   private _workCell: ICellData = new CellData();
   private _cellColorResolver: CellColorResolver;
+  private _renderedLines: (IBufferLine | undefined)[] = [];
+  private _renderedBuffer: IBuffer | undefined;
+  private _fastPathCells = 0;
+  private _reusedRows = 0;
 
   private _canvas: HTMLCanvasElement;
   private readonly _colorAttachment: GPURenderPassColorAttachment;
@@ -236,13 +241,15 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
   }
 
   /** Internal diagnostics consumed by the local renderer benchmark. */
-  public get diagnostics(): Readonly<IWebgpuRenderDiagnostics> | undefined {
+  public get diagnostics(): Readonly<IWebgpuRenderDiagnostics & { fastPathCells: number, reusedRows: number }> | undefined {
     const diagnostics = this._glyphRenderer.value?.diagnostics;
     if (!diagnostics) {
       return undefined;
     }
     return {
       ...diagnostics,
+      fastPathCells: this._fastPathCells,
+      reusedRows: this._reusedRows,
       cursorUploadBytes: this._rectangleRenderer.value?.cursorUploadBytes ?? 0
     };
   }
@@ -415,6 +422,8 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
    */
   private _clearModel(clearGlyphRenderer: boolean): void {
     this._model.clear();
+    this._renderedLines.length = 0;
+    this._renderedBuffer = undefined;
     if (clearGlyphRenderer) {
       this._glyphRenderer.value?.clear();
     }
@@ -467,6 +476,9 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
       this._updateModel(0, this._terminal.rows - 1);
     } else {
       // just update changed lines to draw
+      if (start === 0 && end === this._terminal.rows - 1) {
+        this._reuseScrolledRows();
+      }
       this._updateModel(start, end);
     }
 
@@ -518,6 +530,45 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
     this._requestRedrawCursor();
   }
 
+  private _reuseScrolledRows(): void {
+    const { buffer, rows } = this._core;
+    if (buffer !== this._renderedBuffer || this._renderedLines.length !== rows) {
+      return;
+    }
+    // BufferLine objects are mutable and may be recycled. Identity only identifies a
+    // possible scroll: _updateModel still validates every cell, including combined data.
+    const first = buffer.lines.get(buffer.ydisp);
+    if (!first || !this._renderedLines[0]) {
+      return;
+    }
+    let offset = this._renderedLines.indexOf(first);
+    if (offset === 0) {
+      return;
+    }
+    if (offset < 0) {
+      offset = 0;
+      for (let y = 1; y < rows; y++) {
+        if (buffer.lines.get(buffer.ydisp + y) === this._renderedLines[0]) {
+          offset = -y;
+          break;
+        }
+      }
+    }
+    if (offset === 0) {
+      return;
+    }
+    const start = Math.max(0, -offset);
+    const end = Math.min(rows, rows - offset);
+    for (let y = start; y < end; y++) {
+      if (buffer.lines.get(buffer.ydisp + y) !== this._renderedLines[y + offset]) {
+        return;
+      }
+    }
+    this._model.scrollRows(offset, rows);
+    this._glyphRenderer.value!.scrollRows(offset);
+    this._reusedRows += end - start;
+  }
+
   private _updateModel(start: number, end: number): void {
     const terminal = this._core;
     let cell: ICellData = this._workCell;
@@ -554,14 +605,18 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
       this._coreService.isCursorInitialized &&
       !this._coreService.isCursorHidden &&
       (!this._cursorBlinkStateManager.value || this._cursorBlinkStateManager.value.isCursorVisible);
+    const canUsePlainCells = !this._model.selection.hasSelection && this._decorationService.decorations.next().done;
+    this._renderedBuffer = terminal.buffer;
     this._model.cursor = undefined;
     for (y = start; y <= end; y++) {
+      const rowOffset = this._model.getRowOffset(y, terminal.cols, terminal.rows);
       row = y + terminal.buffer.ydisp;
       const bufferLine = terminal.buffer.lines.get(row);
+      this._renderedLines[y] = bufferLine;
       if (!bufferLine) {
         this._model.lineLengths[y] = 0;
         for (x = 0; x < terminal.cols; x++) {
-          j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
+          j = (rowOffset + x) * RenderModelConstants.INDICIES_PER_CELL;
           this._nullModelCell(x, y, j, 0, 0, 0);
         }
         this._setRowBlinkState(y, false);
@@ -573,7 +628,14 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
       isCursorRow = cursorY === row;
       skipJoinedCheckUntilX = 0;
       joinedRanges = this._characterJoinerService.getJoinedCharacters(row);
+      const plainRow = canUsePlainCells && joinedRanges.length === 0 && !(isCursorVisible && isCursorRow);
       for (x = 0; x < terminal.cols; x++) {
+        if (plainRow) {
+          x = this._updatePlainCells(line, x, y, row, rowOffset);
+          if (x === terminal.cols) {
+            break;
+          }
+        }
         lastBg = this._cellColorResolver.result.bg;
         line.loadCell(x, cell);
 
@@ -624,7 +686,7 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
 
         chars = cell.getChars();
         code = cell.getCode();
-        cellIndex = y * terminal.cols + x;
+        cellIndex = rowOffset + x;
         i = cellIndex * RenderModelConstants.INDICIES_PER_CELL;
 
         if (!rowHasBlinkingCells && cell.isBlink()) {
@@ -682,7 +744,7 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
             this._model.cells[i + RenderModelConstants.FG_OFFSET] === this._cellColorResolver.result.fg &&
             this._model.cells[i + RenderModelConstants.EXT_OFFSET] === this._cellColorResolver.result.ext &&
             this._model.combinedChars[cellIndex] === (chars.length > 1 ? chars : undefined) &&
-            this._model.widths[cellIndex] === width) {
+            this._model.widths[cellIndex] === width && this._model.lastBg[cellIndex] === lastBg) {
           if (isJoined) {
             cell = this._workCell;
             x = lastCharX;
@@ -697,6 +759,7 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
         this._model.cells[i + RenderModelConstants.EXT_OFFSET] = this._cellColorResolver.result.ext;
         this._model.combinedChars[cellIndex] = chars.length > 1 ? chars : undefined;
         this._model.widths[cellIndex] = width;
+        this._model.lastBg[cellIndex] = lastBg;
 
         this._glyphRenderer.value!.updateCell(
           x,
@@ -716,7 +779,7 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
 
           // Null out non-first cells
           for (x++; x <= lastCharX; x++) {
-            j = ((y * terminal.cols) + x) * RenderModelConstants.INDICIES_PER_CELL;
+            j = (rowOffset + x) * RenderModelConstants.INDICIES_PER_CELL;
             // Don't re-resolve the cell color since multi-colored ligature backgrounds are not
             // supported
             this._nullModelCell(x, y, j, this._cellColorResolver.result.bg, this._cellColorResolver.result.fg, this._cellColorResolver.result.ext);
@@ -728,6 +791,68 @@ export class WebgpuRenderer extends Disposable implements IRenderer {
     }
     this._rectangleRenderer.value!.updateCursor(this._model);
     this._updateTextBlinkState();
+  }
+
+  /** Consume a run of simple cells, returning the first cell needing full resolution. */
+  private _updatePlainCells(line: IBufferLine, start: number, y: number, row: number, rowOffset: number): number {
+    // Keep this common loop separate from cursor/joiner/decoration handling. Besides
+    // avoiding string allocations, it lets the engine optimize a much smaller loop.
+    const model = this._model;
+    const result = this._cellColorResolver.result;
+    const cells = model.cells;
+    const widths = model.widths;
+    const lastBackgrounds = model.lastBg;
+    const glyphRenderer = this._glyphRenderer.value!;
+    const cols = this._core.cols;
+    const cellWidth = this.dimensions.device.cell.width;
+    const patternRow = (row * this.dimensions.device.cell.height) % 2;
+    let lastBg = result.bg;
+    let lastFg = result.fg;
+    let lastExt = result.ext;
+    let lineLength = model.lineLengths[y];
+    let x = start;
+    for (; x < cols; x++) {
+      // The content mask includes the combined flag. A single read rejects both
+      // combined strings and astral codepoints without looking up their strings.
+      const code = line.hasContent(x);
+      const fg = line.getFg(x);
+      const bg = line.getBg(x);
+      // Astral codepoints need a UTF-16 string for the atlas's combined-glyph cache.
+      if (code > 0xFFFF || (bg & BgFlags.HAS_EXTENDED) || (fg & FgFlags.BLINK)) {
+        break;
+      }
+      const width = line.getWidth(x);
+      // Match CellColorResolver's absolute buffer-row pattern phase after scrolling.
+      const ext = code >= 256 && blockPatternCodepoints.has(code)
+        ? ((((x * cellWidth) % 2) * 2 + patternRow) << 29) >>> 0 : 0;
+      if (code !== NULL_CELL_CODE) {
+        lineLength = x + 1;
+      }
+      const cellIndex = rowOffset + x;
+      const i = cellIndex * RenderModelConstants.INDICIES_PER_CELL;
+      if (cells[i] !== code || cells[i + 1] !== bg ||
+          cells[i + 2] !== fg || cells[i + 3] !== ext ||
+          widths[cellIndex] !== width || lastBackgrounds[cellIndex] !== lastBg) {
+        cells[i] = code;
+        cells[i + 1] = bg;
+        cells[i + 2] = fg;
+        cells[i + 3] = ext;
+        widths[cellIndex] = width;
+        model.combinedChars[cellIndex] = undefined;
+        lastBackgrounds[cellIndex] = lastBg;
+        glyphRenderer.updateCell(x, y, code, bg, fg, ext, '', width, lastBg);
+      }
+      lastBg = bg;
+      lastFg = fg;
+      lastExt = ext;
+    }
+    // Publish once per run so the following complex cell sees its actual neighbor.
+    result.bg = lastBg;
+    result.fg = lastFg;
+    result.ext = lastExt;
+    model.lineLengths[y] = lineLength;
+    this._fastPathCells += x - start;
+    return x;
   }
 
   private _nullModelCell(x: number, y: number, cellIndex: number, bg: number, fg: number, ext: number): void {

@@ -99,6 +99,11 @@ fn backgroundColor(colorAttribute: u32, useForegroundDefault: bool) -> vec4f {
   }
   return colors.values[select(0u, 1u, useForegroundDefault)];
 }
+fn storageCell(instanceIndex: u32) -> u32 {
+  let cols = uniforms.grid.x;
+  let row = (instanceIndex / cols + uniforms.grid.z) % uniforms.grid.y;
+  return row * cols + instanceIndex % cols;
+}
 fn atlasDimensions(page: u32) -> vec2f {
   switch page {
     ${textureDimensionsCases}
@@ -123,8 +128,9 @@ fn backgroundVertex(@builtin(vertex_index) vertexIndex: u32, @builtin(instance_i
   output.position = vec4f(clip.x * 2.0 - 1.0, 1.0 - clip.y * 2.0, 0.0, 1.0);
   output.textureCoordinates = vec2f(0.0);
   output.texturePage = 0u;
-  let flags = cells[instanceIndex * ${PACKED_CELL_WORDS}u + 3u];
-  output.color = backgroundColor(cells[instanceIndex * ${PACKED_CELL_WORDS}u + 4u], (flags & ${BACKGROUND_DEFAULT_FOREGROUND}u) != 0u);
+  let base = storageCell(instanceIndex) * ${PACKED_CELL_WORDS}u;
+  let flags = cells[base + 3u];
+  output.color = backgroundColor(cells[base + 4u], (flags & ${BACKGROUND_DEFAULT_FOREGROUND}u) != 0u);
   return output;
 }
 @fragment
@@ -133,7 +139,7 @@ fn backgroundFragment(input: VertexOutput) -> @location(0) vec4f { return input.
 @vertex
 fn glyphVertex(@builtin(vertex_index) vertexIndex: u32, @builtin(instance_index) instanceIndex: u32) -> VertexOutput {
   let q = quad(vertexIndex);
-  let base = instanceIndex * ${PACKED_CELL_WORDS}u;
+  let base = storageCell(instanceIndex) * ${PACKED_CELL_WORDS}u;
   let packedOffset = cells[base];
   let packedSize = cells[base + 1u];
   let packedPosition = cells[base + 2u];
@@ -193,6 +199,8 @@ export class GlyphRenderer extends Disposable {
   private _cells = new Uint32Array(0);
   private _dirtyCells!: DirtyCellUploadTracker;
   private _cellCount = 0;
+  private readonly _rowOrigin = new Uint32Array(1);
+  private _rowOriginDirty = false;
   private _atlas: ITextureAtlas | undefined;
   private _lastSeenPageLayoutVersion = -1;
   private _pageOverflowWarned = false;
@@ -298,6 +306,7 @@ export class GlyphRenderer extends Disposable {
   }
 
   public updateCell(x: number, y: number, code: number, bg: number, fg: number, ext: number, chars: string, width: number, lastBg: number): void {
+    y = (y + this._rowOrigin[0]) % this._terminal.rows;
     const index = (y * this._terminal.cols + x) * PACKED_CELL_WORDS;
     const inverseBackground = !!(fg & FgFlags.INVERSE);
     const backgroundFlags = inverseBackground ? BACKGROUND_DEFAULT_FOREGROUND : 0;
@@ -336,9 +345,20 @@ export class GlyphRenderer extends Disposable {
   public clear(): void {
     this._cells.fill(0);
     this._dirtyCells.markAll();
+    this._rowOrigin[0] = 0;
+    this._rowOriginDirty = true;
+  }
+
+  /** Move the logical viewport over persistent GPU rows without uploading retained rows. */
+  public scrollRows(offset: number): void {
+    const { rows } = this._terminal;
+    this._rowOrigin[0] = (this._rowOrigin[0] + offset + rows) % rows;
+    this._rowOriginDirty = true;
   }
 
   public handleResize(): void {
+    this._rowOrigin[0] = 0;
+    this._rowOriginDirty = false;
     this._cellCount = this._terminal.cols * this._terminal.rows;
     this._cells = new Uint32Array(this._cellCount * PACKED_CELL_WORDS);
     this._dirtyCells = new DirtyCellUploadTracker(this._terminal.cols, this._terminal.rows, PACKED_CELL_BYTES);
@@ -359,6 +379,10 @@ export class GlyphRenderer extends Disposable {
   public prepareFrame(): void {
     if (!this._atlas || this._cellCount === 0) {
       return;
+    }
+    if (this._rowOriginDirty) {
+      this._device.queue.writeBuffer(this._uniformBuffer, 24, this._rowOrigin);
+      this._rowOriginDirty = false;
     }
     this._uploadDirtyCells();
     if (this._uploadAtlasChanges()) {
