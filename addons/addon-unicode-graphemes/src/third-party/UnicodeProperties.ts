@@ -35,6 +35,13 @@ export const GRAPHEME_BREAK_ExtPic = 11;
 // and become GRAPHEME_BREAK_Other when masked with GRAPHEME_BREAK_MASK.)
 const GRAPHEME_BREAK_SAW_Regional_Pair = 32;
 
+// Only used in the state returned from shouldJoin, to remember that an
+// Extend or ZWJ was preceded by ExtPic Extend*, as rule GB11 requires.
+// (Must be distinct from the GRAPHEME_BREAK_Xxx values above
+// and fit in GRAPHEME_BREAK_MASK.)
+const GRAPHEME_BREAK_ExtPic_Extend = 12;
+const GRAPHEME_BREAK_ExtPic_ZWJ = 13;
+
 export const CHARWIDTH_NORMAL = 0;
 export const CHARWIDTH_FORCE_1COLUMN = 1;
 export const CHARWIDTH_EA_AMBIGUOUS = 2;
@@ -90,8 +97,14 @@ export function shouldJoin(beforeState: number, afterInfo: number): number {
     if (_shouldJoin(beforeCode, afterCode)) {
         if (afterCode === GRAPHEME_BREAK_Regional_Indicator)
             return GRAPHEME_BREAK_SAW_Regional_Pair;
-        else
-            return afterCode + 16;
+        if (beforeCode === GRAPHEME_BREAK_ExtPic
+            || beforeCode === GRAPHEME_BREAK_ExtPic_Extend) {
+            if (afterCode === GRAPHEME_BREAK_Extend)
+                return GRAPHEME_BREAK_ExtPic_Extend + 16;
+            if (afterCode === GRAPHEME_BREAK_ZWJ)
+                return GRAPHEME_BREAK_ExtPic_ZWJ + 16;
+        }
+        return afterCode + 16;
     } else
         return afterCode - 16;
 }
@@ -99,7 +112,10 @@ export function shouldJoin(beforeState: number, afterInfo: number): number {
 export function shouldJoinBackwards(beforeInfo: number, afterState: number): number {
     let afterCode = (afterState & GRAPHEME_BREAK_MASK) >> GRAPHEME_BREAK_SHIFT;
     let beforeCode = (beforeInfo & GRAPHEME_BREAK_MASK) >> GRAPHEME_BREAK_SHIFT;
-    if (_shouldJoin(beforeCode, afterCode)) {
+    // Looking backwards we can't see what precedes a ZWJ,
+    // so assume the ExtPic Extend* that GB11 requires.
+    if (_shouldJoin(beforeCode === GRAPHEME_BREAK_ZWJ ? GRAPHEME_BREAK_ExtPic_ZWJ : beforeCode,
+                    afterCode)) {
         if (beforeCode === GRAPHEME_BREAK_Regional_Indicator)
             return GRAPHEME_BREAK_SAW_Regional_Pair;
         else
@@ -133,7 +149,7 @@ function _shouldJoin(beforeCode: number, afterCode: number): boolean {
         || beforeCode == GRAPHEME_BREAK_Prepend // GB9a
         || afterCode == GRAPHEME_BREAK_SpacingMark) // GB9b
         return true;
-    if (beforeCode == GRAPHEME_BREAK_ZWJ // GB11
+    if (beforeCode == GRAPHEME_BREAK_ExtPic_ZWJ // GB11
         && afterCode == GRAPHEME_BREAK_ExtPic)
         return true;
     if (afterCode == GRAPHEME_BREAK_Regional_Indicator // GB12, GB13
