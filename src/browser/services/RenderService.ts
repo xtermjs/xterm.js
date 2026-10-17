@@ -156,7 +156,13 @@ export class RenderService extends Disposable implements IRenderService {
   public refreshRows(start: number, end: number, sync: boolean = false, isRedrawOnly: boolean = false): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
-      return;
+      // A sync refresh means the renderer has nothing on screen (eg. its canvas was just cleared
+      // by a resize). The intersection observer reports a frame late, so the terminal may
+      // already be visible again: render now instead of showing it blank until then.
+      if (!sync) {
+        return;
+      }
+      this._pausedResizeTask.flush();
     }
 
     if (this._coreService.decPrivateModes.synchronizedOutput) {
@@ -250,9 +256,14 @@ export class RenderService extends Disposable implements IRenderService {
     if (this._renderer.value) {
       this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, e.sync, true));
 
-      // Force a refresh
+      // Force a refresh. A new renderer starts out blank, so while paused render it right away,
+      // see refreshRows.
       this._needsSelectionRefresh = true;
-      this._fullRefresh();
+      if (this._isPaused) {
+        this.refreshRows(0, this._rowCount - 1, true);
+      } else {
+        this._fullRefresh();
+      }
     }
   }
 
