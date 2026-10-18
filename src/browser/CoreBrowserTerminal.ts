@@ -27,6 +27,7 @@ import * as Strings from './LocalizableStrings';
 import { OscLinkProvider } from './OscLinkProvider';
 import { CharacterJoinerHandler, CustomKeyEventHandler, CustomWheelEventHandler, IBrowser, IBufferRange, ICompositionHelper, ILinkifier2, ITerminal } from './Types';
 import { Viewport } from './Viewport';
+import { isTextKey } from './input/TextKey';
 import { BufferDecorationRenderer } from './decorations/BufferDecorationRenderer';
 import { OverviewRulerRenderer } from './decorations/OverviewRulerRenderer';
 import { CompositionHelper } from './input/CompositionHelper';
@@ -113,6 +114,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * screen readers will announce it.
    */
   private _keyPressHandled: boolean = false;
+
+  /**
+   * The text of the last keydown whose `key` was a whole utterance rather than a key name, so the
+   * matching `insertText` input event can be let through even though a keydown was seen.
+   */
+  private _textKeyDownData: string | undefined;
 
   /**
    * Records whether there has been a keydown event for a dead key without a corresponding keydown
@@ -851,6 +858,13 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
+    // Accessibility-API writers (eg. macOS dictation) put the whole utterance in `key`, the text
+    // itself arrives with the input event.
+    this._textKeyDownData = isTextKey(event.key) ? event.key : undefined;
+    if (this._textKeyDownData !== undefined) {
+      return true;
+    }
+
     // Ignore composing with Alt key on Mac when macOptionIsMeta is enabled
     const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
 
@@ -981,7 +995,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
     this._keyPressHandled = false;
 
-    if (this._keyDownHandled) {
+    if (this._keyDownHandled || isTextKey(ev.key)) {
       return false;
     }
 
@@ -1027,10 +1041,13 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
+    const isTextKeyInput = ev.data !== undefined && ev.data === this._textKeyDownData;
+    this._textKeyDownData = undefined;
+
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
     // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
-    if (ev.data && ev.inputType === 'insertText' && (!ev.composed || !this._keyDownSeen) && !this.optionsService.rawOptions.screenReaderMode) {
+    if (ev.data && ev.inputType === 'insertText' && (!ev.composed || !this._keyDownSeen || isTextKeyInput) && !this.optionsService.rawOptions.screenReaderMode) {
       if (this._keyPressHandled) {
         return false;
       }

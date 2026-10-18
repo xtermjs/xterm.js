@@ -136,6 +136,87 @@ describe('Terminal', () => {
     });
   });
 
+  describe('accessibility-API text insertion', () => {
+    const SENTENCE = 'This is the fourth test of the transcription into the terminal test.';
+    let sent: string[];
+
+    function keyEvent(type: string, key: string, keyCode: number): KeyboardEvent {
+      return { type, key, keyCode, which: keyCode, charCode: keyCode, preventDefault: () => { }, stopPropagation: () => { } } as unknown as KeyboardEvent;
+    }
+
+    function insertText(data: string, composed = true): InputEvent {
+      return { data, inputType: 'insertText', composed } as InputEvent;
+    }
+
+    beforeEach(() => {
+      sent = [];
+      term.onData(data => sent.push(data));
+      (term as any).textarea = { value: '' };
+    });
+
+    it('should send a dictated sentence once and no stray first character', () => {
+      term.keyDown(keyEvent('keydown', SENTENCE, 84));
+      term.keyPress(keyEvent('keypress', SENTENCE, 84));
+      term.inputEvent(insertText(SENTENCE));
+      assert.deepEqual(sent, [SENTENCE]);
+    });
+
+    it('should send a single dictated word once', () => {
+      term.keyDown(keyEvent('keydown', 'Hello', 72));
+      term.keyPress(keyEvent('keypress', 'Hello', 72));
+      term.inputEvent(insertText('Hello'));
+      assert.deepEqual(sent, ['Hello']);
+    });
+
+    it('should not let a dictated utterance suppress a later identical insertText', () => {
+      term.keyDown(keyEvent('keydown', SENTENCE, 84));
+      term.inputEvent(insertText(SENTENCE));
+      term.keyDown(keyEvent('keydown', 'a', 65));
+      assert.equal(term.inputEvent(insertText(SENTENCE)), false);
+      assert.deepEqual(sent, [SENTENCE, 'a']);
+    });
+
+    it('should send an ordinary typed character once', () => {
+      term.keyDown(keyEvent('keydown', 'a', 65));
+      term.inputEvent(insertText('a'));
+      assert.deepEqual(sent, ['a']);
+    });
+
+    it('should still drop composed insertText that follows a keydown (emoji IME, #3679)', () => {
+      term.keyDown(keyEvent('keydown', 'Process', 229));
+      assert.equal(term.inputEvent(insertText('\u{1F600}')), false);
+      assert.deepEqual(sent, []);
+    });
+
+    it('should still send composed insertText when no keydown preceded it (emoji IME, #3679)', () => {
+      assert.equal(term.inputEvent(insertText('\u{1F600}')), true);
+      assert.deepEqual(sent, ['\u{1F600}']);
+    });
+
+    it('should treat a single emoji key as a normal one-character key', () => {
+      term.keyDown(keyEvent('keydown', '\u{1F600}', 229));
+      assert.equal(term.inputEvent(insertText('\u{1F600}')), false);
+    });
+
+    for (const [key, keyCode, expected] of [
+      ['Enter', 13, '\r'],
+      ['ArrowLeft', 37, '\x1b[D'],
+      ['F1', 112, '\x1bOP']
+    ] as const) {
+      it(`should still send ${key} as a key`, () => {
+        term.keyDown(keyEvent('keydown', key, keyCode));
+        assert.deepEqual(sent, [expected]);
+      });
+    }
+
+    for (const [key, keyCode] of [['Unidentified', 0], ['Dead', 222], ['Process', 229]] as const) {
+      it(`should still treat ${key} as a named key, not text`, () => {
+        term.keyDown(keyEvent('keydown', key, keyCode));
+        assert.equal(term.inputEvent(insertText(key)), false);
+      });
+    }
+  });
+
   describe('attachCustomKeyEventHandler', () => {
     const evKeyDown = {
       preventDefault: () => { },
