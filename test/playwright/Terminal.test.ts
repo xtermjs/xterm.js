@@ -323,6 +323,28 @@ test.describe('API Integration Tests', () => {
       deepStrictEqual(await ctx.page.evaluate(`window.calls`), ['f', 'o', 'o']);
     });
 
+    test('onData with text inserted through the accessibility API', async () => {
+      const sentence = 'This is the fourth test of the transcription into the terminal test.';
+      await openTerminal(ctx);
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.term.onData(e => calls.push(e));
+      `);
+      await ctx.page.evaluate((text) => {
+        const textarea = document.querySelector('.xterm-helper-textarea') as HTMLTextAreaElement;
+        textarea.focus();
+        for (const type of ['keydown', 'keypress']) {
+          const event = new KeyboardEvent(type, { key: text, code: 'KeyT', bubbles: true, cancelable: true });
+          for (const property of ['keyCode', 'charCode', 'which']) {
+            Object.defineProperty(event, property, { value: 84 });
+          }
+          textarea.dispatchEvent(event);
+        }
+        textarea.dispatchEvent(new InputEvent('input', { inputType: 'insertText', data: text, composed: true, bubbles: true }));
+      }, sentence);
+      deepStrictEqual(await ctx.page.evaluate(`window.calls`), [sentence]);
+    });
+
     test('onKey', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`
