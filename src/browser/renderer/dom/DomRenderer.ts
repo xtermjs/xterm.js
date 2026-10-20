@@ -399,11 +399,9 @@ export class DomRenderer extends Disposable implements IRenderer {
     // Determine new selection viewport band and create overlays
     let newViewportStart = 0;
     let newViewportEnd = -1;
-    if (!start || !end) {
-      return;
-    }
+    // Update even when cleared so resize cannot reuse stale selection coordinates.
     this._selectionRenderModel.update(this._terminal, start, end, columnSelectMode);
-    if (this._selectionRenderModel.hasSelection) {
+    if (start && end && this._selectionRenderModel.hasSelection) {
       const viewportStartRow = this._selectionRenderModel.viewportStartRow;
       const viewportEndRow = this._selectionRenderModel.viewportEndRow;
       const viewportCappedStartRow = this._selectionRenderModel.viewportCappedStartRow;
