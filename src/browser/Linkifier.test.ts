@@ -126,4 +126,26 @@ describe('Linkifier2', () => {
     linkifier.linkLeave({ classList: { add: () => { } } } as any, multiLineLink, {} as any);
   });
 
+  it('should keep links on different wrapped rows that share x ranges', () => {
+    const createLink = (startX: number, startY: number, endX: number, endY: number): ILink => ({
+      text: 'foo',
+      range: { start: { x: startX, y: startY }, end: { x: endX, y: endY } },
+      activate: () => { }
+    });
+    const wrappedLink = createLink(5, 1, 10, 2);
+    const secondRowLink = createLink(20, 2, 30, 2);
+    const overlappingLink = createLink(8, 2, 12, 2);
+    const linkProviderService = new LinkProviderService();
+    linkProviderService.registerLinkProvider({ provideLinks: (y, callback) => callback([wrappedLink]) });
+    linkProviderService.registerLinkProvider({ provideLinks: (y, callback) => callback([secondRowLink, overlappingLink]) });
+    const dom = new jsdom.JSDOM();
+    const wrappedLinkifier = new TestLinkifier2(dom.window.document.createElement('div'), null!, null!, bufferService, linkProviderService) as any;
+    wrappedLinkifier._isMouseOut = false;
+
+    wrappedLinkifier._askForLink({ x: 1, y: 1 }, false);
+
+    const replies = wrappedLinkifier._activeProviderReplies;
+    assert.deepEqual(replies.get(0).map((e: { link: ILink }) => e.link), [wrappedLink]);
+    assert.deepEqual(replies.get(1).map((e: { link: ILink }) => e.link), [secondRowLink]);
+  });
 });
