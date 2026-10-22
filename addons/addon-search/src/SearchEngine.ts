@@ -76,6 +76,9 @@ export class SearchEngine {
     // Search from startRow + 1 to end
     if (!result) {
       for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
+        if (this._isWrappedRow(y)) {
+          continue;
+        }
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
         result = this._findInLine(term, searchPosition, searchOptions);
@@ -127,6 +130,9 @@ export class SearchEngine {
     // Search from startRow + 1 to end
     if (!result) {
       for (let y = startRow + 1; y < this._terminal.buffer.active.baseY + this._terminal.rows; y++) {
+        if (this._isWrappedRow(y)) {
+          continue;
+        }
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
         result = this._findInLine(term, searchPosition, searchOptions);
@@ -138,6 +144,9 @@ export class SearchEngine {
     // If we hit the bottom and didn't search from the very top wrap back up
     if (!result && startRow !== 0) {
       for (let y = 0; y < startRow; y++) {
+        if (this._isWrappedRow(y)) {
+          continue;
+        }
         searchPosition.startRow = y;
         searchPosition.startCol = 0;
         result = this._findInLine(term, searchPosition, searchOptions);
@@ -226,6 +235,15 @@ export class SearchEngine {
   }
 
   /**
+   * Whether a buffer row is a continuation of a wrapped line. Forward searches skip these rows
+   * because searching the row the wrapped line starts on already covers the entire wrapped line;
+   * searching each continuation row again makes the search quadratic in the wrapped line's length.
+   */
+  private _isWrappedRow(row: number): boolean {
+    return this._terminal.buffer.active.getLine(row)?.isWrapped ?? false;
+  }
+
+  /**
    * A found substring is a whole word if it doesn't have an alphanumeric character directly
    * adjacent to it.
    * @param searchIndex starting index of the potential whole word substring
@@ -288,32 +306,48 @@ export class SearchEngine {
       let foundTerm: RegExpExecArray | null;
       if (isReverseSearch) {
         // This loop will get the resultIndex of the _last_ regex match in the range 0..offset
-        while (foundTerm = searchRegex.exec(searchStringLine.slice(0, offset))) {
-          resultIndex = searchRegex.lastIndex - foundTerm[0].length;
-          term = foundTerm[0];
-          searchRegex.lastIndex -= (term.length - 1);
+        const searchSlice = searchStringLine.slice(0, offset);
+        while (foundTerm = searchRegex.exec(searchSlice)) {
+          const matchIndex = searchRegex.lastIndex - foundTerm[0].length;
+          if (!searchOptions.wholeWord || this._isWholeWord(matchIndex, searchStringLine, foundTerm[0])) {
+            resultIndex = matchIndex;
+            term = foundTerm[0];
+          }
+          searchRegex.lastIndex = matchIndex + 1;
         }
       } else {
-        foundTerm = searchRegex.exec(searchStringLine.slice(offset));
-        if (foundTerm && foundTerm[0].length > 0) {
-          resultIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
-          term = foundTerm[0];
+        const searchSlice = searchStringLine.slice(offset);
+        while (foundTerm = searchRegex.exec(searchSlice)) {
+          if (foundTerm[0].length === 0) {
+            break;
+          }
+          const matchIndex = offset + (searchRegex.lastIndex - foundTerm[0].length);
+          if (!searchOptions.wholeWord || this._isWholeWord(matchIndex, searchStringLine, foundTerm[0])) {
+            resultIndex = matchIndex;
+            term = foundTerm[0];
+            break;
+          }
+          // Not a whole word, continue searching from the next character
+          searchRegex.lastIndex = matchIndex - offset + 1;
         }
       }
     } else {
       if (isReverseSearch) {
         if (offset - searchTerm.length >= 0) {
           resultIndex = searchStringLine.lastIndexOf(searchTerm, offset - searchTerm.length);
+          while (searchOptions.wholeWord && resultIndex >= 0 && !this._isWholeWord(resultIndex, searchStringLine, searchTerm)) {
+            resultIndex = resultIndex > 0 ? searchStringLine.lastIndexOf(searchTerm, resultIndex - 1) : -1;
+          }
         }
       } else {
         resultIndex = searchStringLine.indexOf(searchTerm, offset);
+        while (searchOptions.wholeWord && resultIndex >= 0 && !this._isWholeWord(resultIndex, searchStringLine, searchTerm)) {
+          resultIndex = searchStringLine.indexOf(searchTerm, resultIndex + 1);
+        }
       }
     }
 
     if (resultIndex >= 0) {
-      if (searchOptions.wholeWord && !this._isWholeWord(resultIndex, searchStringLine, term)) {
-        return;
-      }
 
       // Adjust the row number and search index if needed since a "line" of text can span multiple
       // rows
