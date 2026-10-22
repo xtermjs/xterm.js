@@ -143,30 +143,33 @@ export class Linkifier extends Disposable implements ILinkifier2 {
           // If all providers have responded, remove lower priority links that intersect ranges of
           // higher priority links
           if (this._activeProviderReplies?.size === this._linkProviderService.linkProviders.length) {
-            this._removeIntersectingLinks(position.y, this._activeProviderReplies);
+            this._removeIntersectingLinks(this._activeProviderReplies);
           }
         });
       }
     }
   }
 
-  private _removeIntersectingLinks(y: number, replies: Map<Number, ILinkWithState[] | undefined>): void {
+  private _removeIntersectingLinks(replies: Map<Number, ILinkWithState[] | undefined>): void {
+    // Cells are keyed by their absolute buffer offset so links on different rows of a wrapped line
+    // only intersect when they actually share a cell
     const occupiedCells = new Set<number>();
+    const cols = this._bufferService.cols;
     for (let i = 0; i < replies.size; i++) {
       const providerReply = replies.get(i);
       if (!providerReply) {
         continue;
       }
       for (let i = 0; i < providerReply.length; i++) {
-        const linkWithState = providerReply[i];
-        const startX = linkWithState.link.range.start.y < y ? 0 : linkWithState.link.range.start.x;
-        const endX = linkWithState.link.range.end.y > y ? this._bufferService.cols : linkWithState.link.range.end.x;
-        for (let x = startX; x <= endX; x++) {
-          if (occupiedCells.has(x)) {
+        const range = providerReply[i].link.range;
+        const start = range.start.y * cols + range.start.x;
+        const end = range.end.y * cols + range.end.x;
+        for (let cell = start; cell <= end; cell++) {
+          if (occupiedCells.has(cell)) {
             providerReply.splice(i--, 1);
             break;
           }
-          occupiedCells.add(x);
+          occupiedCells.add(cell);
         }
       }
     }
