@@ -184,6 +184,50 @@ describe('SearchEngine', () => {
 
         assert.strictEqual(searchEngine.find('world', 0, 0, { wholeWord: true }), undefined);
       });
+
+      it('should find a whole word after a partial match on the same line', async () => {
+        await writeP(terminal, 'foobar foo');
+
+        assert.deepStrictEqual(searchEngine.find('foo', 0, 0, { wholeWord: true }), {
+          term: 'foo',
+          col: 7,
+          row: 0,
+          size: 3
+        });
+      });
+
+      it('should find a whole word after a partial match on the same line with regex', async () => {
+        await writeP(terminal, 'foobar foo');
+
+        assert.deepStrictEqual(searchEngine.find('fo+', 0, 0, { wholeWord: true, regex: true }), {
+          term: 'foo',
+          col: 7,
+          row: 0,
+          size: 3
+        });
+      });
+
+      it('should find a whole word before a partial match when searching backwards', async () => {
+        await writeP(terminal, 'foo barfoo');
+
+        assert.deepStrictEqual(searchEngine.findPreviousWithSelection('foo', { wholeWord: true }), {
+          term: 'foo',
+          col: 0,
+          row: 0,
+          size: 3
+        });
+      });
+
+      it('should find a whole word before a partial match when searching backwards with regex', async () => {
+        await writeP(terminal, 'foo barfoo');
+
+        assert.deepStrictEqual(searchEngine.findPreviousWithSelection('fo+', { wholeWord: true, regex: true }), {
+          term: 'foo',
+          col: 0,
+          row: 0,
+          size: 3
+        });
+      });
     });
 
     describe('regex', () => {
@@ -484,6 +528,39 @@ describe('SearchEngine', () => {
           term: 'target',
           col: 20,
           row: 1,
+          size: 6
+        });
+      });
+
+      it('should find a whole word after a partial match within a wrapped line', async () => {
+        await writeP(terminal, 'foobar' + 'A'.repeat(100) + ' foo');
+
+        assert.deepStrictEqual(searchEngine.find('foo', 0, 0, { wholeWord: true }), {
+          term: 'foo',
+          col: 27,
+          row: 1,
+          size: 3
+        });
+      });
+
+      it('should find a match when starting from a wrapped continuation row', async () => {
+        await writeP(terminal, 'target' + 'A'.repeat(100) + 'target');
+
+        assert.deepStrictEqual(searchEngine.find('target', 1, 0), {
+          term: 'target',
+          col: 26,
+          row: 1,
+          size: 6
+        });
+      });
+
+      it('should find a match on the next line after a long wrapped line without a match', async () => {
+        await writeP(terminal, 'A'.repeat(80 * 50) + '\r\ntarget');
+
+        assert.deepStrictEqual(searchEngine.find('target', 0, 0), {
+          term: 'target',
+          col: 0,
+          row: 50,
           size: 6
         });
       });
