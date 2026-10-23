@@ -664,6 +664,39 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(1)!.translateToString(true), '语汉语汉语');
         assert.equal(buffer.lines.get(1)!.translateToString(false), '语汉语汉语    ');
       });
+      it('should reflow larger after a wide character was cut from the cursor line', () => {
+        buffer.fillViewportRows();
+        buffer.resize(12, 10);
+        buffer.y = 1;
+        for (let i = 0; i < 12; i += 4) {
+          buffer.lines.get(0)!.set(i, [0, '汉', 2, '汉'.charCodeAt(0)]);
+          buffer.lines.get(1)!.set(i, [0, '汉', 2, '汉'.charCodeAt(0)]);
+        }
+        for (let i = 2; i < 12; i += 4) {
+          buffer.lines.get(0)!.set(i, [0, '语', 2, '语'.charCodeAt(0)]);
+          buffer.lines.get(1)!.set(i, [0, '语', 2, '语'.charCodeAt(0)]);
+        }
+        for (let i = 1; i < 12; i += 2) {
+          buffer.lines.get(0)!.set(i, [0, '', 0, 0]);
+          buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
+        }
+        buffer.setWrapped(1, true);
+        // Buffer:
+        // 汉语汉语汉语 (wrapped)
+        // 汉语汉语汉语 (cursor)
+        // The cursor line is not reflowed, so shrinking cuts the last wide char of each row
+        buffer.resize(11, 10);
+        assert.equal(buffer.lines.get(0)!.translateToString(), '汉语汉语汉 ');
+        assert.equal(buffer.lines.get(1)!.translateToString(), '汉语汉语汉 ');
+        assert.equal(buffer.lines.get(1)!.getTrimmedLength(), 10);
+        // The cursor moves off the wrapped line, then the terminal grows by one column
+        buffer.y = 2;
+        buffer.resize(12, 10);
+        assert.equal(buffer.lines.get(0)!.translateToString(true), '汉语汉语汉汉');
+        assert.equal(buffer.lines.get(1)!.translateToString(true), '语汉语汉');
+        assert.equal(buffer.lines.get(1)!.isWrapped, true);
+        assert.equal(buffer.lines.get(2)!.isWrapped, false);
+      });
       it('should correctly reflow wrapped lines that end in 0 space (via tab char)', () => {
         buffer.fillViewportRows();
         buffer.resize(4, 10);
