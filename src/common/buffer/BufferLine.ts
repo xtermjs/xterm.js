@@ -449,6 +449,10 @@ export class BufferLine implements IBufferLine {
           delete this._extendedAttrs[key];
         }
       }
+      // handle fullwidth at line end: reset last cell if it is first cell of a wide char
+      if (cols && this.getWidth(cols - 1) === 2) {
+        this.setCellFromCodepoint(cols - 1, 0, 1, fillCellData);
+      }
     }
     this.length = cols;
     return uint32Cells * 4 * Constants.CLEANUP_THRESHOLD < this._data.buffer.byteLength;
