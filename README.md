@@ -100,6 +100,7 @@ The xterm.js team maintains the following addons, but anyone can build them:
 - [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit): Fits the terminal to the containing element
 - [`@xterm/addon-image`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image): Adds image support
 - [`@xterm/addon-ligatures`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-ligatures): Enables rendering of ligatures
+- [`@xterm/addon-program-status`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-program-status): Keeps the status that programs report through the program status sequence (`OSC 7501`)
 - [`@xterm/addon-progress`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-progress): Adds support for the progress API (`OSC 9;4`)
 - [`@xterm/addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-search): Adds search functionality
 - [`@xterm/addon-serialize`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-serialize): Serializes the terminal's buffer to VT sequences or HTML
