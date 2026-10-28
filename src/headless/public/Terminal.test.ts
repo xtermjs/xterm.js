@@ -67,6 +67,33 @@ describe('Headless API Tests', function (): void {
     strictEqual(result, 'ABC');
   });
 
+  it('resize after a write yield does not duplicate output or callbacks', async () => {
+    await writeSync('> ');
+    const callbacks: string[] = [];
+    const now = performance.now;
+    let time = 0;
+    // Exhaust the write time budget after the echo, before the command output.
+    performance.now = () => time += 20;
+    try {
+      await new Promise<void>(resolve => {
+        const listener = term.onWriteParsed(() => {
+          listener.dispose();
+          term.resize(40, 10);
+          resolve();
+        });
+        term.write('git status', () => { callbacks.push('echo'); });
+        term.write('\r\nOn branch main\r\n', () => { callbacks.push('output'); });
+      });
+    } finally {
+      performance.now = now;
+    }
+    lineEquals(0, '> git status');
+    lineEquals(1, 'On branch main');
+    deepStrictEqual(callbacks, ['echo', 'output']);
+    await writeSync('> ');
+    lineEquals(2, '> ');
+  });
+
   it('writeln', async () => {
     await writelnSync('foo');
     await writelnSync('bar');
