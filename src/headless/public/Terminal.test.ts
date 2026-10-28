@@ -515,6 +515,108 @@ describe('Headless API Tests', function (): void {
     });
   });
 
+  describe('resize during write', () => {
+    it('resize inside a write callback does not replay the chunk', async () => {
+      term = new Terminal({ cols: 80, rows: 10, allowProposedApi: true });
+      let calls = 0;
+      await new Promise<void>(resolve => {
+        term.write('abc', () => {
+          calls++;
+          if (calls === 1) {
+            term.resize(61, 10);
+          }
+          resolve();
+        });
+      });
+      strictEqual(calls, 1);
+      strictEqual(term.cols, 61);
+      strictEqual(term.rows, 10);
+      lineEquals(0, 'abc');
+    });
+    it('resize inside a write callback flushes later chunks once', async () => {
+      term = new Terminal({ cols: 80, rows: 10, allowProposedApi: true });
+      const calls: string[] = [];
+      await new Promise<void>(resolve => {
+        term.write('A', () => calls.push('A'));
+        term.write('B', () => {
+          calls.push('B');
+          term.resize(30, 8);
+        });
+        term.write('C', () => {
+          calls.push('C');
+          resolve();
+        });
+      });
+      deepStrictEqual(calls, ['A', 'B', 'C']);
+      lineEquals(0, 'ABC');
+      strictEqual(term.cols, 30);
+      strictEqual(term.rows, 8);
+    });
+    it('nested write inside a resize callback is parsed once and keeps order', async () => {
+      term = new Terminal({ cols: 80, rows: 10, allowProposedApi: true });
+      const calls: string[] = [];
+      await new Promise<void>(resolve => {
+        term.write('abc', () => {
+          calls.push('abc');
+          term.write('XYZ', () => {
+            calls.push('XYZ');
+            resolve();
+          });
+          term.resize(20, 10);
+        });
+        term.write('Q', () => calls.push('Q'));
+      });
+      deepStrictEqual(calls, ['abc', 'Q', 'XYZ']);
+      lineEquals(0, 'abcQXYZ');
+      strictEqual(term.cols, 20);
+    });
+    it('resize flushes queued writes before changing the size', async () => {
+      term = new Terminal({ cols: 80, rows: 10, allowProposedApi: true });
+      let calls = 0;
+      const finished = new Promise<void>(resolve => {
+        term.write('queued', () => {
+          calls++;
+          resolve();
+        });
+      });
+      term.resize(61, 12);
+      strictEqual(calls, 1);
+      lineEquals(0, 'queued');
+      strictEqual(term.cols, 61);
+      strictEqual(term.rows, 12);
+      await finished;
+      strictEqual(calls, 1);
+      lineEquals(0, 'queued');
+    });
+    it('resize while an async parser handler is pending does not replay input', async () => {
+      term = new Terminal({ cols: 80, rows: 10, allowProposedApi: true });
+      let release!: () => void;
+      const gate = new Promise<void>(resolve => { release = resolve; });
+      let handlerCalls = 0;
+      // Published headless parser typings omit Promise-returning handlers.
+      term.parser.registerCsiHandler({ final: 'z' }, (() => {
+        handlerCalls++;
+        return gate.then(() => true);
+      }) as any);
+      let writeCalls = 0;
+      term.write('A\x1b[1zB', () => { writeCalls++; });
+      await new Promise<void>(resolve => setTimeout(resolve, 20));
+      strictEqual(handlerCalls, 1);
+      strictEqual(writeCalls, 0);
+      lineEquals(0, 'A');
+      term.resize(40, 10);
+      strictEqual(handlerCalls, 1);
+      strictEqual(writeCalls, 0);
+      lineEquals(0, 'A');
+      strictEqual(term.cols, 40);
+      release();
+      await new Promise<void>(resolve => setTimeout(resolve, 30));
+      strictEqual(handlerCalls, 1);
+      strictEqual(writeCalls, 1);
+      lineEquals(0, 'AB');
+    });
+  });
+
   it('dispose', async () => {
     term.dispose();
     strictEqual((term as any)._core._store.isDisposed, true);

@@ -39,6 +39,12 @@ export class WriteBuffer extends Disposable {
   private _pendingData = 0;
   private _bufferOffset = 0;
   private _isSyncWriting = false;
+  /** True while `_action` is on the stack for the chunk at `_bufferOffset`. */
+  private _inAction = false;
+  /** True when the chunk at `_bufferOffset` is paused in a Promise-returning handler. */
+  private _awaitingAsync = false;
+  /** Set by the async continuation so it can re-enter while `_awaitingAsync` is set. */
+  private _resumeAsync = false;
   private _syncCalls = 0;
   private _didUserInput = false;
 
@@ -65,36 +71,57 @@ export class WriteBuffer extends Disposable {
    * ensure all queued data is processed before performing an operation that
    * depends upon everything being parsed like resize.
    *
-   * Note: This is unreliable with async parser handlers as it does not wait for
-   * promises to resolve.
+   * Only chunks that have not been parsed yet are processed (`_bufferOffset`
+   * and above). Chunks the async loop already parsed — including the chunk
+   * whose callback is running — are left alone, so this can be called
+   * re-entrantly from a write callback without replaying input.
+   *
+   * If a handler returns a promise, parsing stops at that chunk and the async
+   * loop resumes it when the promise settles. This does not wait for that
+   * promise.
    */
   public flushSync(): void {
     if (this._store.isDisposed) {
       return;
     }
-    // exit early if another sync write loop is active
-    if (this._isSyncWriting) {
+    // writeSync/flushSync is already walking the buffer, the current chunk is
+    // still inside _action, or the parser is paused on a promise. Running
+    // another pass here would replay chunks or continue an async handler early.
+    if (this._isSyncWriting || this._inAction || this._awaitingAsync) {
       return;
     }
     this._isSyncWriting = true;
 
-    // Process all pending chunks synchronously
-    let chunk: string | Uint8Array | undefined;
     let didProcess = false;
-    while (chunk = this._writeBuffer.shift()) {
-      didProcess = true;
-      this._action(chunk);
-      const cb = this._callbacks.shift();
-      if (cb) cb();
+    try {
+      while (this._writeBuffer.length > this._bufferOffset) {
+        const chunk = this._writeBuffer[this._bufferOffset];
+        const cb = this._callbacks[this._bufferOffset];
+        // Advance before action/callback so a re-entrant flushSync sees this
+        // chunk as already taken. Rewind if the handler pauses instead.
+        this._bufferOffset++;
+        this._pendingData -= chunk.length;
+        const result = this._action(chunk);
+        if (result) {
+          this._bufferOffset--;
+          this._pendingData += chunk.length;
+          this._awaitingAsync = true;
+          // The queued async pass would otherwise parse this chunk again.
+          this._innerWriteTimer.cancel();
+          this._continueAfterAsync(result, performance.now());
+          return;
+        }
+        didProcess = true;
+        if (cb) cb();
+      }
+
+      this._writeBuffer.length = 0;
+      this._callbacks.length = 0;
+      this._pendingData = 0;
+      this._bufferOffset = 0;
+    } finally {
+      this._isSyncWriting = false;
     }
-
-    // Reset buffer state
-    this._pendingData = 0;
-    this._bufferOffset = 0x7FFFFFFF;
-    this._writeBuffer.length = 0;
-    this._callbacks.length = 0;
-
-    this._isSyncWriting = false;
     if (didProcess) {
       this._onWriteParsed.fire();
     }
@@ -209,88 +236,104 @@ export class WriteBuffer extends Disposable {
    *
    * Note, for pure sync code `lastTime` and `promiseResult` have no meaning.
    */
-  private _scheduleInnerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
+  private _scheduleInnerWrite(lastTime: number = 0, promiseResult: boolean = true, resumeAsync: boolean = false): void {
     if (this._store.isDisposed) {
       return;
     }
-    this._innerWriteTimer.cancelAndSet(() => this._innerWrite(lastTime, promiseResult), 0);
+    this._innerWriteTimer.cancelAndSet(() => {
+      if (resumeAsync) {
+        this._resumeAsync = true;
+      }
+      this._innerWrite(lastTime, promiseResult);
+    }, 0);
+  }
+
+  /**
+   * Resume the chunk paused in `result` once it settles. `startTime` is the
+   * beginning of the current write batch so the timeout keeps batching work
+   * the same way `_innerWrite` does.
+   */
+  private _continueAfterAsync(result: Promise<boolean>, startTime: number): void {
+    /**
+     * If a promise takes long to resolve, schedule continuation behind setTimeout
+     * so the renderer can catch up. The handler itself must slice hard work;
+     * this only schedules a screen update once we gain control again.
+     *
+     * This favors FPS over throughput by checking `startTime` on resolve. A slow
+     * handler that already sliced its work can still schedule extra updates.
+     * FIXME: track FPS at the renderer entry instead. Checking `startTime` up
+     * front would pull one more chunk into this microtask and favor throughput.
+     */
+    const continuation = (resolved: boolean): void => {
+      if (this._store.isDisposed) {
+        return;
+      }
+      if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
+        this._scheduleInnerWrite(0, resolved, true);
+      } else {
+        this._resumeAsync = true;
+        this._innerWrite(startTime, resolved);
+      }
+    };
+
+    // Handle exceptions synchronously to the current band position:
+    // 1. spawn a single microtask which we allow to throw hard
+    // 2. spawn a promise immediately resolving to `false`
+    // (executed on the same queue, thus properly aligned before continuation)
+    result.catch(err => {
+      queueMicrotask(() => { throw err; });
+      return Promise.resolve(false);
+    }).then(continuation);
   }
 
   protected _innerWrite(lastTime: number = 0, promiseResult: boolean = true): void {
     if (this._store.isDisposed) {
       return;
     }
+    // A stale timer must not parse the chunk a promise is still paused on.
+    // The continuation sets `_resumeAsync` and is the only caller allowed in.
+    if (this._awaitingAsync && !this._resumeAsync) {
+      return;
+    }
+    this._resumeAsync = false;
+    this._awaitingAsync = false;
+
     const startTime = lastTime || performance.now();
     while (this._writeBuffer.length > this._bufferOffset) {
+      // flushSync from the previous callback paused on this chunk.
+      if (this._awaitingAsync) {
+        return;
+      }
       const data = this._writeBuffer[this._bufferOffset];
-      const result = this._action(data, promiseResult);
+      const cb = this._callbacks[this._bufferOffset];
+      this._inAction = true;
+      let result: void | Promise<boolean>;
+      try {
+        result = this._action(data, promiseResult);
+      } finally {
+        this._inAction = false;
+      }
       if (result) {
         /**
-         * If we get a promise as return value, we re-schedule the continuation
-         * as thenable on the promise and exit right away.
+         * A promise blocks input at this chunk. The parser stack holds the
+         * position within the chunk; resume by calling `_action` again with
+         * the resolved value until it returns void. The callback stays pending
+         * so it cannot observe partially parsed input.
          *
-         * The exit here means, that we block input processing at the current active chunk,
-         * the exact execution position within the chunk is preserved by the saved
-         * stack content in InputHandler and EscapeSequenceParser.
-         *
-         * Resuming happens automatically from that saved stack state.
-         * Also the resolved promise value is passed along the callstack to
-         * `EscapeSequenceParser.parse` to correctly resume the stopped handler loop.
-         *
-         * Exceptions on async handlers will be logged to console async, but do not interrupt
-         * the input processing (continues with next handler at the current input position).
+         * Exceptions on async handlers are logged async and do not interrupt
+         * input processing (continues with the next handler at this position).
          */
-
-        /**
-         * If a promise takes long to resolve, we should schedule continuation behind setTimeout.
-         * This might already be too late, if our .then enters really late (executor + prev thens
-         * took very long). This cannot be solved here for the handler itself (it is the handlers
-         * responsibility to slice hard work), but we can at least schedule a screen update as we
-         * gain control.
-         */
-        const continuation: (r: boolean) => void = (r: boolean) => {
-          if (this._store.isDisposed) {
-            return;
-          }
-          if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
-            this._scheduleInnerWrite(0, r);
-          } else {
-            this._innerWrite(startTime, r);
-          }
-        };
-
-        /**
-         * Optimization considerations:
-         * The continuation above favors FPS over throughput by eval'ing `startTime` on resolve.
-         * This might schedule too many screen updates with bad throughput drops (in case a slow
-         * resolving handler sliced its work properly behind setTimeout calls). We cannot spot
-         * this condition here, also the renderer has no way to spot nonsense updates either.
-         * FIXME: A proper fix for this would track the FPS at the renderer entry level separately.
-         *
-         * If favoring of FPS shows bad throughput impact, use the following instead. It favors
-         * throughput by eval'ing `startTime` upfront pulling at least one more chunk into the
-         * current microtask queue (executed before setTimeout).
-         */
-        // const continuation: (r: boolean) => void = performance.now() - startTime >=
-        //     Constants.WRITE_TIMEOUT_MS
-        //   ? r => setTimeout(() => this._innerWrite(0, r))
-        //   : r => this._innerWrite(startTime, r);
-
-        // Handle exceptions synchronously to current band position, idea:
-        // 1. spawn a single microtask which we allow to throw hard
-        // 2. spawn a promise immediately resolving to `true`
-        // (executed on the same queue, thus properly aligned before continuation happens)
-        result.catch(err => {
-          queueMicrotask(() => {throw err;});
-          return Promise.resolve(false);
-        }).then(continuation);
+        this._awaitingAsync = true;
+        this._continueAfterAsync(result, startTime);
         return;
       }
 
-      const cb = this._callbacks[this._bufferOffset];
-      if (cb) cb();
+      // The chunk is fully parsed. Advance before the callback so flushSync
+      // (resize from the callback) cannot parse this chunk again, and so this
+      // loop observes any chunks that flushSync consumes.
       this._bufferOffset++;
       this._pendingData -= data.length;
+      if (cb) cb();
 
       if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
         break;

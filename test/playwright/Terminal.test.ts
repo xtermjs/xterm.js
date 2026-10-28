@@ -467,6 +467,28 @@ test.describe('API Integration Tests', () => {
       await ctx.proxy.write(largeData);
     });
 
+    test('resize inside a write callback does not replay input', async () => {
+      await openTerminal(ctx, { cols: 80, rows: 10 });
+      await ctx.page.evaluate(`
+        window.__resizeWriteCalls = 0;
+        window.__resizeWriteChunks = [];
+        window.term.write('abc', () => {
+          window.__resizeWriteCalls++;
+          window.__resizeWriteChunks.push('abc');
+          if (window.__resizeWriteCalls === 1) {
+            window.term.resize(61, 10);
+          }
+        });
+        window.term.write('Z', () => {
+          window.__resizeWriteChunks.push('Z');
+        });
+      `);
+      await pollFor(ctx.page, `window.term.buffer.active.getLine(0).translateToString(true)`, 'abcZ');
+      await pollFor(ctx.page, `window.__resizeWriteCalls`, 1);
+      await pollFor(ctx.page, `window.__resizeWriteChunks`, ['abc', 'Z']);
+      strictEqual(await ctx.proxy.cols, 61);
+    });
+
     test('onTitleChange', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`
