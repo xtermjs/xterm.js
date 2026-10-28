@@ -151,6 +151,11 @@ describe('Terminal', () => {
       term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 65, key: 'a' } as KeyboardEvent);
       assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false);
     });
+    it('should keep the gate armed when a modifier keydown follows a character keydown', () => {
+      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 65, key: 'a' } as KeyboardEvent);
+      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 16, key: 'Shift' } as KeyboardEvent);
+      assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false);
+    });
   });
 
   describe('attachCustomKeyEventHandler', () => {
