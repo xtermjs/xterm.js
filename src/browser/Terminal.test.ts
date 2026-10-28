@@ -137,24 +137,35 @@ describe('Terminal', () => {
   });
 
   describe('_keyDownSeen gate (IME insertText ordering)', () => {
+    const modifiers = [
+      { keyCode: 16, key: 'Shift' },
+      { keyCode: 17, key: 'Control' },
+      { keyCode: 18, key: 'Alt' },
+      { keyCode: 91, key: 'Meta' }
+    ];
+
     beforeEach(() => {
       term.clearSelection = () => { };
       (term as any).textarea = { value: '' };
     });
     it('should not arm the gate on a modifier-only keydown, keeping the first IME insertText deliverable', () => {
-      // macOS IMEs deliver insertText before the character keydown while Shift is held (#5887,
+      // macOS IMEs deliver insertText before the character keydown while a modifier is held (#5887,
       // #6144): if the modifier's keydown arms the gate, the first press is dropped.
-      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 16, key: 'Shift' } as KeyboardEvent);
-      assert.equal(term.inputEvent({ data: '？', inputType: 'insertText', composed: true } as InputEvent), true);
+      for (const modifier of modifiers) {
+        term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: modifier.keyCode, key: modifier.key } as KeyboardEvent);
+        assert.equal(term.inputEvent({ data: '？', inputType: 'insertText', composed: true } as InputEvent), true, modifier.key);
+      }
     });
     it('should still arm the gate on a character keydown so regular insertText stays deduped', () => {
       term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 65, key: 'a' } as KeyboardEvent);
       assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false);
     });
     it('should keep the gate armed when a modifier keydown follows a character keydown', () => {
-      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 65, key: 'a' } as KeyboardEvent);
-      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 16, key: 'Shift' } as KeyboardEvent);
-      assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false);
+      for (const modifier of modifiers) {
+        term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 65, key: 'a' } as KeyboardEvent);
+        term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: modifier.keyCode, key: modifier.key } as KeyboardEvent);
+        assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false, modifier.key);
+      }
     });
   });
 
