@@ -21,7 +21,7 @@ const terminal = new Terminal();
 const programStatusAddon = new ProgramStatusAddon();
 terminal.loadAddon(programStatusAddon);
 programStatusAddon.onChange((records: ReadonlyArray<IProgramStatusRecord>) => {
-  // records: every record the terminal holds, from the oldest update to the newest
+  // records: every record the terminal holds, least recently updated first
 
   // show the status here
   ...
@@ -44,10 +44,10 @@ ESC ] 7501 ; key=value:key=value ESC \
 BEL can end it instead of `ESC \`. The keys are:
 
 - `state`: Required. One of `idle`, `working`, `done`, `blocked`, `error` or `clear`.
-- `id`: The record's path, such as `deploy/eu-west`: up to 8 segments of `[A-Za-z0-9_.+-]{1,32}` joined by `/`, at most 128 bytes. A report without an id addresses the root record.
+- `id`: Which record the report is for, as a path such as `deploy/eu-west`: up to 8 segments of `[A-Za-z0-9_.+-]{1,32}` joined by `/`, at most 128 bytes. A report without an id addresses the root record.
 - `kind`: With `blocked` only. One of `permission`, `question` or `auth`.
 - `progress`: With `working` or `blocked` only. 0 to 100.
-- `app`: The program's name, in the form of one id segment.
+- `app`: A machine-readable program name, such as `cargo`, in the form of one id segment.
 - `title`: A short label, as base64 of UTF-8 text of at most 192 bytes.
 - `msg`: One line, as base64 of UTF-8 text of at most 2048 bytes.
 
@@ -69,20 +69,20 @@ The addon answers with the same sequence. The answer always ends with `ESC \`, w
 
 ### Records
 
-The addon keeps up to 256 records. When a report would create one more, it removes the record that was updated least recently. A record's `effectiveApp` is the `app` of the record itself or of its nearest ancestor that has one.
+The addon holds at most 256 records. A report that would add a 257th first deletes the record that has gone longest without an update. `effectiveApp` is the record's own `app` if it has one. Otherwise it comes from the closest record above it in the id path that has an `app`, which may be the root record.
 
-Records belong to the terminal, not to a screen: they survive switching to the alternate screen and a soft reset (DECSTR). A full reset (RIS) removes them all.
+Switching between the normal and alternate screen doesn't touch records, and neither does a soft reset (DECSTR). A full reset (RIS) deletes them all.
 
-The text in a record is untrusted. The addon refuses control characters, but `title` and `message` can still contain text direction overrides and invisible formatting characters. Remove those before showing the text outside the terminal, and show which terminal a record came from.
+Records hold untrusted text. Control characters never get in, but `title` and `message` may still carry bidirectional overrides or invisible formatting characters. Strip those before the text appears outside the terminal, and label each record with the terminal it came from.
 
 
 ### Embedder duties
 
-The addon sees only what the terminal parses. The embedder tells it about the rest:
+The addon only sees what the terminal parses, so the embedder reports the rest:
 
-- Call `clear()` after `terminal.reset()`, which does not remove records.
-- Call `processExited()` when the attached process exits, after its last output is parsed, for example in the callback of `terminal.write('', callback)`. This removes `working` and `blocked` records.
-- Call `promptStarted()` when a new top-level shell prompt starts, for example from shell integration. This also removes `working` and `blocked` records.
+- `terminal.reset()` leaves records in place. Call `clear()` after it.
+- Call `processExited()` once the attached process has exited and its final output has been parsed, for example from the callback of `terminal.write('', callback)`. It drops `working` and `blocked` records.
+- Call `promptStarted()` when a new shell prompt begins, for example where shell integration's OSC 133 `A` starts a new command. It drops `working` and `blocked` records too.
 - Call `clear(id)` when the user dismisses a record, such as a `done` or `error` record they have seen.
 
 

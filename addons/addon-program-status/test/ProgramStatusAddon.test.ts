@@ -35,14 +35,22 @@ test.describe('ProgramStatusAddon', () => {
   });
 
   test('keeps the status that programs report without printing it', async () => {
-    await ctx.proxy.write('\x1b]7501;state=working:app=grok\x1b\\');
+    await ctx.proxy.write('\x1b]7501;state=working:app=make:title=QnVpbGRpbmc\x1b\\');
     await ctx.proxy.write('\x1b]7501;state=blocked:kind=permission:id=deploy:msg=QXBwbHkgMyB0byBhZGQsIDEgdG8gY2hhbmdlLCAwIHRvIGRlc3Ryb3k/\x07');
     deepStrictEqual(await ctx.page.evaluate('window.programStatusAddon.records'), [
-      { id: '', state: 'working', app: 'grok', effectiveApp: 'grok' },
-      { id: 'deploy', state: 'blocked', kind: 'permission', effectiveApp: 'grok', message: 'Apply 3 to add, 1 to change, 0 to destroy?' }
+      { id: '', state: 'working', app: 'make', effectiveApp: 'make', title: 'Building' },
+      { id: 'deploy', state: 'blocked', kind: 'permission', effectiveApp: 'make', message: 'Apply 3 to add, 1 to change, 0 to destroy?' }
     ]);
     deepStrictEqual(await ctx.page.evaluate('window.programStatusChanges.length'), 2);
     deepStrictEqual(await ctx.page.evaluate('window.term.buffer.active.getLine(0).translateToString(true)'), '');
+  });
+
+  test('accepts a message of 2048 bytes and discards one of 2049', async () => {
+    const text = '0123456789abcdef'.repeat(128);
+    await ctx.proxy.write(`\x1b]7501;state=done:id=long:msg=${btoa(text + '!')}\x1b\\`);
+    await ctx.proxy.write(`\x1b]7501;state=done:msg=${btoa(text)}\x1b\\`);
+    deepStrictEqual(await ctx.page.evaluate('window.programStatusAddon.records.map(record => [record.id, record.message.length])'), [['', 2048]]);
+    deepStrictEqual(await ctx.page.evaluate('window.programStatusChanges.length'), 1);
   });
 
   test('answers the query with ST before a DA1 query that follows it', async () => {
@@ -54,18 +62,18 @@ test.describe('ProgramStatusAddon', () => {
   });
 
   test('clears every record on RIS', async () => {
-    await ctx.proxy.write('\x1b]7501;state=done:id=build\x1b\\\x1bc');
+    await ctx.proxy.write('\x1b]7501;state=done:id=deploy\x1b\\\x1bc');
     deepStrictEqual(await ctx.page.evaluate('window.programStatusAddon.records'), []);
     deepStrictEqual(await ctx.page.evaluate('window.programStatusChanges.length'), 2);
   });
 
   test('removes working and blocked records on promptStarted()', async () => {
     await ctx.proxy.write([
-      '\x1b]7501;state=working:id=a\x1b\\',
-      '\x1b]7501;state=blocked:id=b\x1b\\',
-      '\x1b]7501;state=done:id=c\x1b\\'
+      '\x1b]7501;state=working:id=us-east\x1b\\',
+      '\x1b]7501;state=blocked:id=eu-west\x1b\\',
+      '\x1b]7501;state=done:id=ap-south\x1b\\'
     ].join(''));
     await ctx.page.evaluate('window.programStatusAddon.promptStarted()');
-    deepStrictEqual(await ctx.page.evaluate('window.programStatusAddon.records.map(record => record.id)'), ['c']);
+    deepStrictEqual(await ctx.page.evaluate('window.programStatusAddon.records.map(record => record.id)'), ['ap-south']);
   });
 });
