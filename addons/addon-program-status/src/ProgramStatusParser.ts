@@ -23,13 +23,37 @@ const enum Limits {
    * The whole sequence may take 4096 bytes, and `ESC ] 7501 ;` and `ESC \` take 9 of them.
    */
   PAYLOAD = 4087,
+  /**
+   * The longest key, including keys the addon doesn't know.
+   */
   KEY = 16,
+  /**
+   * The longest `msg` value as sent, in base64.
+   */
   MSG_ENCODED = 2732,
+  /**
+   * The longest `msg` text once decoded from base64.
+   */
   MSG_DECODED = 2048,
+  /**
+   * The longest `title` value as sent, in base64.
+   */
   TITLE_ENCODED = 256,
+  /**
+   * The longest `title` text once decoded from base64.
+   */
   TITLE_DECODED = 192,
+  /**
+   * The longest `app` value.
+   */
   APP = 32,
+  /**
+   * The longest `id` value, including every `/` separated segment.
+   */
   ID = 128,
+  /**
+   * The highest `progress` value, as a percentage.
+   */
   PROGRESS = 100
 }
 
