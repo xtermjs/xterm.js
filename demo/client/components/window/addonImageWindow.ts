@@ -203,11 +203,8 @@ export class AddonImageWindow extends BaseWindow implements IControlWindow {
       const pos = (this._terminal as any)._core._mouseCoordsService!.getCoords(ev, (this._terminal as any)._core.screenElement!, this._terminal.cols, this._terminal.rows);
       const x = pos[0] - 1;
       const y = pos[1] - 1;
-      const canvas = ev.shiftKey
-        // ctrl+shift+click: get single tile
-        ? imageAddon.extractTileAtBufferCell(x, this._terminal.buffer.active.viewportY + y)
-        // ctrl+click: get original image
-        : imageAddon.getImageAtBufferCell(x, this._terminal.buffer.active.viewportY + y);
+      // ctrl+click: get original image
+      const canvas = imageAddon.getImageAtBufferCell(x, this._terminal.buffer.active.viewportY + y);
       canvas?.toBlob(data => data && window.open(URL.createObjectURL(data), '_blank'));
     });
   }

@@ -144,6 +144,9 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
       terminal.options.windowOptions = windowOps;
     }
 
+    // apply placeholder setting
+    this._renderer.showPlaceholder(this._opts.showPlaceholder);
+
     this._disposeLater(
       this._renderer,
       this._storage,
@@ -187,7 +190,7 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
     // iTerm IIP handler
     if (this._opts.iipSupport) {
       const iipStorage = new IIPImageStorage(this._storage!);
-      const iipHandler = new IIPHandler(this._opts, this._renderer!, iipStorage, terminal);
+      const iipHandler = new IIPHandler(this._opts, iipStorage, terminal);
       this._handlers.set('iip', iipHandler);
       this._disposeLater(
         terminal._core._inputHandler._parser.registerOscHandler(1337, iipHandler)
@@ -248,10 +251,6 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
 
   public getImageAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
     return this._storage?.getImageAtBufferCell(x, y);
-  }
-
-  public extractTileAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined {
-    return this._storage?.extractTileAtBufferCell(x, y);
   }
 
   private _report(s: string): void {
@@ -344,8 +343,8 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
       switch (params[1]) {
         // we only implement read and read_max here
         case GaAction.READ:
-          let width = this._renderer?.dimensions?.css.canvas.width;
-          let height = this._renderer?.dimensions?.css.canvas.height;
+          let width = this._renderer?.dimensions?.device.canvas.width;
+          let height = this._renderer?.dimensions?.device.canvas.height;
           if (!width || !height) {
             // for some reason we have no working image renderer
             // --> fallback to default cell size
