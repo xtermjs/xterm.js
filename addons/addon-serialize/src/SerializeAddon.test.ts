@@ -154,6 +154,35 @@ describe('SerializeAddon', () => {
       });
     });
 
+    describe('osc 8 hyperlinks', () => {
+      const hyperlink = (text: string): string => `\u001b]8;;https://example.com\u001b\\${text}\u001b]8;;\u001b\\`;
+
+      it('should not add an underline to a hyperlink that has none', async () => {
+        await writeP(terminal, 'A' + hyperlink('B'));
+        assert.equal(serializeAddon.serialize(), 'AB');
+      });
+
+      it('should serialize the single underline of a hyperlink', async () => {
+        await writeP(terminal, 'A' + hyperlink(sgr('4') + 'B' + sgr('24')));
+        assert.equal(serializeAddon.serialize(), 'A\u001b[4mB\u001b[0m');
+      });
+
+      it('should serialize the curly underline of a hyperlink', async () => {
+        await writeP(terminal, 'A' + hyperlink(sgr('4:3') + 'B' + sgr('4:0')));
+        assert.equal(serializeAddon.serialize(), 'A\u001b[4:3mB\u001b[0m');
+      });
+
+      it('should serialize an underline change between two cells of the same hyperlink', async () => {
+        await writeP(terminal, hyperlink(sgr('4:2') + 'AA' + sgr('4:4') + 'BB' + sgr('4:0')));
+        assert.equal(serializeAddon.serialize(), '\u001b[4:2mAA\u001b[4:4mBB\u001b[0m');
+      });
+
+      it('should serialize the underline of a plain cell following a hyperlink cell', async () => {
+        await writeP(terminal, 'A' + hyperlink(sgr('4:2') + 'B' + sgr('4:0')) + sgr('4:5') + 'C');
+        assert.equal(serializeAddon.serialize(), 'A\u001b[4:2mB\u001b[4:5mC');
+      });
+    });
+
     describe('scroll region', () => {
       let scrollTerminal: Terminal;
       let scrollAddon: SerializeAddon;
@@ -382,6 +411,21 @@ describe('SerializeAddon', () => {
 
       const output = serializeAddon.serializeAsHTML();
       assert.equal((output.match(/<span style='text-decoration: underline dashed;'>terminal<\/span>/g) ?? []).length, 1, output);
+    });
+
+    it('cells with a hyperlink and no underline', async () => {
+      await writeP(terminal, ' ' + '\u001b]8;;https://example.com\u001b\\terminal\u001b]8;;\u001b\\' + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      // The hyperlink must not introduce a decoration of its own.
+      assert.equal((output.match(/<span style='text-decoration[^']*'>[^<]*terminal[^<]*<\/span>/g) ?? []).length, 0, output);
+    });
+
+    it('cells with a hyperlink and curly underline', async () => {
+      await writeP(terminal, ' ' + '\u001b]8;;https://example.com\u001b\\' + sgr('4:3') + 'terminal' + sgr('4:0') + '\u001b]8;;\u001b\\' + ' ');
+
+      const output = serializeAddon.serializeAsHTML();
+      assert.equal((output.match(/<span style='text-decoration: underline wavy;'>terminal<\/span>/g) ?? []).length, 1, output);
     });
 
     it('cells with underline color (palette)', async () => {
