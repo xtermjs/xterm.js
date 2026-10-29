@@ -221,6 +221,13 @@ declare module '@xterm/headless' {
     theme?: ITheme;
 
     /**
+     * Enable VT-compatible, display-relative cursor save/restore for
+     * DECSC/DECRC (`ESC 7`/`ESC 8`) and SCOSC/SCORC (`CSI s`/`CSI u`).
+     * The default is false to preserve legacy document-relative behavior.
+     */
+    useVtCompatibleCursorSave?: boolean;
+
+    /**
      * Compatibility information when the pty is known to be hosted on Windows.
      * Setting this will turn on certain heuristics/workarounds depending on the
      * values:
