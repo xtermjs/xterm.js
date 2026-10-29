@@ -32,6 +32,7 @@ export class RenderService extends Disposable implements IRenderService {
   private _intersectionObserver: IntersectionObserver | undefined;
 
   private _isPaused: boolean = false;
+  private _isResizingRenderer: boolean = false;
   private _needsFullRefresh: boolean = false;
   private _isNextRenderRedrawOnly: boolean = true;
   private _needsSelectionRefresh: boolean = false;
@@ -162,7 +163,11 @@ export class RenderService extends Disposable implements IRenderService {
       if (!sync) {
         return;
       }
-      this._pausedResizeTask.flush();
+      // Renderers request a sync redraw from handleResize. When the paused resize task is what
+      // runs it, flushing the task would run it again, so only render.
+      if (!this._isResizingRenderer) {
+        this._pausedResizeTask.flush();
+      }
     }
 
     if (this._coreService.decPrivateModes.synchronizedOutput) {
@@ -304,11 +309,20 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
     if (this._isPaused) {
-      this._pausedResizeTask.set(() => this._renderer.value?.handleResize(cols, rows));
+      this._pausedResizeTask.set(() => this._resizeRenderer(cols, rows));
     } else {
-      this._renderer.value.handleResize(cols, rows);
+      this._resizeRenderer(cols, rows);
     }
     this._fullRefresh();
+  }
+
+  private _resizeRenderer(cols: number, rows: number): void {
+    this._isResizingRenderer = true;
+    try {
+      this._renderer.value?.handleResize(cols, rows);
+    } finally {
+      this._isResizingRenderer = false;
+    }
   }
 
   // TODO: Is this useful when we have onResize?

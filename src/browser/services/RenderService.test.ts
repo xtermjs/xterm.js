@@ -10,6 +10,7 @@ import { MockCharSizeService, MockRenderer, MockThemeService } from '../TestUtil
 import { MockBufferService, MockCoreService, MockDecorationService, MockLogService, MockOptionsService } from '../../common/TestUtils.test';
 import { ICoreBrowserService } from './Services';
 import { Emitter } from '../../common/Event';
+import { timeout } from '../../common/Async';
 import { IRequestRedrawEvent } from '../renderer/shared/Types';
 
 class TestRenderer extends MockRenderer {
@@ -21,6 +22,24 @@ class TestRenderer extends MockRenderer {
   public renderRows(start: number, end: number): void { this.rendered.push([start, end]); }
   public handleResize(cols: number, rows: number): void { this.resized.push([cols, rows]); }
   public dispose(): void { }
+}
+
+/**
+ * Like the WebGL renderer, requests a sync redraw at the end of handleResize.
+ */
+class SyncResizeRenderer extends TestRenderer {
+  public reentered = false;
+  private _isResizing = false;
+  public handleResize(cols: number, rows: number): void {
+    this.reentered ||= this._isResizing;
+    this._isResizing = true;
+    try {
+      super.handleResize(cols, rows);
+      this.requestRedraw({ start: 0, end: 9, sync: true });
+    } finally {
+      this._isResizing = false;
+    }
+  }
 }
 
 describe('RenderService', () => {
@@ -84,6 +103,44 @@ describe('RenderService', () => {
       renderer.requestRedraw({ start: 0, end: 9, sync: true });
       assert.deepEqual(renderer.resized, [[100, 10]]);
       assert.deepEqual(renderer.rendered, [[0, 9]]);
+    });
+
+    describe('with a renderer that redraws on resize', () => {
+      it('should resize once on a sync redraw with a resize queued', () => {
+        const renderer = new SyncResizeRenderer();
+        renderService.setRenderer(renderer);
+        renderer.rendered = [];
+        renderService.handleResize(100, 10);
+        renderer.requestRedraw({ start: 0, end: 9, sync: true });
+        assert.deepEqual(renderer.resized, [[100, 10]]);
+        assert.isFalse(renderer.reentered);
+        // The resize's own redraw renders, then the redraw that flushed it
+        assert.deepEqual(renderer.rendered, [[0, 9], [0, 9]]);
+      });
+
+      it('should resize once when the queued resize runs idle', async () => {
+        const renderer = new SyncResizeRenderer();
+        renderService.setRenderer(renderer);
+        renderer.rendered = [];
+        renderService.handleResize(100, 10);
+        await timeout(0);
+        assert.deepEqual(renderer.resized, [[100, 10]]);
+        assert.isFalse(renderer.reentered);
+        assert.deepEqual(renderer.rendered, [[0, 9]]);
+      });
+
+      it('should resize once when a renderer is set with a resize queued', async () => {
+        renderService.setRenderer(new TestRenderer());
+        renderService.handleResize(100, 10);
+        const renderer = new SyncResizeRenderer();
+        renderService.setRenderer(renderer);
+        assert.deepEqual(renderer.resized, [[100, 10]]);
+        assert.isFalse(renderer.reentered);
+        assert.deepEqual(renderer.rendered, [[0, 9], [0, 9]]);
+        // The flush emptied the queue
+        await timeout(0);
+        assert.deepEqual(renderer.resized, [[100, 10]]);
+      });
     });
 
     it('should not render other refreshes until resumed', () => {
