@@ -247,10 +247,16 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
           if (this._nullCellCount > 0) {
             // do these because we filled the last several null slot, which we shouldn't
+            // a move of 0 means a move of 1, so skip the moves when the row has no content
+            const contentLength = currentLineLength - this._nullCellCount;
             rowSeparator += '\u001b[A';
-            rowSeparator += `\u001b[${currentLineLength - this._nullCellCount}C`;
+            if (contentLength > 0) {
+              rowSeparator += `\u001b[${contentLength}C`;
+            }
             rowSeparator += `\u001b[${this._nullCellCount}X`;
-            rowSeparator += `\u001b[${currentLineLength - this._nullCellCount}D`;
+            if (contentLength > 0) {
+              rowSeparator += `\u001b[${contentLength}D`;
+            }
             rowSeparator += '\u001b[B';
           }
 
