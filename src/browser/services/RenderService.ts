@@ -174,7 +174,15 @@ export class RenderService extends Disposable implements IRenderService {
       this._isNextRenderRedrawOnly = false;
     }
 
-    if (sync) {
+    // A just-closed synchronized-output frame must render now, not on the next
+    // debounced tick. Under a continuous animation the following frame opens a
+    // new sync block before the debounce fires, and `_renderRows` skips while
+    // sync is on — so a debounced render would be dropped and the frame would
+    // only appear on the 1s sync timeout, capping the display at ~1fps. Sync is
+    // false at this point (this runs from the mode-reset that just flushed the
+    // buffer), so rendering synchronously paints the completed frame before the
+    // next one can reopen sync.
+    if (sync || buffered) {
       this._renderRows(start, end);
     } else {
       this._renderDebouncer.refresh(start, end, this._rowCount);
