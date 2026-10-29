@@ -70,40 +70,40 @@ describe('Buffer', () => {
     describe('wrapped', () => {
       it('should return a range for the first row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(0), { first: 0, last: 1 });
       });
       it('should return a range for a middle row wrapping upwards', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(12)!.isWrapped = true;
+        buffer.setWrapped(12, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 11, last: 12 });
       });
       it('should return a range for a middle row wrapping downwards', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(13)!.isWrapped = true;
+        buffer.setWrapped(13, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 12, last: 13 });
       });
       it('should return a range for a middle row wrapping both ways', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(11)!.isWrapped = true;
-        buffer.lines.get(12)!.isWrapped = true;
-        buffer.lines.get(13)!.isWrapped = true;
-        buffer.lines.get(14)!.isWrapped = true;
+        buffer.setWrapped(11, true);
+        buffer.setWrapped(12, true);
+        buffer.setWrapped(13, true);
+        buffer.setWrapped(14, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(12), { first: 10, last: 14 });
       });
       it('should return a range for the last row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(23)!.isWrapped = true;
+        buffer.setWrapped(23, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 1), { first: 22, last: 23 });
       });
       it('should return a range for a row that wraps upward to first row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(1), { first: 0, last: 1 });
       });
       it('should return a range for a row that wraps downward to last row', () => {
         buffer.fillViewportRows();
-        buffer.lines.get(buffer.lines.length - 1)!.isWrapped = true;
+        buffer.setWrapped(buffer.lines.length - 1, true);
         assert.deepEqual(buffer.getWrappedRangeForLine(buffer.lines.length - 2), { first: 22, last: 23 });
       });
     });
@@ -614,7 +614,7 @@ describe('Buffer', () => {
         buffer.lines.get(0)!.set(1, [0, 'b', 1, 'b'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // "ab  " (wrapped)
         // "cd"
@@ -645,7 +645,7 @@ describe('Buffer', () => {
           buffer.lines.get(0)!.set(i, [0, '', 0, 0]);
           buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
         }
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // 汉语汉语汉语 (wrapped)
         // 汉语汉语汉语
@@ -664,6 +664,39 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(1)!.translateToString(true), '语汉语汉语');
         assert.equal(buffer.lines.get(1)!.translateToString(false), '语汉语汉语    ');
       });
+      it('should reflow larger after a wide character was cut from the cursor line', () => {
+        buffer.fillViewportRows();
+        buffer.resize(12, 10);
+        buffer.y = 1;
+        for (let i = 0; i < 12; i += 4) {
+          buffer.lines.get(0)!.set(i, [0, '汉', 2, '汉'.charCodeAt(0)]);
+          buffer.lines.get(1)!.set(i, [0, '汉', 2, '汉'.charCodeAt(0)]);
+        }
+        for (let i = 2; i < 12; i += 4) {
+          buffer.lines.get(0)!.set(i, [0, '语', 2, '语'.charCodeAt(0)]);
+          buffer.lines.get(1)!.set(i, [0, '语', 2, '语'.charCodeAt(0)]);
+        }
+        for (let i = 1; i < 12; i += 2) {
+          buffer.lines.get(0)!.set(i, [0, '', 0, 0]);
+          buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
+        }
+        buffer.setWrapped(1, true);
+        // Buffer:
+        // 汉语汉语汉语 (wrapped)
+        // 汉语汉语汉语 (cursor)
+        // The cursor line is not reflowed, so shrinking cuts the last wide char of each row
+        buffer.resize(11, 10);
+        assert.equal(buffer.lines.get(0)!.translateToString(), '汉语汉语汉 ');
+        assert.equal(buffer.lines.get(1)!.translateToString(), '汉语汉语汉 ');
+        assert.equal(buffer.lines.get(1)!.getTrimmedLength(), 10);
+        // The cursor moves off the wrapped line, then the terminal grows by one column
+        buffer.y = 2;
+        buffer.resize(12, 10);
+        assert.equal(buffer.lines.get(0)!.translateToString(true), '汉语汉语汉汉');
+        assert.equal(buffer.lines.get(1)!.translateToString(true), '语汉语汉');
+        assert.equal(buffer.lines.get(1)!.isWrapped, true);
+        assert.equal(buffer.lines.get(2)!.isWrapped, false);
+      });
       it('should correctly reflow wrapped lines that end in 0 space (via tab char)', () => {
         buffer.fillViewportRows();
         buffer.resize(4, 10);
@@ -672,7 +705,7 @@ describe('Buffer', () => {
         buffer.lines.get(0)!.set(1, [0, 'b', 1, 'b'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
         buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // "ab  " (wrapped)
         // "cd"
@@ -706,7 +739,7 @@ describe('Buffer', () => {
           buffer.lines.get(0)!.set(i, [0, '', 0, 0]);
           buffer.lines.get(1)!.set(i, [0, '', 0, 0]);
         }
-        buffer.lines.get(1)!.isWrapped = true;
+        buffer.setWrapped(1, true);
         // Buffer:
         // 汉语汉语汉语 (wrapped)
         // 汉语汉语汉语
@@ -761,17 +794,17 @@ describe('Buffer', () => {
           buffer.lines.get(0)!.set(1, [0, 'b', 1, 'b'.charCodeAt(0)]);
           buffer.lines.get(1)!.set(0, [0, 'c', 1, 'c'.charCodeAt(0)]);
           buffer.lines.get(1)!.set(1, [0, 'd', 1, 'd'.charCodeAt(0)]);
-          buffer.lines.get(1)!.isWrapped = true;
+          buffer.setWrapped(1, true);
           buffer.lines.get(2)!.set(0, [0, 'e', 1, 'e'.charCodeAt(0)]);
           buffer.lines.get(2)!.set(1, [0, 'f', 1, 'f'.charCodeAt(0)]);
           buffer.lines.get(3)!.set(0, [0, 'g', 1, 'g'.charCodeAt(0)]);
           buffer.lines.get(3)!.set(1, [0, 'h', 1, 'h'.charCodeAt(0)]);
-          buffer.lines.get(3)!.isWrapped = true;
+          buffer.setWrapped(3, true);
           buffer.lines.get(4)!.set(0, [0, 'i', 1, 'i'.charCodeAt(0)]);
           buffer.lines.get(4)!.set(1, [0, 'j', 1, 'j'.charCodeAt(0)]);
           buffer.lines.get(5)!.set(0, [0, 'k', 1, 'k'.charCodeAt(0)]);
           buffer.lines.get(5)!.set(1, [0, 'l', 1, 'l'.charCodeAt(0)]);
-          buffer.lines.get(5)!.isWrapped = true;
+          buffer.setWrapped(5, true);
         });
         describe('viewport not yet filled', () => {
           it('should move the cursor up and add empty lines', () => {

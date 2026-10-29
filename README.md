@@ -100,6 +100,7 @@ The xterm.js team maintains the following addons, but anyone can build them:
 - [`@xterm/addon-fit`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-fit): Fits the terminal to the containing element
 - [`@xterm/addon-image`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-image): Adds image support
 - [`@xterm/addon-ligatures`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-ligatures): Enables rendering of ligatures
+- [`@xterm/addon-program-status`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-program-status): Keeps the status that programs report through the program status sequence (`OSC 7501`)
 - [`@xterm/addon-progress`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-progress): Adds support for the progress API (`OSC 9;4`)
 - [`@xterm/addon-search`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-search): Adds search functionality
 - [`@xterm/addon-serialize`](https://github.com/xtermjs/xterm.js/tree/master/addons/addon-serialize): Serializes the terminal's buffer to VT sequences or HTML
@@ -261,6 +262,7 @@ Xterm.js is used in many world-class applications to provide great terminal expe
 - [**Codeman**](https://github.com/Ark0N/Codeman): Self-hosted mission control for AI coding agents, streaming live tmux sessions to browser and phone.
 - [**JSVIsion**](https://github.com/blendsdk/jsvision): A Turbo Vision-Style TUI SDK for TypeScript. We use xterm.js in our docs to show live JSVision examples running in a web terminal.
 - [**BitFun**](https://github.com/GCWing/BitFun): Open-source desktop AI agent whose integrated terminals and read-only terminal output views use xterm.js with the Fit, Web Links, and WebGL addons.
+- [**Naqsh**](https://ibraryunus.com/apps/naqsh/): Small, borderless macOS terminal built on Tauri and xterm.js, with tabs, split panes, a command palette and a drop-down quick terminal.
 - [**WebSSH**](https://github.com/bifrost0x/webssh): Self-hosted browser-based SSH and SFTP client using xterm.js for its interactive terminal.
 - [And much more...](https://github.com/xtermjs/xterm.js/network/dependents?package_id=UGFja2FnZS0xNjYzMjc4OQ%3D%3D)
 
