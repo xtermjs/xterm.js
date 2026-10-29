@@ -161,7 +161,7 @@ export class TextureAtlas implements ITextureAtlas {
       // Find the set of the largest 4 images, below the maximum size, with the highest
       // percentages used
       const pagesBySize = this._pages.filter(e => {
-        return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
+        return e.canvas.width * 2 <= Math.min(TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE, Constants.FORCED_MAX_TEXTURE_SIZE);
       }).sort((a, b) => {
         if (b.canvas.width !== a.canvas.width) {
           return b.canvas.width - a.canvas.width;
@@ -240,6 +240,7 @@ export class TextureAtlas implements ITextureAtlas {
       }
 
       this._onRemoveTextureAtlasCanvas.fire(p.canvas);
+      p.releaseCanvas();
 
       // Remove the merging page from active pages if it was there
       const index = this._activePages.indexOf(p);
@@ -267,6 +268,7 @@ export class TextureAtlas implements ITextureAtlas {
     for (const page of this._pages) {
       this._onRemoveTextureAtlasCanvas.fire(page.canvas);
       page.canvas.remove();
+      page.releaseCanvas();
     }
     this._pages.length = 0;
     this._activePages.length = 0;
@@ -1131,6 +1133,15 @@ class AtlasPage {
 
       }
     }
+  }
+
+  /**
+   * Frees the canvas backing store now rather than when the canvas is garbage collected, which
+   * can take long enough for discarded pages to add up to gigabytes under heavy glyph churn.
+   */
+  public releaseCanvas(): void {
+    this.canvas.width = 0;
+    this.canvas.height = 0;
   }
 
   public clear(): void {
