@@ -316,7 +316,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       );
     }
     this._charAtlas = atlas;
-    this._charAtlas.warmUp();
+    this._charAtlas.warmUp(this._terminal.element);
     this._glyphRenderer.value?.setAtlas(this._charAtlas);
   }
 
