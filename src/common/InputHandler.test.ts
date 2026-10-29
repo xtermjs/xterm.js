@@ -1527,6 +1527,11 @@ describe('InputHandler', () => {
       await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r\x1b[2Tm');
       assert.deepEqual(getLines(bufferService), ['m', '', '', '1', '4', '5', '6', '7', '8', '9']);
     });
+    it('scrollDown blank lines respect erase attributes', async () => {
+      await inputHandler.parseP('\x1b[41m\x1b[2;4r\x1b[2H\x1b[T');
+      // The blank line inserted at the top of the scroll region should use the current background.
+      assert.equal(bufferService.buffer.lines.get(1)!.loadCell(0, new CellData()).getBgColor(), 1);
+    });
     it('insertLines - out of margins', async () => {
       await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r');
       assert.equal(bufferService.buffer.scrollTop, 2);
