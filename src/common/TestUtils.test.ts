@@ -13,7 +13,10 @@ import { UnicodeV6 } from './input/UnicodeV6';
 import { IDecorationOptions, IDecoration } from '@xterm/xterm';
 import { Emitter, type IEvent } from './Event';
 import { CellData } from './buffer/CellData';
-import { DEFAULT_ATTR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from './buffer/Constants';
+import { DEFAULT_COLOR, NULL_CELL_CHAR, NULL_CELL_WIDTH } from './buffer/Constants';
+
+// Misnamed - random value for testing.
+export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 
 export function createCellData(attr: number, char: string, width: number): CellData {
   return CellData.fromCharData([attr, char, width, char.length === 0 ? 0 : char.charCodeAt(0)]);

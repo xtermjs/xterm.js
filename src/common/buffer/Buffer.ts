@@ -4,15 +4,13 @@
  */
 
 import { CircularList, IInsertEvent } from '../CircularList';
-import { Disposable, toDisposable } from '../Lifecycle';
-import { IdleTaskQueue } from '../TaskQueue';
-import { ICharset } from '../Types';
+import { Disposable } from '../Lifecycle';
 import { IAttributeData, IBuffer, IBufferLine, ICellData } from './Types';
+import { ICharset } from '../Types';
 import { ExtendedAttrs } from './AttributeData';
-import { BufferLine, DEFAULT_ATTR_DATA } from './BufferLine';
-import { getWrappedLineTrimmedLength, reflowLargerApplyNewLayout, reflowLargerCreateNewLayout, reflowLargerGetLinesToRemove, reflowSmallerGetNewLineLengths } from './BufferReflow';
+import { BufferLine, LogicalLine, DEFAULT_ATTR_DATA } from './BufferLine';
 import { CellData } from './CellData';
-import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH } from './Constants';
+import { NULL_CELL_CHAR, NULL_CELL_CODE, NULL_CELL_WIDTH, WHITESPACE_CELL_CHAR, WHITESPACE_CELL_CODE, WHITESPACE_CELL_WIDTH, Attributes } from './Constants';
 import { Marker } from './Marker';
 import { DEFAULT_CHARSET } from '../data/Charsets';
 import { IBufferService, ILogService, IOptionsService } from '../services/Services';
@@ -30,6 +28,7 @@ export class Buffer extends Disposable implements IBuffer {
   public lines: CircularList<IBufferLine>;
   public ydisp: number = 0;
   public ybase: number = 0;
+  /** Row number, relative to ybase. */
   public y: number = 0;
   public x: number = 0;
   public scrollBottom: number;
@@ -49,8 +48,6 @@ export class Buffer extends Disposable implements IBuffer {
   private _cols: number;
   private _rows: number;
   private _isClearing: boolean = false;
-  private _memoryCleanupQueue: InstanceType<typeof IdleTaskQueue>;
-  private _memoryCleanupPosition = 0;
 
   constructor(
     private _hasScrollback: boolean,
@@ -65,9 +62,13 @@ export class Buffer extends Disposable implements IBuffer {
     this.scrollTop = 0;
     this.scrollBottom = this._rows - 1;
     this.setupTabStops();
-    this._memoryCleanupQueue = new IdleTaskQueue(this._logService);
-    this._register(toDisposable(() => this._memoryCleanupQueue.clear()));
-    this._register(toDisposable(() => this.clearAllMarkers()));
+
+    this.lines.onTrim(amount => {
+      const first = this.lines.length && this.lines.get(0);
+      if (first instanceof BufferLine && first.isWrapped) {
+        const prev = first.getPreviousLine();
+        prev && first.asUnwrapped(prev);
+      }});
   }
 
   public getNullCell(attr?: IAttributeData): ICellData {
@@ -96,12 +97,35 @@ export class Buffer extends Disposable implements IBuffer {
     return this._whitespaceCell;
   }
 
-  public getBlankLine(attr: IAttributeData, isWrapped?: boolean): IBufferLine {
-    return new BufferLine(this._bufferService.cols, this.getNullCell(attr), isWrapped);
+  /**
+   * Get an empty unwrapped line.
+   * @param attr Only used for the background color.
+   */
+  public getBlankLine(
+    attr: IAttributeData,
+    logicalLine: LogicalLine = new LogicalLine(this._cols)
+  ): IBufferLine {
+    logicalLine.backgroundColor = attr.bg & Attributes.COLOR_MASK;
+    return new BufferLine(this._cols, logicalLine);
   }
 
   public get hasScrollback(): boolean {
     return this._hasScrollback && this.lines.maxLength > this._rows;
+  }
+
+  /**
+   * Should we allocate a big block to be used for multiple lines?
+   * This makes sense for the regular buffer, which is "mostly-append".
+   * Furthermore, a logical line can have hightly-variable length,
+   * so it makes sense to allocate from the end of a large buffer, and
+   * for sucessive lines, keep alocating from the same buffer as
+   * long it has room.
+   * For the alternate buffer, there is a bounded number of lines,
+   * and a lot more random-access and back-and-forth.
+   * @returns 0 if the answer is no, otherwise suggested block size
+   */
+  public allocateBigBlock(): number {
+    return this.hasScrollback ? 24 * this._cols : 0;
   }
 
   public get isCursorInViewport(): boolean {
@@ -127,7 +151,14 @@ export class Buffer extends Disposable implements IBuffer {
 
   public setWrapped(absrow: number, value: boolean): void {
     const line = this.lines.get(absrow);
-    if (line) (line as BufferLine)._isWrapped = value;
+    if (!line || line.isWrapped === value)
+    {return;}
+    const prevRow = this.lines.get(absrow - 1) as BufferLine;
+    if (value) {
+      (line as BufferLine).setWrapped(prevRow);
+    } else {
+      (line as BufferLine).asUnwrapped(prevRow);
+    }
   }
 
   /**
@@ -137,8 +168,11 @@ export class Buffer extends Disposable implements IBuffer {
     if (this.lines.length === 0) {
       fillAttr ??= DEFAULT_ATTR_DATA;
       let i = this._rows;
+      const normalBuffer = this._hasScrollback;
       while (i--) {
-        this.lines.push(this.getBlankLine(fillAttr));
+        const line = this.getBlankLine(fillAttr,
+          normalBuffer ? new LogicalLine(0) : undefined);
+        this.lines.push(line);
       }
     }
   }
@@ -163,12 +197,6 @@ export class Buffer extends Disposable implements IBuffer {
    * @param newRows The new number of rows.
    */
   public resize(newCols: number, newRows: number): void {
-    // store reference to null cell with default attrs
-    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
-
-    // count bufferlines with overly big memory to be cleaned afterwards
-    let dirtyMemoryLines = 0;
-
     // Increase max length if needed before adjustments to allow space to fill
     // as required.
     const newMaxLength = this._getCorrectBufferLength(newRows);
@@ -186,8 +214,7 @@ export class Buffer extends Disposable implements IBuffer {
       // Deal with columns increasing (reducing needs to happen after reflow)
       if (this._cols < newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          // +boolean for fast 0 or 1 conversion
-          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
+          this.lines.get(i)!.length = newCols;
         }
       }
 
@@ -199,7 +226,7 @@ export class Buffer extends Disposable implements IBuffer {
             if (this._optionsService.rawOptions.windowsPty.backend !== undefined || this._optionsService.rawOptions.windowsPty.buildNumber !== undefined) {
               // Just add the new missing rows on Windows as conpty reprints the screen with its
               // view of the world. Once a line enters scrollback for conpty it remains there
-              this.lines.push(new BufferLine(newCols, nullCell, false));
+              this.lines.push(new BufferLine(newCols));
             } else {
               if (this.ybase > 0 && this.lines.length <= this.ybase + this.y + addToY + 1) {
                 // There is room above the buffer and there are no empty elements below the line,
@@ -213,7 +240,7 @@ export class Buffer extends Disposable implements IBuffer {
               } else {
                 // Add a blank line if there is no buffer left at the top to scroll to, or if there
                 // are blank lines after the cursor
-                this.lines.push(new BufferLine(newCols, nullCell, false));
+                this.lines.push(new BufferLine(newCols));
               }
             }
           }
@@ -266,8 +293,7 @@ export class Buffer extends Disposable implements IBuffer {
       // Trim the end of the line off if cols shrunk
       if (this._cols > newCols) {
         for (let i = 0; i < this.lines.length; i++) {
-          // +boolean for fast 0 or 1 conversion
-          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
+          this.lines.get(i)!.length = newCols;
         }
       }
     }
@@ -281,35 +307,6 @@ export class Buffer extends Disposable implements IBuffer {
       const maxY = Math.max(0, this.lines.length - this.ybase - 1);
       this.y = Math.min(this.y, maxY);
     }
-
-    this._memoryCleanupQueue.clear();
-    // schedule memory cleanup only, if more than 10% of the lines are affected
-    if (dirtyMemoryLines > 0.1 * this.lines.length) {
-      this._memoryCleanupPosition = 0;
-      this._memoryCleanupQueue.enqueue(() => this._batchedMemoryCleanup());
-    }
-  }
-
-  private _batchedMemoryCleanup(): boolean {
-    let normalRun = true;
-    if (this._memoryCleanupPosition >= this.lines.length) {
-      // cleanup made it once through all lines, thus rescan in loop below to also catch shifted
-      // lines, which should finish rather quick if there are no more cleanups pending
-      this._memoryCleanupPosition = 0;
-      normalRun = false;
-    }
-    let counted = 0;
-    while (this._memoryCleanupPosition < this.lines.length) {
-      counted += this.lines.get(this._memoryCleanupPosition++)!.cleanupMemory();
-      // cleanup max 100 lines per batch
-      if (counted > 100) {
-        return true;
-      }
-    }
-    // normal runs always need another rescan afterwards
-    // if we made it here with normalRun=false, we are in a final run
-    // and can end the cleanup task for sure
-    return normalRun;
   }
 
   private get _isReflowEnabled(): boolean {
@@ -334,17 +331,106 @@ export class Buffer extends Disposable implements IBuffer {
   }
 
   private _reflowLarger(newCols: number, newRows: number): void {
-    const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
-    const toRemove: number[] = reflowLargerGetLinesToRemove(this.lines, this._cols, newCols, this.ybase + this.y, this.getNullCell(DEFAULT_ATTR_DATA), reflowCursorLine);
+    const toRemove: number[] = this._reflowLargerGetLinesToRemove(this._cols, newCols);
     if (toRemove.length > 0) {
-      const newLayoutResult = reflowLargerCreateNewLayout(this.lines, toRemove);
-      reflowLargerApplyNewLayout(this.lines, newLayoutResult.layout);
-      this._reflowLargerAdjustViewport(newCols, newRows, newLayoutResult.countRemoved);
+      const countRemoved = this._reflowLargerNewLayout(this.lines, toRemove);
+      this._reflowLargerAdjustViewport(newCols, newRows, countRemoved);
     }
   }
 
+  /**
+   * Evaluates and returns indexes to be removed after a reflow larger occurs. Lines will be removed
+   * when a wrapped line unwraps.
+   * @param oldCols The columns before resize
+   * @param newCols The columns after resize.
+   */
+  private _reflowLargerGetLinesToRemove(oldCols: number, newCols: number): number[] {
+    // Gather all BufferLines that need to be removed from the Buffer here so that they can be
+    // batched up and only committed once
+    const toRemove: number[] = [];
+    const lines = this.lines;
+    const bufferAbsoluteY = this.ybase + this.y;
+    // Whether to reflow the line containing the cursor.
+    const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
+
+    for (let y = 0; y < lines.length - 1; y++) {
+      // Check if this row is wrapped
+      let i = y;
+      let nextLine = lines.get(++i) as BufferLine;
+      if (!nextLine.isWrapped) {
+        continue;
+      }
+
+      // Check how many lines it's wrapped for
+      const wrappedLines: BufferLine[] = [lines.get(y) as BufferLine];
+      while (i < lines.length && nextLine.isWrapped) {
+        wrappedLines.push(nextLine);
+        nextLine = lines.get(++i) as BufferLine;
+      }
+
+      if (!reflowCursorLine) {
+        // If these lines contain the cursor don't touch them, the program will handle fixing up
+        // wrapped lines with the cursor
+        if (bufferAbsoluteY >= y && bufferAbsoluteY < i) {
+          y += wrappedLines.length - 1;
+          continue;
+        }
+      }
+      const oldWrapped = wrappedLines.length;
+      this._reflowLine(wrappedLines, newCols);
+
+      // Work backwards and remove any rows at the end that only contain null cells
+      const countToRemove = oldWrapped - wrappedLines.length;
+      if (countToRemove > 0) {
+        toRemove.push(y + oldWrapped - countToRemove); // index
+        toRemove.push(countToRemove);
+      }
+
+      y += oldWrapped - 1;
+    }
+    return toRemove;
+  }
+
+  /**
+   * Creates and return the new layout for lines given an array of indexes to be removed.
+   * @param lines The buffer lines.
+   * @param toRemove The indexes to remove.
+   */
+  private _reflowLargerNewLayout(lines: CircularList<IBufferLine>, toRemove: number[]): number {
+    const newLayout: BufferLine[] = [];
+    // First iterate through the list and get the actual indexes to use for rows
+    let nextToRemoveIndex = 0;
+    let nextToRemoveStart = toRemove[nextToRemoveIndex];
+    let countRemovedSoFar = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (nextToRemoveStart === i) {
+        const countToRemove = toRemove[++nextToRemoveIndex];
+
+        // Tell markers that there was a deletion
+        lines.onDeleteEmitter.fire({
+          index: i - countRemovedSoFar,
+          amount: countToRemove
+        });
+
+        i += countToRemove - 1;
+        countRemovedSoFar += countToRemove;
+        nextToRemoveStart = toRemove[++nextToRemoveIndex];
+      } else {
+        // Record original lines so they don't get overridden when we rearrange the list
+        newLayout.push(lines.get(i) as BufferLine);
+      }
+    }
+    // Applies a new layout to the buffer. This essentially does the same as many splice calls but
+    // it's done all at once in a single iteration through the list since splice is very expensive.
+    // Now rearrange the list
+    for (let i = 0; i < newLayout.length; i++) {
+      lines.set(i, newLayout[i]);
+    }
+    lines.length = newLayout.length;
+    return countRemovedSoFar;
+  }
+
   private _reflowLargerAdjustViewport(newCols: number, newRows: number, countRemoved: number): void {
-    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
     // Adjust viewport based on number of items removed
     let viewportAdjustments = countRemoved;
     while (viewportAdjustments-- > 0) {
@@ -354,7 +440,7 @@ export class Buffer extends Disposable implements IBuffer {
         }
         if (this.lines.length < newRows) {
           // Add an extra row at the bottom of the viewport
-          this.lines.push(new BufferLine(newCols, nullCell, false));
+          this.lines.push(new BufferLine(newCols));
         }
       } else {
         if (this.ydisp === this.ybase) {
@@ -366,9 +452,41 @@ export class Buffer extends Disposable implements IBuffer {
     this.savedY = Math.max(this.savedY - countRemoved, 0);
   }
 
+  private _reflowLine(wrappedLines: BufferLine[], newCols: number): BufferLine[] {
+    const newLines: BufferLine[] = [];
+    let startCol = 0;
+    let curRow = 1;
+    let curLine = wrappedLines[0];
+    const logical = curLine.logical();
+    for (;;) {
+      const endCol = logical.charStart(startCol + newCols);
+      if (endCol >= logical.trimmedLength) {
+        curLine.nextBufferLine = undefined;
+        curLine.startColumn = startCol;
+        break;
+      }
+      let newLine;
+      if (curRow < wrappedLines.length) {
+        newLine = wrappedLines[curRow];
+        newLine.length = newCols;
+      } else {
+        newLine = new BufferLine(newCols, logical);
+        newLines.push(newLine);
+      }
+      curRow++;
+      newLine.startColumn = endCol;
+      startCol = endCol;
+      curLine.nextBufferLine = newLine;
+      curLine = newLine;
+    }
+    if (curRow < wrappedLines.length) {
+      wrappedLines.length = curRow;
+    }
+    return newLines;
+  }
+
   private _reflowSmaller(newCols: number, newRows: number): void {
     const reflowCursorLine = this._optionsService.rawOptions.reflowCursorLine;
-    const nullCell = this.getNullCell(DEFAULT_ATTR_DATA);
     // Gather all BufferLines that need to be inserted into the Buffer here so that they can be
     // batched up and only committed once
     const toInsert = [];
@@ -393,13 +511,17 @@ export class Buffer extends Disposable implements IBuffer {
         // wrapped lines with the cursor
         const absoluteY = this.ybase + this.y;
         if (absoluteY >= y && absoluteY < y + wrappedLines.length) {
+          for (let i = wrappedLines.length; --i > 0; ) {
+            wrappedLines[i].asUnwrapped(wrappedLines[i-1]);
+          }
+          for (let i = wrappedLines.length; --i >= 0; ) {
+            wrappedLines[i].eraseRight(newCols);
+          }
           continue;
         }
       }
-
-      const lastLineLength = wrappedLines[wrappedLines.length - 1].getTrimmedLength();
-      const destLineLengths = reflowSmallerGetNewLineLengths(wrappedLines, this._cols, newCols);
-      const linesToAdd = destLineLengths.length - wrappedLines.length;
+      const newLines = this._reflowLine(wrappedLines, newCols);
+      const linesToAdd = newLines.length;
       let trimmedLines: number;
       if (this.ybase === 0 && this.y !== this.lines.length - 1) {
         // If the top section of the buffer is not yet filled
@@ -408,12 +530,6 @@ export class Buffer extends Disposable implements IBuffer {
         trimmedLines = Math.max(0, this.lines.length - this.lines.maxLength + linesToAdd);
       }
 
-      // Add the new lines
-      const newLines: BufferLine[] = [];
-      for (let i = 0; i < linesToAdd; i++) {
-        const newLine = this.getBlankLine(DEFAULT_ATTR_DATA, true) as BufferLine;
-        newLines.push(newLine);
-      }
       if (newLines.length > 0) {
         toInsert.push({
           // countToInsert here gets the actual index, taking into account other inserted items.
@@ -422,46 +538,8 @@ export class Buffer extends Disposable implements IBuffer {
           newLines
         });
         countToInsert += newLines.length;
+        wrappedLines.push(...newLines);
       }
-      wrappedLines.push(...newLines);
-
-      // Copy buffer data to new locations, this needs to happen backwards to do in-place
-      let destLineIndex = destLineLengths.length - 1; // Math.floor(cellsNeeded / newCols);
-      let destCol = destLineLengths[destLineIndex]; // cellsNeeded % newCols;
-      if (destCol === 0) {
-        destLineIndex--;
-        destCol = destLineLengths[destLineIndex];
-      }
-      let srcLineIndex = wrappedLines.length - linesToAdd - 1;
-      let srcCol = lastLineLength;
-      while (srcLineIndex >= 0) {
-        const cellsToCopy = Math.min(srcCol, destCol);
-        if (wrappedLines[destLineIndex] === undefined) {
-          // Sanity check that the line exists, this has been known to fail for an unknown reason
-          // which would stop the reflow from happening if an exception would throw.
-          break;
-        }
-        wrappedLines[destLineIndex].copyCellsFrom(wrappedLines[srcLineIndex], srcCol - cellsToCopy, destCol - cellsToCopy, cellsToCopy, true);
-        destCol -= cellsToCopy;
-        if (destCol === 0) {
-          destLineIndex--;
-          destCol = destLineLengths[destLineIndex];
-        }
-        srcCol -= cellsToCopy;
-        if (srcCol === 0) {
-          srcLineIndex--;
-          const wrappedLinesIndex = Math.max(srcLineIndex, 0);
-          srcCol = getWrappedLineTrimmedLength(wrappedLines, wrappedLinesIndex, this._cols);
-        }
-      }
-
-      // Null out the end of the line ends if a wide character wrapped to the following line
-      for (let i = 0; i < wrappedLines.length; i++) {
-        if (destLineLengths[i] < newCols) {
-          wrappedLines[i].setCell(destLineLengths[i], nullCell);
-        }
-      }
-
       // Adjust viewport as needed
       let viewportAdjustments = linesToAdd - trimmedLines;
       while (viewportAdjustments-- > 0) {

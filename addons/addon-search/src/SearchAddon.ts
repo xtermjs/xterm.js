@@ -8,7 +8,6 @@ import type { SearchAddon as ISearchApi, ISearchOptions, ISearchAddonOptions, IS
 import { Emitter, type IEvent } from 'common/Event';
 import { Disposable, MutableDisposable, toDisposable } from 'common/Lifecycle';
 import { disposableTimeout } from 'common/Async';
-import { SearchLineCache } from './SearchLineCache';
 import { SearchState } from './SearchState';
 import { SearchEngine, type ISearchResult } from './SearchEngine';
 import { DecorationManager } from './DecorationManager';
@@ -34,7 +33,6 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
   private _terminal: Terminal | undefined;
   private _highlightLimit: number;
   private _highlightTimeout = this._register(new MutableDisposable<IDisposable>());
-  private _lineCache = this._register(new MutableDisposable<SearchLineCache>());
 
   // Component instances
   private _state = new SearchState();
@@ -59,8 +57,7 @@ export class SearchAddon extends Disposable implements ITerminalAddon, ISearchAp
 
   public activate(terminal: Terminal): void {
     this._terminal = terminal;
-    this._lineCache.value = new SearchLineCache(terminal);
-    this._engine = new SearchEngine(terminal, this._lineCache.value);
+    this._engine = new SearchEngine(terminal);
     this._decorationManager = new DecorationManager(terminal);
     this._register(this._terminal.onWriteParsed(() => this._updateMatches()));
     this._register(this._terminal.onResize(() => this._updateMatches()));

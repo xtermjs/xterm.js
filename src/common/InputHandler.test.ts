@@ -461,8 +461,10 @@ describe('InputHandler', () => {
       await resetToBaseState();
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 40;
-      inputHandler.eraseInLine(Params.fromArray([0]));
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
+      assert.equal(bufferService.buffer.lines.get(3)!.isWrapped, true);
+      inputHandler.eraseInLine(Params.fromArray([0]));
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);assert.equal(bufferService.buffer.lines.get(3)!.isWrapped, false);
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 0;
       inputHandler.eraseInLine(Params.fromArray([0]));
@@ -473,7 +475,8 @@ describe('InputHandler', () => {
       bufferService.buffer.y = 2;
       bufferService.buffer.x = 40;
       inputHandler.eraseInLine(Params.fromArray([1]));
-      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, true);
+      assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
+      assert.equal(bufferService.buffer.lines.get(3)!.isWrapped, true);
 
       // params[2] - erase complete line
       await resetToBaseState();
@@ -481,6 +484,7 @@ describe('InputHandler', () => {
       bufferService.buffer.x = 40;
       inputHandler.eraseInLine(Params.fromArray([2]));
       assert.equal(bufferService.buffer.lines.get(2)!.isWrapped, false);
+      assert.equal(bufferService.buffer.lines.get(3)!.isWrapped, false);
     });
     it('ED2 with scrollOnEraseInDisplay turned on', async () => {
       const inputHandler = new TestInputHandler(
@@ -1863,6 +1867,8 @@ describe('InputHandler', () => {
         await inputHandler.parseP('\x1b[?45h');
         await inputHandler.parseP('￥￥￥');
         assert.deepEqual(getLines(bufferService, 2), ['￥￥', '￥']);
+        assert.equal(bufferService.buffer.lines.get(0)?.logical().asString(), '￥￥￥');
+        assert.equal(bufferService.buffer.lines.get(1)?.startColumn, 4);
         await inputHandler.parseP(ttyBS);
         assert.deepEqual(getLines(bufferService, 2), ['￥￥', '  ']);
         assert.equal(bufferService.buffer.x, 1);

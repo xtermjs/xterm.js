@@ -4,7 +4,6 @@
  */
 
 export const DEFAULT_COLOR = 0;
-export const DEFAULT_ATTR = (0 << 18) | (DEFAULT_COLOR << 9) | (256 << 0);
 export const DEFAULT_EXT = 0;
 
 export const CHAR_DATA_ATTR_INDEX = 0;
@@ -32,6 +31,15 @@ export const WHITESPACE_CELL_CODE = 32;
 
 /**
  * Bitmasks for accessing data in `content`.
+ * Text contrent is one of:
+ * (a) Directly stored in the content word as a 21-bit Unicode code point.
+ * In this case CODEPOINT_MASK contains the codepoint.
+ * STORED_IN_CHARS_MASK and IS_COMBINED_MASK are always 0 in this case.
+ * (b) A substring of the LogicalLine's _chars property.
+ * In this case STORED_IN_CHARS_MASK is non-zero.
+ * IS_COMBINED_MASK may be zero or non-zero.
+ * The first char is in START_IN_CHARS_MASK and the length is in
+ * LENGTH_IN_CHARS_MASK.
  */
 export const enum Content {
   /**
@@ -54,10 +62,11 @@ export const enum Content {
   /**
    * bit 1..22    mask to check whether a cell contains any string data
    *              we need to check for codepoint and isCombined bits to see
-   *              whether a cell contains anything
+   *              whether a cell contains anything.
+   *              We also check LENGTH_IN_CHARS_MASK in case STORED_IN_CHARS_MASK.
    *              read:   `isEmpty = !(content & Content.HAS_CONTENT_MASK)`
    */
-  HAS_CONTENT_MASK = 0x3FFFFF,
+  HAS_CONTENT_MASK = 0x0F3FFFFF,
 
   /**
    * bit 23..24   wcwidth value of cell, takes 2 bits (ranges from 0..2)
@@ -69,11 +78,24 @@ export const enum Content {
    *                      shortcut if precondition `0 <= width <= 3` is met:
    *                      `content |= width << Content.WIDTH_SHIFT;`
    */
-  WIDTH_MASK = 0xC00000,   // 3 << 22
-  WIDTH_SHIFT = 22
+  WIDTH_MASK = 0xF0000000,   // 3 << WIDTH_SHIFT
+  WIDTH_SHIFT = 28,
+  START_IN_CHARS_MASK = 0x1FFFFF,
+  START_IN_CHARS_SHIFT = 0,
+  LENGTH_IN_CHARS_MASK = 0x0F000000,
+  LENGTH_IN_CHARS_SHIFT = 24,
+  STORED_IN_CHARS_MASK = 0x400000 // 1 << 24
+  // FIXME non-optimal values for some shifts and masks.
+  // The width field must be high-order, unless WIDTH_MASK is used more
+  // The width first field be high-order bits unless we replace >> by >>>.
 }
 
 export const enum Attributes {
+  /**
+   * Color is encoded using 26 bits. If those, the high-order 2 bits is the
+   * color mode, which specifies how to interpret the remaining 24 bits.
+   */
+  COLOR_MASK = 0x3FFFFFF, /* CM_MASK | RGB_MASK */
   /**
    * bit 1..8     blue in RGB, color in P256 and P16
    */

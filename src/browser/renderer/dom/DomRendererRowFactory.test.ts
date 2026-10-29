@@ -6,11 +6,11 @@
 import jsdom = require('jsdom');
 import { assert } from 'chai';
 import { DomRendererRowFactory } from './DomRendererRowFactory';
-import { DEFAULT_ATTR, FgFlags, BgFlags, Attributes, UnderlineStyle } from '../../../common/buffer/Constants';
+import { FgFlags, BgFlags, Attributes, UnderlineStyle, NULL_CELL_CHAR } from '../../../common/buffer/Constants';
 import { BufferLine, DEFAULT_ATTR_DATA } from '../../../common/buffer/BufferLine';
 import { IBufferLine } from '../../../common/buffer/Types';
 import { CellData } from '../../../common/buffer/CellData';
-import { MockCoreService, MockDecorationService, MockOptionsService, createCellData, NULL_CELL_DATA } from '../../../common/TestUtils.test';
+import { MockCoreService, MockDecorationService, MockOptionsService, createCellData, NULL_CELL_DATA, DEFAULT_ATTR } from '../../../common/TestUtils.test';
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from '../../TestUtils.test';
 import { TestWidthCache } from './WidthCache.test';
 
@@ -347,6 +347,7 @@ describe('DomRendererRowFactory', () => {
       });
       it('should force whitespace cells to be rendered above the background', () => {
         lineData.setCell(1, createCellData(DEFAULT_ATTR, 'a', 1));
+        lineData.setCell(0, createCellData(DEFAULT_ATTR, ' ', 1));
         rowFactory.handleSelectionChanged([0, 0], [2, 0], false);
         const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, true, 5, widthCache, -1, -1);
         assert.equal(extractHtml(spans),
@@ -490,6 +491,7 @@ describe('DomRendererRowFactory', () => {
       lineData.setCell(1, createCellData(DEFAULT_ATTR, 'a', 1));
       lineData.setCell(2, createCellData(DEFAULT_ATTR, 'x', 1));
       lineData.setCell(4, createCellData(DEFAULT_ATTR, 'x', 1));
+      lineData.setCell(3, createCellData(DEFAULT_ATTR, NULL_CELL_CHAR, 1));
       const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, true, 5, widthCache, 2, 4);
       assert.equal(extractHtml(spans),
         '<span>aa</span><span style="text-decoration: underline;">x x</span>'

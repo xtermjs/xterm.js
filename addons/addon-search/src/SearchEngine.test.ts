@@ -4,7 +4,6 @@
  */
 import { assert } from 'chai';
 import { SearchEngine } from './SearchEngine';
-import { SearchLineCache } from './SearchLineCache';
 import { Terminal } from 'browser/public/Terminal';
 import type { ISearchOptions } from '@xterm/addon-search';
 import { DisposableStore } from 'common/Lifecycle';
@@ -16,14 +15,12 @@ function writeP(terminal: Terminal, data: string): Promise<void> {
 describe('SearchEngine', () => {
   let store: DisposableStore;
   let terminal: Terminal;
-  let lineCache: SearchLineCache;
   let searchEngine: SearchEngine;
 
   beforeEach(() => {
     store = new DisposableStore();
     terminal = store.add(new Terminal({ cols: 80, rows: 24 }));
-    lineCache = store.add(new SearchLineCache(terminal));
-    searchEngine = new SearchEngine(terminal, lineCache);
+    searchEngine = new SearchEngine(terminal);
   });
 
   afterEach(() => {
@@ -663,9 +660,6 @@ describe('SearchEngine', () => {
     it('should use cache for line translation', async () => {
       await writeP(terminal, 'Hello World');
 
-      // Initialize cache
-      lineCache.initLinesCache();
-
       const result1 = searchEngine.find('World', 0, 0);
       const result2 = searchEngine.find('World', 0, 0);
 
@@ -688,7 +682,6 @@ describe('SearchEngine', () => {
 
     it('should work correctly with cache invalidation', async () => {
       await writeP(terminal, 'Initial text');
-      lineCache.initLinesCache();
 
       const result1 = searchEngine.find('Initial', 0, 0);
       assert.notStrictEqual(result1, undefined);
