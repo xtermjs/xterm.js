@@ -194,9 +194,9 @@ describe('BufferLine', function(): void {
     assert.equal(line.length, 10);
     assert.deepEqual(line.loadCell(0, new CellData()).getAsCharData(), [0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
     assert.equal(line.isWrapped, true);
-    line = new TestBufferLine(10, createCellData(123, 'a', 456), true);
+    line = new TestBufferLine(10, createCellData(123, 'a', 2), true);
     assert.equal(line.length, 10);
-    assert.deepEqual(line.loadCell(0, new CellData()).getAsCharData(), [123, 'a', 456, 'a'.charCodeAt(0)]);
+    assert.deepEqual(line.loadCell(0, new CellData()).getAsCharData(), [123, 'a', 2, 'a'.charCodeAt(0)]);
     assert.equal(line.isWrapped, true);
   });
   it('insertCells', function(): void {

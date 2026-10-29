@@ -31,7 +31,7 @@ export class CellData extends AttributeData implements ICellData {
   }
   /** Width of the cell. */
   public getWidth(): number {
-    return this.content >> Content.WIDTH_SHIFT;
+    return (this.content & Content.WIDTH_MASK) >> Content.WIDTH_SHIFT;
   }
   /** JS string of the content. */
   public getChars(): string {

@@ -141,6 +141,8 @@ export interface IBufferLine {
   /* direct access to cell attrs */
   getWidth(index: number): number;
   hasWidth(index: number): number;
+  isWrapExcess(index: number): boolean;
+  setWrapExcess(index: number): void;
   getFg(index: number): number;
   getBg(index: number): number;
   hasContent(index: number): number;

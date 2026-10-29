@@ -113,7 +113,7 @@ export class BufferLine implements IBufferLine {
       (content & Content.IS_COMBINED_MASK)
         ? this._combined[index]
         : (cp) ? stringFromCodePoint(cp) : '',
-      content >> Content.WIDTH_SHIFT,
+      (content & Content.WIDTH_MASK) >> Content.WIDTH_SHIFT,
       (content & Content.IS_COMBINED_MASK)
         ? this._combined[index].charCodeAt(this._combined[index].length - 1)
         : cp
@@ -140,7 +140,25 @@ export class BufferLine implements IBufferLine {
    * use these when only one value is needed, otherwise use `loadCell`
    */
   public getWidth(index: number): number {
-    return this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] >> Content.WIDTH_SHIFT;
+    return (this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] & Content.WIDTH_MASK) >> Content.WIDTH_SHIFT;
+  }
+
+  /**
+   * Test whether the cell is a filler cell that was added when a wide character did not fit
+   * into the last column and got wrapped early onto the next line.
+   * Such cells are not part of the line content and have to be ignored on reflow.
+   */
+  public isWrapExcess(index: number): boolean {
+    return !!(this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] & Content.IS_WRAP_EXCESS_MASK);
+  }
+
+  /**
+   * Marks a cell as a filler cell that was added when a wide character did not fit into the
+   * last column and got wrapped early onto the next line. Only to be used on cells without
+   * content, otherwise the line content gets flagged as filler.
+   */
+  public setWrapExcess(index: number): void {
+    this._data[index * Constants.CELL_INDICIES + Cell.CONTENT] |= Content.IS_WRAP_EXCESS_MASK;
   }
 
   /** Test whether content has width. */
@@ -532,7 +550,7 @@ export class BufferLine implements IBufferLine {
   public getTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
       if ((this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] & Content.HAS_CONTENT_MASK)) {
-        return i + (this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] >> Content.WIDTH_SHIFT);
+        return i + ((this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] & Content.WIDTH_MASK) >> Content.WIDTH_SHIFT);
       }
     }
     return 0;
@@ -541,7 +559,7 @@ export class BufferLine implements IBufferLine {
   public getNoBgTrimmedLength(): number {
     for (let i = this.length - 1; i >= 0; --i) {
       if ((this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] & Content.HAS_CONTENT_MASK) || (this._data[i * Constants.CELL_INDICIES + Cell.BG] & Attributes.CM_MASK)) {
-        return i + (this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] >> Content.WIDTH_SHIFT);
+        return i + ((this._data[i * Constants.CELL_INDICIES + Cell.CONTENT] & Content.WIDTH_MASK) >> Content.WIDTH_SHIFT);
       }
     }
     return 0;
@@ -610,7 +628,7 @@ export class BufferLine implements IBufferLine {
           outColumns.push(startCol);
         }
       }
-      startCol += (content >> Content.WIDTH_SHIFT) || 1; // always advance by at least 1
+      startCol += ((content & Content.WIDTH_MASK) >> Content.WIDTH_SHIFT) || 1; // always advance by at least 1
     }
     if (outColumns) {
       outColumns.push(startCol);
