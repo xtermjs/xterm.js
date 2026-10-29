@@ -222,6 +222,19 @@
     cursor: default;
 }
 
+/* Slider colors are scoped to each viewport by Viewport. */
+.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider {
+    background: var(--xterm-scrollbar-slider-background);
+}
+
+.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider:hover {
+    background: var(--xterm-scrollbar-slider-hover-background);
+}
+
+.xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-slider.xterm-active {
+    background: var(--xterm-scrollbar-slider-active-background);
+}
+
 /* Arrows */
 
 .xterm .xterm-scrollable-element > .xterm-scrollbar > .xterm-scra {
