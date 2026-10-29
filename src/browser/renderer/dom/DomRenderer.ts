@@ -80,6 +80,8 @@ export class DomRenderer extends Disposable implements IRenderer {
     this._rowContainer = this._document.createElement('div');
     this._rowContainer.classList.add(Constants.ROW_CONTAINER_CLASS);
     this._rowContainer.style.lineHeight = 'normal';
+    // Rows let tall glyphs overflow vertically; clip them at the terminal's edges
+    this._rowContainer.style.overflow = 'clip';
     this._rowContainer.setAttribute('aria-hidden', 'true');
     this._refreshRowElements(this._bufferService.cols, this._bufferService.rows);
     this._selectionContainer = this._document.createElement('div');
@@ -152,8 +154,9 @@ export class DomRenderer extends Disposable implements IRenderer {
       element.style.width = `${this.dimensions.css.canvas.width}px`;
       element.style.height = `${this.dimensions.css.cell.height}px`;
       element.style.lineHeight = `${this.dimensions.css.cell.height}px`;
-      // Make sure rows don't overflow onto following row
-      element.style.overflow = 'hidden';
+      // Clip horizontal overflow, but let glyphs taller than the cell overflow vertically
+      element.style.overflowX = 'clip';
+      element.style.overflowY = 'visible';
     }
 
     if (!this._dimensionsStyleElement) {
