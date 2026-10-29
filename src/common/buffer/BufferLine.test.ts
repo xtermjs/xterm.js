@@ -557,6 +557,16 @@ describe('BufferLine', function(): void {
       line.insertCells(4, 1, createCellData(1, 'a', 1));
       assert.equal(line.translateToString(), 'aaa aa ￥ ');
     });
+    it('resize - shrink cuts wide char at end', () => {
+      const line = new TestBufferLine(10, NULL_CELL_DATA, false);
+      populate(line);
+      line.resize(9, NULL_CELL_DATA);
+      assert.equal(line.translateToString(), '￥￥￥￥ ');
+      assert.equal(line.getTrimmedLength(), 8);
+      line.resize(8, NULL_CELL_DATA);
+      assert.equal(line.translateToString(), '￥￥￥￥');
+      assert.equal(line.getTrimmedLength(), 8);
+    });
     it('delete', () => {
       const line = new TestBufferLine(10, NULL_CELL_DATA, false);
       populate(line);

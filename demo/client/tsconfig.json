@@ -23,6 +23,9 @@
       "@xterm/addon-image": [
         "../../addons/addon-image"
       ],
+      "@xterm/addon-program-status": [
+        "../../addons/addon-program-status"
+      ],
       "@xterm/addon-progress": [
         "../../addons/addon-progress"
       ],
