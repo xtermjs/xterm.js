@@ -452,7 +452,11 @@ export class MouseService implements IMouseService {
 
   /**
    * Processes a wheel event, accounting for partial scrolls for trackpad, mouse scrolls.
-   * This prevents hyper-sensitive scrolling in alt buffer.
+   *
+   * Sub-cell deltas accumulate in `_wheelPartialScroll`, so a trackpad reporting a few pixels per
+   * event yields a line per cell of travel rather than a line per event. That accumulator is what
+   * prevents hyper-sensitive scrolling in the alt buffer, and it is the same approach the viewport
+   * uses for the normal buffer, so a gesture covers the same distance in either buffer.
    */
   private _consumeWheelEvent(ev: WheelEvent, cellHeight?: number, dpr?: number): number {
     // Do nothing if it's not a vertical scroll event
@@ -469,11 +473,6 @@ export class MouseService implements IMouseService {
 
     if (ev.deltaMode === WheelEvent.DOM_DELTA_PIXEL) {
       amount /= (targetWheelEventPixels + 0.0); // Prevent integer division
-
-      const isLikelyTrackpad = Math.abs(ev.deltaY) < 50;
-      if (isLikelyTrackpad) {
-        amount *= 0.3;
-      }
 
       this._wheelPartialScroll += amount;
       amount = Math.floor(Math.abs(this._wheelPartialScroll)) * (this._wheelPartialScroll > 0 ? 1 : -1);
