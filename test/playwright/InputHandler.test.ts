@@ -221,11 +221,13 @@ test.describe('InputHandler Integration Tests', () => {
       await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
       await pollFor(ctx.page, () => getLinesAsArray(5), ['1', '2', '3', '4', '5']);
       await ctx.proxy.write('\x1b[S');
-      await pollFor(ctx.page, () => getLinesAsArray(5), ['2', '3', '4', '5', '']);
+      // Scrolled out lines are preserved in the scrollback, consistent with linefeed
+      // scrolling, so the buffer keeps the scrolled out line above the shifted viewport
+      await pollFor(ctx.page, () => getLinesAsArray(6), ['1', '2', '3', '4', '5', '']);
       await ctx.proxy.reset();
       await ctx.proxy.write('1\r\n2\r\n3\r\n4\r\n5');
       await ctx.proxy.write('\x1b[2S');
-      await pollFor(ctx.page, () => getLinesAsArray(5), ['3', '4', '5', '', '']);
+      await pollFor(ctx.page, () => getLinesAsArray(7), ['1', '2', '3', '4', '5', '', '']);
     });
     // This is intentionally not implemented here are image support lives within an addon
     // test.skip('CSI ? Pi ; Pa ; Pv S - XTSMGRAPHICS: Set or request graphics attribute, xterm', async () => {
