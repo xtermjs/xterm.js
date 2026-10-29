@@ -3,7 +3,7 @@
  * @license MIT
  */
 import { test } from '@playwright/test';
-import { deepStrictEqual } from 'assert';
+import { deepStrictEqual, ok, strictEqual } from 'assert';
 import { createTestContext, ITestContext, openTerminal } from './TestUtils';
 import { IRenderDimensions } from '../../src/browser/renderer/shared/Types';
 
@@ -16,15 +16,26 @@ test.afterAll(async () => await ctx.page.close());
 
 test.describe('RenderService dimensions after dispose', () => {
   test('dimensions does not throw after dispose', async () => {
-    // RenderService.dimensions used a non-null assertion on the (MutableDisposable-cleared)
-    // renderer, so any caller reaching it after dispose() got an uncaught TypeError instead of
-    // a value (xtermjs/xterm.js#6070). CoreBrowserTerminal never nulls out its _renderService
-    // reference on dispose, so this is reachable by anything holding on to the terminal, a
-    // service, or (before #6019) a leaked document-level listener.
+    // Cold read: openTerminal does not write, so nothing on the open path (including
+    // _syncTextArea) touches RenderService.dimensions. Sample the live renderer directly,
+    // dispose, then read the getter. A 0×0 fallback or a TypeError must fail (#6070).
+    await openTerminal(ctx);
+    const size: { width: number, height: number } = await ctx.page.evaluate(`
+      (() => {
+        const dimensions = window.term._core._renderService._renderer.value.dimensions;
+        return { width: dimensions.css.canvas.width, height: dimensions.css.canvas.height };
+      })()
+    `);
+    ok(size.width > 0);
+    ok(size.height > 0);
+
     await ctx.page.evaluate(`window.term.dispose()`);
     const dimensions: IRenderDimensions = await ctx.page.evaluate(`window.term._core._renderService.dimensions`);
-    deepStrictEqual(typeof dimensions, 'object');
-    deepStrictEqual(typeof dimensions.css.cell.width, 'number');
+    strictEqual(dimensions.css.canvas.width, size.width);
+    strictEqual(dimensions.css.canvas.height, size.height);
+    ok(dimensions.css.canvas.width > 0);
+    ok(dimensions.css.canvas.height > 0);
+    ok(dimensions.css.cell.width > 0);
 
     // leave the page in a clean state for the next test
     await openTerminal(ctx);
