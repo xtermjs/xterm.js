@@ -33,7 +33,7 @@ declare module '@xterm/addon-program-status' {
     public dispose(): void;
 
     /**
-     * The current records, from the oldest update to the newest.
+     * Every record the terminal holds, least recently updated first.
      */
     public readonly records: ReadonlyArray<IProgramStatusRecord>;
 
@@ -43,16 +43,18 @@ declare module '@xterm/addon-program-status' {
     public readonly onChange: IEvent<ReadonlyArray<IProgramStatusRecord>>;
 
     /**
-     * Removes a record and its descendants.
-     * @param id The record to remove. With no id, or the root record's empty
-     * id, every record is removed.
+     * Deletes the record at `id` and every record beneath it, as a
+     * `state=clear` report does.
+     * @param id The id to clear. The default, the root record's empty id,
+     * clears every record.
      */
     public clear(id?: string): void;
 
     /**
-     * Removes `working` and `blocked` records. Call this after the attached
-     * process exits and its last output is parsed, for example in the
-     * callback of `terminal.write('', callback)`.
+     * Tells the addon that the attached process has exited, which drops
+     * `working` and `blocked` records. Call it once the process's final
+     * output has been parsed, for example from the callback of
+     * `terminal.write('', callback)`.
      */
     public processExited(): void;
 
@@ -65,16 +67,19 @@ declare module '@xterm/addon-program-status' {
   }
 
   /**
-   * One record, as the last report with its id described it.
+   * The status that the last report with this id gave. Each report replaces
+   * its record whole, so nothing carries over from an earlier report.
    *
-   * The text is untrusted. It has no control characters, but it can contain
-   * text direction overrides and invisible formatting characters, which an
-   * embedder should remove before it shows the text outside the terminal.
+   * `title` and `message` come from the program and are untrusted. Reports
+   * with control characters are refused, but bidirectional overrides and
+   * invisible formatting characters can still appear. Strip them before the
+   * text is shown anywhere outside the terminal.
    */
   export interface IProgramStatusRecord {
     /**
-     * The record's path, segments joined by `/`. An empty string identifies
-     * the root record.
+     * The id from the report, a path of segments joined by `/`, such as
+     * `deploy/us-east`. Reports without an id address the root record, whose
+     * id is the empty string.
      */
     readonly id: string;
 
@@ -90,23 +95,29 @@ declare module '@xterm/addon-program-status' {
     readonly state: 'idle' | 'working' | 'done' | 'blocked' | 'error';
 
     /**
-     * What a `blocked` program needs from the user.
+     * What a `blocked` record is waiting for.
+     *
+     * - `permission`: Approval to do something.
+     * - `question`: An answer the user has to type.
+     * - `auth`: A login, token or credential.
      */
     readonly kind?: 'permission' | 'question' | 'auth';
 
     /**
-     * Progress from 0 to 100 for a `working` or `blocked` record.
+     * Percent complete, 0 to 100, on a `working` or `blocked` record. Absent
+     * means unknown.
      */
     readonly progress?: number;
 
     /**
-     * The program name from this record's last report.
+     * The machine-readable name of the program, such as `cargo`, when the
+     * record's report has one.
      */
     readonly app?: string;
 
     /**
-     * The program name from this record or its nearest ancestor that has
-     * one.
+     * `app` if the record has one. Otherwise the `app` of the closest record
+     * above it in the id path that has one, which may be the root record.
      */
     readonly effectiveApp?: string;
 

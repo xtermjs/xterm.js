@@ -42,9 +42,9 @@ describe('ProgramStatusAddon', () => {
   });
 
   it('keeps the records that programs report', async () => {
-    await writeP(terminal, report(`state=working:app=cargo:msg=${btoa('Building')}`));
+    await writeP(terminal, report('state=working:app=brew:msg=SW5zdGFsbGluZyB1cGRhdGVz'));
     assert.deepStrictEqual(addon.records, [
-      { id: '', state: 'working', app: 'cargo', effectiveApp: 'cargo', message: 'Building' }
+      { id: '', state: 'working', app: 'brew', effectiveApp: 'brew', message: 'Installing updates' }
     ]);
     assert.strictEqual(changes.length, 1);
     assert.strictEqual(changes[0], addon.records);
@@ -56,14 +56,14 @@ describe('ProgramStatusAddon', () => {
   });
 
   it('removes records with a clear report', async () => {
-    await writeP(terminal, report('state=working:id=build') + report('state=working:id=build/test') + report('state=done:id=deploy'));
-    await writeP(terminal, report('state=clear:id=build'));
-    assert.deepStrictEqual(addon.records, [{ id: 'deploy', state: 'done' }]);
+    await writeP(terminal, report('state=working:id=deploy') + report('state=working:id=deploy/us-east') + report('state=done:id=backup'));
+    await writeP(terminal, report('state=clear:id=deploy'));
+    assert.deepStrictEqual(addon.records, [{ id: 'backup', state: 'done' }]);
     assert.strictEqual(changes.length, 4);
   });
 
   it('fires nothing for a report that it rejects or that changes nothing', async () => {
-    await writeP(terminal, report('state=paused') + report('state=clear:id=a//b') + report('state=clear:id=missing'));
+    await writeP(terminal, report('state=paused') + report('state=clear:id=us//east') + report('state=clear:id=eu-west'));
     assert.deepStrictEqual(addon.records, []);
     assert.deepStrictEqual(changes, []);
   });
@@ -116,19 +116,25 @@ describe('ProgramStatusAddon', () => {
   });
 
   it('clears a record and its descendants', async () => {
-    await writeP(terminal, report('state=working:id=a') + report('state=working:id=a/b') + report('state=working:id=ab'));
-    addon.clear('a');
-    assert.deepStrictEqual(addon.records.map(record => record.id), ['ab']);
+    await writeP(terminal, report('state=working:id=us') + report('state=working:id=us/east') + report('state=working:id=use'));
+    addon.clear('us');
+    assert.deepStrictEqual(addon.records.map(record => record.id), ['use']);
     assert.strictEqual(changes.length, 4);
-    addon.clear('a');
+    addon.clear('us');
     assert.strictEqual(changes.length, 4);
   });
 
   for (const method of ['processExited', 'promptStarted'] as const) {
     it(`removes working and blocked records on ${method}()`, async () => {
-      await writeP(terminal, ['working', 'blocked', 'done', 'error', 'idle'].map(state => report(`state=${state}:id=${state}`)).join(''));
+      await writeP(terminal, [
+        report('state=working:id=us-east'),
+        report('state=blocked:id=eu-west'),
+        report('state=done:id=ap-south'),
+        report('state=error:id=sa-east'),
+        report('state=idle')
+      ].join(''));
       addon[method]();
-      assert.deepStrictEqual(addon.records.map(record => record.id), ['done', 'error', 'idle']);
+      assert.deepStrictEqual(addon.records.map(record => record.id), ['ap-south', 'sa-east', '']);
       assert.strictEqual(changes.length, 6);
       addon[method]();
       assert.strictEqual(changes.length, 6);

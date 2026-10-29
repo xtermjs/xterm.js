@@ -7,7 +7,8 @@ import type { Terminal, ITerminalAddon } from '@xterm/xterm';
 import type { ProgramStatusAddon as IProgramStatusApi, IProgramStatusRecord } from '@xterm/addon-program-status';
 import { Emitter } from 'common/Event';
 import { Disposable } from 'common/Lifecycle';
-import { parseProgramStatusReport, ProgramStatusStore } from './ProgramStatus';
+import { parseProgramStatusReport } from './ProgramStatusParser';
+import { ProgramStatusStore } from './ProgramStatusStore';
 
 const enum Constants {
   OSC_IDENT = 7501,
@@ -39,10 +40,10 @@ export class ProgramStatusAddon extends Disposable implements ITerminalAddon, IP
         return true;
       }
       const report = parseProgramStatusReport(data);
-      if (report?.clear) {
+      if (report?.state === 'clear') {
         this.clear(report.id);
       } else if (report) {
-        this._recordStore.replace(report.record);
+        this._recordStore.set(report);
         this._fireChange();
       }
       return true;
@@ -55,24 +56,24 @@ export class ProgramStatusAddon extends Disposable implements ITerminalAddon, IP
   }
 
   public dispose(): void {
-    this._recordStore.clear('');
+    this._recordStore.deleteSubtree('');
     super.dispose();
   }
 
   public clear(id: string = ''): void {
-    if (this._recordStore.clear(id)) {
+    if (this._recordStore.deleteSubtree(id)) {
       this._fireChange();
     }
   }
 
   public processExited(): void {
-    if (this._recordStore.removeActiveRecords()) {
+    if (this._recordStore.deleteWorkingAndBlocked()) {
       this._fireChange();
     }
   }
 
   public promptStarted(): void {
-    if (this._recordStore.removeActiveRecords()) {
+    if (this._recordStore.deleteWorkingAndBlocked()) {
       this._fireChange();
     }
   }
