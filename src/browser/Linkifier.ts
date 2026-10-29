@@ -151,26 +151,35 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   }
 
   private _removeIntersectingLinks(replies: Map<Number, ILinkWithState[] | undefined>): void {
-    // Cells are keyed by their absolute buffer offset so links on different rows of a wrapped line
-    // only intersect when they actually share a cell
-    const occupiedCells = new Set<number>();
+    // Kept links are inclusive [start, end] offsets (y * cols + x). A wrapped link is one
+    // range, and a lower priority link is dropped when a.start <= b.end && b.start <= a.end.
+    const keptRanges: { start: number, end: number }[] = [];
     const cols = this._bufferService.cols;
     for (let i = 0; i < replies.size; i++) {
       const providerReply = replies.get(i);
       if (!providerReply) {
         continue;
       }
-      for (let i = 0; i < providerReply.length; i++) {
-        const range = providerReply[i].link.range;
+      for (let j = 0; j < providerReply.length; j++) {
+        const range = providerReply[j].link.range;
         const start = range.start.y * cols + range.start.x;
         const end = range.end.y * cols + range.end.x;
-        for (let cell = start; cell <= end; cell++) {
-          if (occupiedCells.has(cell)) {
-            providerReply.splice(i--, 1);
+        if (start > end) {
+          continue;
+        }
+        let overlaps = false;
+        for (let k = 0; k < keptRanges.length; k++) {
+          const kept = keptRanges[k];
+          if (start <= kept.end && kept.start <= end) {
+            overlaps = true;
             break;
           }
-          occupiedCells.add(cell);
         }
+        if (overlaps) {
+          providerReply.splice(j--, 1);
+          continue;
+        }
+        keptRanges.push({ start, end });
       }
     }
   }
