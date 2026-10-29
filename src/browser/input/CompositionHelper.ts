@@ -43,6 +43,12 @@ export class CompositionHelper {
   private _isSendingComposition: boolean;
 
   /**
+   * Start of the earliest composition that has not been sent yet. Pending sends read from here, so
+   * whichever send runs first sends everything outstanding and later ones find nothing to send.
+   */
+  private _unsentStart: number | undefined;
+
+  /**
    * Data already sent due to keydown event.
    */
   private _dataAlreadySent: string;
@@ -93,6 +99,9 @@ export class CompositionHelper {
     // compositions
     this._compositionView.textContent = `\u200E${ev.data}\u200E`;
     this.updateCompositionElements();
+    // The textarea is only updated after this event, so the settled end below can be read too late
+    // if a keydown finalizes the composition first. Use the composed length until then.
+    this._compositionPosition.end = this._compositionPosition.start + ev.data.length;
     setTimeout(() => {
       const end = this._textarea.selectionEnd ?? this._textarea.value.length;
       this._compositionPosition.end = Math.max( this._compositionPosition.start, end);
@@ -153,15 +162,14 @@ export class CompositionHelper {
     if (!waitForPropagation) {
       // Cancel any delayed composition send requests and send the input immediately.
       this._isSendingComposition = false;
-      const input = this._textarea.value.substring(this._compositionPosition.start, this._compositionPosition.end);
+      const start = this._unsentStart ?? this._compositionPosition.start;
+      this._unsentStart = undefined;
+      const input = this._textarea.value.substring(start, Math.max(start, this._compositionPosition.end));
       this._coreService.triggerDataEvent(input, true);
     } else {
-      // Make a deep copy of the composition position here as a new compositionstart event may
-      // fire before the setTimeout executes.
-      const currentCompositionPosition = {
-        start: this._compositionPosition.start,
-        end: this._compositionPosition.end
-      };
+      // Remember the suffix here as a new compositionstart event may fire before the setTimeout
+      // executes.
+      this._unsentStart ??= this._compositionPosition.start;
       const currentCompositionSuffix = this._compositionSuffix;
 
       // Since composition* events happen before the changes take place in the textarea on most
@@ -175,16 +183,18 @@ export class CompositionHelper {
       this._isSendingComposition = true;
       setTimeout(() => {
         // Ensure that the input has not already been sent
-        if (this._isSendingComposition) {
+        const unsentStart = this._unsentStart;
+        if (this._isSendingComposition && unsentStart !== undefined) {
           this._isSendingComposition = false;
+          this._unsentStart = undefined;
           let input;
           // Add length of data already sent due to keydown event,
           // otherwise input characters can be duplicated. (Issue #3191)
-          currentCompositionPosition.start += this._dataAlreadySent.length;
+          const start = unsentStart + this._dataAlreadySent.length;
           if (this._isComposing) {
             // Use the start position of the new composition to get the string
             // if a new composition has started.
-            input = this._textarea.value.substring(currentCompositionPosition.start, this._compositionPosition.start);
+            input = this._textarea.value.substring(start, this._compositionPosition.start);
           } else {
             // Keep support for non-composition characters typed immediately after composition end
             // while avoiding re-sending the trailing text that was already present
@@ -193,7 +203,7 @@ export class CompositionHelper {
             const valueEnd = currentCompositionSuffix.length > 0 && value.endsWith(currentCompositionSuffix)
               ? value.length - currentCompositionSuffix.length
               : value.length;
-            input = value.substring(currentCompositionPosition.start, Math.max(currentCompositionPosition.start, valueEnd));
+            input = value.substring(start, Math.max(start, valueEnd));
           }
           if (input.length > 0) {
             this._coreService.triggerDataEvent(input, true);
