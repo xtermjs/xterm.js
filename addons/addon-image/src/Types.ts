@@ -40,6 +40,8 @@ export interface IImageAddonOptions {
   iipSizeLimit: number;
   kittySupport: boolean;
   kittySizeLimit: number;
+  animationSupport: boolean;
+  animationPixelLimit: number;
 }
 
 export interface IResetHandler {
