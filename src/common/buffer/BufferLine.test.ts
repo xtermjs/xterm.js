@@ -846,7 +846,7 @@ describe('BufferLine', function(): void {
       assert.equal(line.cachedString, 'abc  ');
       assert.equal(line.isCachedStringTrimmed, false);
 
-      // Once non-trimmed is cached, trimmed should be derived via trimEnd().
+      // A trimmed request after a non-trimmed cache must walk the cells again and replace the cache.
       assert.equal(line.translateToString(true, undefined, undefined, undefined), 'abc');
       assert.equal(line.cachedString, 'abc');
       assert.equal(line.isCachedStringTrimmed, true);
