@@ -82,7 +82,7 @@ The addon only sees what the terminal parses, so the embedder reports the rest:
 
 - `terminal.reset()` leaves records in place. Call `clear()` after it.
 - Call `processExited()` once the attached process has exited and its final output has been parsed, for example from the callback of `terminal.write('', callback)`. It drops `working` and `blocked` records.
-- Call `promptStarted()` when a new shell prompt begins, for example where shell integration's OSC 133 `A` starts a new command. It drops `working` and `blocked` records too.
+- Call `promptStarted()` when a new top-level shell prompt starts, for example from shell integration. It drops `working` and `blocked` records too.
 - Call `clear(id)` when the user dismisses a record, such as a `done` or `error` record they have seen.
 
 

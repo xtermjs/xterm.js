@@ -67,6 +67,20 @@ test.describe('ProgramStatusAddon', () => {
     deepStrictEqual(await ctx.page.evaluate('window.programStatusChanges.length'), 2);
   });
 
+  test('rejects non-canonical base64, invalid UTF-8, and control characters', async () => {
+    deepStrictEqual(await ctx.page.evaluate('typeof Uint8Array.prototype.setFromBase64'), 'function');
+    await ctx.proxy.write([
+      '\x1b]7501;state=done:id=keep:msg=SA\x1b\\',
+      '\x1b]7501;state=working:id=keep:msg=SB\x1b\\',
+      '\x1b]7501;state=error:id=keep:msg=gA==\x1b\\',
+      '\x1b]7501;state=blocked:id=keep:title=AQ==\x1b\\'
+    ].join(''));
+    deepStrictEqual(await ctx.page.evaluate('window.programStatusAddon.records'), [
+      { id: 'keep', state: 'done', message: 'H' }
+    ]);
+    deepStrictEqual(await ctx.page.evaluate('window.programStatusChanges.length'), 1);
+  });
+
   test('removes working and blocked records on promptStarted()', async () => {
     await ctx.proxy.write([
       '\x1b]7501;state=working:id=us-east\x1b\\',

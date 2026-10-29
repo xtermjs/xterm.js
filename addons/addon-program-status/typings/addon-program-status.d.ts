@@ -59,9 +59,9 @@ declare module '@xterm/addon-program-status' {
     public processExited(): void;
 
     /**
-     * Tells the addon that a new shell prompt has begun, which drops
-     * `working` and `blocked` records. With shell integration, call it where
-     * OSC 133 `A` starts a new command.
+     * Removes `working` and `blocked` records. Call this when a new top-level
+     * shell prompt starts, not for repaints, right or continuation prompts, or
+     * prompt marks inside a running command.
      */
     public promptStarted(): void;
   }
