@@ -189,6 +189,68 @@ describe('SerializeAddon', () => {
         assert.equal(buffer.scrollTop, 1);
         assert.equal(buffer.scrollBottom, 3);
       });
+
+      function screenState(target: Terminal): string[] {
+        const buffer = target.buffer.active;
+        const state = [`cursor ${buffer.cursorX},${buffer.cursorY}`];
+        for (let y = 0; y < target.rows; y++) {
+          state.push(buffer.getLine(buffer.baseY + y)!.translateToString(true));
+        }
+        return state;
+      }
+
+      async function assertReplayMatches(before: string, after: string): Promise<void> {
+        await writeP(scrollTerminal, before);
+        const terminal2 = new Terminal({ cols: 10, rows: 5, allowProposedApi: true });
+        await writeP(terminal2, scrollAddon.serialize());
+        await writeP(scrollTerminal, after);
+        await writeP(terminal2, after);
+        assert.deepEqual(screenState(terminal2), screenState(scrollTerminal));
+      }
+
+      it('should restore the cursor after the scroll region', async () => {
+        await assertReplayMatches('r1\r\nr2\r\nr3\r\nr4\x1b[2;3r\x1b[4;3H', 'X\x1b[3;1H\n\nY');
+      });
+
+      it('should restore the cursor after the scroll region in the alt buffer', async () => {
+        await assertReplayMatches('\x1b[?1049hr1\r\nr2\r\nr3\x1b[2;4r\x1b[5;2H', 'X\x1b[4;1H\n\nY');
+      });
+
+      it('should restore the cursor relative to the scroll region in origin mode', async () => {
+        await assertReplayMatches('r1\r\nr2\r\nr3\r\nr4\x1b[2;4r\x1b[?6h\x1b[1;2H', 'X');
+      });
+
+      it('should place the normal buffer cursor when excluding the alt buffer', async () => {
+        await writeP(scrollTerminal, '\x1b[1;5Hn\x1b[?1049h\x1b[2;4r\x1b[4;3H');
+        const terminal2 = new Terminal({ cols: 10, rows: 5, allowProposedApi: true });
+        await writeP(terminal2, scrollAddon.serialize({ excludeAltBuffer: true }));
+        const source = scrollTerminal.buffer.normal;
+        assert.deepEqual([terminal2.buffer.active.cursorX, terminal2.buffer.active.cursorY], [source.cursorX, source.cursorY]);
+      });
+
+      it('should place the alt buffer cursor when serializing a range', async () => {
+        await writeP(scrollTerminal, 'n1\x1b[?1049ha1\r\na2\x1b[2;4r\x1b[4;3H');
+        const terminal2 = new Terminal({ cols: 10, rows: 5, allowProposedApi: true });
+        await writeP(terminal2, scrollAddon.serialize({ range: { start: 0, end: 0 } }));
+        const source = scrollTerminal.buffer.active;
+        assert.deepEqual([terminal2.buffer.active.cursorX, terminal2.buffer.active.cursorY], [source.cursorX, source.cursorY]);
+      });
+
+      it('should not write a row below 1 for a cursor above the region in origin mode', async () => {
+        await writeP(scrollTerminal, 'r1\x1b[3;5r\x1b[1;4H\x1b[?1047h\x1b[?6h\x1b[?1047l');
+        assert.equal(scrollTerminal.buffer.active.cursorY, 0);
+        const serialized = scrollAddon.serialize();
+        assert.ok(serialized.endsWith('\x1b[3;5r\x1b[1;1H'), JSON.stringify(serialized));
+      });
+
+      it('should not place the cursor when serializing a range', async () => {
+        await writeP(scrollTerminal, 'r1\r\nr2\x1b[2;4r\x1b[2;2H');
+        assert.equal(scrollAddon.serialize({ range: { start: 0, end: 1 } }), 'r1\r\nr2\x1b[2;4r');
+      });
+
+      it('should restore the cursor in origin mode without a scroll region', async () => {
+        await assertReplayMatches('abc\x1b[?6h\x1b[2;3H', 'X');
+      });
     });
 
     describe('cursor visibility', () => {
