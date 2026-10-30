@@ -146,11 +146,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
 
       if (!this._inControlData) {
         // Found semicolon - parse control data early for validation
-        this._parsedCommand = parseKittyCommand(this._parseControlDataString());
-
-        // Early validation: i+I conflict
-        if (this._parsedCommand.id !== undefined && this._parsedCommand.imageNumber !== undefined) {
-          this._sendResponse(this._parsedCommand.id, 'EINVAL:cannot specify both i and I keys', this._parsedCommand.quiet ?? 0);
+        this._parsedCommand = this._parseCommand();
+        if (!this._parsedCommand) {
           this._aborted = true;
           return;
         }
@@ -167,6 +164,12 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         }
       }
     }
+  }
+
+  private _createDecoder(): Base64Decoder {
+    const decoder = new Base64Decoder(Constants.DECODER_KEEP_DATA, this._maxEncodedBytes, this._initialEncodedBytes);
+    decoder.init();
+    return decoder;
   }
 
   // Stream payload bytes into the base64 decoder.
@@ -199,10 +202,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     if (pending?.decoder && !this._activeDecoder) {
       this._activeDecoder = pending.decoder;
     }
-    if (!this._activeDecoder) {
-      this._activeDecoder = new Base64Decoder(Constants.DECODER_KEEP_DATA, this._maxEncodedBytes, this._initialEncodedBytes);
-      this._activeDecoder.init();
-    }
+    this._activeDecoder ??= this._createDecoder();
 
     if (this._activeDecoder.put(data.subarray(start, end)) !== DECODER_OK) {
       this._activeDecoder.release();
@@ -223,15 +223,13 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       return true;
     }
 
-    // No semicolon = no payload (delete, capability query)
-    if (this._inControlData) {
-      return this._handleNoPayloadCommand();
+    // Use command parsed early in put(), or parse it now if there was no semicolon
+    const cmd = this._inControlData ? this._parseCommand() : this._parsedCommand;
+    if (!cmd) {
+      return true;
     }
 
-    // Use command parsed early in put() - i+I already validated there
-    const cmd = this._parsedCommand!;
-
-    // Delete action was handled by skipping payload - just execute
+    // Delete action doesn't need payload - just execute
     if (cmd.action === KittyAction.DELETE) {
       return this._handleDelete(cmd);
     }
@@ -241,15 +239,23 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const isMoreComing = cmd.more === 1;
     const pending = this._pendingTransmissions.get(pendingKey);
 
+    // No semicolon = no payload (capability query, placement), unless it's a chunk
+    const isChunk = isMoreComing || pending !== undefined;
+    if (this._inControlData && !isChunk) {
+      return this._handleNoPayloadCommand(cmd);
+    }
+
     if (isMoreComing) {
-      if (this._activeDecoder) {
+      // On decode error _streamPayload() already dropped the transmission
+      if (!this._decodeError) {
         if (pending) {
           pending.totalEncodedSize += this._totalEncodedSize;
           pending.decodeError = pending.decodeError || this._decodeError;
         } else {
           this._pendingTransmissions.set(pendingKey, {
             cmd: { ...cmd },
-            decoder: this._activeDecoder,
+            // No decoder yet if the first chunk had no payload
+            decoder: this._activeDecoder ?? this._createDecoder(),
             totalEncodedSize: this._totalEncodedSize,
             decodeError: this._decodeError
           });
@@ -305,20 +311,23 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     return str;
   }
 
-  private _handleNoPayloadCommand(): boolean | Promise<boolean> {
+  // Parse and validate the control data.
+  // Returns null if invalid, after sending the error response.
+  private _parseCommand(): IKittyCommand | null {
     const cmd = parseKittyCommand(this._parseControlDataString());
 
     // Per spec: specifying both i and I is an error
     if (cmd.id !== undefined && cmd.imageNumber !== undefined) {
       this._sendResponse(cmd.id, 'EINVAL:cannot specify both i and I keys', cmd.quiet ?? 0);
-      return true;
+      return null;
     }
+    return cmd;
+  }
 
+  private _handleNoPayloadCommand(cmd: IKittyCommand): boolean | Promise<boolean> {
     const action = cmd.action ?? 't';
 
     switch (action) {
-      case KittyAction.DELETE:
-        return this._handleDelete(cmd);
       case KittyAction.QUERY:
         this._sendResponse(cmd.id ?? 0, 'OK', cmd.quiet ?? 0);
         return true;
