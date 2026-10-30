@@ -585,6 +585,14 @@ export class SerializeAddon implements ITerminalAddon, ISerializeApi {
       }
     }
 
+    // Default: 'default'
+    if (modes.mouseEncoding !== 'default') {
+      switch (modes.mouseEncoding) {
+        case 'sgr': content += '\x1b[?1006h'; break;
+        case 'sgr-pixels': content += '\x1b[?1016h'; break;
+      }
+    }
+
     // Cursor visibility (DECTCEM)
     // Default: visible
     if (!modes.showCursor) {
