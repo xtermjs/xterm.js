@@ -457,6 +457,33 @@ describe('Headless API Tests', function (): void {
     });
   });
 
+  describe('parser', () => {
+    it('isInSequence', async () => {
+      strictEqual(term.parser.isInSequence, false);
+      for (const [data, isInSequence] of [
+        ['ab\x1b', true],
+        ['[3', true],
+        ['1mc', false],
+        ['\x1b]0;title', true],
+        ['\x07', false],
+        ['\x1bP1$q', true],
+        ['m\x1b\\', false],
+        ['\x1b_Gdata', true],
+        ['\x1b\\', false],
+        ['\x1b[1$1', true],
+        ['m', false],
+        ['\x1bXsos', true],
+        ['\x1b\\', false],
+        ['\x1b]0;t\x1b', true],
+        ['\\', false],
+        ['\x1b[3\x18', false]
+      ] as const) {
+        await writeSync(data);
+        strictEqual(term.parser.isInSequence, isInSequence, JSON.stringify(data));
+      }
+    });
+  });
+
   describe('modes', () => {
     it('defaults', () => {
       deepStrictEqual(term.modes, {

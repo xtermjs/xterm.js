@@ -21,6 +21,7 @@ import { UnicodeService } from './services/UnicodeService';
 import { OscHandler } from './parser/OscParser';
 import { DcsHandler } from './parser/DcsParser';
 import { ApcHandler } from './parser/ApcParser';
+import { ParserState } from './parser/Constants';
 import { parseColor } from './input/XParseColor';
 import { Emitter } from './Event';
 import { XTERM_VERSION } from './Version';
@@ -714,6 +715,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this._parser.registerApcHandler(id, new ApcHandler(callback));
+  }
+
+  public get isParserInSequence(): boolean {
+    return this._parser.currentState !== ParserState.GROUND;
   }
 
   /**
