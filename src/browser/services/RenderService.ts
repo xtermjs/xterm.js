@@ -33,6 +33,7 @@ export class RenderService extends Disposable implements IRenderService {
   private _intersectionObserver: IntersectionObserver | undefined;
 
   private _isPaused: boolean = false;
+  private _isResizingRenderer: boolean = false;
   private _needsFullRefresh: boolean = false;
   private _isNextRenderRedrawOnly: boolean = true;
   private _needsSelectionRefresh: boolean = false;
@@ -164,7 +165,17 @@ export class RenderService extends Disposable implements IRenderService {
   public refreshRows(start: number, end: number, sync: boolean = false, isRedrawOnly: boolean = false): void {
     if (this._isPaused) {
       this._needsFullRefresh = true;
-      return;
+      // A sync refresh means the renderer has nothing on screen (eg. its canvas was just cleared
+      // by a resize). The intersection observer reports a frame late, so the terminal may
+      // already be visible again: render now instead of showing it blank until then.
+      if (!sync) {
+        return;
+      }
+      // Renderers request a sync redraw from handleResize. When the paused resize task is what
+      // runs it, flushing the task would run it again, so only render.
+      if (!this._isResizingRenderer) {
+        this._pausedResizeTask.flush();
+      }
     }
 
     if (this._coreService.decPrivateModes.synchronizedOutput) {
@@ -261,9 +272,14 @@ export class RenderService extends Disposable implements IRenderService {
       this._dimensions = this._renderer.value.dimensions;
       this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, e.sync, true));
 
-      // Force a refresh
+      // Force a refresh. A new renderer starts out blank, so while paused render it right away,
+      // see refreshRows.
       this._needsSelectionRefresh = true;
-      this._fullRefresh();
+      if (this._isPaused) {
+        this.refreshRows(0, this._rowCount - 1, true);
+      } else {
+        this._fullRefresh();
+      }
     }
   }
 
@@ -304,11 +320,20 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
     if (this._isPaused) {
-      this._pausedResizeTask.set(() => this._renderer.value?.handleResize(cols, rows));
+      this._pausedResizeTask.set(() => this._resizeRenderer(cols, rows));
     } else {
-      this._renderer.value.handleResize(cols, rows);
+      this._resizeRenderer(cols, rows);
     }
     this._fullRefresh();
+  }
+
+  private _resizeRenderer(cols: number, rows: number): void {
+    this._isResizingRenderer = true;
+    try {
+      this._renderer.value?.handleResize(cols, rows);
+    } finally {
+      this._isResizingRenderer = false;
+    }
   }
 
   // TODO: Is this useful when we have onResize?
