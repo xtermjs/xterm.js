@@ -5,6 +5,7 @@
 
 import { RenderDebouncer } from '../RenderDebouncer';
 import { IRenderDebouncerWithCallback } from '../Types';
+import { createRenderDimensions } from '../renderer/shared/RendererUtils';
 import { IRenderDimensions, IRenderer } from '../renderer/shared/Types';
 import { ICharSizeService, ICoreBrowserService, IRenderService, IThemeService } from './Services';
 import { Disposable, MutableDisposable, toDisposable } from '../../common/Lifecycle';
@@ -54,7 +55,14 @@ export class RenderService extends Disposable implements IRenderService {
   private readonly _onRefreshRequest = this._register(new Emitter<{ start: number, end: number }>());
   public readonly onRefreshRequest = this._onRefreshRequest.event;
 
-  public get dimensions(): IRenderDimensions { return this._renderer.value!.dimensions; }
+  private _dimensions: IRenderDimensions = createRenderDimensions();
+
+  /**
+   * Dispose already removes the document-level mouse listeners (#6019). This getter can still be
+   * reached after dispose via `terminal.dimensions` or anything else holding the service, so it
+   * returns the last known dimensions instead of throwing.
+   */
+  public get dimensions(): IRenderDimensions { return this._renderer.value?.dimensions ?? this._dimensions; }
 
   constructor(
     private _rowCount: number,
@@ -244,11 +252,13 @@ export class RenderService extends Disposable implements IRenderService {
     if (!this._renderer.value) {
       return;
     }
+    this._dimensions = this._renderer.value.dimensions;
+
     // Don't fire the event if the dimensions haven't changed
-    if (this._renderer.value.dimensions.css.canvas.width === this._canvasWidth && this._renderer.value.dimensions.css.canvas.height === this._canvasHeight) {
+    if (this._dimensions.css.canvas.width === this._canvasWidth && this._dimensions.css.canvas.height === this._canvasHeight) {
       return;
     }
-    this._onDimensionsChange.fire(this._renderer.value.dimensions);
+    this._onDimensionsChange.fire(this._dimensions);
   }
 
   public hasRenderer(): boolean {
@@ -259,6 +269,7 @@ export class RenderService extends Disposable implements IRenderService {
     this._renderer.value = renderer;
     // If the value was not set, the terminal is being disposed so ignore it
     if (this._renderer.value) {
+      this._dimensions = this._renderer.value.dimensions;
       this._renderer.value.onRequestRedraw(e => this.refreshRows(e.start, e.end, e.sync, true));
 
       // Force a refresh. A new renderer starts out blank, so while paused render it right away,
