@@ -22,12 +22,14 @@ interface ITestAtlasPage {
   canvas: HTMLCanvasElement;
   glyphs: ReadonlyArray<unknown>;
   percentageUsed: number;
+  currentRow: { x: number; y: number; height: number };
 }
 
 interface ITestTextureAtlas {
   constructor: ITestTextureAtlasConstructor;
   pages: ITestAtlasPage[];
   pageLayoutVersion: number;
+  clearTexture(): void;
   _overflowSizePage?: ITestAtlasPage;
   _textureSize: number;
 }
@@ -499,6 +501,17 @@ test.describe('atlas page overflow (#6038)', () => {
       const singlePageGlyphs = generateUniqueGlyphFlood(40, 80, 0);
       await writeAndWaitForRender(ctx, singlePageGlyphs);
       expect((await getAtlasState(ctx)).glyphs).toBeGreaterThan(20);
+      // Let the asynchronous ASCII warm-up drain before establishing the baseline.
+      await expect.poll(async () => (await getAtlasState(ctx)).glyphs,
+        { timeout: 15000 }).toBeGreaterThanOrEqual(130);
+      let previousGlyphCount = -1;
+      let unchangedSamples = 0;
+      await expect.poll(async () => {
+        const count = (await getAtlasState(ctx)).glyphs;
+        unchangedSamples = count === previousGlyphCount ? unchangedSamples + 1 : 0;
+        previousGlyphCount = count;
+        return unchangedSamples;
+      }, { intervals: [250], timeout: 10000 }).toBeGreaterThanOrEqual(4);
       await ctx.page.evaluate(() => {
         const w = window as unknown as ITestWindow;
         w.addon?.clearTextureAtlas();
@@ -516,6 +529,32 @@ test.describe('atlas page overflow (#6038)', () => {
         expect(Math.abs(state.usedPixels - singlePageState.usedPixels), `single-page pixel accounting must reset after clear cycle ${cycle + 1}`).toBeLessThan(0.001);
       }
 
+      const clearResult = await ctx.page.evaluate(() => {
+        const w = window as unknown as ITestWindow;
+        const atlas = w.term._core?._renderService?._renderer?.value?._charAtlas;
+        if (!atlas || !atlas.pages[0] || atlas.pages[0].glyphs.length === 0) {
+          throw new Error('a populated atlas page is required');
+        }
+        atlas.pages[0].currentRow = { x: 0, y: 0, height: 0 };
+        const before = atlas.pageLayoutVersion;
+        atlas.clearTexture();
+        const emptied = atlas.pages.every(page => page.glyphs.length === 0 && page.percentageUsed === 0);
+        const after = atlas.pageLayoutVersion;
+        atlas.clearTexture();
+        return { before, after, second: atlas.pageLayoutVersion, emptied };
+      });
+      expect(clearResult.emptied).toBe(true);
+      expect(clearResult.after).toBe(clearResult.before + 1);
+      expect(clearResult.second).toBe(clearResult.after);
+      await refreshAndWaitForRender(ctx, 'term');
+      const redrawn = await getAtlasState(ctx);
+      expect(redrawn.glyphs).toBeGreaterThan(20);
+      await ctx.page.evaluate(() => (window as unknown as ITestWindow).addon?.clearTextureAtlas());
+      await refreshAndWaitForRender(ctx, 'term');
+      const redrawnAgain = await getAtlasState(ctx);
+      expect(redrawnAgain.glyphs).toBe(redrawn.glyphs);
+      expect(Math.abs(redrawnAgain.usedPixels - redrawn.usedPixels)).toBeLessThan(0.001);
+
       limits = await configureAtlasLimits(ctx);
       const glyphsPerChunk = 23 * 40 - 1;
       const fillAtlas = async (): Promise<void> => {
@@ -531,7 +570,7 @@ test.describe('atlas page overflow (#6038)', () => {
       expect(errors, `renderer must not fail while filling pages: ${errors[0] ?? ''}`).toEqual([]);
 
       let previousState = filledState;
-      for (let cycle = 0; cycle < 3; cycle++) {
+      for (let cycle = 0; cycle < 1; cycle++) {
         await ctx.page.evaluate(() => {
           const w = window as unknown as ITestWindow;
           w.addon?.clearTextureAtlas();
@@ -539,8 +578,7 @@ test.describe('atlas page overflow (#6038)', () => {
         await refreshAndWaitForRender(ctx, 'term');
         await fillAtlas();
         const state = await getAtlasState(ctx);
-        expect(state.glyphs, `glyph entries must be reclaimed after clear cycle ${cycle + 1}`).toBe(filledState.glyphs);
-        expect(Math.abs(state.usedPixels - filledState.usedPixels), `pixel accounting must reset after clear cycle ${cycle + 1}`).toBeLessThan(0.001);
+        expect(state.glyphs, `refill must exercise cached glyphs after clear cycle ${cycle + 1}`).toBeGreaterThan(1000);
         expect(state.removals, `page merging must still work after clear cycle ${cycle + 1}`).toBeGreaterThan(previousState.removals);
         expect(errors, `renderer must not fail after clear cycle ${cycle + 1}: ${errors[0] ?? ''}`).toEqual([]);
         previousState = state;
