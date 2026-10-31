@@ -67,6 +67,43 @@ describe('SortedList', () => {
     list.delete(2);
     assertList([]);
   });
+  describe('delete', () => {
+    it('should return false for a value that is not in the list', () => {
+      list.insert(1);
+      list.insert(2);
+      assert.isFalse(list.delete(3));
+      assertList([1, 2]);
+    });
+    it('should delete a value whose key changed after another deletion was deferred', () => {
+      // Deletions are deferred, so a value that was just deleted still sits in the array. If its
+      // key then changes (eg. a disposed marker reporting line -1) the array is no longer sorted
+      // and a binary search for a neighbouring key can land on the wrong entry.
+      const entries = [{ key: 0 }, { key: 0 }, { key: 13 }, { key: 13 }];
+      const customList = new SortedList<{ key: number }>(e => e.key, new MockLogService());
+      for (const entry of entries) {
+        customList.insert(entry);
+      }
+      assert.isTrue(customList.delete(entries[1]));
+      entries[1].key = -1;
+      assert.isTrue(customList.delete(entries[0]));
+      assert.isTrue(customList.delete(entries[2]));
+      assert.isTrue(customList.delete(entries[3]));
+      deepStrictEqual(Array.from(customList.values()), []);
+    });
+    it('should not report a deferred deletion twice when falling back to a linear search', () => {
+      const entries = [{ key: 0 }, { key: 0 }, { key: 0 }, { key: 13 }, { key: 13 }];
+      const customList = new SortedList<{ key: number }>(e => e.key, new MockLogService());
+      for (const entry of entries) {
+        customList.insert(entry);
+      }
+      assert.isTrue(customList.delete(entries[1]));
+      // With the key changed the binary search no longer lands on the entry, so the linear
+      // fallback finds it and must recognise it as already deleted.
+      entries[1].key = -1;
+      assert.isFalse(customList.delete(entries[1]));
+      deepStrictEqual(Array.from(customList.values()), [{ key: 0 }, { key: 0 }, { key: 13 }, { key: 13 }]);
+    });
+  });
   it('getKeyIterator', () => {
     list.insert(5);
     list.insert(5);
