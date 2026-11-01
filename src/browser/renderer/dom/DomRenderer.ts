@@ -368,13 +368,22 @@ export class DomRenderer extends Disposable implements IRenderer {
   public handleBlur(): void {
     this._rowContainer.classList.remove(Constants.FOCUS_CLASS);
     this._cursorBlinkStateManager.pause();
-    this.renderRows(0, this._bufferService.rows - 1);
+    this._requestRedraw(0, this._bufferService.rows - 1);
   }
 
   public handleFocus(): void {
     this._rowContainer.classList.add(Constants.FOCUS_CLASS);
     this._cursorBlinkStateManager.resume();
-    this.renderRows(this._bufferService.buffer.y, this._bufferService.buffer.y);
+    this._requestRedraw(this._bufferService.buffer.y, this._bufferService.buffer.y);
+  }
+
+  /**
+   * Requests that rows be redrawn by the render service rather than rendering them here, so that
+   * the redraw is held while the terminal is paused (not visible) and merged with other pending
+   * refreshes.
+   */
+  private _requestRedraw(start: number, end: number): void {
+    this._onRequestRedraw.fire({ start, end });
   }
 
   public handleViewportVisibilityChange(isVisible: boolean): void {
@@ -456,7 +465,7 @@ export class DomRenderer extends Disposable implements IRenderer {
         renderEndRow = Math.max(renderEndRow, cursorViewportRow);
       }
 
-      this.renderRows(renderStartRow, renderEndRow);
+      this._requestRedraw(renderStartRow, renderEndRow);
     }
 
     // Update last selection state
