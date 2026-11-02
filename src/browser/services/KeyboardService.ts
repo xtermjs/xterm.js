@@ -16,6 +16,7 @@ export class KeyboardService implements IKeyboardService {
 
   private _win32InputMode: Win32InputMode | undefined;
   private _kittyKeyboard: KittyKeyboard | undefined;
+  private readonly _clipboardShortcutKeys = new Set<string>();
 
   constructor(
     @ICoreService private readonly _coreService: ICoreService,
@@ -34,11 +35,17 @@ export class KeyboardService implements IKeyboardService {
   }
 
   public evaluateKeyDown(event: KeyboardEvent): IKeyboardResult {
+    const key = event.code || (event.key || '').toLowerCase();
+    // Browsers may omit releases for Cmd shortcuts or when focus changes.
+    if (!event.repeat) {
+      this._clipboardShortcutKeys.delete(key);
+    }
     // Win32 input mode takes priority (most raw)
     if (this.useWin32InputMode) {
       return this._getWin32InputMode().evaluateKeyboardEvent(event, true);
     }
-    if (this.useKitty && this._isMacClipboardShortcut(event)) {
+    if (this.useKitty && (this._isMacClipboardShortcut(event) || this._clipboardShortcutKeys.has(key))) {
+      this._clipboardShortcutKeys.add(key);
       return { type: KeyboardResultType.SEND_KEY, cancel: false, key: undefined };
     }
     const kittyFlags = this._coreService.kittyKeyboard.flags;
@@ -48,19 +55,24 @@ export class KeyboardService implements IKeyboardService {
   }
 
   public evaluateKeyUp(event: KeyboardEvent): IKeyboardResult | undefined {
+    const wasClipboardShortcut = this._clipboardShortcutKeys.delete(event.code || (event.key || '').toLowerCase());
     // Win32 input mode sends key up events
     if (this.useWin32InputMode) {
       return this._getWin32InputMode().evaluateKeyboardEvent(event, false);
     }
+    // Match the suppressed press even when Cmd or Shift was released first.
+    if (wasClipboardShortcut) {
+      return undefined;
+    }
     const kittyFlags = this._coreService.kittyKeyboard.flags;
-    if (this.useKitty && (kittyFlags & KittyKeyboardFlags.REPORT_EVENT_TYPES) && !this._isMacClipboardShortcut(event)) {
+    if (this.useKitty && (kittyFlags & KittyKeyboardFlags.REPORT_EVENT_TYPES)) {
       return this._getKittyKeyboard().evaluate(event, kittyFlags, KittyKeyboardEventType.RELEASE, isMac && this._optionsService.rawOptions.macOptionIsMeta);
     }
     return undefined;
   }
 
   private _isMacClipboardShortcut(event: KeyboardEvent): boolean {
-    // Let the browser handle copy/paste before encoding application input, including releases.
+    // Preserve browser copy/paste on macOS when an application enables Kitty input.
     return isMac && event.metaKey && !event.ctrlKey && !event.altKey &&
       (event.key === 'c' || event.key === 'C' || event.key === 'v' || event.key === 'V');
   }

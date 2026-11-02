@@ -82,6 +82,44 @@ for (const platform of ['MacIntel', 'Linux x86_64']) {
   });
 }
 
+test('keeps clipboard releases paired when modifiers change', async ({ browser }) => {
+  const ctx = await createTestContext(browser);
+  try {
+    await ctx.page.addInitScript(() => {
+      Object.defineProperty(navigator, 'platform', { get: () => 'MacIntel' });
+    });
+    await ctx.page.reload();
+    await openTerminal(ctx, { vtExtensions: { kittyKeyboard: true } });
+    await ctx.proxy.write('\x1b[>3u');
+    const data = await ctx.page.evaluate(() => {
+      const term = (window as any).term;
+      const data: string[] = [];
+      const listener = term.onData((value: string) => data.push(value));
+      const dispatch = (type: string, key: string, modifiers: KeyboardEventInit = {}) => {
+        term.textarea.dispatchEvent(new KeyboardEvent(type, {
+          key, code: `Key${key.toUpperCase()}`, bubbles: true, cancelable: true, ...modifiers
+        }));
+      };
+      for (const key of ['c', 'v']) {
+        dispatch('keydown', key, { metaKey: true });
+        // Cmd is released first; the letter release must still be suppressed.
+        dispatch('keyup', key);
+        dispatch('keydown', key, { metaKey: true, shiftKey: true });
+        dispatch('keyup', key, { ctrlKey: true });
+        // A lost release must not suppress the next ordinary press of this key.
+        dispatch('keydown', key, { metaKey: true });
+        dispatch('keydown', key);
+        dispatch('keyup', key);
+      }
+      listener.dispose();
+      return data;
+    });
+    deepStrictEqual(data, ['c', '\x1b[99;1:3u', 'v', '\x1b[118;1:3u']);
+  } finally {
+    await ctx.page.close();
+  }
+});
+
 for (const flags of [1, 3]) {
   test(`native macOS copy and paste with Kitty flags ${flags}`, async ({ browser, browserName }) => {
     test.skip(process.platform !== 'darwin' || browserName !== 'chromium', 'Requires macOS and Chromium clipboard permissions');
