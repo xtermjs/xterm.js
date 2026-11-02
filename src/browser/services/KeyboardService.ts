@@ -9,7 +9,7 @@ import { KittyKeyboard, KittyKeyboardEventType, KittyKeyboardFlags } from '../..
 import { Win32InputMode } from '../../common/input/Win32InputMode';
 import { isMac } from '../../common/Platform';
 import { ICoreService, IOptionsService } from '../../common/services/Services';
-import { IKeyboardResult } from '../../common/Types';
+import { IKeyboardResult, KeyboardResultType } from '../../common/Types';
 
 export class KeyboardService implements IKeyboardService {
   public serviceBrand: undefined;
@@ -38,6 +38,9 @@ export class KeyboardService implements IKeyboardService {
     if (this.useWin32InputMode) {
       return this._getWin32InputMode().evaluateKeyboardEvent(event, true);
     }
+    if (this.useKitty && this._isMacClipboardShortcut(event)) {
+      return { type: KeyboardResultType.SEND_KEY, cancel: false, key: undefined };
+    }
     const kittyFlags = this._coreService.kittyKeyboard.flags;
     return this.useKitty
       ? this._getKittyKeyboard().evaluate(event, kittyFlags, event.repeat ? KittyKeyboardEventType.REPEAT : KittyKeyboardEventType.PRESS, isMac && this._optionsService.rawOptions.macOptionIsMeta)
@@ -50,10 +53,16 @@ export class KeyboardService implements IKeyboardService {
       return this._getWin32InputMode().evaluateKeyboardEvent(event, false);
     }
     const kittyFlags = this._coreService.kittyKeyboard.flags;
-    if (this.useKitty && (kittyFlags & KittyKeyboardFlags.REPORT_EVENT_TYPES)) {
+    if (this.useKitty && (kittyFlags & KittyKeyboardFlags.REPORT_EVENT_TYPES) && !this._isMacClipboardShortcut(event)) {
       return this._getKittyKeyboard().evaluate(event, kittyFlags, KittyKeyboardEventType.RELEASE, isMac && this._optionsService.rawOptions.macOptionIsMeta);
     }
     return undefined;
+  }
+
+  private _isMacClipboardShortcut(event: KeyboardEvent): boolean {
+    // Let the browser handle copy/paste before encoding application input, including releases.
+    return isMac && event.metaKey && !event.ctrlKey && !event.altKey &&
+      (event.key === 'c' || event.key === 'C' || event.key === 'v' || event.key === 'V');
   }
 
   public get useKitty(): boolean {
