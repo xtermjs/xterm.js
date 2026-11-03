@@ -323,6 +323,40 @@ test.describe('API Integration Tests', () => {
       deepStrictEqual(await ctx.page.evaluate(`window.calls`), ['f', 'o', 'o']);
     });
 
+    test('onData - ASCII punctuation and digits', async () => {
+      await openTerminal(ctx);
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.term.onData(e => calls.push(e));
+      `);
+      await ctx.page.type('.xterm-helper-textarea', ',.!?()123');
+      deepStrictEqual(await ctx.page.evaluate(`window.calls`), Array.from(',.!?()123'));
+    });
+
+    test('onData - macOS IME punctuation event sequence', async () => {
+      await openTerminal(ctx);
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.term.onData(e => calls.push(e));
+        window.term._core.browser = { ...window.term._core.browser, isMac: true };
+        const textarea = window.term.textarea;
+        for (const [key, keyCode, text, shiftKey] of [
+          [',', 188, '，', false], ['.', 190, '。', false],
+          ['!', 49, '！', true], ['?', 191, '？', true],
+          ['(', 57, '（', true], [')', 48, '）', true]
+        ]) {
+          const init = { key, keyCode, shiftKey, bubbles: true, cancelable: true };
+          if (textarea.dispatchEvent(new KeyboardEvent('keydown', init))) {
+            const charCode = text.charCodeAt(0);
+            textarea.dispatchEvent(new KeyboardEvent('keypress', { ...init, keyCode: charCode, charCode }));
+            textarea.dispatchEvent(new InputEvent('input', { data: text, inputType: 'insertText', bubbles: true, composed: true }));
+          }
+          textarea.dispatchEvent(new KeyboardEvent('keyup', init));
+        }
+      `);
+      deepStrictEqual(await ctx.page.evaluate(`window.calls`), Array.from('，。！？（）'));
+    });
+
     test('onKey', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`

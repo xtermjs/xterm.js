@@ -10,6 +10,7 @@ import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
 import { CellData } from '../common/buffer/CellData';
 import { MockUnicodeService, createCellData } from '../common/TestUtils.test';
 import { IMarker } from '../common/buffer/Types';
+import { KittyKeyboardFlags } from '../common/input/KittyKeyboard';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -166,6 +167,145 @@ describe('Terminal', () => {
         term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: modifier.keyCode, key: modifier.key } as KeyboardEvent);
         assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false, modifier.key);
       }
+    });
+  });
+
+  describe('macOS IME punctuation', () => {
+    let data: string[];
+    let keys: string[];
+
+    function keyboardEvent(type: string, key: string, keyCode: number, overrides: Partial<KeyboardEvent> = {}): KeyboardEvent {
+      let defaultPrevented = false;
+      return {
+        type,
+        key,
+        keyCode,
+        charCode: 0,
+        code: 'Comma',
+        ctrlKey: false,
+        altKey: false,
+        metaKey: false,
+        shiftKey: false,
+        isComposing: false,
+        get defaultPrevented() { return defaultPrevented; },
+        preventDefault: () => { defaultPrevented = true; },
+        stopPropagation: () => { },
+        getModifierState: () => false,
+        ...overrides
+      } as KeyboardEvent;
+    }
+
+    beforeEach(() => {
+      term.browser = { ...term.browser, isMac: true, isWindows: false };
+      term.clearSelection = () => { };
+      data = [];
+      keys = [];
+      term.onData(e => data.push(e));
+      term.onKey(e => keys.push(e.key));
+    });
+
+    afterEach(() => term.dispose());
+
+    const punctuation = [
+      { key: ',', keyCode: 188, text: '，' },
+      { key: '.', keyCode: 190, text: '。' },
+      { key: '!', keyCode: 49, text: '！', shiftKey: true },
+      { key: '?', keyCode: 191, text: '？', shiftKey: true },
+      { key: '(', keyCode: 57, text: '（', shiftKey: true },
+      { key: ')', keyCode: 48, text: '）', shiftKey: true },
+      { key: ',', keyCode: 188, text: ',' },
+      { key: '.', keyCode: 190, text: '.' },
+      { key: '1', keyCode: 49, text: '1' }
+    ];
+
+    for (const { key, keyCode, text, shiftKey } of punctuation) {
+      it(`should send ${text} from keypress instead of ${key} from keydown`, () => {
+        const keydown = keyboardEvent('keydown', key, keyCode, { shiftKey });
+        assert.equal(term.keyDown(keydown), true);
+        assert.equal(keydown.defaultPrevented, false);
+        assert.deepEqual(data, []);
+        assert.deepEqual(keys, []);
+
+        const charCode = text.charCodeAt(0);
+        assert.equal(term.keyPress(keyboardEvent('keypress', key, charCode, { charCode, shiftKey })), true);
+        assert.deepEqual(data, [text]);
+        assert.deepEqual(keys, [text]);
+
+        assert.equal(term.inputEvent({ data: text, inputType: 'insertText', composed: true } as InputEvent), false);
+        assert.deepEqual(data, [text]);
+      });
+    }
+
+    it('should preserve repeated punctuation', () => {
+      for (let i = 0; i < 3; i++) {
+        term.keyDown(keyboardEvent('keydown', ',', 188, { repeat: i > 0 }));
+        term.keyPress(keyboardEvent('keypress', ',', 65292, { charCode: 65292, repeat: i > 0 }));
+      }
+      assert.deepEqual(data, ['，', '，', '，']);
+    });
+
+    it('should preserve control sequences', () => {
+      term.keyDown(keyboardEvent('keydown', '[', 219, { ctrlKey: true }));
+      assert.deepEqual(data, ['\x1b']);
+    });
+
+    it('should preserve Option as Meta', () => {
+      term.options.macOptionIsMeta = true;
+      term.keyDown(keyboardEvent('keydown', ',', 188, { altKey: true }));
+      assert.deepEqual(data, ['\x1b,']);
+    });
+
+    it('should respect custom key handlers', () => {
+      term.attachCustomKeyEventHandler(() => false);
+      assert.equal(term.keyDown(keyboardEvent('keydown', ',', 188)), false);
+      assert.equal(term.keyPress(keyboardEvent('keypress', ',', 65292, { charCode: 65292 })), false);
+      assert.deepEqual(data, []);
+    });
+
+    it('should leave numeric candidate selection to the composition helper', () => {
+      const compositionHelper = new MockCompositionHelper();
+      let receivedEvent: KeyboardEvent | undefined;
+      compositionHelper.keydown = e => {
+        receivedEvent = e;
+        return false;
+      };
+      (term as any)._compositionHelper = compositionHelper;
+      const event = keyboardEvent('keydown', '1', 229, { isComposing: true });
+      assert.equal(term.keyDown(event), false);
+      assert.strictEqual(receivedEvent, event);
+      assert.deepEqual(data, []);
+    });
+
+    it('should not defer a composing key when the composition helper allows it', () => {
+      term.keyDown(keyboardEvent('keydown', '1', 49, { isComposing: true }));
+      assert.deepEqual(data, ['1']);
+    });
+
+    it('should preserve screen reader keydown handling', () => {
+      term.options.screenReaderMode = true;
+      term.keyDown(keyboardEvent('keydown', ',', 188));
+      assert.equal(term.keyPress(keyboardEvent('keypress', ',', 44, { charCode: 44 })), false);
+      assert.deepEqual(data, [',']);
+    });
+
+    it('should preserve keydown handling on other platforms', () => {
+      term.browser = { ...term.browser, isMac: false };
+      assert.equal(term.keyDown(keyboardEvent('keydown', ',', 188)), false);
+      assert.deepEqual(data, [',']);
+    });
+
+    it('should preserve Kitty keyboard protocol encoding', () => {
+      term.options.vtExtensions = { kittyKeyboard: true };
+      term.coreService.kittyKeyboard.flags = KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES;
+      term.keyDown(keyboardEvent('keydown', ',', 188));
+      assert.deepEqual(data, ['\x1b[44u']);
+    });
+
+    it('should preserve Win32 input mode encoding', () => {
+      term.options.vtExtensions = { win32InputMode: true };
+      term.coreService.decPrivateModes.win32InputMode = true;
+      term.keyDown(keyboardEvent('keydown', ',', 188));
+      assert.deepEqual(data, ['\x1b[188;51;44;1;0;1_']);
     });
   });
 
