@@ -176,6 +176,7 @@ describe('Terminal', () => {
 
     function keyboardEvent(type: string, key: string, keyCode: number, overrides: Partial<KeyboardEvent> = {}): KeyboardEvent {
       let defaultPrevented = false;
+      let propagationStopped = false;
       return {
         type,
         key,
@@ -188,8 +189,9 @@ describe('Terminal', () => {
         shiftKey: false,
         isComposing: false,
         get defaultPrevented() { return defaultPrevented; },
+        get cancelBubble() { return propagationStopped; },
         preventDefault: () => { defaultPrevented = true; },
-        stopPropagation: () => { },
+        stopPropagation: () => { propagationStopped = true; },
         getModifierState: () => false,
         ...overrides
       } as KeyboardEvent;
@@ -232,6 +234,7 @@ describe('Terminal', () => {
         const keydown = keyboardEvent('keydown', key, keyCode, { shiftKey });
         assert.equal(term.keyDown(keydown), true);
         assert.equal(keydown.defaultPrevented, false);
+        assert.equal(keydown.cancelBubble, true);
         assert.deepEqual(data, []);
         assert.deepEqual(keys, []);
 

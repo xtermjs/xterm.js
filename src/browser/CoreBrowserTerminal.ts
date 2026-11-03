@@ -916,6 +916,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
         (charCode >= 123 && charCode <= 126)  // { through ~
       );
       if ((charCode >= 65 && charCode <= 90) || isMacPunctuationOrDigit) {
+        if (isMacPunctuationOrDigit) {
+          // Block host shortcuts while allowing the default action to generate IME text.
+          event.stopPropagation();
+        }
         return true;
       }
     }

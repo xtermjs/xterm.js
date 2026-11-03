@@ -340,6 +340,36 @@ test.describe('API Integration Tests', () => {
       deepStrictEqual(await ctx.page.evaluate(`window.inputData`), Array.from(',.!?()123'));
     });
 
+    test('onData - macOS punctuation and digits are isolated from host shortcuts', async () => {
+      await openTerminal(ctx);
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.hostKeys = [];
+        window.keyEventTypes = [];
+        window.inputData = [];
+        window.term.onData(e => window.calls.push(e));
+        window.term.onKey(e => window.keyEventTypes.push(e.domEvent.type));
+        window.term.textarea.addEventListener('input', e => window.inputData.push(e.data));
+        window.term._core.browser = { ...window.term._core.browser, isMac: true };
+        window.hostShortcutController = new AbortController();
+        document.addEventListener('keydown', e => {
+          if ('/?!1[~'.includes(e.key)) {
+            window.hostKeys.push(e.key);
+            e.preventDefault();
+          }
+        }, { signal: window.hostShortcutController.signal });
+      `);
+      try {
+        await ctx.page.type('.xterm-helper-textarea', '/?!1[~');
+        deepStrictEqual(await ctx.page.evaluate('window.hostKeys'), []);
+        deepStrictEqual(await ctx.page.evaluate('window.calls'), Array.from('/?!1[~'));
+        deepStrictEqual(await ctx.page.evaluate('window.keyEventTypes'), Array(6).fill('keypress'));
+        deepStrictEqual(await ctx.page.evaluate('window.inputData'), Array.from('/?!1[~'));
+      } finally {
+        await ctx.page.evaluate('window.hostShortcutController.abort()');
+      }
+    });
+
     test('onData - preserve macOS IME multi-character commits with keyCode 229', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`
