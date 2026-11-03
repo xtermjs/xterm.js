@@ -259,5 +259,34 @@ describe('CompositionHelper', () => {
         }, 0);
       }, 0);
     });
+
+    it('Should not send the partial dead key composition on a composing keydown with a real keyCode', (done) => {
+      // Firefox on macOS: ` (dead key) followed by 'a' composes 'à'. The keydown for 'a' is
+      // reported with keyCode 65 and isComposing true, not keyCode 229.
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: '`' });
+      textarea.value = '`';
+      setTimeout(() => { // wait for any textarea updates
+        assert.equal(compositionHelper.keydown({ keyCode: 65, isComposing: true } as KeyboardEvent), false);
+        compositionHelper.compositionupdate({ data: 'à' });
+        textarea.value = 'à';
+        compositionHelper.compositionend();
+        setTimeout(() => { // wait for any textarea updates
+          assert.equal(handledText, 'à');
+          done();
+        }, 0);
+      }, 0);
+    });
+
+    it('Should finalize the composition immediately on a non-composing keydown', (done) => {
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'ㅇ' });
+      textarea.value = 'ㅇ';
+      setTimeout(() => { // wait for any textarea updates
+        assert.equal(compositionHelper.keydown({ keyCode: 13, isComposing: false } as KeyboardEvent), true);
+        assert.equal(handledText, 'ㅇ');
+        done();
+      }, 0);
+    });
   });
 });
