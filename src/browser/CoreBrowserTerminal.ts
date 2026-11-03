@@ -905,9 +905,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return true;
     }
 
-    // Process A-Z in keypress to support lower case input with caps lock on in macOS IMEs.
+    // HACK: Process A-Z in keypress to support lower case input with caps lock on in macOS IMEs.
     // Also defer ASCII punctuation and digits on macOS: third-party IMEs can report the ASCII
     // key in keydown but the committed character in keypress.charCode (#4486).
+    // Leave lowercase letters and space on their existing paths to limit this workaround's scope.
     // Kitty protocol and Win32 input mode need to encode their own key events.
     if (!this._keyboardService.useKitty && !this._keyboardService.useWin32InputMode && event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
       const charCode = event.key.charCodeAt(0);

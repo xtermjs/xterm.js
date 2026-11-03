@@ -333,28 +333,29 @@ test.describe('API Integration Tests', () => {
       deepStrictEqual(await ctx.page.evaluate(`window.calls`), Array.from(',.!?()123'));
     });
 
-    test('onData - macOS IME punctuation event sequence', async () => {
+    test('onData - macOS IME multi-character punctuation with keyCode 229', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`
         window.calls = [];
         window.term.onData(e => calls.push(e));
         window.term._core.browser = { ...window.term._core.browser, isMac: true };
-        const textarea = window.term.textarea;
-        for (const [key, keyCode, text, shiftKey] of [
-          [',', 188, '，', false], ['.', 190, '。', false],
-          ['!', 49, '！', true], ['?', 191, '？', true],
-          ['(', 57, '（', true], [')', 48, '）', true]
-        ]) {
-          const init = { key, keyCode, shiftKey, bubbles: true, cancelable: true };
-          if (textarea.dispatchEvent(new KeyboardEvent('keydown', init))) {
-            const charCode = text.charCodeAt(0);
-            textarea.dispatchEvent(new KeyboardEvent('keypress', { ...init, keyCode: charCode, charCode }));
-            textarea.dispatchEvent(new InputEvent('input', { data: text, inputType: 'insertText', bubbles: true, composed: true }));
-          }
-          textarea.dispatchEvent(new KeyboardEvent('keyup', init));
-        }
       `);
-      deepStrictEqual(await ctx.page.evaluate(`window.calls`), Array.from('，。！？（）'));
+      const expected: string[] = [];
+      for (const [key, keyCode, text] of [['^', 54, '……'], ['_', 189, '——']] as const) {
+        await ctx.page.evaluate(`
+          const textarea = window.term.textarea;
+          textarea.dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(key)}, keyCode: 229, shiftKey: true, bubbles: true, cancelable: true }));
+          textarea.dispatchEvent(new InputEvent('beforeinput', { data: ${JSON.stringify(text)}, inputType: 'insertText', bubbles: true, composed: true }));
+          textarea.value += ${JSON.stringify(text)};
+          textarea.dispatchEvent(new InputEvent('input', { data: ${JSON.stringify(text)}, inputType: 'insertText', bubbles: true, composed: true }));
+        `);
+        expected.push(text);
+        await pollFor(ctx.page, 'window.calls', expected);
+        await ctx.page.evaluate(`
+          window.term.textarea.dispatchEvent(new KeyboardEvent('keyup', { key: ${JSON.stringify(key)}, keyCode: ${keyCode}, shiftKey: true, bubbles: true }));
+        `);
+      }
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), ['……', '——']);
     });
 
     test('onKey', async () => {
