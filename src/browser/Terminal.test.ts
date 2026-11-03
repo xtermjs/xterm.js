@@ -228,7 +228,7 @@ describe('Terminal', () => {
     ];
 
     for (const { key, keyCode, text, shiftKey } of punctuation) {
-      it(`should send ${text} from keypress instead of ${key} from keydown`, () => {
+      it(`should send ${JSON.stringify(text)} once via keypress for key ${JSON.stringify(key)}`, () => {
         const keydown = keyboardEvent('keydown', key, keyCode, { shiftKey });
         assert.equal(term.keyDown(keydown), true);
         assert.equal(keydown.defaultPrevented, false);
@@ -271,7 +271,7 @@ describe('Terminal', () => {
       assert.deepEqual(data, []);
     });
 
-    it('should leave numeric candidate selection to the composition helper', () => {
+    it('should not handle a keydown rejected by the composition helper', () => {
       const compositionHelper = new MockCompositionHelper();
       let receivedEvent: KeyboardEvent | undefined;
       compositionHelper.keydown = e => {
