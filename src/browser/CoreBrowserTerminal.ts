@@ -909,13 +909,14 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // Also defer ASCII punctuation and digits on macOS: third-party IMEs can report the ASCII
     // key in keydown but the committed character in keypress.charCode (#4486).
     // Leave lowercase letters and space on their existing paths to limit this workaround's scope.
+    // Preserve the screen reader's keydown/textarea path until its announcements are validated.
     // Kitty protocol and Win32 input mode need to encode their own key events.
     if (!this._keyboardService.useKitty && !this._keyboardService.useWin32InputMode && event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
       const charCode = event.key.charCodeAt(0);
-      const isMacPunctuationOrDigit = this.browser.isMac && !this.options.screenReaderMode && !event.isComposing && (
-        (charCode >= 33 && charCode <= 64) ||
-        (charCode >= 91 && charCode <= 96) ||
-        (charCode >= 123 && charCode <= 126)
+      const isMacPunctuationOrDigit = this.browser.isMac && !this.optionsService.rawOptions.screenReaderMode && !event.isComposing && (
+        (charCode >= 33 && charCode <= 64) || // ! through @ (including digits)
+        (charCode >= 91 && charCode <= 96) || // [ through `
+        (charCode >= 123 && charCode <= 126)  // { through ~
       );
       if ((charCode >= 65 && charCode <= 90) || isMacPunctuationOrDigit) {
         return true;

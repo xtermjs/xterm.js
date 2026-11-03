@@ -323,17 +323,24 @@ test.describe('API Integration Tests', () => {
       deepStrictEqual(await ctx.page.evaluate(`window.calls`), ['f', 'o', 'o']);
     });
 
-    test('onData - ASCII punctuation and digits', async () => {
+    test('onData - macOS punctuation and digits use keypress once', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`
         window.calls = [];
+        window.keyEventTypes = [];
+        window.inputData = [];
         window.term.onData(e => calls.push(e));
+        window.term.onKey(e => window.keyEventTypes.push(e.domEvent.type));
+        window.term.textarea.addEventListener('input', e => window.inputData.push(e.data));
+        window.term._core.browser = { ...window.term._core.browser, isMac: true };
       `);
       await ctx.page.type('.xterm-helper-textarea', ',.!?()123');
       deepStrictEqual(await ctx.page.evaluate(`window.calls`), Array.from(',.!?()123'));
+      deepStrictEqual(await ctx.page.evaluate(`window.keyEventTypes`), Array(9).fill('keypress'));
+      deepStrictEqual(await ctx.page.evaluate(`window.inputData`), Array.from(',.!?()123'));
     });
 
-    test('onData - macOS IME multi-character punctuation with keyCode 229', async () => {
+    test('onData - preserve macOS IME multi-character commits with keyCode 229', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`
         window.calls = [];
