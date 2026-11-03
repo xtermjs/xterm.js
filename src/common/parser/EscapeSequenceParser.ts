@@ -539,10 +539,12 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
    * - DCS_PARAM:PARAM
    * - OSC_STRING:OSC_PUT
    * - DCS_PASSTHROUGH:DCS_PUT
+   * - APC_PASSTHROUGH:APC_PUT
    *
    * Additionally the following fast paths exist before the table lookup:
    * - EXE bytes < 0x18 in non-payload states (avoids table lookup entirely)
    * - 7-bit CSI sequences without intermediates (ESC [ params final)
+   * - simple 7-bit string sequences (ESC ]/P/_ id payload ST)
    *
    * Note on asynchronous handler support:
    * Any handler returning a promise will be treated as asynchronous.
@@ -575,6 +577,8 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     let code: number;
     let transition: number;
     let start = 0;
+    let c = 0;
+    const l4 = length - 4;
     let handlerResult: void | boolean | Promise<boolean>;
 
     // resume from async handler
@@ -681,7 +685,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
     // continue with main sync loop
 
     // process input string
-    for (let i = start; i < length; ++i) {
+    parseLoop: for (let i = start; i < length; ++i) {
       code = data[i];
 
       // EXE fast-path: common control bytes (0x00-0x17) in non-payload states
@@ -745,6 +749,148 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         continue;
       }
 
+      // Fast-path simple OSC/DCS/APC strings; fall back on complex forms.
+      stringFastPath: if (code === 0x1b && this.currentState < ParserState.OSC_STRING && i + 2 < length) {
+        const introducer = data[i + 1];
+        if (introducer !== 0x50 && introducer !== 0x5d && introducer !== 0x5f) {
+          break stringFastPath;
+        }
+
+        if (introducer === 0x5d) {
+          let k = i + 2;
+          for (; k < length; k++) {
+            const ch = data[k];
+            if (ch >= 0x20 && (ch <= 0x7f || ch >= NON_ASCII_PRINTABLE)) {
+              continue;
+            }
+            if (ch === 0x1b && k + 1 < length && data[k + 1] === 0x5c) {
+              this._params.resetZdm();
+              this._collect = 0;
+              this._oscParser.start();
+              this._oscParser.put(data, i + 2, k);
+              handlerResult = this._oscParser.end(true);
+              if (handlerResult) {
+                this._preserveStack(ParserStackType.OSC, [], 0, ParserState.GROUND, k);
+                return handlerResult;
+              }
+              this.currentState = ParserState.GROUND;
+              this.precedingJoinState = 0;
+              i = k + 1;
+              continue parseLoop;
+            }
+            if (ch === 0x9c || ch === 0x07 || ch === 0x18 || ch === 0x1a) {
+              this._params.resetZdm();
+              this._collect = 0;
+              this._oscParser.start();
+              this._oscParser.put(data, i + 2, k);
+              handlerResult = this._oscParser.end(ch !== 0x18 && ch !== 0x1a);
+              if (handlerResult) {
+                this._preserveStack(ParserStackType.OSC, [], 0, ParserState.GROUND, k);
+                return handlerResult;
+              }
+              this.currentState = ParserState.GROUND;
+              this.precedingJoinState = 0;
+              i = k;
+              continue parseLoop;
+            }
+            break stringFastPath;
+          }
+          if (k === length) {
+            this._params.resetZdm();
+            this._collect = 0;
+            this._oscParser.start();
+            this._oscParser.put(data, i + 2, length);
+            this.currentState = ParserState.OSC_STRING;
+            i = length - 1;
+            continue parseLoop;
+          }
+        }
+
+        if (i + 3 >= length) {
+          break stringFastPath;
+        }
+
+        const isDcs = introducer === 0x50;
+        const identifier = data[i + 2];
+        if ((isDcs && (identifier < 0x40 || identifier > 0x7e))
+          || (!isDcs && (identifier < 0x30 || identifier > 0x7e))
+        ) {
+          break stringFastPath;
+        }
+
+        let k = i + 3;
+        for (; k < length; k++) {
+          const ch = data[k];
+          if (ch >= 0x20 && (ch <= 0x7e || ch >= NON_ASCII_PRINTABLE)) {
+            continue;
+          }
+          if (ch === 0x1b && k + 1 < length && data[k + 1] === 0x5c) {
+            this._params.resetZdm();
+            this._collect = 0;
+            if (isDcs) {
+              this._dcsParser.hook(identifier, this._params);
+              this._dcsParser.put(data, i + 3, k);
+              handlerResult = this._dcsParser.unhook(true);
+              if (handlerResult) {
+                this._preserveStack(ParserStackType.DCS, [], 0, ParserState.GROUND, k);
+                return handlerResult;
+              }
+            } else {
+              this._apcParser.start(identifier);
+              this._apcParser.put(data, i + 3, k);
+              handlerResult = this._apcParser.end(true);
+              if (handlerResult) {
+                this._preserveStack(ParserStackType.APC, [], 0, ParserState.GROUND, k);
+                return handlerResult;
+              }
+            }
+            this.currentState = ParserState.GROUND;
+            this.precedingJoinState = 0;
+            i = k + 1;
+            continue parseLoop;
+          }
+          if (ch === 0x9c || ch === 0x18 || ch === 0x1a) {
+            this._params.resetZdm();
+            this._collect = 0;
+            if (isDcs) {
+              this._dcsParser.hook(identifier, this._params);
+              this._dcsParser.put(data, i + 3, k);
+              handlerResult = this._dcsParser.unhook(ch !== 0x18 && ch !== 0x1a);
+              if (handlerResult) {
+                this._preserveStack(ParserStackType.DCS, [], 0, ParserState.GROUND, k);
+                return handlerResult;
+              }
+            } else {
+              this._apcParser.start(identifier);
+              this._apcParser.put(data, i + 3, k);
+              handlerResult = this._apcParser.end(ch !== 0x18 && ch !== 0x1a);
+              if (handlerResult) {
+                this._preserveStack(ParserStackType.APC, [], 0, ParserState.GROUND, k);
+                return handlerResult;
+              }
+            }
+            this.currentState = ParserState.GROUND;
+            this.precedingJoinState = 0;
+            i = k;
+            continue parseLoop;
+          }
+          break stringFastPath;
+        }
+        this._params.resetZdm();
+        this._collect = 0;
+        if (isDcs) {
+          this._dcsParser.hook(identifier, this._params);
+          this._dcsParser.put(data, i + 3, length);
+          this.currentState = ParserState.DCS_PASSTHROUGH;
+        } else {
+          this._apcParser.start(identifier);
+          this._apcParser.put(data, i + 3, length);
+          this.currentState = ParserState.APC_PASSTHROUGH;
+        }
+        i = length - 1;
+        continue parseLoop;
+      }
+
       // normal transition & action lookup
       transition = this._transitions.table[
         this.currentState << TableAccess.INDEX_STATE_SHIFT |
@@ -753,8 +899,7 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
       switch (transition >> TableAccess.TRANSITION_ACTION_SHIFT) {
         case ParserAction.PRINT:
           // Note: 0x20 (SP) is included, 0x7F (DEL) is excluded
-          let c = i;
-          const l4 = length - 4;
+          c = i;
           while (c < l4
             && data[++c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)
             && data[++c] >= 0x20 && (data[c] <= 0x7e || data[c] >= NON_ASCII_PRINTABLE)
@@ -858,13 +1003,18 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         case ParserAction.DCS_PUT:
           // inner loop - exit DCS_PUT: 0x18, 0x1a, 0x1b, 0x7f, 0x80 - 0x9f
           // unhook triggered by: 0x1b, 0x9c (success) and 0x18, 0x1a (abort)
-          for (let j = i + 1; ; ++j) {
-            if (j >= length || (code = data[j]) === 0x18 || code === 0x1a || code === 0x1b || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              this._dcsParser.put(data, i, j);
-              i = j - 1;
-              break;
-            }
+          c = i;
+          for (; c < l4;) {
+            if (((code = data[++c]) <= 0x1b || code >= 0x7f) && (code === 0x1b || code === 0x1a || code === 0x18 || code === 0x7f || (code > 0x7f && code < NON_ASCII_PRINTABLE))) break;
+            if (((code = data[++c]) <= 0x1b || code >= 0x7f) && (code === 0x1b || code === 0x1a || code === 0x18 || code === 0x7f || (code > 0x7f && code < NON_ASCII_PRINTABLE))) break;
+            if (((code = data[++c]) <= 0x1b || code >= 0x7f) && (code === 0x1b || code === 0x1a || code === 0x18 || code === 0x7f || (code > 0x7f && code < NON_ASCII_PRINTABLE))) break;
+            if (((code = data[++c]) <= 0x1b || code >= 0x7f) && (code === 0x1b || code === 0x1a || code === 0x18 || code === 0x7f || (code > 0x7f && code < NON_ASCII_PRINTABLE))) break;
           }
+          if (c >= l4) {
+            while (c < length && !(((code = data[c]) <= 0x1b || code >= 0x7f) && (code === 0x1b || code === 0x1a || code === 0x18 || code === 0x7f || (code > 0x7f && code < NON_ASCII_PRINTABLE)))) c++;
+          }
+          this._dcsParser.put(data, i, c);
+          i = c - 1;
           break;
         case ParserAction.DCS_UNHOOK:
           handlerResult = this._dcsParser.unhook(code !== 0x18 && code !== 0x1a);
@@ -882,13 +1032,18 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
           break;
         case ParserAction.OSC_PUT:
           // inner loop: 0x20 (SP) included, 0x7F (DEL) included
-          for (let j = i + 1; ; j++) {
-            if (j >= length || (code = data[j]) < 0x20 || (code > 0x7f && code < NON_ASCII_PRINTABLE)) {
-              this._oscParser.put(data, i, j);
-              i = j - 1;
-              break;
-            }
+          c = i;
+          while (c < l4
+            && data[++c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)
+            && data[++c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)
+            && data[++c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)
+            && data[++c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)
+          ) {}
+          if (c >= l4) {
+            while (c < length && data[c] >= 0x20 && (data[c] <= 0x7f || data[c] >= NON_ASCII_PRINTABLE)) c++;
           }
+          this._oscParser.put(data, i, c);
+          i = c - 1;
           break;
         case ParserAction.OSC_END:
           handlerResult = this._oscParser.end(code !== 0x18 && code !== 0x1a);
@@ -907,14 +1062,18 @@ export class EscapeSequenceParser extends Disposable implements IEscapeSequenceP
         case ParserAction.APC_PUT:
           // inner loop - exit APC_PUT: 0x18, 0x1a, 0x1b, 0x9c
           // allowed: 00/08 .. 00/13, 02/00 .. 07/14 + NON_ASCII_PRINTABLE
-          for (let j = i + 1; ; ++j) {
-            if (j < length && (
-              (data[j] >= 0x20 && data[j] < 0x7f) || (data[j] >= 0x08 && data[j] < 0x0e) || data[j] >= NON_ASCII_PRINTABLE
-            )) continue;
-            this._apcParser.put(data, i, j);
-            i = j - 1;
-            break;
+          c = i;
+          for (; c < l4;) {
+            if (((code = data[++c]) < 0x20 || code >= 0x7f) && (code < 0x08 || (code >= 0x0e && code < 0x20) || (code >= 0x7f && code < NON_ASCII_PRINTABLE))) break;
+            if (((code = data[++c]) < 0x20 || code >= 0x7f) && (code < 0x08 || (code >= 0x0e && code < 0x20) || (code >= 0x7f && code < NON_ASCII_PRINTABLE))) break;
+            if (((code = data[++c]) < 0x20 || code >= 0x7f) && (code < 0x08 || (code >= 0x0e && code < 0x20) || (code >= 0x7f && code < NON_ASCII_PRINTABLE))) break;
+            if (((code = data[++c]) < 0x20 || code >= 0x7f) && (code < 0x08 || (code >= 0x0e && code < 0x20) || (code >= 0x7f && code < NON_ASCII_PRINTABLE))) break;
           }
+          if (c >= l4) {
+            while (c < length && !(((code = data[c]) < 0x20 || code >= 0x7f) && (code < 0x08 || (code >= 0x0e && code < 0x20) || (code >= 0x7f && code < NON_ASCII_PRINTABLE)))) c++;
+          }
+          this._apcParser.put(data, i, c);
+          i = c - 1;
           break;
         case ParserAction.APC_END:
           handlerResult = this._apcParser.end(code !== 0x18 && code !== 0x1a);
