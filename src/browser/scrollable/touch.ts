@@ -434,6 +434,15 @@ export class Gesture extends Disposable {
       const evt = this._newGestureEvent(EventType.CHANGE);
       evt.translationX = deltaPosX;
       evt.translationY = deltaPosY;
+      // Carry the extrapolated position on inertia frames. Real touchmove
+      // CHANGE events (_handleTouchMove) always stamp coordinates and
+      // consumers like the mouse-report wheel path read event.clientX/clientY.
+      // Without these, momentum frames yield NaN coordinates (undefined
+      // arithmetic), which ends up serialized into mouse reports.
+      evt.pageX = x + deltaPosX;
+      evt.pageY = y + deltaPosY;
+      evt.clientX = x + deltaPosX - targetWindow.scrollX;
+      evt.clientY = y + deltaPosY - targetWindow.scrollY;
       dispatchTo.forEach(d => d.dispatchEvent(evt));
 
       if (!stopped) {
