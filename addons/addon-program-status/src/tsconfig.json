@@ -1,0 +1,48 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es2021",
+    "lib": [
+      "dom",
+      "es2015"
+    ],
+    "rootDir": ".",
+    "outDir": "../out",
+    "sourceMap": true,
+    "removeComments": true,
+    "strict": true,
+    "types": [
+      "../../../node_modules/@types/mocha"
+    ],
+    "paths": {
+      "common/*": [
+        "../../../src/common/*"
+      ],
+      "browser/*": [
+        "../../../src/browser/*"
+      ],
+      "headless/*": [
+        "../../../src/headless/*"
+      ],
+      "@xterm/addon-program-status": [
+        "../typings/addon-program-status.d.ts"
+      ]
+    }
+  },
+  "include": [
+    "./**/*",
+    "../../../typings/xterm.d.ts",
+    "../../../typings/xterm-headless.d.ts"
+  ],
+  "references": [
+    {
+      "path": "../../../src/browser"
+    },
+    {
+      "path": "../../../src/common"
+    },
+    {
+      "path": "../../../src/headless"
+    }
+  ]
+}

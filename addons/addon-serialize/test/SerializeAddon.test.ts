@@ -48,7 +48,7 @@ test.describe('SerializeAddon', () => {
         const lines = [];
         for (let i = 0; i < buffer.length; i++) {
           // Do this intentionally to get content of underlining source
-          const bufferLine = buffer.getLine(i)._line;
+          const bufferLine = buffer.getLine(i);
           lines.push(JSON.stringify(bufferLine, (key, value) => {
             // BufferLine caches are internal/transient and can legitimately differ
             // across equivalent terminal states.
@@ -520,6 +520,22 @@ test.describe('SerializeAddon', () => {
     await testNormalScreenEqual(ctx.page, segments.join(''));
   });
 
+  test('handle empty row followed by wrapped row', async () => {
+    const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
+    const MOVE_TO = (row: number, col: number): string => `\u001b[${row};${col}H`;
+
+    // The wrap is forced with a row of dashes. With no content in the row, the
+    // moves around the erase have a count of 0, which means 1.
+    const segments = [
+      'abcdefghijXYZ',
+      MOVE_TO(1, 1),
+      CLEAR_RIGHT(10),
+      MOVE_TO(2, 4)
+    ];
+
+    await testNormalScreenEqual(ctx.page, segments.join(''));
+  });
+
   test('handle invalid wrap after scroll', async () => {
     const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
     const MOVE_UP = (l: number): string => `\u001b[${l}A`;
@@ -548,6 +564,21 @@ test.describe('SerializeAddon', () => {
     ];
 
     await testNormalScreenEqual(ctx.page, lines.join(''));
+  });
+
+  test('handle wrapped row starting with empty cell', async () => {
+    const CLEAR_RIGHT = (l: number): string => `\u001b[${l}X`;
+    const MOVE_TO = (row: number, col: number): string => `\u001b[${row};${col}H`;
+
+    // The wrap only happens when a character is printed, so the empty first
+    // cell of the wrapped row can't be written as a cursor move.
+    const segments = [
+      'abcdefghijXYZ',
+      MOVE_TO(2, 1),
+      CLEAR_RIGHT(1)
+    ];
+
+    await testNormalScreenEqual(ctx.page, segments.join(''));
   });
 
   test.describe('handle modes', () => {
