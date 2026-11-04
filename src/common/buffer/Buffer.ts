@@ -125,6 +125,11 @@ export class Buffer extends Disposable implements IBuffer {
     return correctBufferLength > MAX_BUFFER_SIZE ? MAX_BUFFER_SIZE : correctBufferLength;
   }
 
+  public setWrapped(absrow: number, value: boolean): void {
+    const line = this.lines.get(absrow);
+    if (line) (line as BufferLine)._isWrapped = value;
+  }
+
   /**
    * Fills the buffer's viewport with blank lines.
    */

@@ -170,6 +170,29 @@ describe('MouseService _triggerMouseEvent', () => {
     assert.equal(trigger({ col: 0, row: 500, x: 0, y: 0, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), false);
   });
 
+  describe('non-finite coords', () => {
+    const nonFiniteCoords = [
+      { col: NaN, row: 0, x: 0, y: 0 },
+      { col: 0, row: NaN, x: 0, y: 0 },
+      { col: Infinity, row: 0, x: 0, y: 0 },
+      { col: 0, row: -Infinity, x: 0, y: 0 },
+      { col: 0, row: 0, x: NaN, y: 0 },
+      { col: 0, row: 0, x: 0, y: Infinity }
+    ];
+    for (const encoding of ['DEFAULT', 'SGR', 'SGR_PIXELS']) {
+      it(`${encoding} encoding`, () => {
+        mouseStateService.activeProtocol = 'ANY';
+        mouseStateService.activeEncoding = encoding;
+        for (const coords of nonFiniteCoords) {
+          assert.equal(trigger({ ...coords, button: CoreMouseButton.LEFT, action: CoreMouseAction.DOWN }), false);
+          assert.equal(trigger({ ...coords, button: CoreMouseButton.LEFT, action: CoreMouseAction.UP }), false);
+          assert.equal(trigger({ ...coords, button: CoreMouseButton.WHEEL, action: CoreMouseAction.UP }), false);
+        }
+        assert.deepEqual(reports, []);
+      });
+    }
+  });
+
   describe('coords', () => {
     it('DEFAULT encoding', () => {
       mouseStateService.activeProtocol = 'ANY';

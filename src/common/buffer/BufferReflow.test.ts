@@ -100,9 +100,8 @@ describe('BufferReflow', () => {
     function createWrappedLines(chars: string): CircularList<IBufferLine> {
       const lines = new CircularList<IBufferLine>(chars.length);
       for (let i = 0; i < chars.length; i++) {
-        const line = new BufferLine(1);
+        const line = new BufferLine(1, undefined, i > 0);
         line.set(0, [0, chars[i], 1, chars.charCodeAt(i)]);
-        line.isWrapped = i > 0;
         lines.push(line);
       }
       return lines;

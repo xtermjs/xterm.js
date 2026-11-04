@@ -12,6 +12,7 @@
     { "path": "./addons/addon-fit" },
     { "path": "./addons/addon-image" },
     { "path": "./addons/addon-ligatures" },
+    { "path": "./addons/addon-program-status" },
     { "path": "./addons/addon-progress" },
     { "path": "./addons/addon-search" },
     { "path": "./addons/addon-serialize" },

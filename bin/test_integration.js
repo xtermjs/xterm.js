@@ -25,6 +25,7 @@ const addons = [
   'clipboard',
   'fit',
   'image',
+  'program-status',
   'progress',
   'search',
   'serialize',

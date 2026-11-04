@@ -74,6 +74,14 @@ export class BufferLine implements IBufferLine {
   protected _extendedAttrs: {[index: number]: IExtendedAttrs | undefined} = {};
   public length: number;
 
+  // INTERNAL - if modifying, use Buffer.setWrapped.
+  // WARNING - this field is likely to be removed or made private
+  public _isWrapped: boolean;
+
+  public get isWrapped(): boolean {
+    return this._isWrapped;
+  }
+
   /** line text cache */
   protected _cacheValid = false;
   protected _cache: string = '';
@@ -82,7 +90,7 @@ export class BufferLine implements IBufferLine {
   constructor(
     cols: number,
     fillCellData?: ICellData,
-    public isWrapped: boolean = false
+    isWrapped: boolean = false
   ) {
     this._data = new Uint32Array(cols * Constants.CELL_INDICIES);
     const cell = fillCellData ?? CellData.fromCharData([0, NULL_CELL_CHAR, NULL_CELL_WIDTH, NULL_CELL_CODE]);
@@ -90,6 +98,7 @@ export class BufferLine implements IBufferLine {
       this.setCell(i, cell);
     }
     this.length = cols;
+    this._isWrapped = isWrapped;
   }
 
   /**
@@ -210,6 +219,21 @@ export class BufferLine implements IBufferLine {
     }
     cell.extended = this.getExtended(index);
     return cell;
+  }
+
+  /**
+   * Convenience wrapper around loadCell, used by public API.
+   */
+  public getCell(x: number, cell?: ICellData): ICellData | undefined {
+    if (x < 0 || x >= this.length) {
+      return undefined;
+    }
+
+    if (cell) {
+      this.loadCell(x, cell);
+      return cell;
+    }
+    return this.loadCell(x, new CellData());
   }
 
   public getExtended(index: number): IExtendedAttrs {
@@ -425,6 +449,10 @@ export class BufferLine implements IBufferLine {
           delete this._extendedAttrs[key];
         }
       }
+      // handle fullwidth at line end: reset last cell if it is first cell of a wide char
+      if (cols && this.getWidth(cols - 1) === 2) {
+        this.setCellFromCodepoint(cols - 1, 0, 1, fillCellData);
+      }
     }
     this.length = cols;
     return uint32Cells * 4 * Constants.CLEANUP_THRESHOLD < this._data.buffer.byteLength;
@@ -484,7 +512,7 @@ export class BufferLine implements IBufferLine {
     }
     this._cache = '';
     this._cacheValid = false;
-    this.isWrapped = line.isWrapped;
+    this._isWrapped = line._isWrapped;
   }
 
   /** create a new clone */
@@ -497,7 +525,7 @@ export class BufferLine implements IBufferLine {
       // thus we can skip handling them
       newLine._copySparseMapsFrom(this);
     }
-    newLine.isWrapped = this.isWrapped;
+    newLine._isWrapped = this._isWrapped;
     return newLine;
   }
 
@@ -555,13 +583,8 @@ export class BufferLine implements IBufferLine {
    */
   public translateToString(trimRight?: boolean, startCol?: number, endCol?: number, outColumns?: number[]): string {
     const isCanonical = (startCol === undefined || startCol === 0) && endCol === undefined && outColumns === undefined;
-    if (isCanonical && this._cacheValid) {
-      if (trimRight) {
-        return this._cacheTrimmed ? this._cache : this._cache.trimEnd();
-      }
-      if (!this._cacheTrimmed) {
-        return this._cache;
-      }
+    if (isCanonical && this._cacheValid && trimRight === this._cacheTrimmed) {
+      return this._cache;
     }
     startCol = startCol ?? 0;
     endCol = endCol ?? this.length;

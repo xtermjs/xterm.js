@@ -56,6 +56,7 @@ let $glyph = undefined;
 
 export class TextureAtlas implements ITextureAtlas {
   private _didWarmUp: boolean = false;
+  private _warmUpQueue: InstanceType<typeof IdleTaskQueue> | undefined;
 
   private _cacheMap: FourKeyMap<number, number, number, number, IRasterizedGlyph> = new FourKeyMap();
   private _cacheMapCombined: FourKeyMap<string, number, number, number, IRasterizedGlyph> = new FourKeyMap();
@@ -104,6 +105,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   public dispose(): void {
+    this._warmUpQueue?.clear();
     this._tmpCanvas.remove();
     for (const page of this.pages) {
       page.canvas.remove();
@@ -121,7 +123,8 @@ export class TextureAtlas implements ITextureAtlas {
 
   private _doWarmUp(): void {
     // Pre-fill with ASCII 33-126, this is not urgent and done in idle callbacks
-    const queue = new IdleTaskQueue(this._logService);
+    this._warmUpQueue?.clear();
+    const queue = this._warmUpQueue = new IdleTaskQueue(this._logService);
     for (let i = 33; i < 126; i++) {
       queue.enqueue(() => {
         if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {

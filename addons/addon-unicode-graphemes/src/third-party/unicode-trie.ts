@@ -71,7 +71,7 @@ class UnicodeTrie {
   constructor(data: Uint8Array) {
       // read binary format
       
-        const view = new DataView(data.buffer);
+        const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
         this.highStart = view.getUint32(0, true);
         this.errorValue = view.getUint32(4, true);
         let uncompressedLength = view.getUint32(8, true);

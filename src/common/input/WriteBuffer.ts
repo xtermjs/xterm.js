@@ -78,13 +78,12 @@ export class WriteBuffer extends Disposable {
     }
     this._isSyncWriting = true;
 
-    // Process all pending chunks synchronously
-    let chunk: string | Uint8Array | undefined;
+    // _innerWrite leaves parsed chunks before _bufferOffset when it yields.
     let didProcess = false;
-    while (chunk = this._writeBuffer.shift()) {
+    while (this._bufferOffset < this._writeBuffer.length) {
       didProcess = true;
-      this._action(chunk);
-      const cb = this._callbacks.shift();
+      this._action(this._writeBuffer[this._bufferOffset]);
+      const cb = this._callbacks[this._bufferOffset++];
       if (cb) cb();
     }
 
@@ -287,10 +286,11 @@ export class WriteBuffer extends Disposable {
         return;
       }
 
+      // Retire the chunk before its callback can synchronously flush the remaining queue.
       const cb = this._callbacks[this._bufferOffset];
-      if (cb) cb();
       this._bufferOffset++;
       this._pendingData -= data.length;
+      if (cb) cb();
 
       if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
         break;

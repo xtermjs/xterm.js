@@ -4,7 +4,7 @@
 
 An addon providing enhanced Unicode support (include grapheme clustering) for xterm.js.
 
-The file `src/UnicodeProperties.ts` is generated and depends on the Unicode version. See [the unicode-properties project](https://github.com/PerBothner/unicode-properties) for credits and re-generation instructions.
+The file `src/third-party/UnicodeProperties.ts` is generated and depends on the Unicode version (currently Unicode 18.0.0). It and the files `src/third-party/unicode-trie.ts` and `src/third-party/tiny-inflate.ts` come from the `out-ts` directory of [the unicode-properties project](https://github.com/PerBothner/unicode-properties); see that project for credits and re-generation instructions.
 
 ### Install
 
