@@ -335,6 +335,34 @@ describe('DomRendererRowFactory', () => {
       });
     });
 
+    describe('block elements', () => {
+      it('should draw block elements as backgrounds that fill the cell', () => {
+        lineData.setCell(0, createCellData(DEFAULT_ATTR, '█', 1));
+        lineData.setCell(1, createCellData(DEFAULT_ATTR, '▄', 1));
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, true, 5, widthCache, -1, -1);
+        assert.equal(extractHtml(spans),
+          '<span style="background-image:linear-gradient(currentColor,currentColor);background-size:100% 100%;background-position:top;background-repeat:no-repeat;"> </span>' +
+          '<span style="background-image:linear-gradient(currentColor,currentColor);background-size:100% 50%;background-position:bottom;background-repeat:no-repeat;"> </span>'
+        );
+      });
+      it('should draw each rect of quadrant block elements', () => {
+        lineData.setCell(0, createCellData(DEFAULT_ATTR, '▚', 1));
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, true, 5, widthCache, -1, -1);
+        assert.equal(extractHtml(spans),
+          '<span style="background-image:linear-gradient(currentColor,currentColor),linear-gradient(currentColor,currentColor);background-size:50% 50%,50% 50%;background-position:left top,right bottom;background-repeat:no-repeat;"> </span>'
+        );
+      });
+      it('should not draw invisible block elements', () => {
+        const cell = createCellData(DEFAULT_ATTR, '█', 1);
+        cell.fg |= FgFlags.INVISIBLE;
+        lineData.setCell(0, cell);
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, true, 5, widthCache, -1, -1);
+        assert.equal(extractHtml(spans),
+          '<span> </span>'
+        );
+      });
+    });
+
     describe('selectionForeground', () => {
       it('should force selected cells with content to be rendered above the background', () => {
         lineData.setCell(0, createCellData(DEFAULT_ATTR, 'a', 1));
