@@ -34,6 +34,50 @@ export const enum RowCss {
   CURSOR_STYLE_UNDERLINE_CLASS = 'xterm-cursor-underline'
 }
 
+/**
+ * Block elements drawn as backgrounds so they fill the whole cell instead of relying on the font's
+ * glyph, which is often shorter than the row. Each rect is [width, height] in eighths of the cell
+ * and the edge(s) it is anchored to, matching the webgl addon's custom glyphs.
+ */
+const BLOCK_ELEMENT_RECTS: { [char: string]: [number, number, string][] } = {
+  '▀': [[8, 4, 'top']],
+  '▁': [[8, 1, 'bottom']],
+  '▂': [[8, 2, 'bottom']],
+  '▃': [[8, 3, 'bottom']],
+  '▄': [[8, 4, 'bottom']],
+  '▅': [[8, 5, 'bottom']],
+  '▆': [[8, 6, 'bottom']],
+  '▇': [[8, 7, 'bottom']],
+  '█': [[8, 8, 'top']],
+  '▉': [[7, 8, 'left']],
+  '▊': [[6, 8, 'left']],
+  '▋': [[5, 8, 'left']],
+  '▌': [[4, 8, 'left']],
+  '▍': [[3, 8, 'left']],
+  '▎': [[2, 8, 'left']],
+  '▏': [[1, 8, 'left']],
+  '▐': [[4, 8, 'right']],
+  '▔': [[8, 1, 'top']],
+  '▕': [[1, 8, 'right']],
+  '▖': [[4, 4, 'left bottom']],
+  '▗': [[4, 4, 'right bottom']],
+  '▘': [[4, 4, 'left top']],
+  '▙': [[4, 8, 'left'], [8, 4, 'bottom']],
+  '▚': [[4, 4, 'left top'], [4, 4, 'right bottom']],
+  '▛': [[4, 8, 'left'], [4, 4, 'right top']],
+  '▜': [[8, 4, 'top'], [4, 8, 'right']],
+  '▝': [[4, 4, 'right top']],
+  '▞': [[4, 4, 'right top'], [4, 4, 'left bottom']],
+  '▟': [[4, 8, 'right'], [8, 4, 'bottom']]
+};
+const BLOCK_ELEMENT_STYLES: { [char: string]: string } = {};
+for (const [char, rects] of Object.entries(BLOCK_ELEMENT_RECTS)) {
+  BLOCK_ELEMENT_STYLES[char] =
+    `background-image:${rects.map(() => 'linear-gradient(currentColor,currentColor)').join(',')};` +
+    `background-size:${rects.map(r => `${r[0] * 12.5}% ${r[1] * 12.5}%`).join(',')};` +
+    `background-position:${rects.map(r => r[2]).join(',')};` +
+    `background-repeat:no-repeat`;
+}
 
 export class DomRendererRowFactory {
   private _workCell: CellData = new CellData();
@@ -178,6 +222,10 @@ export class DomRendererRowFactory {
       if (chars === ' ' && (cell.isUnderline() || cell.isOverline())) {
         chars = '\xa0';
       }
+      const blockElementStyle = cell.isInvisible() ? undefined : BLOCK_ELEMENT_STYLES[chars];
+      if (blockElementStyle) {
+        chars = ' ';
+      }
 
       // lookup char render width and calc spacing
       spacing = width * cellWidth - widthCache.get(chars, cell.isBold(), cell.isItalic());
@@ -212,6 +260,7 @@ export class DomRendererRowFactory {
           && !isJoined
           && !isDecorated
           && isValidJoinRange
+          && !blockElementStyle
         ) {
           // no span alterations, thus only account chars skipping all code below
           if (cell.isInvisible()) {
@@ -299,7 +348,7 @@ export class DomRendererRowFactory {
         classes.push(RowCss.DIM_CLASS);
       }
 
-      if (cell.isInvisible()) {
+      if (cell.isInvisible() || blockElementStyle) {
         text = WHITESPACE_CELL_CHAR;
       } else {
         text = cell.getChars() || WHITESPACE_CELL_CHAR;
@@ -468,8 +517,12 @@ export class DomRendererRowFactory {
         classes.length = 0;
       }
 
+      if (blockElementStyle) {
+        this._addStyle(charElement, blockElementStyle);
+      }
+
       // exclude conditions for cell merging - never merge these
-      if (!isCursorCell && !isJoined && !isDecorated && isValidJoinRange) {
+      if (!isCursorCell && !isJoined && !isDecorated && isValidJoinRange && !blockElementStyle) {
         cellAmount++;
       } else {
         charElement.textContent = text;
