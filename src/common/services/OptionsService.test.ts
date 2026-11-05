@@ -128,6 +128,36 @@ describe('OptionsService', () => {
       });
     });
   });
+  describe('lineHeight', () => {
+    let service: OptionsService;
+    beforeEach(() => {
+      service = new OptionsService({});
+    });
+    it('should default to 1', () => {
+      assert.strictEqual(service.options.lineHeight, 1);
+    });
+    it('should accept multiplier values (< 8)', () => {
+      service.options.lineHeight = 1.5;
+      assert.strictEqual(service.options.lineHeight, 1.5);
+    });
+    it('should accept pixel values (>= 8)', () => {
+      service.options.lineHeight = 20;
+      assert.strictEqual(service.options.lineHeight, 20);
+    });
+    it('should accept boundary value 8 as pixel height', () => {
+      service.options.lineHeight = 8;
+      assert.strictEqual(service.options.lineHeight, 8);
+    });
+    it('should accept 7.9 as multiplier', () => {
+      service.options.lineHeight = 7.9;
+      assert.strictEqual(service.options.lineHeight, 7.9);
+    });
+    it('should reject values less than 1', () => {
+      assert.throws(() => { service.options.lineHeight = 0.5; });
+      assert.throws(() => { service.options.lineHeight = 0; });
+      assert.throws(() => { service.options.lineHeight = -1; });
+    });
+  });
   describe('onMultipleOptionChange', () => {
     let service: OptionsService;
     beforeEach(() => {
