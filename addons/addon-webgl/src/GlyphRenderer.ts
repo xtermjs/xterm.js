@@ -299,6 +299,7 @@ export class GlyphRenderer extends Disposable {
     if (this._optionsService.rawOptions.rescaleOverlappingGlyphs) {
       if (allowRescaling(code, width, $glyph.size.x, this._dimensions.device.cell.width, this._dimensions.device.char.left - $glyph.offset.x)) {
         array[$i + 2] = (this._dimensions.device.cell.width - 1) / this._dimensions.device.canvas.width; // - 1 to improve readability
+        array[$i] = Math.min(Math.max(array[$i], 0), 1);
       }
     }
   }
