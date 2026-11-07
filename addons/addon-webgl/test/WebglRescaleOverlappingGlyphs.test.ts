@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import test from '@playwright/test';
+import test, { expect } from '@playwright/test';
 import type { Terminal } from '@xterm/xterm';
 import type { WebglAddon } from '@xterm/addon-webgl';
 import { ITestContext, createTestContext, openTerminal, pollFor } from '../../../test/playwright/TestUtils';
@@ -51,10 +51,27 @@ test.describe('WebGL rescale overlapping glyphs', () => {
       await ctx.page.close();
     }
   });
+
+  test('glyphs that end just past half way into the following cell are rescaled', async ({ browser }) => {
+    const ctx = await createTestContext(browser);
+    try {
+      await openTerminal(ctx, { rescaleOverlappingGlyphs: true });
+      const cellWidth = await loadWebglAddon(ctx, { oddCellWidth: true });
+      expect(cellWidth % 2).toBe(1);
+      const halfCellWidth = Math.floor(cellWidth / 2);
+      await writeGlyphs(ctx, {
+        [0x2228]: { width: cellWidth + 1, left: halfCellWidth - 1 },
+        [0x222A]: { width: cellWidth + 1, left: halfCellWidth }
+      });
+      await pollFor(ctx.page, () => getGlyphBounds(ctx), [[halfCellWidth - 1, cellWidth + halfCellWidth], [1, cellWidth]]);
+    } finally {
+      await ctx.page.close();
+    }
+  });
 });
 
-async function loadWebglAddon(ctx: ITestContext): Promise<number> {
-  return ctx.page.evaluate(() => {
+async function loadWebglAddon(ctx: ITestContext, options: { oddCellWidth?: boolean } = {}): Promise<number> {
+  return ctx.page.evaluate(options => {
     const w = window as unknown as ITestWindow;
     w.addon = new w.WebglAddon();
     w.term.loadAddon(w.addon);
@@ -62,8 +79,11 @@ async function loadWebglAddon(ctx: ITestContext): Promise<number> {
     if (!renderer) {
       throw new Error('WebGL renderer must be available');
     }
+    if (options.oddCellWidth && renderer.dimensions.device.cell.width % 2 === 0) {
+      w.term.options.letterSpacing = 1;
+    }
     return renderer.dimensions.device.cell.width;
-  });
+  }, options);
 }
 
 async function writeGlyphs(ctx: ITestContext, glyphs: { [code: number]: { width: number, left: number } }): Promise<void> {

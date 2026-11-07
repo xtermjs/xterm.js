@@ -52,11 +52,14 @@ describe('RendererUtils', () => {
     it('should rescale a glyph that ends more than half way into the following cell', () => {
       assert.equal(allowRescaling(0x2228, 1, 11, 7, 1), true);
       assert.equal(allowRescaling(0x222A, 1, 12, 8, 1), true);
+      assert.equal(allowRescaling(0x2228, 1, 11, 7, 0), true);
+      assert.equal(allowRescaling(0x2228, 1, 9, 7, 2), true);
+      assert.equal(allowRescaling(0x222A, 1, 8, 7, 3), true);
     });
 
     it('should not rescale a glyph that ends at most half way into the following cell', () => {
-      assert.equal(allowRescaling(0x2228, 1, 11, 7, 0), false);
-      assert.equal(allowRescaling(0x2228, 1, 10, 7, 1), false);
+      assert.equal(allowRescaling(0x2228, 1, 10, 7, 0), false);
+      assert.equal(allowRescaling(0x2228, 1, 9, 7, 1), false);
       assert.equal(allowRescaling(0x222A, 1, 11, 8, 1), false);
       assert.equal(allowRescaling(0x2228, 1, 11, 7, -1), false);
     });
