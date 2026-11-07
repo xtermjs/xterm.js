@@ -44,13 +44,14 @@ export function isEmoji(codepoint: number): boolean {
   );
 }
 
-export function allowRescaling(codepoint: number | undefined, width: number, glyphSizeX: number, deviceCellWidth: number): boolean {
+export function allowRescaling(codepoint: number | undefined, width: number, glyphSizeX: number, deviceCellWidth: number, glyphLeft: number): boolean {
   return (
     // Is single cell width
     width === 1 &&
     // Glyph exceeds cell bounds, add 50% to avoid hurting readability by rescaling glyphs that
     // barely overlap
-    glyphSizeX > Math.ceil(deviceCellWidth * 1.5) &&
+    (glyphSizeX > Math.ceil(deviceCellWidth * 1.5) ||
+      (glyphSizeX > deviceCellWidth && glyphSizeX + glyphLeft > Math.ceil(deviceCellWidth * 1.5))) &&
     // Never rescale ascii
     codepoint !== undefined && codepoint > 0xFF &&
     // Never rescale emoji
