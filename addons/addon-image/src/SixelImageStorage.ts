@@ -4,7 +4,7 @@
  */
 
 import { ImageStorage, CELL_SIZE_DEFAULT } from './ImageStorage';
-import { IImageAddonOptions, ITerminalExt, IAddImageOpts } from './Types';
+import { IImageAddonOptions, ITerminalExt, IAddImageOpts, IDrawable, IMetrics } from './Types';
 import { ImageRenderer } from './ImageRenderer';
 
 /**
@@ -27,9 +27,9 @@ export class SixelImageStorage {
    * Add a sixel image to storage.
    * Cursor behavior depends on the sixelScrolling option (DECSET 80).
    */
-  public addImage(img: HTMLCanvasElement | ImageBitmap): void {
+  public addImage(src: IDrawable, data: Blob | undefined, metrics: IMetrics): void {
     this._addImageOpts.scrolling = this._opts.sixelScrolling;
-    this._storage.addImage(img, this._addImageOpts);
+    this._storage.addImage(src, data, metrics, this._addImageOpts);
   }
 
   /**
@@ -39,10 +39,7 @@ export class SixelImageStorage {
    */
   public advanceCursor(height: number): void {
     if (this._opts.sixelScrolling) {
-      let cellSize = this._renderer.cellSize;
-      if (cellSize.width === -1 || cellSize.height === -1) {
-        cellSize = CELL_SIZE_DEFAULT;
-      }
+      const cellSize = this._renderer.getCellSize() ?? CELL_SIZE_DEFAULT;
       const rows = Math.ceil(height / cellSize.height);
       for (let i = 1; i < rows; ++i) {
         this._terminal._core._inputHandler.lineFeed();
