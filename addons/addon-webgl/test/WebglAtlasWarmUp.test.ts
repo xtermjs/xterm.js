@@ -12,7 +12,8 @@ import { platform } from 'os';
 interface ITestTextureAtlas {
   _tmpCtx: CanvasRenderingContext2D;
   clearTexture(): void;
-  warmUp(): void;
+  getRasterizedGlyph(code: number, bg: number, fg: number, ext: number, restrictToCellHeight: boolean, domContainer: HTMLElement | undefined): unknown;
+  warmUp(domContainer?: HTMLElement): void;
 }
 
 interface ITestWebglAddon extends WebglAddon {
@@ -175,5 +176,63 @@ test.describe('texture atlas warm-up', () => {
     expect(result.shared).toBe(true);
     expect(result.pending).toBe(1);
     expect(result.draws).toEqual(Array.from({ length: 93 }, (_, i) => String.fromCharCode(i + 33)));
+  });
+
+  test('#5455: draws warm-up glyphs with the terminal element\'s font-feature-settings', async () => {
+    const result = await ctx.page.evaluate(() => {
+      const w = window as unknown as ITestWindow;
+      const state = w.warmUpTest;
+      const element = document.createElement('div');
+      document.body.appendChild(element);
+      // A different font size gives this terminal its own atlas, with nothing drawn yet
+      const terminal = new w.Terminal({ fontSize: 20 });
+      terminal.open(element);
+      // The same style the ligatures addon sets
+      terminal.element!.style.fontFeatureSettings = '"zero" on';
+      const addon = new w.WebglAddon();
+      terminal.loadAddon(addon);
+      const atlas = addon._renderer!._charAtlas!;
+      const featureSettings: string[] = [];
+      const fillText = atlas._tmpCtx.fillText.bind(atlas._tmpCtx);
+      atlas._tmpCtx.fillText = (text, x, y, maxWidth) => {
+        featureSettings.push(getComputedStyle(atlas._tmpCtx.canvas).fontFeatureSettings);
+        fillText(text, x, y, maxWidth);
+      };
+      state.flush();
+      const expected = getComputedStyle(terminal.element!).fontFeatureSettings;
+      terminal.dispose();
+      element.remove();
+      return { separate: atlas !== state.atlas, expected, featureSettings };
+    });
+    expect(result.separate).toBe(true);
+    expect(result.expected).not.toBe('normal');
+    expect(result.featureSettings).toEqual(Array(93).fill(result.expected));
+  });
+
+  test('does not move the canvas from a live owner into the element of a disposed owner', async () => {
+    const result = await ctx.page.evaluate(() => {
+      const w = window as unknown as ITestWindow;
+      const state = w.warmUpTest;
+      const element = document.createElement('div');
+      document.body.appendChild(element);
+      const terminal = new w.Terminal({ allowProposedApi: true });
+      terminal.open(element);
+      const addon = new w.WebglAddon();
+      terminal.loadAddon(addon);
+      const shared = addon._renderer?._charAtlas === state.atlas;
+      state.flush();
+      state.atlas!.clearTexture();
+      // A glyph drawn for the other owner moves the canvas into its element
+      state.atlas!.getRasterizedGlyph(0xE9, 0, 0, 0, false, terminal.element);
+      state.atlas!.warmUp(w.term.element);
+      w.term.dispose();
+      state.flush();
+      const inLiveOwner = !!terminal.element?.contains(state.atlas!._tmpCtx.canvas);
+      terminal.dispose();
+      element.remove();
+      return { shared, inLiveOwner };
+    });
+    expect(result.shared).toBe(true);
+    expect(result.inLiveOwner).toBe(true);
   });
 });
