@@ -2088,6 +2088,16 @@ declare module '@xterm/xterm' {
      */
     readonly insertMode: boolean;
     /**
+     * Mouse Encoding, this can be one of the following:
+     * - default: This is the default value and can be reset with DECRST. The
+     *   coordinates are limited to 223 and are not reported beyond that
+     * - sgr: Use SGR Mouse Mode `CSI ? 1 0 0 6 h`, this lifts the coordinate
+     *   limit and reports the button on release
+     * - sgr-pixels: Use SGR Mouse Mode reporting pixels instead of cells
+     *   `CSI ? 1 0 1 6 h`
+     */
+    readonly mouseEncoding: 'default' | 'sgr' | 'sgr-pixels';
+    /**
      * Mouse Tracking, this can be one of the following:
      * - none: This is the default value and can be reset with DECRST
      * - x10: Send Mouse X & Y on button press `CSI ? 9 h`
