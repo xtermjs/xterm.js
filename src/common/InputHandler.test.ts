@@ -223,7 +223,7 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.wraparound, false);
     });
   });
-  it('полный сброс восстанавливает видимость курсора', async () => {
+  it('full reset restores cursor visibility', async () => {
     await inputHandler.parseP('\x1b[?25l');
     assert.equal(coreService.isCursorHidden, true);
     coreService.reset();

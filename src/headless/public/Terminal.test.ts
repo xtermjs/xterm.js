@@ -95,7 +95,7 @@ describe('Headless API Tests', function (): void {
   });
 
   for (const reset of ['RIS', 'API']) {
-    it(`восстанавливает видимость курсора после полного сброса (${reset})`, async () => {
+    it(`restores cursor visibility after a full reset (${reset})`, async () => {
       const replies: string[] = [];
       term.onData(data => replies.push(data));
       await writeSync('\x1b[?25l');
@@ -111,7 +111,7 @@ describe('Headless API Tests', function (): void {
 
   for (const convertEol of [false, true]) {
     for (const reset of ['RIS', 'API']) {
-      it(`сбрасывает LNM к настройке приложения convertEol=${convertEol} (${reset})`, async () => {
+      it(`resets LNM to the application option convertEol=${convertEol} (${reset})`, async () => {
         term = new Terminal({ convertEol });
         const replies: string[] = [];
         term.onData(data => replies.push(data));
@@ -132,7 +132,7 @@ describe('Headless API Tests', function (): void {
     }
   }
 
-  it('мягкий сброс сохраняет LNM, а полный возвращает текущую настройку приложения', async () => {
+  it('preserves LNM on soft reset and restores the current application option on full reset', async () => {
     term = new Terminal({ convertEol: false });
     const replies: string[] = [];
     term.onData(data => replies.push(data));

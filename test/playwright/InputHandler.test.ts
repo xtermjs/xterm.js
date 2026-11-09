@@ -29,7 +29,7 @@ test.describe('InputHandler Integration Tests', () => {
     await ctx.proxy.resize(80, 24);
   });
 
-  test('RIS восстанавливает видимость курсора после DECTCEM', async () => {
+  test('RIS restores cursor visibility after DECTCEM', async () => {
     await ctx.proxy.reset();
     await ctx.proxy.write('\x1b[?25l\x1bc\x1b[?25$p');
     await pollFor(ctx.page, () => recordedData, ['\x1b[?25;1$y']);
@@ -38,7 +38,7 @@ test.describe('InputHandler Integration Tests', () => {
     await pollFor(ctx.page, () => ctx.page.locator('.xterm-cursor').count(), 1);
   });
 
-  test('RIS сбрасывает LNM к convertEol приложения без изменения настройки', async () => {
+  test('RIS restores LNM from the application convertEol option without changing the option', async () => {
     const previousConvertEol = await ctx.proxy.getOption('convertEol');
     try {
       for (const convertEol of [false, true]) {
@@ -389,7 +389,7 @@ test.describe('InputHandler Integration Tests', () => {
       // With all tabs cleared, tab moves to end of line
       await pollFor(ctx.page, () => getLinesAsArray(1), ['                                                                               a']);
     });
-    test('CSI Ps h - SM: установка режима', async () => {
+    test('CSI Ps h - SM: Set Mode', async () => {
       await ctx.proxy.write('\x1b[4h');
       await pollFor(ctx.page, async () => (await ctx.proxy.modes).insertMode, true);
       await ctx.proxy.write('\x1b[20h');
@@ -760,7 +760,7 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI ? Ps i - MC: Media Copy, DEC-specified', async () => {
       // TODO: Implement
     });
-    test('CSI Pm l - RM: сброс режима', async () => {
+    test('CSI Pm l - RM: Reset Mode', async () => {
       await ctx.proxy.write('\x1b[4h\x1b[20h');
       await pollFor(ctx.page, async () => (await ctx.proxy.modes).insertMode, true);
       await pollFor(ctx.page, () => ctx.proxy.core.evaluate(([core]) => core.coreService.modes.newLineMode), true);
