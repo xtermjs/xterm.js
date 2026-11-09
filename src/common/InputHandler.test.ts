@@ -223,6 +223,36 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.wraparound, false);
     });
   });
+  describe('Cursor position reports', () => {
+    for (const prefix of ['', '?']) {
+      for (const cols of [1, 10]) {
+        it(`clamps the column during pending wrap (CSI ${prefix}6 n, width ${cols})`, async () => {
+          bufferService.resize(cols, 3);
+          bufferService.reset();
+          const replies: string[] = [];
+          coreService.onData(data => replies.push(data));
+
+          await inputHandler.parseP('a'.repeat(cols));
+          assert.equal(bufferService.buffer.x, cols);
+          await inputHandler.parseP(`\x1b[${prefix}6n`);
+          assert.deepEqual(replies, [`\x1b[${prefix}1;${cols}R`]);
+          assert.equal(bufferService.buffer.x, cols);
+
+          await inputHandler.parseP(`b\x1b[${prefix}6n`);
+          assert.deepEqual(replies, [`\x1b[${prefix}1;${cols}R`, `\x1b[${prefix}2;${Math.min(2, cols)}R`]);
+          assert.deepEqual(getLines(bufferService, 2), ['a'.repeat(cols), 'b']);
+        });
+      }
+
+      it(`preserves ordinary cursor coordinates (CSI ${prefix}6 n)`, async () => {
+        const replies: string[] = [];
+        coreService.onData(data => replies.push(data));
+        await inputHandler.parseP(`\x1b[3;5H\x1b[${prefix}6n`);
+        assert.deepEqual(replies, [`\x1b[${prefix}3;5R`]);
+      });
+    }
+  });
+
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       inputHandler.setCursorStyle(Params.fromArray([0]));
