@@ -323,6 +323,78 @@ test.describe('API Integration Tests', () => {
       deepStrictEqual(await ctx.page.evaluate(`window.calls`), ['f', 'o', 'o']);
     });
 
+    test('onData - macOS punctuation and digits use keypress once', async () => {
+      await openTerminal(ctx);
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.keyEventTypes = [];
+        window.inputData = [];
+        window.term.onData(e => calls.push(e));
+        window.term.onKey(e => window.keyEventTypes.push(e.domEvent.type));
+        window.term.textarea.addEventListener('input', e => window.inputData.push(e.data));
+        window.term._core.browser = { ...window.term._core.browser, isMac: true };
+      `);
+      await ctx.page.type('.xterm-helper-textarea', ',.!?()123');
+      deepStrictEqual(await ctx.page.evaluate(`window.calls`), Array.from(',.!?()123'));
+      deepStrictEqual(await ctx.page.evaluate(`window.keyEventTypes`), Array(9).fill('keypress'));
+      deepStrictEqual(await ctx.page.evaluate(`window.inputData`), Array.from(',.!?()123'));
+    });
+
+    test('onData - macOS punctuation and digits are isolated from host shortcuts', async () => {
+      await openTerminal(ctx);
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.hostKeys = [];
+        window.keyEventTypes = [];
+        window.inputData = [];
+        window.term.onData(e => window.calls.push(e));
+        window.term.onKey(e => window.keyEventTypes.push(e.domEvent.type));
+        window.term.textarea.addEventListener('input', e => window.inputData.push(e.data));
+        window.term._core.browser = { ...window.term._core.browser, isMac: true };
+        window.hostShortcutController = new AbortController();
+        document.addEventListener('keydown', e => {
+          if ('/?!1[~'.includes(e.key)) {
+            window.hostKeys.push(e.key);
+            e.preventDefault();
+          }
+        }, { signal: window.hostShortcutController.signal });
+      `);
+      try {
+        await ctx.page.type('.xterm-helper-textarea', '/?!1[~');
+        deepStrictEqual(await ctx.page.evaluate('window.hostKeys'), []);
+        deepStrictEqual(await ctx.page.evaluate('window.calls'), Array.from('/?!1[~'));
+        deepStrictEqual(await ctx.page.evaluate('window.keyEventTypes'), Array(6).fill('keypress'));
+        deepStrictEqual(await ctx.page.evaluate('window.inputData'), Array.from('/?!1[~'));
+      } finally {
+        await ctx.page.evaluate('window.hostShortcutController.abort()');
+      }
+    });
+
+    test('onData - preserve macOS IME multi-character commits with keyCode 229', async () => {
+      await openTerminal(ctx);
+      await ctx.page.evaluate(`
+        window.calls = [];
+        window.term.onData(e => calls.push(e));
+        window.term._core.browser = { ...window.term._core.browser, isMac: true };
+      `);
+      const expected: string[] = [];
+      for (const [key, keyCode, text] of [['^', 54, '……'], ['_', 189, '——']] as const) {
+        await ctx.page.evaluate(`
+          const textarea = window.term.textarea;
+          textarea.dispatchEvent(new KeyboardEvent('keydown', { key: ${JSON.stringify(key)}, keyCode: 229, shiftKey: true, bubbles: true, cancelable: true }));
+          textarea.dispatchEvent(new InputEvent('beforeinput', { data: ${JSON.stringify(text)}, inputType: 'insertText', bubbles: true, composed: true }));
+          textarea.value += ${JSON.stringify(text)};
+          textarea.dispatchEvent(new InputEvent('input', { data: ${JSON.stringify(text)}, inputType: 'insertText', bubbles: true, composed: true }));
+        `);
+        expected.push(text);
+        await pollFor(ctx.page, 'window.calls', expected);
+        await ctx.page.evaluate(`
+          window.term.textarea.dispatchEvent(new KeyboardEvent('keyup', { key: ${JSON.stringify(key)}, keyCode: ${keyCode}, shiftKey: true, bubbles: true }));
+        `);
+      }
+      deepStrictEqual(await ctx.page.evaluate('window.calls'), ['……', '——']);
+    });
+
     test('onKey', async () => {
       await openTerminal(ctx);
       await ctx.page.evaluate(`
