@@ -29,6 +29,36 @@ test.describe('InputHandler Integration Tests', () => {
     await ctx.proxy.resize(80, 24);
   });
 
+  test('RIS восстанавливает видимость курсора после DECTCEM', async () => {
+    await ctx.proxy.reset();
+    await ctx.proxy.write('\x1b[?25l\x1bc\x1b[?25$p');
+    await pollFor(ctx.page, () => recordedData, ['\x1b[?25;1$y']);
+    await ctx.proxy.focus();
+    await ctx.proxy.write('X');
+    await pollFor(ctx.page, () => ctx.page.locator('.xterm-cursor').count(), 1);
+  });
+
+  test('RIS сбрасывает LNM к convertEol приложения без изменения настройки', async () => {
+    const previousConvertEol = await ctx.proxy.getOption('convertEol');
+    try {
+      for (const convertEol of [false, true]) {
+        await ctx.proxy.setOption('convertEol', convertEol);
+        await ctx.proxy.reset();
+        recordedData.length = 0;
+        await ctx.proxy.write(`\x1b[20${convertEol ? 'l' : 'h'}\x1b[20$p`);
+        await pollFor(ctx.page, () => recordedData, [`\x1b[20;${convertEol ? 2 : 1}$y`]);
+        deepStrictEqual(await ctx.proxy.getOption('convertEol'), convertEol);
+        recordedData.length = 0;
+        await ctx.proxy.write('\x1bc\x1b[20$pA\nB');
+        await pollFor(ctx.page, () => recordedData, [`\x1b[20;${convertEol ? 1 : 2}$y`]);
+        await pollFor(ctx.page, () => getLinesAsArray(2), ['A', convertEol ? 'B' : ' B']);
+      }
+    } finally {
+      await ctx.proxy.setOption('convertEol', previousConvertEol);
+      await ctx.proxy.reset();
+    }
+  });
+
   test.describe('CSI', () => {
     test.beforeEach(async () => await ctx.proxy.reset());
 
@@ -359,11 +389,11 @@ test.describe('InputHandler Integration Tests', () => {
       // With all tabs cleared, tab moves to end of line
       await pollFor(ctx.page, () => getLinesAsArray(1), ['                                                                               a']);
     });
-    test('CSI Ps h - SM: Set Mode', async () => {
+    test('CSI Ps h - SM: установка режима', async () => {
       await ctx.proxy.write('\x1b[4h');
       await pollFor(ctx.page, async () => (await ctx.proxy.modes).insertMode, true);
       await ctx.proxy.write('\x1b[20h');
-      await pollFor(ctx.page, async () => await ctx.proxy.getOption('convertEol'), true);
+      await pollFor(ctx.page, () => ctx.proxy.core.evaluate(([core]) => core.coreService.modes.newLineMode), true);
     });
     test.describe('CSI ? Pm h - DECSET: Private Mode Set', () => {
       test('Ps = 1 - Application Cursor Keys (DECCKM), VT100', async () => {
@@ -730,13 +760,13 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI ? Ps i - MC: Media Copy, DEC-specified', async () => {
       // TODO: Implement
     });
-    test('CSI Pm l - RM: Reset Mode', async () => {
+    test('CSI Pm l - RM: сброс режима', async () => {
       await ctx.proxy.write('\x1b[4h\x1b[20h');
       await pollFor(ctx.page, async () => (await ctx.proxy.modes).insertMode, true);
-      await pollFor(ctx.page, async () => await ctx.proxy.getOption('convertEol'), true);
+      await pollFor(ctx.page, () => ctx.proxy.core.evaluate(([core]) => core.coreService.modes.newLineMode), true);
       await ctx.proxy.write('\x1b[4l\x1b[20l');
       await pollFor(ctx.page, async () => (await ctx.proxy.modes).insertMode, false);
-      await pollFor(ctx.page, async () => await ctx.proxy.getOption('convertEol'), false);
+      await pollFor(ctx.page, () => ctx.proxy.core.evaluate(([core]) => core.coreService.modes.newLineMode), false);
     });
     test.describe('CSI ? Pm l - DECRST: DEC Private Mode Reset', async () => {
       test('Ps = 1 - Normal Cursor Keys (DECCKM), VT100.', async () => {
