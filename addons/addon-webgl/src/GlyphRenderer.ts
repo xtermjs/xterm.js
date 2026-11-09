@@ -207,9 +207,10 @@ export class GlyphRenderer extends Disposable {
       this._atlasTextures[i] = glTexture;
     }
 
-    // Allow drawing of transparent texture
+    // Allow drawing of transparent texture. Alpha is blended with ONE rather than SRC_ALPHA, which
+    // would square it over a transparent canvas (allowTransparency) and wash out glyph edges.
     gl.enable(gl.BLEND);
-    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.blendFuncSeparate(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA, gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
 
     // Set viewport
     this.handleResize();
