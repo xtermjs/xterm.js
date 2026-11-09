@@ -262,13 +262,14 @@ export class Buffer extends Disposable implements IBuffer {
 
     if (this._isReflowEnabled) {
       this._reflow(newCols, newRows);
+    }
 
-      // Trim the end of the line off if cols shrunk
-      if (this._cols > newCols) {
-        for (let i = 0; i < this.lines.length; i++) {
-          // +boolean for fast 0 or 1 conversion
-          dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
-        }
+    // Trim the end of the line off if cols shrunk. This must also happen if reflow is disabled
+    // (e.g. the alt buffer), otherwise lines keep their old length and cut off cells.
+    if (this._cols > newCols) {
+      for (let i = 0; i < this.lines.length; i++) {
+        // +boolean for fast 0 or 1 conversion
+        dirtyMemoryLines += +this.lines.get(i)!.resize(newCols, nullCell);
       }
     }
 
