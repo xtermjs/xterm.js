@@ -167,6 +167,13 @@ describe('Terminal', () => {
         assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false, modifier.key);
       }
     });
+    it('should disarm the gate on blur, as the matching keyup is delivered elsewhere', () => {
+      // e.g. a keybinding that moves focus away on keydown: the keyup never reaches the textarea,
+      // so a later composed insertText (e.g. an IME/emoji commit) must not be dropped as a duplicate.
+      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 65, key: 'a' } as KeyboardEvent);
+      (term as any)._handleTextAreaBlur();
+      assert.equal(term.inputEvent({ data: '😀', inputType: 'insertText', composed: true } as InputEvent), true);
+    });
   });
 
   describe('attachCustomKeyEventHandler', () => {

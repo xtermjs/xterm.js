@@ -326,6 +326,9 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // Text can safely be removed on blur. Doing it earlier could interfere with
     // screen readers reading it out.
     this.textarea!.value = '';
+    // The keyup for a key held while focus leaves is delivered elsewhere, so without this the
+    // _keyDownSeen gate of _inputEvent would stay armed until the next keyup.
+    this._keyDownSeen = false;
     this.refresh(this.buffer.y, this.buffer.y);
     if (this.coreService.decPrivateModes.sendFocus) {
       this.coreService.triggerDataEvent(C0.ESC + '[O');
