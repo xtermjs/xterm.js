@@ -9,7 +9,8 @@ import { IBufferService, ICoreService, ILogService, IOptionsService } from './Se
 import { Emitter } from '../Event';
 
 const DEFAULT_MODES: IModes = Object.freeze({
-  insertMode: false
+  insertMode: false,
+  newLineMode: undefined
 });
 
 const DEFAULT_DEC_PRIVATE_MODES: IDecPrivateModes = Object.freeze({
@@ -66,6 +67,7 @@ export class CoreService extends Disposable implements ICoreService {
   }
 
   public reset(): void {
+    this.isCursorHidden = false;
     this.modes = structuredClone(DEFAULT_MODES);
     this.decPrivateModes = structuredClone(DEFAULT_DEC_PRIVATE_MODES);
     this.kittyKeyboard = DEFAULT_KITTY_KEYBOARD_STATE();
