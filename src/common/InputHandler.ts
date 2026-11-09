@@ -2750,7 +2750,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 6:
         // cursor position
         const y = this._activeBuffer.y + 1;
-        const x = this._activeBuffer.x + 1;
+        const x = Math.min(this._activeBuffer.x + 1, this._bufferService.cols);
         this._coreService.triggerDataEvent(`${C0.ESC}[${y};${x}R`);
         break;
     }
@@ -2765,7 +2765,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       case 6:
         // cursor position
         const y = this._activeBuffer.y + 1;
-        const x = this._activeBuffer.x + 1;
+        const x = Math.min(this._activeBuffer.x + 1, this._bufferService.cols);
         this._coreService.triggerDataEvent(`${C0.ESC}[?${y};${x}R`);
         break;
       case 15:

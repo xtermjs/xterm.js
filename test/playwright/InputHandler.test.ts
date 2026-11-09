@@ -1404,6 +1404,15 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI ? Pp m - XTQMODKEYS: Query key modifier options, xterm', () => {
       // TODO: Implement
     });
+    test('CSI 6 n и CSI ? 6 n: ограничивают колонку при ожидающем переносе', async () => {
+      await ctx.proxy.resize(10, 3);
+      await ctx.proxy.write('0123456789\x1b[6n\x1b[?6n');
+      await pollFor(ctx.page, () => recordedData, ['\x1b[1;10R', '\x1b[?1;10R']);
+      await ctx.proxy.write('X\x1b[6n\x1b[?6n');
+      await pollFor(ctx.page, () => recordedData, ['\x1b[1;10R', '\x1b[?1;10R', '\x1b[2;2R', '\x1b[?2;2R']);
+      await pollFor(ctx.page, () => getLinesAsArray(2), ['0123456789', 'X']);
+    });
+
     test.describe('CSI Ps n - DSR: Device Status Report', () => {
       test('Status Report - CSI 5 n', async () => {
         await ctx.proxy.write('\x1b[5n');
