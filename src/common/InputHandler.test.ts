@@ -223,9 +223,9 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.wraparound, false);
     });
   });
-  describe('DECRQSS: фактический стиль курсора', () => {
+  describe('DECRQSS: effective cursor style', () => {
     for (const style of [1, 2, 3, 4, 5, 6]) {
-      it(`возвращает стиль DECSCUSR ${style} вместо настроек приложения`, async () => {
+      it(`reports DECSCUSR style ${style} instead of application options`, async () => {
         optionsService.options.cursorStyle = 'bar';
         optionsService.options.cursorBlink = true;
         const replies: string[] = [];
@@ -235,7 +235,7 @@ describe('InputHandler', () => {
       });
     }
 
-    it('возвращается к настройкам после сброса DECSCUSR', async () => {
+    it('falls back to options after resetting DECSCUSR', async () => {
       optionsService.options.cursorStyle = 'underline';
       optionsService.options.cursorBlink = false;
       const replies: string[] = [];
@@ -244,7 +244,7 @@ describe('InputHandler', () => {
       assert.deepEqual(replies, ['\x1bP1$r4 q\x1b\\']);
     });
 
-    it('использует текущие настройки, если DECSCUSR не задан', async () => {
+    it('uses current options when DECSCUSR is unset', async () => {
       optionsService.options.cursorStyle = 'bar';
       optionsService.options.cursorBlink = true;
       const replies: string[] = [];

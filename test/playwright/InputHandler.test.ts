@@ -1511,7 +1511,7 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI Ps q - Load LEDs (DECLL), VT100.', async () => {
       // TODO: Implement
     });
-    test('DECRQSS возвращает установленный стиль курсора и восстанавливает настройки после сброса', async () => {
+    test('DECRQSS reports the active cursor style and falls back to options after reset', async () => {
       const previousStyle = await ctx.proxy.getOption('cursorStyle');
       const previousBlink = await ctx.proxy.getOption('cursorBlink');
       try {
