@@ -536,9 +536,9 @@ export class TextureAtlas implements ITextureAtlas {
 
     // draw the foreground/glyph
     const fontWeight = bold ? this._config.fontWeightBold : this._config.fontWeight;
-    const fontStyle = italic ? 'italic' : '';
+    const fontStyle = italic ? 'italic ' : '';
     this._tmpCtx.font =
-      `${fontStyle} ${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
+      `${fontStyle}${fontWeight} ${this._config.fontSize * this._config.devicePixelRatio}px ${this._config.fontFamily}`;
     this._tmpCtx.textBaseline = TEXT_BASELINE;
 
     const powerlineGlyph = chars.length === 1 && isPowerlineGlyph(chars.charCodeAt(0));
