@@ -297,8 +297,9 @@ export class GlyphRenderer extends Disposable {
     // Reduce scale horizontally for wide glyphs printed in cells that would overlap with the
     // following cell (ie. the width is not 2).
     if (this._optionsService.rawOptions.rescaleOverlappingGlyphs) {
-      if (allowRescaling(code, width, $glyph.size.x, this._dimensions.device.cell.width)) {
+      if (allowRescaling(code, width, $glyph.size.x, this._dimensions.device.cell.width, this._dimensions.device.char.left - $glyph.offset.x)) {
         array[$i + 2] = (this._dimensions.device.cell.width - 1) / this._dimensions.device.canvas.width; // - 1 to improve readability
+        array[$i] = Math.min(Math.max(array[$i], 0), 1);
       }
     }
   }
