@@ -223,6 +223,37 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.wraparound, false);
     });
   });
+  describe('DECRQSS: фактический стиль курсора', () => {
+    for (const style of [1, 2, 3, 4, 5, 6]) {
+      it(`возвращает стиль DECSCUSR ${style} вместо настроек приложения`, async () => {
+        optionsService.options.cursorStyle = 'bar';
+        optionsService.options.cursorBlink = true;
+        const replies: string[] = [];
+        coreService.onData(data => replies.push(data));
+        await inputHandler.parseP(`\x1b[${style} q\x1bP$q q\x1b\\`);
+        assert.deepEqual(replies, [`\x1bP1$r${style} q\x1b\\`]);
+      });
+    }
+
+    it('возвращается к настройкам после сброса DECSCUSR', async () => {
+      optionsService.options.cursorStyle = 'underline';
+      optionsService.options.cursorBlink = false;
+      const replies: string[] = [];
+      coreService.onData(data => replies.push(data));
+      await inputHandler.parseP('\x1b[5 q\x1b[0 q\x1bP$q q\x1b\\');
+      assert.deepEqual(replies, ['\x1bP1$r4 q\x1b\\']);
+    });
+
+    it('использует текущие настройки, если DECSCUSR не задан', async () => {
+      optionsService.options.cursorStyle = 'bar';
+      optionsService.options.cursorBlink = true;
+      const replies: string[] = [];
+      coreService.onData(data => replies.push(data));
+      await inputHandler.parseP('\x1bP$q q\x1b\\');
+      assert.deepEqual(replies, ['\x1bP1$r5 q\x1b\\']);
+    });
+  });
+
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       inputHandler.setCursorStyle(Params.fromArray([0]));
