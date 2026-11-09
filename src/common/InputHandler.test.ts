@@ -223,10 +223,10 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.wraparound, false);
     });
   });
-  describe('Отчёт о позиции курсора', () => {
+  describe('Cursor position reports', () => {
     for (const prefix of ['', '?']) {
       for (const cols of [1, 10]) {
-        it(`ограничивает колонку при ожидающем переносе (CSI ${prefix}6 n, ширина ${cols})`, async () => {
+        it(`clamps the column during pending wrap (CSI ${prefix}6 n, width ${cols})`, async () => {
           bufferService.resize(cols, 3);
           bufferService.reset();
           const replies: string[] = [];
@@ -244,7 +244,7 @@ describe('InputHandler', () => {
         });
       }
 
-      it(`сохраняет обычные координаты курсора (CSI ${prefix}6 n)`, async () => {
+      it(`preserves ordinary cursor coordinates (CSI ${prefix}6 n)`, async () => {
         const replies: string[] = [];
         coreService.onData(data => replies.push(data));
         await inputHandler.parseP(`\x1b[3;5H\x1b[${prefix}6n`);

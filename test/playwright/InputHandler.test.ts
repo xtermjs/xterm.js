@@ -1404,7 +1404,7 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI ? Pp m - XTQMODKEYS: Query key modifier options, xterm', () => {
       // TODO: Implement
     });
-    test('CSI 6 n и CSI ? 6 n: ограничивают колонку при ожидающем переносе', async () => {
+    test('CSI 6 n and CSI ? 6 n: clamp the column during pending wrap', async () => {
       await ctx.proxy.resize(10, 3);
       await ctx.proxy.write('0123456789\x1b[6n\x1b[?6n');
       await pollFor(ctx.page, () => recordedData, ['\x1b[1;10R', '\x1b[?1;10R']);
