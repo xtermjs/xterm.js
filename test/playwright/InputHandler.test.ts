@@ -1511,6 +1511,26 @@ test.describe('InputHandler Integration Tests', () => {
     test.skip('CSI Ps q - Load LEDs (DECLL), VT100.', async () => {
       // TODO: Implement
     });
+    test('DECRQSS reports the active cursor style and falls back to options after reset', async () => {
+      const previousStyle = await ctx.proxy.getOption('cursorStyle');
+      const previousBlink = await ctx.proxy.getOption('cursorBlink');
+      try {
+        await ctx.proxy.setOption('cursorStyle', 'underline');
+        await ctx.proxy.setOption('cursorBlink', false);
+        for (const style of [1, 2, 3, 4, 5, 6]) {
+          recordedData.length = 0;
+          await ctx.proxy.write(`\x1b[${style} q\x1bP$q q\x1b\\`);
+          await pollFor(ctx.page, () => recordedData, [`\x1bP1$r${style} q\x1b\\`]);
+        }
+        recordedData.length = 0;
+        await ctx.proxy.write('\x1b[0 q\x1bP$q q\x1b\\');
+        await pollFor(ctx.page, () => recordedData, ['\x1bP1$r4 q\x1b\\']);
+      } finally {
+        await ctx.proxy.setOption('cursorStyle', previousStyle);
+        await ctx.proxy.setOption('cursorBlink', previousBlink);
+      }
+    });
+
     test('CSI Ps SP q - Set cursor style (DECSCUSR), VT520.', async () => {
       const getCursorMode = async () => ctx.proxy.core.evaluate(([core]) => {
         const modes = core.coreService.decPrivateModes;
