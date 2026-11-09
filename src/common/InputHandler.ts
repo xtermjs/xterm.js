@@ -911,13 +911,22 @@ export class InputHandler extends Disposable implements IInputHandler {
   }
 
   /**
+   * The cursor row as `_setCursor` expects it, relative to the scroll top in origin mode.
+   */
+  private _getCursorRow(): number {
+    return this._coreService.decPrivateModes.origin
+      ? this._activeBuffer.y - this._activeBuffer.scrollTop
+      : this._activeBuffer.y;
+  }
+
+  /**
    * Set relative cursor position.
    */
   private _moveCursor(x: number, y: number): void {
     // for relative changes we have to make sure we are within 0 .. cols/rows - 1
     // before calculating the new position
     this._restrictCursor();
-    this._setCursor(this._activeBuffer.x + x, this._activeBuffer.y + y);
+    this._setCursor(this._activeBuffer.x + x, this._getCursorRow() + y);
   }
 
   /**
@@ -1013,7 +1022,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI CHA   "Cursor Horizontal Absolute" "CSI Ps G" "Move cursor to `Ps`-th column of the active row (default=1)."
    */
   public cursorCharAbsolute(params: IParams): boolean {
-    this._setCursor((params.params[0] || 1) - 1, this._activeBuffer.y);
+    this._setCursor((params.params[0] || 1) - 1, this._getCursorRow());
     return true;
   }
 
@@ -1044,7 +1053,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    * @vt: #Y CSI HPA   "Horizontal Position Absolute"  "CSI Ps ` " "Same as CHA."
    */
   public charPosAbsolute(params: IParams): boolean {
-    this._setCursor((params.params[0] || 1) - 1, this._activeBuffer.y);
+    this._setCursor((params.params[0] || 1) - 1, this._getCursorRow());
     return true;
   }
 

@@ -1259,6 +1259,36 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[2;1H');
       assert.deepEqual(getCursor(bufferService), [0, 1]);
     });
+    it('relative cursor moves, CHA and HPA with DECOM and scroll margins', async () => {
+      await inputHandler.parseP('\x1b[3;6r\x1b[?6h\x1b[2;3H');
+      assert.deepEqual(getCursor(bufferService), [2, 3]);
+      // the cursor row is not offset by the scroll top a second time
+      await inputHandler.parseP('\x1b[2C');
+      assert.deepEqual(getCursor(bufferService), [4, 3]);
+      await inputHandler.parseP('\x1b[D');
+      assert.deepEqual(getCursor(bufferService), [3, 3]);
+      await inputHandler.parseP('\x1b[B');
+      assert.deepEqual(getCursor(bufferService), [3, 4]);
+      await inputHandler.parseP('\x1b[A');
+      assert.deepEqual(getCursor(bufferService), [3, 3]);
+      await inputHandler.parseP('\x1b[5G');
+      assert.deepEqual(getCursor(bufferService), [4, 3]);
+      await inputHandler.parseP('\x1b[2`');
+      assert.deepEqual(getCursor(bufferService), [1, 3]);
+      await inputHandler.parseP('\x1b[2a');
+      assert.deepEqual(getCursor(bufferService), [3, 3]);
+      await inputHandler.parseP('\x1b[e');
+      assert.deepEqual(getCursor(bufferService), [3, 4]);
+      await inputHandler.parseP('\x1b[E');
+      assert.deepEqual(getCursor(bufferService), [0, 5]);
+      await inputHandler.parseP('\x1b[F');
+      assert.deepEqual(getCursor(bufferService), [0, 4]);
+      // relative moves stop at the scroll margins
+      await inputHandler.parseP('\x1b[9A');
+      assert.deepEqual(getCursor(bufferService), [0, 2]);
+      await inputHandler.parseP('\x1b[9B');
+      assert.deepEqual(getCursor(bufferService), [0, 5]);
+    });
     it('horizontal position absolute (HPA)', async () => {
       await inputHandler.parseP('\x1b[`');
       assert.deepEqual(getCursor(bufferService), [0, 0]);
