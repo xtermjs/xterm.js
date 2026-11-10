@@ -7,13 +7,58 @@
 
 import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
-import { IColor } from 'common/Types';
-import { IAttributeData } from 'common/buffer/Types';
+import { ICharset, IColor } from 'common/Types';
+import { IAttributeData, IBuffer as IInternalBuffer } from 'common/buffer/Types';
+import { ICharsetService } from 'common/services/Services';
+import { CHARSETS } from 'common/data/Charsets';
 import { DEFAULT_ANSI_COLORS } from 'browser/Types';
 import { UnderlineStyle } from 'common/buffer/Constants';
 
 function constrain(value: number, low: number, high: number): number {
   return Math.max(low, Math.min(value, high));
+}
+
+interface ICharsetState {
+  charsets: (ICharset | undefined)[];
+  glevel: number;
+}
+
+const DEFAULT_CHARSET_STATE: ICharsetState = { charsets: [], glevel: 0 };
+
+// Designates G0 to G3, and shifts G0 to G3 into GL
+const CHARSET_DESIGNATORS = ['(', ')', '*', '+'];
+const GLEVEL_SHIFTS = ['\x0f', '\x0e', '\x1bn', '\x1bo'];
+
+// The terminal and this addon can each have their own copy of CHARSETS, so compare by content
+function charsetFinal(charset: ICharset | undefined): string | undefined {
+  if (!charset) {
+    return 'B';
+  }
+  const keys = Object.keys(charset);
+  for (const final in CHARSETS) {
+    const candidate = CHARSETS[final];
+    if (candidate && Object.keys(candidate).length === keys.length && keys.every(key => candidate[key] === charset[key])) {
+      return final;
+    }
+  }
+  return undefined;
+}
+
+// ESC 8 only restores the G sets that had been designated at ESC 7, even to the default, so each of
+// those is designated
+function serializeCharsetChange(from: ICharsetState, to: ICharsetState): string {
+  let content = '';
+  for (let g = 0; g < CHARSET_DESIGNATORS.length; g++) {
+    const final = charsetFinal(to.charsets[g]);
+    const isNewlyDesignated = g < to.charsets.length && g >= from.charsets.length;
+    if (final !== undefined && (isNewlyDesignated || final !== charsetFinal(from.charsets[g]))) {
+      content += `\x1b${CHARSET_DESIGNATORS[g]}${final}`;
+    }
+  }
+  if (to.glevel !== from.glevel) {
+    content += GLEVEL_SHIFTS[to.glevel];
+  }
+  return content;
 }
 
 function escapeHTMLChar(c: string): string {
@@ -422,6 +467,57 @@ class StringSerializeHandler extends BaseSerializeHandler {
     }
   }
 
+  // DECSC also saves the colors, charsets, origin mode and wraparound mode, so the saved ones are
+  // set around ESC 7. Turning origin mode off again homes the cursor.
+  private _serializeSavedCursor(): string {
+    // HACK: Internal API access since the saved cursor isn't exposed in the API
+    const buffer: IInternalBuffer = (this._terminal as any)._core.buffer;
+    const saved: ICharsetState = { charsets: buffer.savedCharsets, glevel: buffer.savedGlevel };
+    const charsets = serializeCharsetChange(DEFAULT_CHARSET_STATE, saved);
+    if (buffer.savedX === 0 && buffer.savedY === 0 && buffer.savedCurAttrData.isAttributeDefault() &&
+      !charsets && !buffer.savedOriginMode && buffer.savedWraparoundMode) {
+      return '';
+    }
+
+    const row = constrain(buffer.savedY - buffer.ybase, 0, this._terminal.rows - 1);
+    const col = Math.min(buffer.savedX, this._terminal.cols - 1);
+    const defaultStyle = this._buffer.getNullCell();
+    const styleChanged = !attributesEquals(buffer.savedCurAttrData, this._cursorStyle);
+    const sgr = (style: IBufferCell | IAttributeData): string => styleChanged
+      ? `\u001b[${[0, ...this._diffStyle(style, defaultStyle)].join(';')}m`
+      : '';
+
+    let content = buffer.savedOriginMode ? '\u001b[?6h' : '';
+    content += buffer.savedWraparoundMode ? '' : '\u001b[?7l';
+    content += `\u001b[${row + 1};${col + 1}H${sgr(buffer.savedCurAttrData)}${charsets}\u001b7`;
+    content += sgr(this._cursorStyle) + serializeCharsetChange(saved, DEFAULT_CHARSET_STATE);
+    content += buffer.savedWraparoundMode ? '' : '\u001b[?7h';
+    content += buffer.savedOriginMode ? '\u001b[?6l' : '';
+
+    this._lastCursorRow = buffer.ybase + (buffer.savedOriginMode ? 0 : row);
+    this._lastCursorCol = buffer.savedOriginMode ? 0 : col;
+    return content;
+  }
+
+  // A cursor past the last column is waiting to wrap, which a cursor move can't do. Printing the
+  // last cell again puts it back in that state.
+  private _serializePendingWrap(row: number): string {
+    const line = this._buffer.getLine(row)!;
+    let col = this._terminal.cols - 1;
+    if (col > 0 && line.getCell(col)?.getWidth() === 0) {
+      col--;
+    }
+    const cell = line.getCell(col)!;
+
+    let content = `\u001b[${col + 1}G`;
+    const sgrSeq = this._diffStyle(cell, this._cursorStyle);
+    if (sgrSeq.length > 0) {
+      content += `\u001b[${sgrSeq.join(';')}m`;
+      line.getCell(col, this._cursorStyle);
+    }
+    return content + (cell.getChars() || ' ');
+  }
+
   protected _serializeString(excludeFinalCursorPosition: boolean): string {
     let rowEnd = this._allRows.length;
 
@@ -444,6 +540,10 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
     // restore the cursor
     if (!excludeFinalCursorPosition) {
+      if (this._buffer.type === this._terminal.buffer.active.type) {
+        content += this._serializeSavedCursor();
+      }
+
       const realCursorRow = this._buffer.baseY + this._buffer.cursorY;
       const realCursorCol = this._buffer.cursorX;
 
@@ -466,7 +566,11 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
       if (cursorMoved) {
         moveDown(realCursorRow - this._lastCursorRow);
-        moveRight(realCursorCol - this._lastCursorCol);
+        if (realCursorCol >= this._terminal.cols) {
+          content += this._serializePendingWrap(realCursorRow);
+        } else {
+          moveRight(realCursorCol - this._lastCursorCol);
+        }
       }
     }
 
@@ -609,6 +713,12 @@ export class SerializeAddon implements ITerminalAddon, ISerializeApi {
     if (!options?.excludeAltBuffer) {
       if (this._terminal.buffer.active.type === 'alternate') {
         const alternativeScreenContent = this._serializeBufferByScrollback(this._terminal, this._terminal.buffer.alternate, undefined);
+        // The alternate buffer is written starting from the default style
+        // HACK: Internal API access since it's awkward to expose this in the API
+        const curAttrData: IAttributeData = (this._terminal as any)._core._inputHandler._curAttrData;
+        if (!curAttrData.isAttributeDefault()) {
+          content += '\u001b[0m';
+        }
         content += `\u001b[?1049h\u001b[H${alternativeScreenContent}`;
       }
     }
@@ -617,6 +727,11 @@ export class SerializeAddon implements ITerminalAddon, ISerializeApi {
     if (!options?.excludeModes) {
       content += this._serializeModes(this._terminal);
       content += this._serializeScrollRegion(this._terminal);
+
+      // Last, so that the buffer content isn't printed through them
+      // HACK: Internal API access since the charsets aren't exposed in the API
+      const charsetService: ICharsetService = (this._terminal as any)._core._charsetService;
+      content += serializeCharsetChange(DEFAULT_CHARSET_STATE, charsetService);
     }
 
     return content;
