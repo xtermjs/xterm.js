@@ -467,3 +467,77 @@ describe('MouseService multi-window', () => {
     assert.deepEqual(openDocument.removed, []);
   });
 });
+
+describe('MouseService repeated mousedown', () => {
+  it('should keep reporting drag and release after a second mousedown without a mouseup in between', () => {
+    const reports: string[] = [];
+    const mouseStateService = new MouseStateService();
+    const mouseService = new MouseService(
+      new MockRenderService(),
+      {
+        getMouseReportCoords: () => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      mouseStateService,
+      {
+        triggerDataEvent: (data: string) => reports.push(data),
+        triggerBinaryEvent: (data: string) => reports.push(data),
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      bufferService,
+      new OptionsService({}),
+      new TestSelectionService(),
+      logService,
+      new MockCoreBrowserService()
+    );
+
+    // A real event target is used so that registering the same listener twice is deduplicated
+    // like in a browser
+    const doc = new EventTarget();
+    const elementListeners: { [type: string]: EventListener[] } = {};
+    const element = {
+      classList: {
+        add: () => {},
+        remove: () => {},
+        contains: () => false
+      },
+      addEventListener: (type: string, listener: EventListener) => {
+        (elementListeners[type] ??= []).push(listener);
+      },
+      removeEventListener: () => {},
+      ownerDocument: doc
+    } as any;
+    mouseService.bindMouse({
+      element,
+      screenElement: createTestMouseTargetElement(),
+      document: doc as any
+    }, disposable => disposable, () => {});
+    mouseStateService.activeProtocol = 'ANY';
+
+    const mouseEvent = (type: string, buttons: number): Event => Object.assign(new Event(type, { cancelable: true }), {
+      button: 0,
+      buttons,
+      altKey: false,
+      ctrlKey: false,
+      shiftKey: false
+    });
+
+    // The mouseup of the first press was never handled, eg. it happened outside of the window
+    elementListeners['mousedown'][0](mouseEvent('mousedown', 1));
+    elementListeners['mousedown'][0](mouseEvent('mousedown', 1));
+
+    reports.length = 0;
+    doc.dispatchEvent(mouseEvent('mousemove', 1));
+    assert.equal(reports.length, 1, 'drag should be reported');
+
+    reports.length = 0;
+    doc.dispatchEvent(mouseEvent('mouseup', 0));
+    assert.equal(reports.length, 1, 'release should be reported');
+
+    // The next press and release must work as usual
+    elementListeners['mousedown'][0](mouseEvent('mousedown', 1));
+    reports.length = 0;
+    doc.dispatchEvent(mouseEvent('mousemove', 1));
+    doc.dispatchEvent(mouseEvent('mouseup', 0));
+    assert.equal(reports.length, 2, 'drag and release should be reported after a normal click');
+  });
+});

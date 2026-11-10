@@ -241,6 +241,11 @@ export class MouseService implements IMouseService {
     // Use the element's current document in case it moved to another window after open.
     const { element, document: targetDocument } = ctx.target;
     const listenerDocument = element.ownerDocument ?? targetDocument;
+    // Clear any listeners left over from a previous mousedown whose mouseup was never handled.
+    // The replacement registers the same callback, which the DOM deduplicates, and assigning
+    // `.value` would then dispose the old listener and remove the callback altogether.
+    ctx.mouseupListener.clear();
+    ctx.mousedragListener.clear();
     if (ctx.requestedEvents.mouseup) {
       ctx.mouseupListener.value = addDisposableListener(listenerDocument, 'mouseup', ctx.requestedEvents.mouseup);
     }
