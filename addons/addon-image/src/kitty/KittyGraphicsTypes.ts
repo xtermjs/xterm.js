@@ -78,7 +78,9 @@ export const enum KittyKey {
   // Delete selector (a/A=all, i/I=by id, c/C=at cursor, etc.) — only used when a=d
   DELETE_SELECTOR = 'd',
   // Placement ID for targeting specific placements
-  PLACEMENT_ID = 'p'
+  PLACEMENT_ID = 'p',
+  // Unicode placeholder (virtual placement): 1 = place via U+10EEEE cells instead of at the cursor
+  UNICODE_PLACEMENT = 'U'
 }
 
 // Pixel format constants
@@ -111,6 +113,7 @@ export interface IKittyCommand {
   transmission?: string;
   deleteSelector?: string;
   placementId?: number;
+  unicodePlacement?: number;
   compression?: string;
   payload?: string;
 }
@@ -188,6 +191,7 @@ export function parseKittyCommand(data: string): IKittyCommand {
       case KittyKey.CURSOR_MOVEMENT: cmd.cursorMovement = numValue; break;
       case KittyKey.Z_INDEX: cmd.zIndex = numValue; break;
       case KittyKey.PLACEMENT_ID: cmd.placementId = numValue; break;
+      case KittyKey.UNICODE_PLACEMENT: cmd.unicodePlacement = numValue; break;
     }
   }
 

@@ -141,6 +141,12 @@ describe('KittyGraphicsTypes', () => {
       assert.strictEqual(cmd.placementId, undefined);
     });
 
+    it('should parse unicode placement key', () => {
+      const cmd = parseKittyCommand('a=T,U=1,i=3,c=4,r=2');
+      assert.strictEqual(cmd.unicodePlacement, 1);
+      assert.strictEqual(parseKittyCommand('a=T').unicodePlacement, undefined);
+    });
+
     it('should parse image number key', () => {
       const cmd = parseKittyCommand('a=t,f=100,I=42');
       assert.strictEqual(cmd.imageNumber, 42);

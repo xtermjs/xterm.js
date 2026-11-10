@@ -6,7 +6,7 @@
 import test from '@playwright/test';
 import { readFileSync } from 'fs';
 import { ITestContext, createTestContext, openTerminal, pollFor, timeout } from '../../../test/playwright/TestUtils';
-import { deepStrictEqual, ok, strictEqual } from 'assert';
+import { deepStrictEqual, notDeepStrictEqual, ok, strictEqual } from 'assert';
 
 /**
  * Plugin ctor options.
@@ -93,6 +93,13 @@ const RAW_RGBA_5X1 = Buffer.from([
   255, 0, 255, 255
 ]).toString('base64');
 
+// Unicode placeholders (U=1): U+10EEEE followed by row/column diacritics (0, 1, 2)
+const PH = String.fromCodePoint(0x10EEEE);
+const DIACRITIC = ['\u0305', '\u030D', '\u030E'];
+const ph = (row?: number, col?: number): string => PH + (row !== undefined ? DIACRITIC[row] : '') + (col !== undefined ? DIACRITIC[col] : '');
+// fg color carrying a 24-bit image id
+const fgId = (id: number): string => `\x1b[38;2;${(id >> 16) & 255};${(id >> 8) & 255};${id & 255}m`;
+
 let ctx: ITestContext;
 test.beforeAll(async ({ browser }) => {
   ctx = await createTestContext(browser);
@@ -102,7 +109,6 @@ test.afterAll(async () => await ctx.page.close());
 
 test.describe('Kitty Graphics Protocol', () => {
   // TODO: Add tests for larger images with various dimensions
-  // TODO: Add tests for virtual placement (U=1)
   // TODO: Add tests for animation frames
   // TODO: Add performance tests for streaming large images
   // TODO: Implement cursor movement per Kitty spec - cursor should move by cols/rows after placement (unless C=1)
@@ -2201,6 +2207,94 @@ test.describe('Kitty Graphics Protocol', () => {
     });
   });
 
+  test.describe('Unicode placeholders (U=1)', () => {
+    // 2x2 raw RGB: red, green / blue, yellow — placed over 2x2 cells
+    const transmit2x2 = (id: number, extra = ''): string => `\x1b_Ga=T,U=1,f=24,s=2,v=2,c=2,r=2,i=${id},q=2${extra};${RAW_RGB_2X2}\x1b\\`;
+
+    test('stores the image without placing it at the cursor', async () => {
+      await ctx.proxy.write(transmit2x2(5));
+      await pollFor(ctx.page, 'window.imageAddon._handlers.get("kitty")._kittyStorage.virtualPlacements.has(5)', true);
+      strictEqual(await hasTileAtBufferCell(0, 0), false);
+      deepStrictEqual(await getCursor(), [0, 0]);
+    });
+
+    test('renders the tiles placeholder cells reference', async () => {
+      await ctx.proxy.write(transmit2x2(5));
+      await ctx.proxy.write(`\x1b[H${fgId(5)}${ph(0, 0)}${ph(0, 1)}\r\n${ph(1, 0)}${ph(1, 1)}\x1b[39m`);
+      await pollFor(ctx.page, () => getLayerPixelAt(0.25, 0.25), [255, 0, 0, 255]);
+      deepStrictEqual(await getLayerPixelAt(1.75, 0.25), [0, 255, 0, 255]);
+      deepStrictEqual(await getLayerPixelAt(0.25, 1.75), [0, 0, 255, 255]);
+      deepStrictEqual(await getLayerPixelAt(1.75, 1.75), [255, 255, 0, 255]);
+    });
+
+    test('infers missing columns from the left neighbour', async () => {
+      await ctx.proxy.write(transmit2x2(5));
+      await ctx.proxy.write(`\x1b[H${fgId(5)}${ph(1)}${ph()}\x1b[39m`);
+      // sample away from the tile's top edge, the scaled image blends rows there
+      await pollFor(ctx.page, () => getLayerPixelAt(0.25, 0.75), [0, 0, 255, 255]);
+      deepStrictEqual(await getLayerPixelAt(1.75, 0.75), [255, 255, 0, 255]);
+    });
+
+    test('a single placeholder shows only its own tile', async () => {
+      await ctx.proxy.write(transmit2x2(5));
+      await ctx.proxy.write(`\x1b[3;4H${fgId(5)}${ph(1, 1)}\x1b[39m`);
+      await pollFor(ctx.page, () => getLayerPixelAt(3.75, 2.75), [255, 255, 0, 255]);
+    });
+
+    test('takes the image id from a 256-color fg', async () => {
+      await ctx.proxy.write(transmit2x2(7));
+      await ctx.proxy.write(`\x1b[H\x1b[38;5;7m${ph(0, 1)}\x1b[39m`);
+      await pollFor(ctx.page, () => getLayerPixelAt(0.75, 0.25), [0, 255, 0, 255]);
+    });
+
+    test('picks the placement from the underline color', async () => {
+      await ctx.proxy.write(`\x1b_Ga=t,f=24,s=2,v=2,i=5,q=2;${RAW_RGB_2X2}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=p,U=1,i=5,p=1,c=2,r=2,q=2\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=p,U=1,i=5,p=2,c=1,r=1,q=2\x1b\\`);
+      await pollFor(ctx.page, 'window.imageAddon._handlers.get("kitty")._kittyStorage.virtualPlacements.get(5)?.size', 2);
+      // Note: the buffer keeps an underline color only on underlined cells (SGR 4).
+      // p=1 spans 2x2 cells, so its tile (0, 0) is only the red quarter
+      await ctx.proxy.write(`\x1b[H${fgId(5)}\x1b[4;58;2;0;0;1m${ph(0, 0)}\x1b[24;59m\x1b[39m`);
+      await pollFor(ctx.page, () => getLayerPixelAt(0.25, 0.25), [255, 0, 0, 255]);
+      // p=2 fits the whole image in one cell
+      await ctx.proxy.write(`\x1b[H${fgId(5)}\x1b[4;58;2;0;0;2m${ph(0, 0)}\x1b[24;59m\x1b[39m`);
+      await pollFor(ctx.page, () => getLayerPixelAt(0.9, 0.9), [255, 255, 0, 255]);
+    });
+
+    test('retransmitting the image updates the placeholders in place', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,U=1,f=24,s=1,v=1,i=9,c=1,r=1,q=2;${RAW_RGB_1X1_RED}\x1b\\`);
+      await ctx.proxy.write(`\x1b[H${fgId(9)}${ph(0, 0)}\x1b[39m`);
+      await pollFor(ctx.page, () => getLayerPixelAt(0.5, 0.5), [255, 0, 0, 255]);
+      await ctx.proxy.write(`\x1b_Ga=T,U=1,f=24,s=1,v=1,i=9,c=1,r=1,q=2;${RAW_RGB_1X1_BLACK}\x1b\\`);
+      await pollFor(ctx.page, () => getLayerPixelAt(0.5, 0.5), [0, 0, 0, 255]);
+      strictEqual(await getImageStorageLength(), 1);
+    });
+
+    test('deleting the image removes its placements', async () => {
+      await ctx.proxy.write(transmit2x2(5));
+      await ctx.proxy.write(`\x1b[H${fgId(5)}${ph(0, 0)}\x1b[39m`);
+      await pollFor(ctx.page, () => getLayerPixelAt(0.25, 0.25), [255, 0, 0, 255]);
+      await ctx.proxy.write(`\x1b_Ga=d,d=I,i=5\x1b\\`);
+      await pollFor(ctx.page, () => getImageStorageLength(), 0);
+      strictEqual(await ctx.page.evaluate('window.imageAddon._handlers.get("kitty")._kittyStorage.virtualPlacements.size'), 0);
+    });
+
+    test('hides the placeholder glyphs from the text renderer', async () => {
+      await ctx.proxy.write(transmit2x2(5));
+      await pollFor(ctx.page, 'window.imageAddon._handlers.get("kitty")._kittyStorage.virtualPlacements.has(5)', true);
+      await ctx.proxy.write(`\x1b[H${fgId(5)}${ph(0, 0)}\x1b[39mx`);
+      await pollFor(ctx.page, '!!window.term.buffer.active.getLine(0).getCell(0).isInvisible()', true);
+      strictEqual(await ctx.page.evaluate('!!window.term.buffer.active.getLine(0).getCell(1).isInvisible()'), false);
+    });
+
+    test('placeholders of unknown images draw no tile', async () => {
+      await ctx.proxy.write(transmit2x2(5));
+      await ctx.proxy.write(`\x1b[H${fgId(6)}${ph(0, 0)}\x1b[39m`);
+      await timeout(100);
+      notDeepStrictEqual(await getLayerPixelAt(0.25, 0.25), [255, 0, 0, 255]);
+    });
+  });
+
   test.describe('onImageAdded callback', () => {
     test('onImageAdded fires for each kitty image', async () => {
       await ctx.page.evaluate(`
@@ -2280,4 +2374,16 @@ async function getPixels(col: number, row: number, x: number, y: number, w: numb
 
 async function hasTileAtBufferCell(x: number, y: number): Promise<boolean> {
   return ctx.page.evaluate(`!!window.imageAddon.extractTileAtBufferCell(${x}, ${y})`);
+}
+
+// Pixel of the top image layer at a position given in cells (fractions allowed).
+async function getLayerPixelAt(col: number, row: number): Promise<number[] | null> {
+  return ctx.page.evaluate(([col, row]: number[]) => {
+    const canvas = document.querySelector('.xterm-image-layer-top') as HTMLCanvasElement | null;
+    const ctx2d = canvas?.getContext('2d');
+    if (!canvas || !ctx2d) return null;
+    const cell = (window as any).term.dimensions.css.cell;
+    const scale = canvas.width / (window as any).term.dimensions.css.canvas.width;
+    return Array.from(ctx2d.getImageData(Math.floor(col * cell.width * scale), Math.floor(row * cell.height * scale), 1, 1).data);
+  }, [col, row]);
 }

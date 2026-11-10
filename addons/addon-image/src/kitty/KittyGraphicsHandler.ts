@@ -416,7 +416,7 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       height: cmd.height ?? 0,
       format: (cmd.format ?? KittyFormat.RGBA) as 24 | 32 | 100,
       compression: cmd.compression ?? ''
-    });
+    }, cmd.action === KittyAction.TRANSMIT_DISPLAY && cmd.unicodePlacement === 1);
     return true;
   }
 
@@ -661,6 +661,17 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
       }
 
       const zIndex = cmd.zIndex ?? 0;
+
+      // Per spec: U=1 creates a virtual placement, shown only where the client
+      // writes U+10EEEE placeholder cells. Nothing is drawn at the cursor and
+      // the cursor does not move.
+      if (cmd.unicodePlacement === 1) {
+        const replaceAll = cmd.action === KittyAction.TRANSMIT_DISPLAY;
+        this._kittyStorage.addVirtualPlacement(image.id, cmd.placementId ?? 0, bitmap, layer, zIndex, replaceAll);
+        bitmap = undefined;  // ownership transferred to storage
+        return;
+      }
+
       this._kittyStorage.addImage(image.id, bitmap, true, layer, zIndex);
       bitmap = undefined;  // ownership transferred to storage
 
