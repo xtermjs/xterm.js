@@ -13,6 +13,16 @@ interface IPosition {
 }
 
 /**
+ * Whether a keyCode-229 keydown is a control input a CJK IME has masked (and
+ * that produces no composition), rather than composable text. These must reach
+ * the normal key handler instead of being swallowed as textarea changes. Kept
+ * in sync with `recoverImeControlKeyCode` in common/input/Keyboard.ts.
+ */
+function isImeControlPassthrough(ev: KeyboardEvent): boolean {
+  return ev.code === 'Escape' || (ev.ctrlKey && !ev.altKey && !ev.metaKey);
+}
+
+/**
  * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
  * events, displaying the in-progress composition to the UI and forwarding the final composition
  * to the handler.
@@ -129,6 +139,16 @@ export class CompositionHelper {
     }
 
     if (ev.keyCode === 229) {
+      // A CJK IME reports keyCode 229 ("Process") for every key it claims,
+      // including control inputs that never begin a composition and produce no
+      // input event: Ctrl+<letter>, Ctrl+Space and a bare Escape. Swallowing
+      // those (return false) loses them entirely, so let them continue to the
+      // normal key handler, which recovers the key from `code`. Everything else
+      // (numbers, punctuation typed with the IME active) still goes through the
+      // textarea diff below.
+      if (isImeControlPassthrough(ev)) {
+        return true;
+      }
       // If the "composition character" is used but gets to this point it means a non-composition
       // character (eg. numbers and punctuation) was pressed when the IME was active.
       this._handleAnyTextareaChanges();

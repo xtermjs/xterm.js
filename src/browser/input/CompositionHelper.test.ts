@@ -260,4 +260,16 @@ describe('CompositionHelper', () => {
       }, 0);
     });
   });
+
+  describe('keydown under a CJK IME (keyCode 229)', () => {
+    // A CJK IME delivers control inputs with keyCode 229 and no composition.
+    // keydown() must let those continue to the normal key handler (return true)
+    // rather than swallowing them. https://github.com/xtermjs/xterm.js/issues/153
+    it('should pass ctrl chords through (return true)', () => {
+      assert.equal(compositionHelper.keydown({ keyCode: 229, code: 'KeyJ', ctrlKey: true } as any), true);
+    });
+    it('should pass a bare escape through (return true)', () => {
+      assert.equal(compositionHelper.keydown({ keyCode: 229, code: 'Escape' } as any), true);
+    });
+  });
 });
