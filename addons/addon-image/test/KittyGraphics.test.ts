@@ -415,6 +415,42 @@ test.describe('Kitty Graphics Protocol', () => {
       });
       deepStrictEqual(storedData, KITTY_BLACK_1X1_BYTES);
     });
+
+    test('capability query without semicolon does not end a pending transfer', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=408,m=1;${part1}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=q\x1b\\`);
+      await timeout(100);
+
+      deepStrictEqual([
+        await ctx.page.evaluate('window.kittyResponse'),
+        await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.has(408)`)
+      ], ['\x1b_Gi=0;OK\x1b\\', true]);
+    });
+
+    test('placement without semicolon for a pending image does not end its transfer', async () => {
+      await ctx.page.evaluate(() => {
+        (window as any).kittyResponse = '';
+        (window as any).term.onData((data: string) => { (window as any).kittyResponse = data; });
+      });
+      const half = Math.floor(KITTY_BLACK_1X1_BASE64.length / 2);
+      const part1 = KITTY_BLACK_1X1_BASE64.substring(0, half);
+
+      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=409,m=1;${part1}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=p,i=409\x1b\\`);
+      await timeout(100);
+
+      deepStrictEqual([
+        await ctx.page.evaluate('window.kittyResponse'),
+        await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.has(409)`)
+      ], ['\x1b_Gi=409;ENOENT:image not found\x1b\\', true]);
+    });
   });
 
   test.describe('Delete commands', () => {

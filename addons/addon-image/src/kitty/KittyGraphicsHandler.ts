@@ -239,8 +239,8 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     const isMoreComing = cmd.more === 1;
     const pending = this._pendingTransmissions.get(pendingKey);
 
-    // No semicolon = no payload (capability query, placement), unless it's a chunk
-    const isChunk = isMoreComing || pending !== undefined;
+    // No semicolon = no payload (capability query, placement), unless it's a chunk (has m=)
+    const isChunk = cmd.more !== undefined && (isMoreComing || pending !== undefined);
     if (this._inControlData && !isChunk) {
       return this._handleNoPayloadCommand(cmd);
     }
