@@ -4,7 +4,7 @@
  */
 import { test } from '@playwright/test';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
-import { createTestContext, ITestContext, openTerminal } from './TestUtils';
+import { createTestContext, ITestContext, openTerminal, pollFor } from './TestUtils';
 import { IRenderDimensions } from '../../src/browser/renderer/shared/Types';
 
 let ctx: ITestContext;
@@ -79,5 +79,65 @@ test.describe('RenderService dimensions after dispose', () => {
 
     // leave the page in a clean state for any tests that might run after this file
     await openTerminal(ctx);
+  });
+});
+
+test.describe('RenderService resize while paused', () => {
+  // While the terminal is off screen its renderer is paused and a resize reaches the renderer
+  // later. Putting a terminal back and resizing it in the same task, as a layout that moves a
+  // terminal between containers does, lands the resize before the renderer resumes.
+  async function resizeWhileOffScreen(rows: number): Promise<void> {
+    await ctx.page.evaluate(`
+      window.terminalParent = window.term.element.parentElement;
+      window.term.element.remove();
+    `);
+    await pollFor(ctx.page, `window.term._core._renderService._isPaused`, true);
+    // Hold back idle callbacks so the renderer takes the new size only when it resumes, after the
+    // viewport's queued sync has run. An idle period before the next frame would otherwise let it
+    // take the size first and hide the problem.
+    await ctx.page.evaluate(`
+      if (window.requestIdleCallback) {
+        window.originalRequestIdleCallback = window.requestIdleCallback;
+        window.requestIdleCallback = () => 0;
+      }
+      window.terminalParent.appendChild(window.term.element);
+      window.term.resize(window.term.cols, ${rows});
+    `);
+    try {
+      await pollFor(ctx.page, `window.term._core._renderService._isPaused`, false);
+    } finally {
+      await ctx.page.evaluate(`
+        if (window.originalRequestIdleCallback) {
+          window.requestIdleCallback = window.originalRequestIdleCallback;
+          delete window.originalRequestIdleCallback;
+        }
+      `);
+    }
+  }
+
+  test.beforeEach(async () => {
+    await openTerminal(ctx, { rows: 10 });
+  });
+
+  test('fires onDimensionsChange when the resize reaches the renderer', async () => {
+    await ctx.page.evaluate(`
+      window.canvasHeights = [];
+      window.term.onDimensionsChange(e => window.canvasHeights.push(e.css.canvas.height));
+    `);
+    await resizeWhileOffScreen(20);
+    const canvasHeight: number = await ctx.page.evaluate(`window.term.dimensions.css.canvas.height`);
+    await pollFor(ctx.page, `window.canvasHeights.at(-1)`, canvasHeight);
+  });
+
+  test('leaves the viewport without a scroll range in the alternate buffer', async () => {
+    // A full screen application repaints in place and never scrolls, so no scroll event would
+    // sync the viewport again (#6117)
+    await ctx.proxy.write('\x1b[?1049h');
+    await resizeWhileOffScreen(20);
+    const canvasHeight: number = await ctx.page.evaluate(`window.term.dimensions.css.canvas.height`);
+    await pollFor(ctx.page, `(() => {
+      const dimensions = window.term._core._viewport._scrollableElement.getScrollDimensions();
+      return [dimensions.height, dimensions.scrollHeight];
+    })()`, [canvasHeight, canvasHeight]);
   });
 });

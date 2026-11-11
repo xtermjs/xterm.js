@@ -98,6 +98,9 @@ export class Viewport extends Disposable {
     }));
 
     this._register(this._bufferService.onResize(() => this.queueSync()));
+    // The renderer's dimensions can change after the buffer resizes, for example when the resize
+    // lands while the renderer is paused
+    this._register(this._renderService.onDimensionsChange(() => this.queueSync()));
     this._register(this._bufferService.buffers.onBufferActivate(() => {
       // Reset _latestYDisp when switching buffers to prevent stale scroll position
       // from alt buffer contaminating normal buffer scroll position
