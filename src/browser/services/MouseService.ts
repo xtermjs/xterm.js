@@ -273,16 +273,17 @@ export class MouseService implements IMouseService {
         return false;
       }
 
-      const lines = this._consumeWheelEvent(
+      // Keep the partial-scroll accumulator in sync for the wheel-scroll option,
+      // but never gate the up/down fallback on it: the magnitude is unused here
+      // (the comment above states the behavior is a single up/down sequence), so
+      // a zero result -- small pixel deltas dampened and floored to 0 lines,
+      // shift+wheel, or renderer dims not ready -- must not drop the event, or
+      // full-screen TUI apps receive no wheel input at all.
+      this._consumeWheelEvent(
         ev,
         this._renderService?.dimensions?.device?.cell?.height,
         this._coreBrowserService?.dpr
       );
-      if (lines === 0) {
-        ev.preventDefault();
-        ev.stopPropagation();
-        return false;
-      }
 
       // Construct and send sequences
       const sequence = C0.ESC + (this._coreService.decPrivateModes.applicationCursorKeys ? 'O' : '[') + (ev.deltaY < 0 ? 'A' : 'B');
