@@ -304,7 +304,12 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
     if (this._isPaused) {
-      this._pausedResizeTask.set(() => this._renderer.value?.handleResize(cols, rows));
+      // Fire the event once the renderer has taken the new size, so that anything that read the
+      // old dimensions in the meantime (eg. the viewport) catches up
+      this._pausedResizeTask.set(() => {
+        this._renderer.value?.handleResize(cols, rows);
+        this._fireOnCanvasResize();
+      });
     } else {
       this._renderer.value.handleResize(cols, rows);
     }
