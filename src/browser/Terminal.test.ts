@@ -10,6 +10,7 @@ import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
 import { CellData } from '../common/buffer/CellData';
 import { MockUnicodeService, createCellData } from '../common/TestUtils.test';
 import { IMarker } from '../common/buffer/Types';
+import { KittyKeyboardFlags } from '../common/input/KittyKeyboard';
 
 const INIT_COLS = 80;
 const INIT_ROWS = 24;
@@ -600,6 +601,50 @@ describe('Terminal', () => {
           assert.equal(term.buffer.lines.get(4)!.loadCell(0, new CellData()).getChars(), 'e');
         });
       });
+    });
+  });
+
+  describe('keydown during an IME composition (#6112)', () => {
+    let data: string[];
+
+    function ev(overrides: Record<string, unknown>): any {
+      return {
+        preventDefault: () => { },
+        stopPropagation: () => { },
+        type: 'keydown',
+        key: ' ',
+        code: 'Space',
+        keyCode: 32,
+        shiftKey: false,
+        ctrlKey: false,
+        altKey: false,
+        metaKey: false,
+        getModifierState: () => false,
+        isComposing: false,
+        ...overrides
+      };
+    }
+
+    beforeEach(() => {
+      data = [];
+      term.onData(e => data.push(e));
+      term.options.vtExtensions = { kittyKeyboard: true };
+      term.coreService.kittyKeyboard.flags = KittyKeyboardFlags.DISAMBIGUATE_ESCAPE_CODES;
+    });
+
+    it('should not forward a text key consumed by the composition', () => {
+      term.keyDown(ev({ isComposing: true }));
+      assert.deepEqual(data, []);
+    });
+
+    it('should not forward a candidate selection digit consumed by the composition', () => {
+      term.keyDown(ev({ isComposing: true, key: '1', code: 'Digit1', keyCode: 49 }));
+      assert.deepEqual(data, []);
+    });
+
+    it('should still forward a space when no composition is active', () => {
+      term.keyDown(ev({ isComposing: false }));
+      assert.deepEqual(data, [' ']);
     });
   });
 
