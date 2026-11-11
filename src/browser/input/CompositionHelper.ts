@@ -204,6 +204,15 @@ export class CompositionHelper {
   }
 
   /**
+   * Cancel any pending composition send. This is called from _inputEvent when the
+   * IME committed text is handled via the input event, preventing a double-send from
+   * the _finalizeComposition timeout.
+   */
+  public cancelPendingComposition(): void {
+    this._isSendingComposition = false;
+  }
+
+  /**
    * Apply any changes made to the textarea after the current event chain is allowed to complete.
    * This should be called when not currently composing but a keydown event with the "composition
    * character" (229) is triggered, in order to allow non-composition text to be entered when an
