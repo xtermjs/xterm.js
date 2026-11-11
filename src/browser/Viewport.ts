@@ -187,9 +187,12 @@ export class Viewport extends Disposable {
     // Ignore any onScroll event that happens as a result of dimensions changing as this should
     // never cause a scrollLines call, only setScrollPosition can do that.
     this._suppressOnScrollHandler = true;
+    // Size both from the buffer: while the renderer is paused, its canvas can still have the
+    // previous size
+    const cellHeight = this._renderService.dimensions.css.cell.height;
     this._scrollableElement.setScrollDimensions({
-      height: this._renderService.dimensions.css.canvas.height,
-      scrollHeight: this._renderService.dimensions.css.cell.height * this._bufferService.buffer.lines.length
+      height: cellHeight * this._bufferService.rows,
+      scrollHeight: cellHeight * this._bufferService.buffer.lines.length
     });
     this._suppressOnScrollHandler = false;
 

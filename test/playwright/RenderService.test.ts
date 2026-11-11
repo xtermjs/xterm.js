@@ -140,4 +140,13 @@ test.describe('RenderService resize while paused', () => {
       return [dimensions.height, dimensions.scrollHeight];
     })()`, [canvasHeight, canvasHeight]);
   });
+
+  test('keeps following output in the normal buffer after shrinking', async () => {
+    // Syncing to the old, taller canvas would clamp the scroll position short of the bottom, which
+    // reads as the user scrolling up
+    await ctx.proxy.write(Array.from({ length: 50 }, (_, i) => `line ${i}`).join('\r\n'));
+    await resizeWhileOffScreen(5);
+    await ctx.proxy.write('\r\nnew output');
+    await pollFor(ctx.page, `window.term.buffer.active.viewportY === window.term.buffer.active.baseY`, true);
+  });
 });
