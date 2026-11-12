@@ -87,6 +87,54 @@ describe('BufferService', () => {
       assert.strictEqual(buffer.lines.get(buffer.ybase + 3)!.translateToString(true).trim(), '');
       assert.strictEqual(buffer.lines.get(buffer.ybase + 4)!.translateToString().trim(), 'E');
     });
+
+    it('should keep lines independent across repeated scrolls within DECSTBM margins', () => {
+      const optionsService = new OptionsService({ rows: 5, cols: 10, scrollback: 10 });
+      const bufferService = new BufferService(optionsService, new MockLogService());
+      const buffer = bufferService.buffer;
+      const markRow = (row: number, ch: string) => {
+        buffer.lines.get(buffer.ybase + row)!.setCellFromCodepoint(0, ch.charCodeAt(0), 1, eraseAttr);
+      };
+      const rowText = (row: number) => buffer.lines.get(buffer.ybase + row)!.translateToString(true);
+      markRow(0, 'A');
+      markRow(4, 'E');
+      buffer.scrollTop = 1;
+      buffer.scrollBottom = 3;
+
+      for (const ch of ['F', 'G', 'H', 'I', 'J', 'K']) {
+        markRow(3, ch);
+        bufferService.scroll(eraseAttr);
+      }
+
+      assert.deepStrictEqual([0, 1, 2, 3, 4].map(rowText), ['A', 'J', 'K', '', 'E']);
+    });
+
+    it('should scroll within a bottom margin when the buffer is full without affecting lines below the region', () => {
+      const optionsService = new OptionsService({ rows: 5, cols: 10, scrollback: 2 });
+      const bufferService = new BufferService(optionsService, new MockLogService());
+      const buffer = bufferService.buffer;
+      while (!buffer.lines.isFull) {
+        bufferService.scroll(eraseAttr);
+      }
+      const markRow = (row: number, ch: string) => {
+        buffer.lines.get(buffer.ybase + row)!.setCellFromCodepoint(0, ch.charCodeAt(0), 1, eraseAttr);
+      };
+      const rowText = (row: number) => buffer.lines.get(buffer.ybase + row)!.translateToString(true);
+      markRow(0, 'A');
+      markRow(1, 'B');
+      markRow(2, 'C');
+      markRow(3, 'D');
+      markRow(4, 'E');
+      buffer.scrollTop = 0;
+      buffer.scrollBottom = 3;
+
+      bufferService.scroll(eraseAttr);
+      markRow(3, 'F');
+      bufferService.scroll(eraseAttr);
+
+      assert.strictEqual(buffer.lines.length, 7);
+      assert.deepStrictEqual([-2, -1, 0, 1, 2, 3, 4].map(rowText), ['A', 'B', 'C', 'D', 'F', '', 'E']);
+    });
   });
 
   describe('scrollLines', () => {
