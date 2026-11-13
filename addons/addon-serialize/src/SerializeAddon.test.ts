@@ -154,6 +154,24 @@ describe('SerializeAddon', () => {
       });
     });
 
+    describe('bold and dim transitions', () => {
+      it('dim to bold stays bold (SGR 22 clears bold too)', async () => {
+        await writeP(terminal, sgr('2') + 'a' + sgr('22', '1') + 'b' + sgr('0'));
+        assert.equal(serializeAddon.serialize(), sgr('2') + 'a' + sgr('1', '22', '1') + 'b' + sgr('0'));
+      });
+
+      it('bold and dim to bold stays bold', async () => {
+        await writeP(terminal, sgr('1', '2') + 'a' + sgr('22', '1') + 'b' + sgr('0'));
+        assert.equal(serializeAddon.serialize(), sgr('1', '2') + 'a' + sgr('22', '1') + 'b' + sgr('0'));
+      });
+
+      it('bold to dim keeps dim', async () => {
+        await writeP(terminal, sgr('1') + 'a' + sgr('22', '2') + 'b' + sgr('0'));
+        assert.equal(serializeAddon.serialize(), sgr('1') + 'a' + sgr('22', '2') + 'b' + sgr('0'));
+      });
+    });
+
+
     describe('scroll region', () => {
       let scrollTerminal: Terminal;
       let scrollAddon: SerializeAddon;

@@ -312,36 +312,48 @@ class StringSerializeHandler extends BaseSerializeHandler {
           else { sgrSeq.push(49); }
         }
         if (flagsChanged) {
-          if (cell.isInverse() !== oldCell.isInverse()) { sgrSeq.push(cell.isInverse() ? 7 : 27); }
-          if (cell.isBold() !== oldCell.isBold()) { sgrSeq.push(cell.isBold() ? 1 : 22); }
+          const flagSeq: number[] = [];
+          if (cell.isInverse() !== oldCell.isInverse()) { flagSeq.push(cell.isInverse() ? 7 : 27); }
+          if (cell.isBold() !== oldCell.isBold()) { flagSeq.push(cell.isBold() ? 1 : 22); }
           if (!equalUnderline(cell, oldCell)) {
             const style = cell.getUnderlineStyle();
             if (style === UnderlineStyle.NONE) {
-              sgrSeq.push(24);
+              flagSeq.push(24);
             } else if (style === UnderlineStyle.SINGLE && cell.isUnderlineColorDefault()) {
-              sgrSeq.push(4);
+              flagSeq.push(4);
             } else {
               // Use SGR 4:X format for underline styles
-              sgrSeq.push('4:' + style as unknown as number);
+              flagSeq.push('4:' + style as unknown as number);
               // Handle underline color
               if (!cell.isUnderlineColorDefault()) {
                 const color = cell.getUnderlineColor();
                 if (cell.isUnderlineColorRGB()) {
-                  sgrSeq.push('58:2::' + ((color >>> 16) & 0xFF) + ':' + ((color >>> 8) & 0xFF) + ':' + (color & 0xFF) as unknown as number);
+                  flagSeq.push('58:2::' + ((color >>> 16) & 0xFF) + ':' + ((color >>> 8) & 0xFF) + ':' + (color & 0xFF) as unknown as number);
                 } else {
-                  sgrSeq.push('58:5:' + color as unknown as number);
+                  flagSeq.push('58:5:' + color as unknown as number);
                 }
               }
             }
           } else if (cell.isUnderline() !== oldCell.isUnderline()) {
-            sgrSeq.push(cell.isUnderline() ? 4 : 24);
+            flagSeq.push(cell.isUnderline() ? 4 : 24);
           }
-          if (cell.isOverline() !== oldCell.isOverline()) { sgrSeq.push(cell.isOverline() ? 53 : 55); }
-          if (cell.isBlink() !== oldCell.isBlink()) { sgrSeq.push(cell.isBlink() ? 5 : 25); }
-          if (cell.isInvisible() !== oldCell.isInvisible()) { sgrSeq.push(cell.isInvisible() ? 8 : 28); }
-          if (cell.isItalic() !== oldCell.isItalic()) { sgrSeq.push(cell.isItalic() ? 3 : 23); }
-          if (cell.isDim() !== oldCell.isDim()) { sgrSeq.push(cell.isDim() ? 2 : 22); }
-          if (cell.isStrikethrough() !== oldCell.isStrikethrough()) { sgrSeq.push(cell.isStrikethrough() ? 9 : 29); }
+          if (cell.isOverline() !== oldCell.isOverline()) { flagSeq.push(cell.isOverline() ? 53 : 55); }
+          if (cell.isBlink() !== oldCell.isBlink()) { flagSeq.push(cell.isBlink() ? 5 : 25); }
+          if (cell.isInvisible() !== oldCell.isInvisible()) { flagSeq.push(cell.isInvisible() ? 8 : 28); }
+          if (cell.isItalic() !== oldCell.isItalic()) { flagSeq.push(cell.isItalic() ? 3 : 23); }
+          if (cell.isDim() !== oldCell.isDim()) { flagSeq.push(cell.isDim() ? 2 : 22); }
+          if (cell.isStrikethrough() !== oldCell.isStrikethrough()) { flagSeq.push(cell.isStrikethrough() ? 9 : 29); }
+          // SGR 22 clears bold and dim together, so a transition that emits 22
+          // (dim to bold, bold to dim, bold+dim to bold) also clears the other
+          // attribute. Re-assert whatever the cell still needs after the last 22.
+          // Flags are collected separately so a colour parameter of 22 in sgrSeq
+          // cannot be mistaken for the flag.
+          const last22 = flagSeq.lastIndexOf(22);
+          if (last22 !== -1) {
+            if (cell.isBold() && !flagSeq.slice(last22).includes(1)) { flagSeq.push(1); }
+            if (cell.isDim() && !flagSeq.slice(last22).includes(2)) { flagSeq.push(2); }
+          }
+          sgrSeq.push(...flagSeq);
         }
       }
     }
