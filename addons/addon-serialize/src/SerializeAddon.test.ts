@@ -172,6 +172,21 @@ describe('SerializeAddon', () => {
     });
 
 
+    describe('colour-erased trailing rows', () => {
+      it('should not trim a trailing row that only holds a background-colour erase', async () => {
+        // Fill row 0 completely so the cursor style is still red at the row
+        // break; then the erased row's cells carry the pen's background (BCE),
+        // no style change marks the row as content, and only the ECH emitted
+        // at row end can keep it from the no-scrollback trim.
+        await writeP(terminal, sgr('41') + '0123456789' + '\r\n' + '\x1b[2K' + sgr('0'));
+        const restored = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
+        await writeP(restored, serializeAddon.serialize());
+        const cell = restored.buffer.active.getLine(1)?.getCell(0);
+        assert.ok(cell, 'second row survives serialization');
+        assert.ok(cell!.isBgPalette() && cell!.getBgColor() === 1, 'row keeps the erased background colour');
+      });
+    });
+
     describe('scroll region', () => {
       let scrollTerminal: Terminal;
       let scrollAddon: SerializeAddon;

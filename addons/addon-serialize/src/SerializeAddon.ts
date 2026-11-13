@@ -173,6 +173,13 @@ class StringSerializeHandler extends BaseSerializeHandler {
     if (this._nullCellCount > 0 && !equalBg(this._cursorStyle, this._backgroundCell)) {
       // use clear right to set background.
       this._currentRow += `\u001b[${this._nullCellCount}X`;
+      // ECH leaves the cursor at the start of the erased run. Count the row as
+      // content, or the no-scrollback fixup in _serializeString trims trailing
+      // rows that consist only of colour-erased blanks.
+      if (this._lastCursorRow === row) {
+        this._lastContentCursorRow = row;
+        this._lastContentCursorCol = this._lastCursorCol;
+      }
     }
 
     let rowSeparator = '';
