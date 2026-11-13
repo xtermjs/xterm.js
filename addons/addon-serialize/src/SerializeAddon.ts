@@ -606,6 +606,7 @@ export class SerializeAddon implements ITerminalAddon, ISerializeApi {
       : this._serializeBufferByScrollback(this._terminal, this._terminal.buffer.normal, options?.scrollback);
 
     // Alternate buffer
+    const isAlternateLast = !options?.excludeAltBuffer && this._terminal.buffer.active.type === 'alternate';
     if (!options?.excludeAltBuffer) {
       if (this._terminal.buffer.active.type === 'alternate') {
         const alternativeScreenContent = this._serializeBufferByScrollback(this._terminal, this._terminal.buffer.alternate, undefined);
@@ -615,11 +616,27 @@ export class SerializeAddon implements ITerminalAddon, ISerializeApi {
 
     // Modes and scroll region
     if (!options?.excludeModes) {
-      content += this._serializeModes(this._terminal);
-      content += this._serializeScrollRegion(this._terminal);
+      const scrollRegion = this._serializeScrollRegion(this._terminal);
+      content += this._serializeModes(this._terminal) + scrollRegion;
+      // A range of the normal buffer is written without its cursor
+      if ((isAlternateLast || !options?.range) && (scrollRegion || this._terminal.modes.originMode)) {
+        const buffer = isAlternateLast ? this._terminal.buffer.alternate : this._terminal.buffer.normal;
+        content += this._serializeCursorAfterHome(this._terminal, buffer);
+      }
     }
 
     return content;
+  }
+
+  // DECSTBM and DECOM move the cursor home, which is the top of the scroll region in origin mode
+  private _serializeCursorAfterHome(terminal: Terminal, buffer: IBuffer): string {
+    // HACK: Internal API access since scroll region is not exposed in the public API
+    const top: number = terminal.modes.originMode ? (terminal as any)._core.buffer.scrollTop : 0;
+    if (buffer.cursorY === top && buffer.cursorX === 0) {
+      return '';
+    }
+    // A cursor above the region in origin mode can't be placed, and a row below 1 isn't valid
+    return `\x1b[${Math.max(buffer.cursorY - top, 0) + 1};${buffer.cursorX + 1}H`;
   }
 
   public serializeAsHTML(options?: Partial<IHTMLSerializeOptions>): string {
