@@ -2028,6 +2028,18 @@ declare module '@xterm/xterm' {
      * @returns An IDisposable you can call to remove this handler.
      */
     registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+
+    /**
+     * Whether the parser is partway through an escape sequence (ESC, CSI, OSC,
+     * DCS, APC, SOS or PM) in the data parsed so far. Until it ends, a
+     * sequence has no effect on the buffer, apart from C0 controls inside an
+     * ESC or CSI sequence, which run as they arrive. A caller that copies the
+     * buffer, for example with the serialize addon, can use this to tell that
+     * the rest of a sequence is still to come. A character split across writes
+     * of UTF-8 bytes doesn't count. Read it in a `write` callback to get the
+     * state after that write was parsed.
+     */
+    readonly isInSequence: boolean;
   }
 
   /**

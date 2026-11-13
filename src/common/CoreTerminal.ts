@@ -56,6 +56,7 @@ export interface ICoreTerminal {
   registerEscHandler(id: IFunctionIdentifier, callback: () => boolean | Promise<boolean>): IDisposable;
   registerOscHandler(ident: number, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
   registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable;
+  readonly isParserInSequence: boolean;
 }
 
 export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
@@ -261,6 +262,11 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
   /** Add handler for APC escape sequence. See xterm.d.ts for details. */
   public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this._inputHandler.registerApcHandler(id, callback);
+  }
+
+  /** Whether the parser is partway through an escape sequence. See xterm.d.ts for details. */
+  public get isParserInSequence(): boolean {
+    return this._inputHandler.isParserInSequence;
   }
 
   protected _setup(): void {

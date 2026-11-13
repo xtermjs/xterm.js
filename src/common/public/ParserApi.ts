@@ -37,4 +37,7 @@ export class ParserApi implements IParser {
   public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     return this._core.registerApcHandler(id, callback);
   }
+  public get isInSequence(): boolean {
+    return this._core.isParserInSequence;
+  }
 }
