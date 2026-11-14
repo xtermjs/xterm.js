@@ -1,0 +1,373 @@
+{
+  "Escape +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[27;65u",
+      "REPEAT": "\u001b[27;65u",
+      "RELEASE": null
+    }
+  },
+  "F1 +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[1;65P",
+      "REPEAT": "\u001b[1;65P",
+      "RELEASE": null
+    }
+  },
+  "Insert +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[2;65~",
+      "REPEAT": "\u001b[2;65~",
+      "RELEASE": null
+    }
+  },
+  "Delete +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[3;65~",
+      "REPEAT": "\u001b[3;65~",
+      "RELEASE": null
+    }
+  },
+  "PageUp +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[5;65~",
+      "REPEAT": "\u001b[5;65~",
+      "RELEASE": null
+    }
+  },
+  "Dead (Backquote) +CapsLock": {
+    "1": {
+      "PRESS": "^",
+      "REPEAT": "^",
+      "RELEASE": null
+    }
+  },
+  "1 (Digit1) +CapsLock": {
+    "1": {
+      "PRESS": "1",
+      "REPEAT": "1",
+      "RELEASE": null
+    }
+  },
+  "\u00df (Minus) +CapsLock": {
+    "1": {
+      "PRESS": "\u1e9e",
+      "REPEAT": "\u1e9e",
+      "RELEASE": null
+    }
+  },
+  "Dead (Equal) +CapsLock": {
+    "1": {
+      "PRESS": "\u00b4",
+      "REPEAT": "\u00b4",
+      "RELEASE": null
+    }
+  },
+  "Backspace +CapsLock": {
+    "1": {
+      "PRESS": "\u007f",
+      "REPEAT": "\u007f",
+      "RELEASE": null
+    }
+  },
+  "Tab +CapsLock": {
+    "1": {
+      "PRESS": "\t",
+      "REPEAT": "\t",
+      "RELEASE": null
+    }
+  },
+  "Q (KeyQ) +CapsLock": {
+    "1": {
+      "PRESS": "Q",
+      "REPEAT": "Q",
+      "RELEASE": null
+    }
+  },
+  "\u00dc (BracketLeft) +CapsLock": {
+    "1": {
+      "PRESS": "\u00dc",
+      "REPEAT": "\u00dc",
+      "RELEASE": null
+    }
+  },
+  "+ (BracketRight) +CapsLock": {
+    "1": {
+      "PRESS": "+",
+      "REPEAT": "+",
+      "RELEASE": null
+    }
+  },
+  "Enter +CapsLock": {
+    "1": {
+      "PRESS": "\r",
+      "REPEAT": "\r",
+      "RELEASE": null
+    }
+  },
+  "\u00d6 (Semicolon) +CapsLock": {
+    "1": {
+      "PRESS": "\u00d6",
+      "REPEAT": "\u00d6",
+      "RELEASE": null
+    }
+  },
+  "\u00c4 (Quote) +CapsLock": {
+    "1": {
+      "PRESS": "\u00c4",
+      "REPEAT": "\u00c4",
+      "RELEASE": null
+    }
+  },
+  "# (Bashslash) +CapsLock": {
+    "1": {
+      "PRESS": "#",
+      "REPEAT": "#",
+      "RELEASE": null
+    }
+  },
+  "< (IntlBackslash) +CapsLock": {
+    "1": {
+      "PRESS": "<",
+      "REPEAT": "<",
+      "RELEASE": null
+    }
+  },
+  ", (Comma) +CapsLock": {
+    "1": {
+      "PRESS": ",",
+      "REPEAT": ",",
+      "RELEASE": null
+    }
+  },
+  ". (Period) +CapsLock": {
+    "1": {
+      "PRESS": ".",
+      "REPEAT": ".",
+      "RELEASE": null
+    }
+  },
+  "- (Slash) +CapsLock": {
+    "1": {
+      "PRESS": "-",
+      "REPEAT": "-",
+      "RELEASE": null
+    }
+  },
+  "ArrowUp +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[1;65A",
+      "REPEAT": "\u001b[1;65A",
+      "RELEASE": null
+    }
+  },
+  "PageDown +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[6;65~",
+      "REPEAT": "\u001b[6;65~",
+      "RELEASE": null
+    }
+  },
+  "Home +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[1;65H",
+      "REPEAT": "\u001b[1;65H",
+      "RELEASE": null
+    }
+  },
+  "End +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[1;65F",
+      "REPEAT": "\u001b[1;65F",
+      "RELEASE": null
+    }
+  },
+  "+ (NumpadAdd) +CapsLock": {
+    "1": {
+      "PRESS": "+",
+      "REPEAT": "+",
+      "RELEASE": null
+    }
+  },
+  "Enter (NumpadEnter) +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[57414;65u",
+      "REPEAT": "\u001b[57414;65u",
+      "RELEASE": null
+    }
+  },
+  "Insert (Numpad0) +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[57425;65u",
+      "REPEAT": "\u001b[57425;65u",
+      "RELEASE": null
+    }
+  },
+  "\u0000 (NumpadDecimal) +CapsLock": {
+    "1": {
+      "PRESS": "\u001b[57426;65u",
+      "REPEAT": "\u001b[57426;65u",
+      "RELEASE": null
+    }
+  },
+  "Numlock +CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "CapsLock +CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Shift (ShiftLeft) +CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Shift (ShiftRight) +CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Control (ControlLeft) +CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Meta (MetaLeft) +CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Alt (AltLeft) +CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "AltGraph (AltRight) +CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "Control (ControlRight) +CapsLock": {
+    "1": {
+      "PRESS": null,
+      "REPEAT": null,
+      "RELEASE": null
+    }
+  },
+  "/ (NumpadDivide) +NumLock": {
+    "1": {
+      "PRESS": "/",
+      "REPEAT": "/",
+      "RELEASE": null
+    }
+  },
+  "* (NumpadMultiply) +NumLock": {
+    "1": {
+      "PRESS": "*",
+      "REPEAT": "*",
+      "RELEASE": null
+    }
+  },
+  "- (NumpadSubtract) +NumLock": {
+    "1": {
+      "PRESS": "-",
+      "REPEAT": "-",
+      "RELEASE": null
+    }
+  },
+  "0 (Numpad0) +NumLock": {
+    "1": {
+      "PRESS": "0",
+      "REPEAT": "0",
+      "RELEASE": null
+    }
+  },
+  "1 (Numpad1) +NumLock": {
+    "1": {
+      "PRESS": "1",
+      "REPEAT": "1",
+      "RELEASE": null
+    }
+  },
+  "2 (Numpad2) +NumLock": {
+    "1": {
+      "PRESS": "2",
+      "REPEAT": "2",
+      "RELEASE": null
+    }
+  },
+  "3 (Numpad3) +NumLock": {
+    "1": {
+      "PRESS": "3",
+      "REPEAT": "3",
+      "RELEASE": null
+    }
+  },
+  "4 (Numpad4) +NumLock": {
+    "1": {
+      "PRESS": "4",
+      "REPEAT": "4",
+      "RELEASE": null
+    }
+  },
+  "5 (Numpad5) +NumLock": {
+    "1": {
+      "PRESS": "5",
+      "REPEAT": "5",
+      "RELEASE": null
+    }
+  },
+  "6 (Numpad6) +NumLock": {
+    "1": {
+      "PRESS": "6",
+      "REPEAT": "6",
+      "RELEASE": null
+    }
+  },
+  "7 (Numpad7) +NumLock": {
+    "1": {
+      "PRESS": "7",
+      "REPEAT": "7",
+      "RELEASE": null
+    }
+  },
+  "8 (Numpad8) +NumLock": {
+    "1": {
+      "PRESS": "8",
+      "REPEAT": "8",
+      "RELEASE": null
+    }
+  },
+  "9 (Numpad9) +NumLock": {
+    "1": {
+      "PRESS": "9",
+      "REPEAT": "9",
+      "RELEASE": null
+    }
+  },
+  ", (NumpadDecimal) +NumLock": {
+    "1": {
+      "PRESS": ",",
+      "REPEAT": ",",
+      "RELEASE": null
+    }
+  }
+}
