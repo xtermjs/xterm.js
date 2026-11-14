@@ -17,7 +17,7 @@ export const CELL_SIZE_DEFAULT: ICellSize = {
   height: 14
 };
 
-class ImageTileInfo {
+export class ImageTileInfo {
   constructor(
     public imageId = -1,
     public tileId = -1) {
@@ -141,6 +141,13 @@ export class ImageStorage implements IDisposable {
     // mark canvas to be wiped on next render
     this._needsFullClear = true;
     this._fullyCleared = false;
+  }
+
+  /**
+   * Retrieve image spec from storage.
+   */
+  public getImage(id: number): IImageSpec | undefined {
+    return this._images.get(id);
   }
 
   /**
