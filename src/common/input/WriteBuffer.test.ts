@@ -223,6 +223,22 @@ describe('WriteBuffer', () => {
       assert.deepEqual(handler.calls[2], ['b', false]);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
     });
+    it('flushSyncAttempt leaves a resolved chunk to its continuation scheduled behind setTimeout', async () => {
+      const handler = new PausingAction('a');
+      const buffer = new TestWriteBuffer(handler.action);
+      wb = buffer;
+      wb.write('a');
+      wb.write('b');
+      buffer.processOneChunk();
+      handler.resolve(true);
+      await Promise.resolve();
+      await Promise.resolve();
+      await Promise.resolve();
+      wb.flushSyncAttempt();
+      assert.deepEqual(handler.chunks, ['a']);
+      await new Promise<void>(resolve => wb.write('c', resolve));
+      assert.deepEqual(handler.calls, [['a', true], ['a', true], ['b', true], ['c', true]]);
+    });
     it('flushSyncAttempt stops at a chunk that starts an async handler', async () => {
       const handler = new PausingAction('b');
       wb = new WriteBuffer(handler.action);
