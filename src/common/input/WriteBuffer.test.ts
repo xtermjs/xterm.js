@@ -136,11 +136,11 @@ describe('WriteBuffer', () => {
       wb.writeSync('1', 10);
       assert.equal(last, '11'); // 1 + 10 sub calls = 11
     });
-    it('flushSync processes all pending writes', done => {
+    it('flushSyncAttempt processes all pending writes', done => {
       wb.write('a', () => { cbStack.push('a'); });
       wb.write('b', () => { cbStack.push('b'); });
       wb.write('c', () => { cbStack.push('c'); });
-      wb.flushSync();
+      wb.flushSyncAttempt();
       assert.deepEqual(stack, ['a', 'b', 'c']);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
       wb.write('x', () => { cbStack.push('x'); });
@@ -150,7 +150,7 @@ describe('WriteBuffer', () => {
         done();
       });
     });
-    it('flushSync after a yield does not repeat parsed chunks or callbacks', async () => {
+    it('flushSyncAttempt after a yield does not repeat parsed chunks or callbacks', async () => {
       const buffer = new TestWriteBuffer(data => { stack.push(data); });
       wb = buffer;
       wb.write('a', () => { cbStack.push('a'); });
@@ -160,7 +160,7 @@ describe('WriteBuffer', () => {
       assert.deepEqual(stack, ['a']);
       assert.deepEqual(cbStack, ['a']);
 
-      wb.flushSync();
+      wb.flushSyncAttempt();
       assert.deepEqual(stack, ['a', toBytes('b'), 'c']);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
       // Let the previously scheduled continuation run before a new write can replace it.
@@ -171,11 +171,11 @@ describe('WriteBuffer', () => {
       assert.deepEqual(stack, ['a', toBytes('b'), 'c', 'd']);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
     });
-    it('flushSync from a write callback does not repeat parsed chunks or callbacks', async () => {
+    it('flushSyncAttempt from a write callback does not repeat parsed chunks or callbacks', async () => {
       await new Promise<void>(resolve => {
         wb.write('a', () => {
           cbStack.push('a');
-          wb.flushSync();
+          wb.flushSyncAttempt();
         });
         wb.write('b', () => {
           cbStack.push('b');
@@ -187,26 +187,26 @@ describe('WriteBuffer', () => {
       await new Promise<void>(resolve => wb.write('c', resolve));
       assert.deepEqual(stack, ['a', 'b', 'c']);
     });
-    it('flushSync processes empty chunks and their callbacks', () => {
+    it('flushSyncAttempt processes empty chunks and their callbacks', () => {
       wb.write('a', () => { cbStack.push('a'); });
       wb.write('', () => { cbStack.push('empty string'); });
       wb.write(new Uint8Array(0), () => { cbStack.push('empty bytes'); });
       wb.write('b', () => { cbStack.push('b'); });
-      wb.flushSync();
+      wb.flushSyncAttempt();
       assert.deepEqual(stack, ['a', '', new Uint8Array(0), 'b']);
       assert.deepEqual(cbStack, ['a', 'empty string', 'empty bytes', 'b']);
     });
-    it('flushSync includes writes queued by a callback', () => {
+    it('flushSyncAttempt includes writes queued by a callback', () => {
       wb.write('a', () => {
         cbStack.push('a');
         wb.write('c', () => { cbStack.push('c'); });
       });
       wb.write('b', () => { cbStack.push('b'); });
-      wb.flushSync();
+      wb.flushSyncAttempt();
       assert.deepEqual(stack, ['a', 'b', 'c']);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
     });
-    it('flushSync leaves a chunk paused in an async handler to its continuation', async () => {
+    it('flushSyncAttempt leaves a chunk paused in an async handler to its continuation', async () => {
       const handler = new PausingAction('b');
       wb = new WriteBuffer(handler.action);
       wb.write('a', () => { cbStack.push('a'); });
@@ -214,7 +214,7 @@ describe('WriteBuffer', () => {
       wb.write('c', () => { cbStack.push('c'); });
       await new Promise<void>(resolve => setTimeout(resolve, 0));
       assert.deepEqual(handler.chunks, ['a', 'b']);
-      wb.flushSync();
+      wb.flushSyncAttempt();
       assert.deepEqual(handler.chunks, ['a', 'b']);
       assert.deepEqual(cbStack, ['a']);
       handler.resolve(false);
@@ -223,13 +223,13 @@ describe('WriteBuffer', () => {
       assert.deepEqual(handler.calls[2], ['b', false]);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
     });
-    it('flushSync stops at a chunk that starts an async handler', async () => {
+    it('flushSyncAttempt stops at a chunk that starts an async handler', async () => {
       const handler = new PausingAction('b');
       wb = new WriteBuffer(handler.action);
       wb.write('a', () => { cbStack.push('a'); });
       wb.write('b', () => { cbStack.push('b'); });
       wb.write('c', () => { cbStack.push('c'); });
-      wb.flushSync();
+      wb.flushSyncAttempt();
       assert.deepEqual(handler.chunks, ['a', 'b']);
       assert.deepEqual(cbStack, ['a']);
       await new Promise<void>(resolve => setTimeout(resolve, 0));
@@ -240,12 +240,12 @@ describe('WriteBuffer', () => {
       assert.deepEqual(handler.calls[2], ['b', true]);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
     });
-    it('flushSync from a write callback leaves a chunk it paused to the async write loop', async () => {
+    it('flushSyncAttempt from a write callback leaves a chunk it paused to the async write loop', async () => {
       const handler = new PausingAction('b');
       wb = new WriteBuffer(handler.action);
       wb.write('a', () => {
         cbStack.push('a');
-        wb.flushSync();
+        wb.flushSyncAttempt();
       });
       wb.write('b', () => { cbStack.push('b'); });
       wb.write('c', () => { cbStack.push('c'); });
@@ -258,11 +258,11 @@ describe('WriteBuffer', () => {
       assert.deepEqual(handler.calls[2], ['b', true]);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
     });
-    it('a write loop scheduled before flushSync does not resume a later paused chunk', async () => {
+    it('a write loop scheduled before flushSyncAttempt does not resume a later paused chunk', async () => {
       const handler = new PausingAction('b');
       wb = new WriteBuffer(handler.action);
       wb.write('a');
-      wb.flushSync();
+      wb.flushSyncAttempt();
       wb.handleUserInput();
       wb.write('b', () => { cbStack.push('b'); });
       await new Promise<void>(resolve => setTimeout(resolve, 0));
@@ -273,24 +273,24 @@ describe('WriteBuffer', () => {
       assert.deepEqual(handler.calls[2], ['b', true]);
       assert.deepEqual(cbStack, ['b']);
     });
-    it('flushSync with no pending writes is a no-op', () => {
-      wb.flushSync();
+    it('flushSyncAttempt with no pending writes is a no-op', () => {
+      wb.flushSyncAttempt();
       assert.deepEqual(stack, []);
       assert.deepEqual(cbStack, []);
     });
-    it('flushSync fires onWriteParsed', () => {
+    it('flushSyncAttempt fires onWriteParsed', () => {
       let parsed = 0;
       wb.onWriteParsed(() => parsed++);
       wb.write('a');
       wb.write('b');
       assert.equal(parsed, 0);
-      wb.flushSync();
+      wb.flushSyncAttempt();
       assert.equal(parsed, 1);
     });
-    it('flushSync with no pending writes does not fire onWriteParsed', () => {
+    it('flushSyncAttempt with no pending writes does not fire onWriteParsed', () => {
       let parsed = 0;
       wb.onWriteParsed(() => parsed++);
-      wb.flushSync();
+      wb.flushSyncAttempt();
       assert.equal(parsed, 0);
     });
     it('dispose cancels scheduled innerWrite', done => {
@@ -345,10 +345,10 @@ describe('WriteBuffer', () => {
       wb.write('a');
       assert.deepEqual(stack, ['a']);
     });
-    it('flushSync after dispose is a no-op', done => {
+    it('flushSyncAttempt after dispose is a no-op', done => {
       wb.write('a');
       wb.dispose();
-      wb.flushSync();
+      wb.flushSyncAttempt();
       setTimeout(() => {
         assert.deepEqual(stack, []);
         done();

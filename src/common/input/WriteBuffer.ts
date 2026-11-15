@@ -73,7 +73,7 @@ export class WriteBuffer extends Disposable {
    * the async write loop once the handler's promise settles, so writes can still
    * be pending when this returns.
    */
-  public flushSync(): void {
+  public flushSyncAttempt(): void {
     if (this._store.isDisposed) {
       return;
     }
@@ -300,7 +300,7 @@ export class WriteBuffer extends Disposable {
 
   /**
    * Resumes the paused chunk at `_bufferOffset` with the handler's result once
-   * `result` settles. Until then the write loop and `flushSync` leave the queue alone.
+   * `result` settles. Until then the write loop and `flushSyncAttempt` leave the queue alone.
    */
   private _resumeAfterAsyncHandler(result: Promise<boolean>, startTime: number): void {
     this._isAwaitingAsyncHandler = true;

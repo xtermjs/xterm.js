@@ -194,7 +194,7 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
 
     // Parse queued writes first so output written for the old size is applied with it. This
     // stops at a pending async parser handler, whose chunk resumes after the resize.
-    this._writeBuffer.flushSync();
+    this._writeBuffer.flushSyncAttempt();
 
     this._bufferService.resize(x, y);
   }
