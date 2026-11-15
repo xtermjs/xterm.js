@@ -41,8 +41,7 @@ export class WriteBuffer extends Disposable {
   private _isSyncWriting = false;
   private _syncCalls = 0;
   private _didUserInput = false;
-  // Set while the chunk at _bufferOffset is paused in an async parser handler. Only that
-  // handler's continuation may resume the parser, so no other path may feed it meanwhile.
+  // Set while the chunk at _bufferOffset waits on an async parser handler.
   private _isAwaitingAsyncHandler = false;
 
   private readonly _innerWriteTimer = this._register(new TimeoutTimer());
@@ -64,14 +63,12 @@ export class WriteBuffer extends Disposable {
   }
 
   /**
-   * Parses pending writes synchronously. This is useful when you need queued
-   * data to be processed before performing an operation that depends upon it,
-   * like resize.
+   * Flushes all pending writes synchronously. This is useful when you need to
+   * ensure all queued data is processed before performing an operation that
+   * depends upon everything being parsed like resize.
    *
-   * Parsing stops at a chunk whose async parser handler is pending, including
-   * one started by this flush. That chunk and the writes after it are resumed by
-   * the async write loop once the handler's promise settles, so writes can still
-   * be pending when this returns.
+   * Note: With async parser handlers this stops at the first returned promise.
+   * The async write loop resumes from there once it settles.
    */
   public flushSyncAttempt(): void {
     if (this._store.isDisposed) {
@@ -94,7 +91,7 @@ export class WriteBuffer extends Disposable {
       const data = this._writeBuffer[this._bufferOffset];
       const result = this._action(data);
       if (result) {
-        // A scheduled _innerWrite would feed the paused parser before the handler settles.
+        // Keep a scheduled _innerWrite from feeding the paused parser.
         this._innerWriteTimer.cancel();
         this._resumeAfterAsyncHandler(result, startTime);
         isPaused = true;
@@ -271,7 +268,7 @@ export class WriteBuffer extends Disposable {
       this._bufferOffset++;
       this._pendingData -= data.length;
       if (cb) cb();
-      // A flush from the callback may have paused the parser in an async handler.
+      // A flush in the callback may have paused the parser.
       if (this._isAwaitingAsyncHandler) {
         return;
       }
@@ -299,8 +296,7 @@ export class WriteBuffer extends Disposable {
   }
 
   /**
-   * Resumes the paused chunk at `_bufferOffset` with the handler's result once
-   * `result` settles. Until then the write loop and `flushSyncAttempt` leave the queue alone.
+   * Resumes the chunk at `_bufferOffset` once its async handler's `result` settles.
    */
   private _resumeAfterAsyncHandler(result: Promise<boolean>, startTime: number): void {
     this._isAwaitingAsyncHandler = true;
