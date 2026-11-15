@@ -41,6 +41,9 @@ export class WriteBuffer extends Disposable {
   private _isSyncWriting = false;
   private _syncCalls = 0;
   private _didUserInput = false;
+  // Set while the chunk at _bufferOffset is paused in an async parser handler. Only that
+  // handler's continuation may resume the parser, so no other path may feed it meanwhile.
+  private _isAwaitingAsyncHandler = false;
 
   private readonly _innerWriteTimer = this._register(new TimeoutTimer());
   private readonly _onWriteParsed = this._register(new Emitter<void>());
@@ -61,12 +64,14 @@ export class WriteBuffer extends Disposable {
   }
 
   /**
-   * Flushes all pending writes synchronously. This is useful when you need to
-   * ensure all queued data is processed before performing an operation that
-   * depends upon everything being parsed like resize.
+   * Parses pending writes synchronously. This is useful when you need queued
+   * data to be processed before performing an operation that depends upon it,
+   * like resize.
    *
-   * Note: This is unreliable with async parser handlers as it does not wait for
-   * promises to resolve.
+   * Parsing stops at a chunk whose async parser handler is pending, including
+   * one started by this flush. That chunk and the writes after it are resumed by
+   * the async write loop once the handler's promise settles, so writes can still
+   * be pending when this returns.
    */
   public flushSync(): void {
     if (this._store.isDisposed) {
@@ -76,22 +81,39 @@ export class WriteBuffer extends Disposable {
     if (this._isSyncWriting) {
       return;
     }
+    if (this._isAwaitingAsyncHandler) {
+      return;
+    }
     this._isSyncWriting = true;
+    const startTime = performance.now();
 
     // _innerWrite leaves parsed chunks before _bufferOffset when it yields.
     let didProcess = false;
+    let isPaused = false;
     while (this._bufferOffset < this._writeBuffer.length) {
+      const data = this._writeBuffer[this._bufferOffset];
+      const result = this._action(data);
+      if (result) {
+        // A scheduled _innerWrite would feed the paused parser before the handler settles.
+        this._innerWriteTimer.cancel();
+        this._resumeAfterAsyncHandler(result, startTime);
+        isPaused = true;
+        break;
+      }
       didProcess = true;
-      this._action(this._writeBuffer[this._bufferOffset]);
       const cb = this._callbacks[this._bufferOffset++];
+      this._pendingData -= data.length;
       if (cb) cb();
     }
 
-    // Reset buffer state
-    this._pendingData = 0;
-    this._bufferOffset = 0x7FFFFFFF;
-    this._writeBuffer.length = 0;
-    this._callbacks.length = 0;
+    if (!isPaused) {
+      // Reset buffer state
+      this._innerWriteTimer.cancel();
+      this._pendingData = 0;
+      this._bufferOffset = 0x7FFFFFFF;
+      this._writeBuffer.length = 0;
+      this._callbacks.length = 0;
+    }
 
     this._isSyncWriting = false;
     if (didProcess) {
@@ -219,6 +241,7 @@ export class WriteBuffer extends Disposable {
     if (this._store.isDisposed) {
       return;
     }
+    this._isAwaitingAsyncHandler = false;
     const startTime = lastTime || performance.now();
     while (this._writeBuffer.length > this._bufferOffset) {
       const data = this._writeBuffer[this._bufferOffset];
@@ -239,50 +262,7 @@ export class WriteBuffer extends Disposable {
          * Exceptions on async handlers will be logged to console async, but do not interrupt
          * the input processing (continues with next handler at the current input position).
          */
-
-        /**
-         * If a promise takes long to resolve, we should schedule continuation behind setTimeout.
-         * This might already be too late, if our .then enters really late (executor + prev thens
-         * took very long). This cannot be solved here for the handler itself (it is the handlers
-         * responsibility to slice hard work), but we can at least schedule a screen update as we
-         * gain control.
-         */
-        const continuation: (r: boolean) => void = (r: boolean) => {
-          if (this._store.isDisposed) {
-            return;
-          }
-          if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
-            this._scheduleInnerWrite(0, r);
-          } else {
-            this._innerWrite(startTime, r);
-          }
-        };
-
-        /**
-         * Optimization considerations:
-         * The continuation above favors FPS over throughput by eval'ing `startTime` on resolve.
-         * This might schedule too many screen updates with bad throughput drops (in case a slow
-         * resolving handler sliced its work properly behind setTimeout calls). We cannot spot
-         * this condition here, also the renderer has no way to spot nonsense updates either.
-         * FIXME: A proper fix for this would track the FPS at the renderer entry level separately.
-         *
-         * If favoring of FPS shows bad throughput impact, use the following instead. It favors
-         * throughput by eval'ing `startTime` upfront pulling at least one more chunk into the
-         * current microtask queue (executed before setTimeout).
-         */
-        // const continuation: (r: boolean) => void = performance.now() - startTime >=
-        //     Constants.WRITE_TIMEOUT_MS
-        //   ? r => setTimeout(() => this._innerWrite(0, r))
-        //   : r => this._innerWrite(startTime, r);
-
-        // Handle exceptions synchronously to current band position, idea:
-        // 1. spawn a single microtask which we allow to throw hard
-        // 2. spawn a promise immediately resolving to `true`
-        // (executed on the same queue, thus properly aligned before continuation happens)
-        result.catch(err => {
-          queueMicrotask(() => {throw err;});
-          return Promise.resolve(false);
-        }).then(continuation);
+        this._resumeAfterAsyncHandler(result, startTime);
         return;
       }
 
@@ -291,6 +271,10 @@ export class WriteBuffer extends Disposable {
       this._bufferOffset++;
       this._pendingData -= data.length;
       if (cb) cb();
+      // A flush from the callback may have paused the parser in an async handler.
+      if (this._isAwaitingAsyncHandler) {
+        return;
+      }
 
       if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
         break;
@@ -312,5 +296,57 @@ export class WriteBuffer extends Disposable {
       this._bufferOffset = 0;
     }
     this._onWriteParsed.fire();
+  }
+
+  /**
+   * Resumes the paused chunk at `_bufferOffset` with the handler's result once
+   * `result` settles. Until then the write loop and `flushSync` leave the queue alone.
+   */
+  private _resumeAfterAsyncHandler(result: Promise<boolean>, startTime: number): void {
+    this._isAwaitingAsyncHandler = true;
+
+    /**
+     * If a promise takes long to resolve, we should schedule continuation behind setTimeout.
+     * This might already be too late, if our .then enters really late (executor + prev thens
+     * took very long). This cannot be solved here for the handler itself (it is the handlers
+     * responsibility to slice hard work), but we can at least schedule a screen update as we
+     * gain control.
+     */
+    const continuation: (r: boolean) => void = (r: boolean) => {
+      if (this._store.isDisposed) {
+        return;
+      }
+      if (performance.now() - startTime >= Constants.WRITE_TIMEOUT_MS) {
+        this._scheduleInnerWrite(0, r);
+      } else {
+        this._innerWrite(startTime, r);
+      }
+    };
+
+    /**
+     * Optimization considerations:
+     * The continuation above favors FPS over throughput by eval'ing `startTime` on resolve.
+     * This might schedule too many screen updates with bad throughput drops (in case a slow
+     * resolving handler sliced its work properly behind setTimeout calls). We cannot spot
+     * this condition here, also the renderer has no way to spot nonsense updates either.
+     * FIXME: A proper fix for this would track the FPS at the renderer entry level separately.
+     *
+     * If favoring of FPS shows bad throughput impact, use the following instead. It favors
+     * throughput by eval'ing `startTime` upfront pulling at least one more chunk into the
+     * current microtask queue (executed before setTimeout).
+     */
+    // const continuation: (r: boolean) => void = performance.now() - startTime >=
+    //     Constants.WRITE_TIMEOUT_MS
+    //   ? r => setTimeout(() => this._innerWrite(0, r))
+    //   : r => this._innerWrite(startTime, r);
+
+    // Handle exceptions synchronously to current band position, idea:
+    // 1. spawn a single microtask which we allow to throw hard
+    // 2. spawn a promise immediately resolving to `true`
+    // (executed on the same queue, thus properly aligned before continuation happens)
+    result.catch(err => {
+      queueMicrotask(() => {throw err;});
+      return Promise.resolve(false);
+    }).then(continuation);
   }
 }

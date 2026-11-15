@@ -24,6 +24,28 @@ class TestWriteBuffer extends WriteBuffer {
   }
 }
 
+class PausingAction {
+  public readonly calls: [string | Uint8Array, boolean | undefined][] = [];
+  private _resolve: ((value: boolean) => void) | undefined;
+
+  constructor(private readonly _pausedChunk: string) {}
+
+  public readonly action = (data: string | Uint8Array, promiseResult?: boolean): void | Promise<boolean> => {
+    this.calls.push([data, promiseResult]);
+    if (data === this._pausedChunk && !this._resolve) {
+      return new Promise<boolean>(resolve => { this._resolve = resolve; });
+    }
+  };
+
+  public get chunks(): (string | Uint8Array)[] {
+    return this.calls.map(call => call[0]);
+  }
+
+  public resolve(value: boolean): void {
+    this._resolve!(value);
+  }
+}
+
 describe('WriteBuffer', () => {
   let wb: WriteBuffer;
   let stack: (string | Uint8Array)[] = [];
@@ -183,6 +205,73 @@ describe('WriteBuffer', () => {
       wb.flushSync();
       assert.deepEqual(stack, ['a', 'b', 'c']);
       assert.deepEqual(cbStack, ['a', 'b', 'c']);
+    });
+    it('flushSync leaves a chunk paused in an async handler to its continuation', async () => {
+      const handler = new PausingAction('b');
+      wb = new WriteBuffer(handler.action);
+      wb.write('a', () => { cbStack.push('a'); });
+      wb.write('b', () => { cbStack.push('b'); });
+      wb.write('c', () => { cbStack.push('c'); });
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      assert.deepEqual(handler.chunks, ['a', 'b']);
+      wb.flushSync();
+      assert.deepEqual(handler.chunks, ['a', 'b']);
+      assert.deepEqual(cbStack, ['a']);
+      handler.resolve(false);
+      await new Promise<void>(resolve => wb.write('d', resolve));
+      assert.deepEqual(handler.chunks, ['a', 'b', 'b', 'c', 'd']);
+      assert.deepEqual(handler.calls[2], ['b', false]);
+      assert.deepEqual(cbStack, ['a', 'b', 'c']);
+    });
+    it('flushSync stops at a chunk that starts an async handler', async () => {
+      const handler = new PausingAction('b');
+      wb = new WriteBuffer(handler.action);
+      wb.write('a', () => { cbStack.push('a'); });
+      wb.write('b', () => { cbStack.push('b'); });
+      wb.write('c', () => { cbStack.push('c'); });
+      wb.flushSync();
+      assert.deepEqual(handler.chunks, ['a', 'b']);
+      assert.deepEqual(cbStack, ['a']);
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      assert.deepEqual(handler.chunks, ['a', 'b']);
+      handler.resolve(true);
+      await new Promise<void>(resolve => wb.write('d', resolve));
+      assert.deepEqual(handler.chunks, ['a', 'b', 'b', 'c', 'd']);
+      assert.deepEqual(handler.calls[2], ['b', true]);
+      assert.deepEqual(cbStack, ['a', 'b', 'c']);
+    });
+    it('flushSync from a write callback leaves a chunk it paused to the async write loop', async () => {
+      const handler = new PausingAction('b');
+      wb = new WriteBuffer(handler.action);
+      wb.write('a', () => {
+        cbStack.push('a');
+        wb.flushSync();
+      });
+      wb.write('b', () => { cbStack.push('b'); });
+      wb.write('c', () => { cbStack.push('c'); });
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      assert.deepEqual(handler.chunks, ['a', 'b']);
+      assert.deepEqual(cbStack, ['a']);
+      handler.resolve(true);
+      await new Promise<void>(resolve => wb.write('d', resolve));
+      assert.deepEqual(handler.chunks, ['a', 'b', 'b', 'c', 'd']);
+      assert.deepEqual(handler.calls[2], ['b', true]);
+      assert.deepEqual(cbStack, ['a', 'b', 'c']);
+    });
+    it('a write loop scheduled before flushSync does not resume a later paused chunk', async () => {
+      const handler = new PausingAction('b');
+      wb = new WriteBuffer(handler.action);
+      wb.write('a');
+      wb.flushSync();
+      wb.handleUserInput();
+      wb.write('b', () => { cbStack.push('b'); });
+      await new Promise<void>(resolve => setTimeout(resolve, 0));
+      assert.deepEqual(handler.chunks, ['a', 'b']);
+      handler.resolve(true);
+      await new Promise<void>(resolve => wb.write('c', resolve));
+      assert.deepEqual(handler.chunks, ['a', 'b', 'b', 'c']);
+      assert.deepEqual(handler.calls[2], ['b', true]);
+      assert.deepEqual(cbStack, ['b']);
     });
     it('flushSync with no pending writes is a no-op', () => {
       wb.flushSync();
