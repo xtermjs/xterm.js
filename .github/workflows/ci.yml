@@ -261,8 +261,6 @@ jobs:
     - name: Install dependencies
       run: |
         npm ci
-    - name: Install playwright
-      run: npx playwright install
     - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
       with:
         name: build-artifacts
