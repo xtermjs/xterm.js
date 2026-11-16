@@ -459,6 +459,13 @@ export class KittyKeyboard {
       return result;
     }
 
+    // <Ctrl> or <Shift> + <Insert> are copy/paste shortcuts on some systems. Match the legacy
+    // encoder: send no key and do not cancel the event, for any active flags, so a press that was
+    // not reported has no release either.
+    if (ev.key === 'Insert' && (ev.shiftKey || ev.ctrlKey)) {
+      return result;
+    }
+
     const tildeCode = this._csiTildeKeys[ev.key];
     if (tildeCode !== undefined) {
       result.key = this._buildCsiTildeSequence(tildeCode, modifiers, eventType, reportEventTypes);
