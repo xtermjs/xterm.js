@@ -857,12 +857,20 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._keyDownSeen = true;
     }
 
+    // Ignore composing with Alt key on Mac when macOptionIsMeta is enabled
+    const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
+
+    // An IME can commit its text just before the keydown of the key that ended the composition
+    // (eg. Shift+Enter with the macOS Korean IME), and the committed text is only sent a tick
+    // later. Send it now so a key the custom handler acts on (eg. a keybinding writing a newline)
+    // comes after it.
+    if (!shouldIgnoreComposition) {
+      this._compositionHelper!.flushCommittedComposition(event);
+    }
+
     if (this._customKeyEventHandler && this._customKeyEventHandler(event) === false) {
       return false;
     }
-
-    // Ignore composing with Alt key on Mac when macOptionIsMeta is enabled
-    const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
 
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {

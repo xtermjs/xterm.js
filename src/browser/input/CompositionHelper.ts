@@ -13,6 +13,14 @@ interface IPosition {
 }
 
 /**
+ * Whether a keydown leaves an in-progress composition alone: the "composition character" (229),
+ * CapsLock (20) or a modifier key (16-18).
+ */
+function continuesComposition(ev: KeyboardEvent): boolean {
+  return ev.keyCode === 229 || ev.keyCode === 20 || ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18;
+}
+
+/**
  * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
  * events, displaying the in-progress composition to the UI and forwarding the final composition
  * to the handler.
@@ -46,6 +54,12 @@ export class CompositionHelper {
    * Data already sent due to keydown event.
    */
   private _dataAlreadySent: string;
+
+  /**
+   * Sends the text of the last ended composition, scheduled by {@link _finalizeComposition}. It
+   * does nothing once that text has been sent.
+   */
+  private _sendCommittedComposition?: () => void;
 
   /**
    * The pending textarea change timer, if any.
@@ -114,13 +128,7 @@ export class CompositionHelper {
    */
   public keydown(ev: KeyboardEvent): boolean {
     if (this._isComposing || this._isSendingComposition) {
-      if (ev.keyCode === 20 || ev.keyCode === 229) {
-        // 20 is CapsLock, 229 is Enter
-        // Continue composing if the keyCode is the "composition character"
-        return false;
-      }
-      if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
-        // Continue composing if the keyCode is a modifier key
+      if (continuesComposition(ev)) {
         return false;
       }
       // Finish composition immediately. This is mainly here for the case where enter is
@@ -136,6 +144,18 @@ export class CompositionHelper {
     }
 
     return true;
+  }
+
+  /**
+   * Sends a composition that has ended but whose text is still waiting to be sent, without waiting
+   * for the timeout. This lets a key handled before the terminal sees it, such as an embedder's
+   * keybinding, act after the text the IME committed instead of before it.
+   * @param ev The keydown event.
+   */
+  public flushCommittedComposition(ev: KeyboardEvent): void {
+    if (this._isSendingComposition && !this._isComposing && !continuesComposition(ev)) {
+      this._sendCommittedComposition?.();
+    }
   }
 
   /**
@@ -173,7 +193,7 @@ export class CompositionHelper {
       //   the character, a counter example being Korean where an ending consonsant can move to
       //   the following character if the following input is a vowel.
       this._isSendingComposition = true;
-      setTimeout(() => {
+      this._sendCommittedComposition = () => {
         // Ensure that the input has not already been sent
         if (this._isSendingComposition) {
           this._isSendingComposition = false;
@@ -199,7 +219,8 @@ export class CompositionHelper {
             this._coreService.triggerDataEvent(input, true);
           }
         }
-      }, 0);
+      };
+      setTimeout(this._sendCommittedComposition, 0);
     }
   }
 

@@ -206,6 +206,19 @@ describe('Terminal', () => {
       assert.equal(term.keyDown(evKeyDown), false);
       assert.equal(term.keyPress(evKeyPress), false);
     });
+
+    it('should send an ended IME composition before calling the handler', () => {
+      const calls: string[] = [];
+      const compositionHelper = new MockCompositionHelper();
+      compositionHelper.flushCommittedComposition = () => { calls.push('flush'); };
+      (term as any)._compositionHelper = compositionHelper;
+      term.attachCustomKeyEventHandler(() => {
+        calls.push('handler');
+        return false;
+      });
+      assert.equal(term.keyDown({ ...evKeyDown, keyCode: 13, key: 'Enter', shiftKey: true }), false);
+      assert.deepEqual(calls, ['flush', 'handler']);
+    });
   });
 
   describe('clear', () => {

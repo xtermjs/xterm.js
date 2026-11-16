@@ -260,4 +260,51 @@ describe('CompositionHelper', () => {
       }, 0);
     });
   });
+
+  describe('flushCommittedComposition', () => {
+    it('Should send an ended composition right away, and only once', (done) => {
+      textarea.value = '안녕하세';
+      textarea.selectionStart = textarea.selectionEnd = 4;
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: '고' });
+      textarea.value = '안녕하세고';
+      setTimeout(() => { // wait for any textarea updates
+        compositionHelper.compositionend();
+        // Shift+Enter arriving right after the IME committed '고'
+        compositionHelper.flushCommittedComposition({ keyCode: 13 } as KeyboardEvent);
+        assert.equal(handledText, '고');
+        setTimeout(() => { // the delayed send must not send it again
+          assert.equal(handledText, '고');
+          done();
+        }, 0);
+      }, 0);
+    });
+
+    it('Should leave a composition key or modifier key to the delayed send', (done) => {
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: '고' });
+      textarea.value = '고';
+      setTimeout(() => { // wait for any textarea updates
+        compositionHelper.compositionend();
+        compositionHelper.flushCommittedComposition({ keyCode: 229 } as KeyboardEvent);
+        compositionHelper.flushCommittedComposition({ keyCode: 16 } as KeyboardEvent);
+        assert.equal(handledText, '');
+        setTimeout(() => { // wait for any textarea updates
+          assert.equal(handledText, '고');
+          done();
+        }, 0);
+      }, 0);
+    });
+
+    it('Should not send a composition that is still in progress', (done) => {
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: '고' });
+      textarea.value = '고';
+      setTimeout(() => { // wait for any textarea updates
+        compositionHelper.flushCommittedComposition({ keyCode: 13 } as KeyboardEvent);
+        assert.equal(handledText, '');
+        done();
+      }, 0);
+    });
+  });
 });
