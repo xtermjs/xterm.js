@@ -308,6 +308,13 @@ declare module '@xterm/xterm' {
     theme?: ITheme;
 
     /**
+     * Enable VT-compatible, display-relative cursor save/restore for
+     * DECSC/DECRC (`ESC 7`/`ESC 8`) and SCOSC/SCORC (`CSI s`/`CSI u`).
+     * The default is false to preserve legacy document-relative behavior.
+     */
+    useVtCompatibleCursorSave?: boolean;
+
+    /**
      * Enable various VT extensions.
      */
     vtExtensions?: IVtExtensions;
@@ -457,6 +464,7 @@ declare module '@xterm/xterm' {
      * modern terminals. Note that DECRQM works regardless of this option.
      */
     allowSetCursorBlink?: boolean;
+
   }
 
   /**
