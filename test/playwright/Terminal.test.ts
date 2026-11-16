@@ -666,6 +666,7 @@ test.describe('API Integration Tests', () => {
         applicationKeypadMode: false,
         bracketedPasteMode: false,
         insertMode: false,
+        mouseEncoding: 'default',
         mouseTrackingMode: 'none',
         originMode: false,
         reverseWraparoundMode: false,
@@ -699,6 +700,16 @@ test.describe('API Integration Tests', () => {
       strictEqual((await ctx.proxy.modes).insertMode, true);
       await ctx.proxy.write('\x1b[4l');
       strictEqual((await ctx.proxy.modes).insertMode, false);
+    });
+    test('mouseEncoding', async () => {
+      await ctx.proxy.write('\x1b[?1006h');
+      strictEqual((await ctx.proxy.modes).mouseEncoding, 'sgr');
+      await ctx.proxy.write('\x1b[?1006l');
+      strictEqual((await ctx.proxy.modes).mouseEncoding, 'default');
+      await ctx.proxy.write('\x1b[?1016h');
+      strictEqual((await ctx.proxy.modes).mouseEncoding, 'sgr-pixels');
+      await ctx.proxy.write('\x1b[?1016l');
+      strictEqual((await ctx.proxy.modes).mouseEncoding, 'default');
     });
     test('mouseTrackingMode', async () => {
       await ctx.proxy.write('\x1b[?9h');
