@@ -259,5 +259,52 @@ describe('CompositionHelper', () => {
         }, 0);
       }, 0);
     });
+
+    it('Should not drop a queued composition when a non-composition key ends a later one', (done) => {
+      // Typing 니 then 다 then '.' quickly. Under load the browser delivers input events in
+      // bursts, so a second composition can start *and* finish before the first one's deferred
+      // send gets a turn, leaving two sends outstanding at once.
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: '니' });
+      textarea.value = '니';
+      setTimeout(() => { // wait for any textarea updates
+        // 니 finishes — its send is queued, its timer has not run yet.
+        compositionHelper.compositionend();
+
+        // 다 starts and finishes in the same tick, before that timer fires.
+        compositionHelper.compositionstart();
+        compositionHelper.compositionupdate({ data: '다' });
+        textarea.value = '니다';
+        compositionHelper.compositionend();
+
+        // '.' is not a composition character, so it takes the synchronous path. This used to
+        // clear the single shared flag and cancel *both* pending sends, dropping 니 silently.
+        compositionHelper.keydown({ keyCode: 190 } as KeyboardEvent);
+
+        setTimeout(() => { // wait for any textarea updates
+          assert.equal(handledText, '니다');
+          done();
+        }, 0);
+      }, 0);
+    });
+
+    it('Should send an in-progress composition interrupted by a non-composition key', (done) => {
+      textarea.selectionStart = 0;
+      textarea.selectionEnd = 0;
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: '가' });
+      textarea.value = '가';
+      textarea.selectionStart = 1;
+      textarea.selectionEnd = 1;
+
+      // Space arrives before the compositionupdate's 0ms timer has run, so
+      // _compositionPosition.end is still equal to .start and the slice would be empty.
+      compositionHelper.keydown({ keyCode: 32 } as KeyboardEvent);
+
+      setTimeout(() => { // wait for any textarea updates
+        assert.equal(handledText, '가');
+        done();
+      }, 0);
+    });
   });
 });
