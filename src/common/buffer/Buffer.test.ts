@@ -119,6 +119,40 @@ describe('Buffer', () => {
           assert.equal(buffer.lines.get(i)!.length, INIT_COLS / 2);
         }
       });
+      it('should trim the data in a buffer without scrollback (reflow disabled)', () => {
+        buffer = new TestBuffer(false, optionsService, bufferService, new MockLogService());
+        buffer.fillViewportRows();
+        buffer.lines.get(0)!.setCellFromCodepoint(INIT_COLS - 1, 'x'.charCodeAt(0), 1, DEFAULT_ATTR_DATA);
+        buffer.resize(INIT_COLS / 2, INIT_ROWS);
+        assert.equal(buffer.lines.length, INIT_ROWS);
+        for (let i = 0; i < INIT_ROWS; i++) {
+          assert.equal(buffer.lines.get(i)!.length, INIT_COLS / 2);
+        }
+        assert.equal(buffer.lines.get(0)!.translateToString(true), '');
+      });
+      it('should trim the data in a buffer with scrollback if reflow is disabled by windowsPty', () => {
+        optionsService.options.windowsPty = { backend: 'conpty', buildNumber: 19000 };
+        buffer.fillViewportRows();
+        buffer.resize(INIT_COLS / 2, INIT_ROWS);
+        assert.equal(buffer.lines.length, INIT_ROWS);
+        for (let i = 0; i < INIT_ROWS; i++) {
+          assert.equal(buffer.lines.get(i)!.length, INIT_COLS / 2);
+        }
+      });
+      it('should reset a wide char cut off by the new last column if reflow is disabled', () => {
+        buffer = new TestBuffer(false, optionsService, bufferService, new MockLogService());
+        buffer.fillViewportRows();
+        const half = INIT_COLS / 2;
+        // wide char with its left half on the new last column
+        buffer.lines.get(0)!.setCellFromCodepoint(half - 1, 0x4E2D, 2, DEFAULT_ATTR_DATA);
+        buffer.lines.get(0)!.setCellFromCodepoint(half, 0, 0, DEFAULT_ATTR_DATA);
+        buffer.resize(half, INIT_ROWS);
+        const line = buffer.lines.get(0)!;
+        assert.equal(line.length, half);
+        assert.equal(line.getWidth(half - 1), 1);
+        assert.equal(line.getCodePoint(half - 1), 0);
+        assert.equal(line.translateToString(true), '');
+      });
     });
 
     describe('column size is increased', () => {
