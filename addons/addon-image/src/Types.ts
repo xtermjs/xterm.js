@@ -106,4 +106,6 @@ export interface IImageSpec {
   bufferType: 'alternate' | 'normal';
   layer: ImageLayer;
   zIndex: number;
+  // Not written to cells, drawn wherever placeholder cells reference it (kitty U=1).
+  virtual?: boolean;
 }
