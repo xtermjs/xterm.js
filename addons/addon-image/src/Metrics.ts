@@ -3,14 +3,9 @@
  * @license MIT
  */
 
+import { IMetrics } from './Types';
 
-export type ImageType = 'image/png' | 'image/jpeg' | 'image/gif' | 'image/qoi' | 'image/webp' | 'image/avif' | 'unsupported' | '';
 
-export interface IMetrics {
-  mime: ImageType;
-  width: number;
-  height: number;
-}
 
 export const UNSUPPORTED_TYPE: IMetrics = {
   mime: 'unsupported',
