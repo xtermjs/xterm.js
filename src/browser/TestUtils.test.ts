@@ -364,6 +364,8 @@ export class MockCompositionHelper implements ICompositionHelper {
   public keydown(ev: KeyboardEvent): boolean {
     return true;
   }
+  public flushCommittedComposition(ev: KeyboardEvent): void {
+  }
 }
 
 export class MockCoreBrowserService implements ICoreBrowserService {
