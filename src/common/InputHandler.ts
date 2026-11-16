@@ -741,7 +741,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public lineFeed(): boolean {
     this._dirtyRowTracker.markDirty(this._activeBuffer.y);
-    if (this._optionsService.rawOptions.convertEol) {
+    if (this._coreService.modes.newLineMode ?? this._optionsService.rawOptions.convertEol) {
       this._activeBuffer.x = 0;
     }
     this._activeBuffer.y++;
@@ -1809,7 +1809,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.modes.insertMode = true;
           break;
         case 20:
-          this._optionsService.options.convertEol = true;
+          this._coreService.modes.newLineMode = true;
           break;
       }
     }
@@ -2079,7 +2079,7 @@ export class InputHandler extends Disposable implements IInputHandler {
           this._coreService.modes.insertMode = false;
           break;
         case 20:
-          this._optionsService.options.convertEol = false;
+          this._coreService.modes.newLineMode = false;
           break;
       }
     }
@@ -2364,7 +2364,7 @@ export class InputHandler extends Disposable implements IInputHandler {
       if (p === 2) return f(p, V.PERMANENTLY_RESET);
       if (p === 4) return f(p, b2v(cs.modes.insertMode));
       if (p === 12) return f(p, V.PERMANENTLY_SET);
-      if (p === 20) return f(p, b2v(opts.convertEol));
+      if (p === 20) return f(p, b2v(cs.modes.newLineMode ?? opts.convertEol));
       return f(p, V.NOT_RECOGNIZED);
     }
 
@@ -2820,7 +2820,9 @@ export class InputHandler extends Disposable implements IInputHandler {
     this._activeBuffer.scrollTop = 0;
     this._activeBuffer.scrollBottom = this._bufferService.rows - 1;
     this._curAttrData = DEFAULT_ATTR_DATA.clone();
+    const newLineMode = this._coreService.modes.newLineMode;
     this._coreService.reset();
+    this._coreService.modes.newLineMode = newLineMode;
     this._charsetService.reset();
 
     // reset DECSC data

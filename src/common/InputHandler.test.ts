@@ -223,6 +223,13 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.wraparound, false);
     });
   });
+  it('full reset restores cursor visibility', async () => {
+    await inputHandler.parseP('\x1b[?25l');
+    assert.equal(coreService.isCursorHidden, true);
+    coreService.reset();
+    assert.equal(coreService.isCursorHidden, false);
+  });
+
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       inputHandler.setCursorStyle(Params.fromArray([0]));
