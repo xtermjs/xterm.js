@@ -464,6 +464,7 @@ describe('Headless API Tests', function (): void {
         applicationKeypadMode: false,
         bracketedPasteMode: false,
         insertMode: false,
+        mouseEncodingMode: 'default',
         mouseTrackingMode: 'none',
         originMode: false,
         reverseWraparoundMode: false,
@@ -497,6 +498,16 @@ describe('Headless API Tests', function (): void {
       strictEqual(term.modes.insertMode, true);
       await writeSync('\x1b[4l');
       strictEqual(term.modes.insertMode, false);
+    });
+    it('mouseEncodingMode', async () => {
+      await writeSync('\x1b[?1006h');
+      strictEqual(term.modes.mouseEncodingMode, 'sgr');
+      await writeSync('\x1b[?1006l');
+      strictEqual(term.modes.mouseEncodingMode, 'default');
+      await writeSync('\x1b[?1016h');
+      strictEqual(term.modes.mouseEncodingMode, 'sgr-pixels');
+      await writeSync('\x1b[?1016l');
+      strictEqual(term.modes.mouseEncodingMode, 'default');
     });
     it('mouseTrackingMode', async () => {
       await writeSync('\x1b[?9h');

@@ -598,6 +598,13 @@ test.describe('SerializeAddon', () => {
       await testSerializeEquals('test\u001b[4h', 'test\u001b[4h');
       await testSerializeEquals('\u001b[4l', 'test');
     });
+    test('mouseEncodingMode', async () => {
+      await testSerializeEquals('test\u001b[?1006h', 'test\u001b[?1006h');
+      await testSerializeEquals('\u001b[?1006l', 'test');
+      await testSerializeEquals('\u001b[?1016h', 'test\u001b[?1016h');
+      await testSerializeEquals('\u001b[?1016l', 'test');
+      await testSerializeEquals('\u001b[?1002h\u001b[?1006h', 'test\u001b[?1002h\u001b[?1006h');
+    });
     test('mouseTrackingMode', async () => {
       await testSerializeEquals('test\u001b[?9h', 'test\u001b[?9h');
       await testSerializeEquals('\u001b[?9l', 'test');

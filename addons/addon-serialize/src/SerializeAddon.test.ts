@@ -223,6 +223,56 @@ describe('SerializeAddon', () => {
       });
     });
 
+    describe('mouse modes', () => {
+      it('should serialize SGR mouse encoding', async () => {
+        await writeP(terminal, '\x1b[?1002h\x1b[?1006h');
+        assert.equal(terminal.modes.mouseEncodingMode, 'sgr');
+        const result = serializeAddon.serialize();
+        assert.ok(result.includes('\x1b[?1002h'), result);
+        assert.ok(result.includes('\x1b[?1006h'), result);
+      });
+
+      it('should serialize SGR-pixels mouse encoding', async () => {
+        await writeP(terminal, '\x1b[?1016h');
+        assert.equal(terminal.modes.mouseEncodingMode, 'sgr-pixels');
+        const result = serializeAddon.serialize();
+        assert.ok(result.includes('\x1b[?1016h'), result);
+      });
+
+      it('should not serialize default mouse encoding', async () => {
+        await writeP(terminal, 'hello');
+        const result = serializeAddon.serialize();
+        assert.ok(!result.includes('\x1b[?1006h'), result);
+        assert.ok(!result.includes('\x1b[?1016h'), result);
+      });
+
+      it('should not serialize mouse encoding after it is reset', async () => {
+        await writeP(terminal, '\x1b[?1006h\x1b[?1006l');
+        assert.equal(terminal.modes.mouseEncodingMode, 'default');
+        const result = serializeAddon.serialize();
+        assert.ok(!result.includes('\x1b[?1006h'), result);
+      });
+
+      it('should restore mouse tracking and encoding when deserialized', async () => {
+        await writeP(terminal, '\x1b[?1002h\x1b[?1006h');
+        const serialized = serializeAddon.serialize();
+        const terminal2 = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
+        terminal2.loadAddon(new SerializeAddon());
+        await writeP(terminal2, serialized);
+        assert.equal(terminal2.modes.mouseTrackingMode, 'drag');
+        assert.equal(terminal2.modes.mouseEncodingMode, 'sgr');
+      });
+
+      it('should restore SGR-pixels mouse encoding when deserialized', async () => {
+        await writeP(terminal, '\x1b[?1002h\x1b[?1016h');
+        const serialized = serializeAddon.serialize();
+        const terminal2 = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
+        terminal2.loadAddon(new SerializeAddon());
+        await writeP(terminal2, serialized);
+        assert.equal(terminal2.modes.mouseEncodingMode, 'sgr-pixels');
+      });
+    });
+
     describe('lines longer than cols', () => {
       // A column shrink on the alt buffer leaves its lines at the old length, see
       // https://github.com/xtermjs/xterm.js/issues/6228
