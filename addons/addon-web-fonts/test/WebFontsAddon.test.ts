@@ -47,18 +47,13 @@ test.describe('WebFontsAddon', () => {
       `);
       deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loaded' }, { family: 'BPdots', status: 'loaded' }]);
     });
-    test('loadFonts (CSS, quoted)', async ({ browser }) => {
-      // NOTE: firefox preserves family quotes from CSS rules in fontface, all other browsers unquote them
+    test('loadFonts (CSS, quoted)', async () => {
       await ctx.page.evaluate(`
         document.styleSheets[0].insertRule("@font-face {font-family: 'Kongtext'; src: url(/fonts/kongtext.regular.ttf) format('truetype')}", 0);
         document.styleSheets[0].insertRule("@font-face {font-family: 'BPdots'; src: url(/fonts/bpdots.regular.otf) format('opentype')}", 1);
         loadFonts(['Kongtext', 'BPdots']);
       `);
-      if (browser.browserType().name() === 'firefox') {
-        deepStrictEqual(await getDocumentFonts(), [{ family: '"Kongtext"', status: 'loaded' }, { family: '"BPdots"', status: 'loaded' }]);
-      } else {
-        deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loaded' }, { family: 'BPdots', status: 'loaded' }]);
-      }
+      deepStrictEqual(await getDocumentFonts(), [{ family: 'Kongtext', status: 'loaded' }, { family: 'BPdots', status: 'loaded' }]);
     });
     test('FontFace hashing', async () => {
       // multiple calls of `loadFonts` with the same objects shall not bloat document.fonts
