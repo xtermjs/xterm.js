@@ -1179,6 +1179,22 @@ describe('Terminal', () => {
     assert.equal(termConverting.buffer.lines.get(1)!.translateToString(true), 'World');
   });
 
+  describe('resize', () => {
+    it('keeps parsing later writes when it happens during an async parser handler', async () => {
+      let resolveHandler!: (value: boolean) => void;
+      term.registerOscHandler(1337, () => new Promise<boolean>(resolve => { resolveHandler = resolve; }));
+      const callbacks: string[] = [];
+      term.write('\x1b]1337;File=inline=1:AAAA\x07', () => { callbacks.push('osc'); });
+      term.write('second', () => { callbacks.push('second'); });
+      term.resize(39, 10);
+      term.write('third', () => { callbacks.push('third'); });
+      resolveHandler(true);
+      await term.writeP('');
+      assert.equal(term.buffer.lines.get(0)!.translateToString(true), 'secondthird');
+      assert.deepEqual(callbacks, ['osc', 'second', 'third']);
+    });
+  });
+
   // FIXME: move to common/CoreTerminal.test once the trimming is moved over
   describe('marker lifecycle', () => {
     // create a 10x5 terminal with markers on every line
