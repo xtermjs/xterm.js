@@ -214,11 +214,24 @@ export class CompositionHelper {
       return;
     }
     const oldValue = this._textarea.value;
+    const oldSelectionStart = this._textarea.selectionStart;
+    const oldSelectionEnd = this._textarea.selectionEnd;
     this._textareaChangeTimer = window.setTimeout(() => {
       this._textareaChangeTimer = undefined;
       // Ignore if a composition has started since the timeout
       if (!this._isComposing) {
         const newValue = this._textarea.value;
+        const selectionPrefix = oldValue.slice(0, oldSelectionStart);
+
+        if (oldSelectionStart < oldSelectionEnd && oldSelectionEnd === oldValue.length &&
+            newValue !== oldValue && newValue.startsWith(selectionPrefix)) {
+          const deletedSuffix = oldValue.slice(oldSelectionStart);
+          const deleteCount = Array.from(deletedSuffix).length;
+          const insertedText = newValue.slice(selectionPrefix.length);
+          this._dataAlreadySent = insertedText;
+          this._coreService.triggerDataEvent(`${C0.DEL}`.repeat(deleteCount) + insertedText, true);
+          return;
+        }
 
         const diff = newValue.replace(oldValue, '');
 
@@ -227,7 +240,9 @@ export class CompositionHelper {
         if (newValue.length > oldValue.length) {
           this._coreService.triggerDataEvent(diff, true);
         } else if (newValue.length < oldValue.length) {
-          this._coreService.triggerDataEvent(`${C0.DEL}`, true);
+          const deletedSuffix = oldValue.startsWith(newValue) ? oldValue.slice(newValue.length) : '';
+          const deleteCount = deletedSuffix ? Array.from(deletedSuffix).length : 1;
+          this._coreService.triggerDataEvent(`${C0.DEL}`.repeat(deleteCount), true);
         } else if ((newValue.length === oldValue.length) && (newValue !== oldValue)) {
           this._coreService.triggerDataEvent(newValue, true);
         }

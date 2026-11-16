@@ -31,6 +31,8 @@ describe('CompositionHelper', () => {
     } as any;
     textarea = {
       value: '',
+      selectionStart: 0,
+      selectionEnd: 0,
       style: {
         left: 0,
         top: 0
@@ -46,6 +48,76 @@ describe('CompositionHelper', () => {
   });
 
   describe('Input', () => {
+    const keydown = () => compositionHelper.keydown({ keyCode: 229 } as KeyboardEvent);
+    const waitForTextareaChange = () => new Promise<void>(resolve => setTimeout(resolve, 0));
+    const withWindow = async (callback: () => Promise<void>): Promise<void> => {
+      const originalWindow = (globalThis as any).window;
+      (globalThis as any).window = globalThis;
+      try {
+        await callback();
+      } finally {
+        if (originalWindow === undefined) {
+          delete (globalThis as any).window;
+        } else {
+          (globalThis as any).window = originalWindow;
+        }
+      }
+    };
+
+    it('Should delete a fully selected textarea value before inserting its replacement', async () => {
+      await withWindow(async () => {
+        keydown();
+        textarea.value = 'action';
+        await waitForTextareaChange();
+
+        textarea.selectionStart = 0;
+        textarea.selectionEnd = textarea.value.length;
+        keydown();
+        textarea.value = '';
+        await waitForTextareaChange();
+
+        keydown();
+        textarea.value = 'Anton ';
+        await waitForTextareaChange();
+
+        assert.equal(handledText, `action${'\x7f'.repeat('action'.length)}Anton `);
+      });
+    });
+
+    it('Should replace a selected tail when deletion and insertion share a 229 timer', async () => {
+      await withWindow(async () => {
+        keydown();
+        textarea.value = 'activation';
+        await waitForTextareaChange();
+
+        textarea.selectionStart = 0;
+        textarea.selectionEnd = textarea.value.length;
+        keydown();
+        textarea.value = '';
+        keydown();
+        textarea.value = 'Activision ';
+        await waitForTextareaChange();
+
+        assert.equal(handledText, `activation${'\x7f'.repeat('activation'.length)}Activision `);
+      });
+    });
+
+    it('Should count removed Unicode code points when deleting a textarea suffix', async () => {
+      await withWindow(async () => {
+        keydown();
+        textarea.value = 'a😀x';
+        await waitForTextareaChange();
+
+        textarea.selectionStart = textarea.value.length;
+        textarea.selectionEnd = textarea.value.length;
+        keydown();
+        textarea.value = 'a';
+        await waitForTextareaChange();
+
+        assert.equal(handledText, `a😀x${'\x7f'.repeat(2)}`);
+      });
+    });
+
     it('Should insert simple characters', (done) => {
       // First character 'ㅇ'
       compositionHelper.compositionstart();
