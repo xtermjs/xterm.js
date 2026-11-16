@@ -35,6 +35,41 @@ const KEYCODE_KEY_MAPPINGS: { [key: number]: [string, string]} = {
   222: ['\'', '"']
 };
 
+/**
+ * Recover the legacy `keyCode` for a control input that a CJK IME has masked
+ * with keyCode 229 ("Process").
+ *
+ * On Windows/Chromium (Korean, Japanese, Chinese IMEs) every key the IME has
+ * claimed is delivered with `keyCode === 229`, even control inputs that never
+ * begin a composition — Ctrl+<letter>, Ctrl+Space and a bare Escape. Because
+ * the encoding below switches on the deprecated `keyCode`, those inputs match
+ * nothing and are silently dropped: no ESC reaches the PTY for Escape, no ^J
+ * for Ctrl+J, etc. The physical `code` is still correct, so use it to recover
+ * the keyCode for exactly these control inputs. Printable keys are left at 229
+ * so the composition/input path keeps handling them.
+ */
+function recoverImeControlKeyCode(ev: IKeyboardEvent): number {
+  // A bare Escape cancels the foreground app's UI; it has no printable meaning
+  // and never composes, so recover it regardless of modifiers.
+  if (ev.code === 'Escape') {
+    return 27;
+  }
+  // Ctrl+<key> is always a control chord under an IME, never a composition.
+  if (ev.ctrlKey && !ev.altKey && !ev.metaKey) {
+    // 'KeyA'..'KeyZ' -> 65..90
+    if (ev.code.length === 4 && ev.code.startsWith('Key')) {
+      const c = ev.code.charCodeAt(3);
+      if (c >= 65 && c <= 90) {
+        return c;
+      }
+    }
+    if (ev.code === 'Space') {
+      return 32;
+    }
+  }
+  return ev.keyCode;
+}
+
 export function evaluateKeyboardEvent(
   ev: IKeyboardEvent,
   applicationCursorMode: boolean,
@@ -50,7 +85,10 @@ export function evaluateKeyboardEvent(
     key: undefined
   };
   const modifiers = (ev.shiftKey ? 1 : 0) | (ev.altKey ? 2 : 0) | (ev.ctrlKey ? 4 : 0) | (ev.metaKey ? 8 : 0);
-  switch (ev.keyCode) {
+  // Under a CJK IME control inputs arrive with keyCode 229; recover the real
+  // keyCode from the physical `code` so the encoding below can match them.
+  const keyCode = ev.keyCode === 229 ? recoverImeControlKeyCode(ev) : ev.keyCode;
+  switch (keyCode) {
     case 0:
       if (ev.key === 'UIKeyInputUpArrow') {
         if (applicationCursorMode) {
@@ -312,9 +350,9 @@ export function evaluateKeyboardEvent(
     default:
       // a-z and space
       if (ev.ctrlKey && !ev.shiftKey && !ev.altKey && !ev.metaKey) {
-        if (ev.keyCode >= 65 && ev.keyCode <= 90) {
-          result.key = String.fromCharCode(ev.keyCode - 64);
-        } else if (ev.keyCode === 32) {
+        if (keyCode >= 65 && keyCode <= 90) {
+          result.key = String.fromCharCode(keyCode - 64);
+        } else if (keyCode === 32) {
           result.key = C0.NUL;
         } else if (ev.keyCode >= 51 && ev.keyCode <= 55) {
           // escape, file sep, group sep, record sep, unit sep
