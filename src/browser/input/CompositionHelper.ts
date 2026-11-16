@@ -131,6 +131,12 @@ export class CompositionHelper {
     if (ev.keyCode === 229) {
       // If the "composition character" is used but gets to this point it means a non-composition
       // character (eg. numbers and punctuation) was pressed when the IME was active.
+      // A selection in the textarea is not pending input: on Linux it is the terminal selection
+      // (onLinuxMouseSelection). The IME commit replaces it, and the shorter value would be sent
+      // as DEL instead of the commit.
+      if (this._textarea.selectionStart !== this._textarea.selectionEnd) {
+        this._textarea.value = '';
+      }
       this._handleAnyTextareaChanges();
       return false;
     }
