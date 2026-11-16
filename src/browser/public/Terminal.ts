@@ -109,11 +109,17 @@ export class Terminal extends Disposable implements ITerminalApi {
       case 'DRAG': mouseTrackingMode = 'drag'; break;
       case 'ANY': mouseTrackingMode = 'any'; break;
     }
+    let mouseEncodingMode: 'default' | 'sgr' | 'sgr-pixels' = 'default';
+    switch (this._core.mouseStateService.activeEncoding) {
+      case 'SGR': mouseEncodingMode = 'sgr'; break;
+      case 'SGR_PIXELS': mouseEncodingMode = 'sgr-pixels'; break;
+    }
     return {
       applicationCursorKeysMode: m.applicationCursorKeys,
       applicationKeypadMode: m.applicationKeypad,
       bracketedPasteMode: m.bracketedPasteMode,
       insertMode: this._core.coreService.modes.insertMode,
+      mouseEncodingMode: mouseEncodingMode,
       mouseTrackingMode: mouseTrackingMode,
       originMode: m.origin,
       reverseWraparoundMode: m.reverseWraparound,
