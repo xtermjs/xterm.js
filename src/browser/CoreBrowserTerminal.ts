@@ -323,6 +323,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * Binds the desired blur behavior on a given terminal object.
    */
   private _handleTextAreaBlur(): void {
+    this._compositionHelper!.finalizeInputComposition();
     // Text can safely be removed on blur. Doing it earlier could interfere with
     // screen readers reading it out.
     this.textarea!.value = '';
@@ -1037,6 +1038,10 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    * @param ev The input event to be handled.
    */
   protected _inputEvent(ev: InputEvent): boolean {
+    if (!this._keyPressHandled && !this.optionsService.rawOptions.screenReaderMode && this._compositionHelper!.input(ev)) {
+      return true;
+    }
+
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
     // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679

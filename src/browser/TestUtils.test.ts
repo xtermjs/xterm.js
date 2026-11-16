@@ -358,6 +358,11 @@ export class MockCompositionHelper implements ICompositionHelper {
   public compositionend(): void {
     throw new Error('Method not implemented.');
   }
+  public input(ev: InputEvent): boolean {
+    return false;
+  }
+  public finalizeInputComposition(): void {
+  }
   public updateCompositionElements(dontRecurse?: boolean): void {
     throw new Error('Method not implemented.');
   }

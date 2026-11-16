@@ -26,6 +26,12 @@ export class CompositionHelper {
   public get isComposing(): boolean { return this._isComposing; }
 
   /**
+   * Whether the current composition is made of input events instead of composition events, see
+   * {@link input}.
+   */
+  private _isInputComposition: boolean;
+
+  /**
    * The position within the input textarea's value of the current composition.
    */
   private _compositionPosition: IPosition;
@@ -61,6 +67,7 @@ export class CompositionHelper {
     @IRenderService private readonly _renderService: IRenderService
   ) {
     this._isComposing = false;
+    this._isInputComposition = false;
     this._isSendingComposition = false;
     this._compositionPosition = { start: 0, end: 0 };
     this._compositionSuffix = '';
@@ -72,6 +79,7 @@ export class CompositionHelper {
    */
   public compositionstart(): void {
     this._isComposing = true;
+    this._isInputComposition = false;
     // It's important to use the selection here instead of textarea length to avoid conflicts with
     // screen reader mode
     const start = this._textarea.selectionStart ?? this._textarea.value.length;
@@ -105,6 +113,55 @@ export class CompositionHelper {
    */
   public compositionend(): void {
     this._finalizeComposition(true);
+  }
+
+  /**
+   * Handles the input event for an IME that edits the textarea in place instead of firing
+   * composition events. WebKit does this with the macOS Korean IME: it inserts each new syllable as
+   * `insertText` and rewrites it in place with `insertReplacementText` as further keys are typed
+   * (#6284). Such a syllable is handled as a composition: it is shown in the composition view and
+   * sent once the next text is inserted, a key that ends a composition is pressed (see
+   * {@link keydown}) or the textarea loses focus (see {@link finalizeInputComposition}).
+   * @param ev The input event.
+   * @returns Whether the event was handled as part of such a composition.
+   */
+  public input(ev: Pick<InputEvent, 'data' | 'inputType' | 'isComposing'>): boolean {
+    if (ev.isComposing || this._isSendingComposition || (this._isComposing && !this._isInputComposition)) {
+      return false;
+    }
+    const end = this._textarea.selectionEnd ?? this._textarea.value.length;
+    if (ev.inputType === 'insertText' && ev.data) {
+      this.finalizeInputComposition();
+      if (!/^\p{Script=Hangul}+$/u.test(ev.data)) {
+        return false;
+      }
+      this._isComposing = true;
+      this._isInputComposition = true;
+      this._compositionPosition.start = Math.max(end - ev.data.length, 0);
+      this._compositionView.classList.add('active');
+    } else if (!this._isComposing || (ev.inputType !== 'insertReplacementText' && ev.inputType !== 'deleteContentBackward')) {
+      return false;
+    }
+    this._compositionPosition.end = end;
+    if (end > this._compositionPosition.start) {
+      this._compositionView.textContent = `\u200E${this._textarea.value.substring(this._compositionPosition.start, end)}\u200E`;
+      this.updateCompositionElements();
+    } else {
+      // The IME deleted the syllable
+      this._compositionView.classList.remove('active');
+      this._isComposing = false;
+    }
+    return true;
+  }
+
+  /**
+   * Sends a composition made of input events (see {@link input}) right away, eg. before the
+   * textarea is cleared on blur.
+   */
+  public finalizeInputComposition(): void {
+    if (this._isComposing && this._isInputComposition) {
+      this._finalizeComposition(false);
+    }
   }
 
   /**
