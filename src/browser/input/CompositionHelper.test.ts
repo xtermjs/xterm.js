@@ -259,5 +259,41 @@ describe('CompositionHelper', () => {
         }, 0);
       }, 0);
     });
+
+    // Two compositions and the key between them are handled before any setTimeout(0) runs, as in
+    // a busy page (#6250). The key itself is sent by the terminal, not the helper, so it does not
+    // appear in handledText.
+    const compose = (ch: string): void => {
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: ch });
+      textarea.value += ch;
+      compositionHelper.compositionend();
+    };
+    const type = (ch: string): void => {
+      compositionHelper.keydown({ keyCode: ch.charCodeAt(0) } as KeyboardEvent);
+      textarea.value += ch;
+    };
+
+    it('Should send the composed text when a key arrives before the end position settles', (done) => {
+      compose('é');
+      type(' ');
+      compose('ü');
+      type(' ');
+      setTimeout(() => {
+        assert.equal(handledText, 'éü');
+        done();
+      }, 0);
+    });
+
+    it('Should not send a composition twice when a later one is pending', (done) => {
+      compose('ż');
+      compose('ó');
+      type('ł');
+      compose('ć');
+      setTimeout(() => {
+        assert.equal(handledText, 'żóć');
+        done();
+      }, 0);
+    });
   });
 });
