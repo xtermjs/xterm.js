@@ -80,7 +80,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@lunapaint/png-codec": "^0.2.0",
-    "@playwright/test": "^1.59.1",
+    "@playwright/test": "^1.65.0",
     "@stylistic/eslint-plugin": "^5.10.0",
     "@types/chai": "^5.2.3",
     "@types/express": "^5.0.6",
