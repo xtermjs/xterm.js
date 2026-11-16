@@ -88,22 +88,31 @@ export class SortedList<T> {
       return false;
     }
     i = this._search(key);
-    if (i === -1) {
-      return false;
-    }
-    if (this._getKey(this._array[i]) !== key) {
-      return false;
-    }
-    do {
-      if (this._array[i] === value) {
-        if (this._deletedIndices.length === 0) {
-          this._flushDeletedTask.enqueue(() => this._flushDeleted());
+    if (i !== -1 && this._getKey(this._array[i]) === key) {
+      do {
+        if (this._array[i] === value) {
+          return this._markDeleted(i);
         }
-        this._deletedIndices.push(i);
-        return true;
-      }
-    } while (++i < this._array.length && this._getKey(this._array[i]) === key);
-    return false;
+      } while (++i < this._array.length && this._getKey(this._array[i]) === key);
+    }
+    // The binary search can miss the value while the list is temporarily out of order: a value
+    // whose deletion is still pending may have had its key changed in the meantime (for example a
+    // decoration whose marker was disposed now reports line -1), which breaks the sort invariant
+    // until the pending deletions are flushed. Fall back to a linear search by reference so the
+    // value is never silently left behind.
+    i = this._array.indexOf(value);
+    if (i === -1 || this._deletedIndices.includes(i)) {
+      return false;
+    }
+    return this._markDeleted(i);
+  }
+
+  private _markDeleted(index: number): boolean {
+    if (this._deletedIndices.length === 0) {
+      this._flushDeletedTask.enqueue(() => this._flushDeleted());
+    }
+    this._deletedIndices.push(index);
+    return true;
   }
 
   private _flushDeleted(): void {
