@@ -200,4 +200,37 @@ describe('Linkifier2', () => {
     assert.isDefined(linkifier.currentLink, 'the link under the stationary pointer should be detected');
   });
 
+  it('should re-evaluate links when the pointer returns to a line that changed while it was away', async () => {
+    linkifier.currentLink = undefined;
+    let provideCalls = 0;
+    const pointerLink: ILink = {
+      text: 'http://example.com/',
+      range: { start: { x: 5, y: 1 }, end: { x: 7, y: 1 } },
+      activate: () => { }
+    };
+    linkProviderService.registerLinkProvider({
+      provideLinks: (y: number, callback: (links: ILink[] | undefined) => void) => {
+        provideCalls++;
+        callback(provideCalls === 1 ? undefined : [pointerLink]);
+      }
+    });
+    // The pointer hovers the still-empty line, caching the "no link" answer for it
+    element.dispatchEvent(new dom.window.MouseEvent('mousemove'));
+    await new Promise(r => setTimeout(r, 0));
+    assert.equal(provideCalls, 1);
+
+    // The pointer leaves; the line changes while it is away (the render listener ignores it)
+    element.dispatchEvent(new dom.window.MouseEvent('mouseleave'));
+    renderService.fireRenderedViewportChange(0, 5);
+    await new Promise(r => setTimeout(r, 250));
+    assert.equal(provideCalls, 1);
+
+    // The pointer comes back onto the same line
+    element.dispatchEvent(new dom.window.MouseEvent('mousemove'));
+    await new Promise(r => setTimeout(r, 0));
+
+    assert.equal(provideCalls, 2, 'providers should be asked again for a line the pointer returned to');
+    assert.isDefined(linkifier.currentLink, 'the link on the returned-to line should be detected');
+  });
+
 });

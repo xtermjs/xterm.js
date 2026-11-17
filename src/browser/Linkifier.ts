@@ -57,6 +57,8 @@ export class Linkifier extends Disposable implements ILinkifier2 {
     }));
     this._register(addDisposableListener(this._element, 'mouseleave', () => {
       this._isMouseOut = true;
+      this._activeLine = -1;
+      this._lastBufferCell = undefined;
       this._clearCurrentLink();
     }));
     this._register(addDisposableListener(this._element, 'mousemove', this._handleMouseMove.bind(this)));
