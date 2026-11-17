@@ -461,8 +461,9 @@ test.describe('SerializeAddon', () => {
     const lines = [
       `1${SMCUP}2${RMCUP}`
     ];
+    // SMCUP saved the cursor
     const expected = [
-      `1`
+      `1\u001b[1;2H\u001b7`
     ];
 
     await ctx.proxy.write(lines.join('\r\n'));
@@ -579,6 +580,11 @@ test.describe('SerializeAddon', () => {
     ];
 
     await testNormalScreenEqual(ctx.page, segments.join(''));
+  });
+
+  test('handle charsets', async () => {
+    await testSerializeEquals('a\u001b(0', 'a\u001b(0');
+    await testSerializeEquals('\u001b(B\u001b)A\u000e', 'a\u001b(B\u001b)A\u000e');
   });
 
   test.describe('handle modes', () => {

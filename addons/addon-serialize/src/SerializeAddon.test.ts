@@ -223,6 +223,103 @@ describe('SerializeAddon', () => {
       });
     });
 
+    describe('state written after the content', () => {
+      function screenState(target: Terminal): string[] {
+        const buffer = target.buffer.active;
+        const state = [`cursor ${buffer.cursorX},${buffer.cursorY}`];
+        for (let y = 0; y < target.rows; y++) {
+          const line = buffer.getLine(buffer.baseY + y)!;
+          for (let x = 0; x < target.cols; x++) {
+            const cell = line.getCell(x)!;
+            if (cell.getChars() || !cell.isBgDefault()) {
+              state.push(`${x},${y} ${cell.getChars()} fg ${cell.getFgColor()} bg ${cell.getBgColor()}`);
+            }
+          }
+        }
+        return state;
+      }
+
+      async function assertReplayMatches(rows: number, before: string, after: string): Promise<void> {
+        const source = new Terminal({ cols: 10, rows, allowProposedApi: true });
+        const sourceAddon = new SerializeAddon();
+        source.loadAddon(sourceAddon);
+        await writeP(source, before);
+        const replayTerminal = new Terminal({ cols: 10, rows, allowProposedApi: true });
+        await writeP(replayTerminal, sourceAddon.serialize());
+        await writeP(source, after);
+        await writeP(replayTerminal, after);
+        assert.deepEqual(screenState(replayTerminal), screenState(source));
+      }
+
+      it('should restore the saved cursor with its colors and charset', async () => {
+        await assertReplayMatches(6, '\x1b[3;4H\x1b[31m\x1b(0\x1b7\x1b[0m\x1b(B\x1b[1;1H', 'q\x1b8q');
+      });
+
+      it('should restore a saved cursor that has scrolled off', async () => {
+        await assertReplayMatches(4, 'a\x1b[33m\x1b7\x1b[0m\r\n\r\n\r\n\r\n\r\n', '\x1b8s');
+      });
+
+      it('should restore a cursor saved while waiting to wrap', async () => {
+        await assertReplayMatches(4, '\x1b[2;1Habcdefghij\x1b7\x1b[4;6H', 'Z\x1b8XY');
+      });
+
+      it('should restore the saved origin mode', async () => {
+        await assertReplayMatches(6, '\x1b[2;4r\x1b[?6h\x1b[2;3H\x1b7\x1b[?6l\x1b[6;1H', '\x1b[1;1Hp\x1b8\x1b[1;1Ho');
+      });
+
+      it('should restore the saved wraparound mode', async () => {
+        await assertReplayMatches(4, '\x1b[?7l\x1b[2;1H\x1b7\x1b[?7h\x1b[4;1H', 'abcdefghijkl\x1b8abcdefghijkl');
+      });
+
+      it('should restore the G0 charset', async () => {
+        await assertReplayMatches(4, 'a\x1b(0', 'q');
+      });
+
+      it('should restore the G1 charset shifted in', async () => {
+        await assertReplayMatches(4, 'a\x1b)0\x0e', 'q\x0fq');
+      });
+
+      it('should restore the G2 charset shifted in', async () => {
+        await assertReplayMatches(4, 'a\x1b*0\x1bn', 'q\x0fq');
+      });
+
+      it('should restore a charset designated to the default', async () => {
+        await assertReplayMatches(4, 'a\x1b(B', '\x1b7\x1b(0q\x1b8q');
+      });
+
+      it('should restore a saved charset designated to the default', async () => {
+        await assertReplayMatches(4, '\x1b(B\x1b[m\x1b7\x1b[2;1H', '\x1b(0q\x1b8q');
+      });
+
+      it('should restore the saved cursor colors in the alt buffer', async () => {
+        await assertReplayMatches(4, '\x1b[?1049h\x1b[2;2H\x1b7\x1b[31m', '\x1b8x');
+      });
+
+      it('should not write the charsets when excluding modes', async () => {
+        await writeP(terminal, 'ab\x1b(0');
+        assert.equal(serializeAddon.serialize({ excludeModes: true }), 'ab');
+      });
+
+      it('should restore a pending wrap on a row before the last one written', async () => {
+        await assertReplayMatches(4, '\x1b[3;1Hzzz\x1b[1;1Habcdefghi\x1b[41mj\x1b[0;32m', 'X');
+      });
+
+      it('should restore a pending wrap after a wide character', async () => {
+        await assertReplayMatches(4, '\x1b[3;1Hzzz\x1b[1;1Habcdefgh一', 'X');
+      });
+
+      it('should restore a pending wrap after the last cell was erased', async () => {
+        await writeP(terminal, '\x1b[2;1Hzzz\x1b[1;1Habcdefghij\x1b[2K');
+        const replayTerminal = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
+        await writeP(replayTerminal, serializeAddon.serialize());
+        await writeP(terminal, 'X');
+        await writeP(replayTerminal, 'X');
+        // Only printing can set the pending wrap, so the erased cell comes back as a space
+        const [cursor, ...cells] = screenState(terminal);
+        assert.deepEqual(screenState(replayTerminal), [cursor, '9,0   fg -1 bg -1', ...cells]);
+      });
+    });
+
     describe('lines longer than cols', () => {
       // A column shrink on the alt buffer leaves its lines at the old length, see
       // https://github.com/xtermjs/xterm.js/issues/6228
