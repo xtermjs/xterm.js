@@ -4,12 +4,22 @@
  */
 
 import { IRenderService } from '../services/Services';
-import { IBufferService, ICoreService, IOptionsService } from '../../common/services/Services';
+import { IBufferService, ICoreService, IOptionsService, IUnicodeService, UnicodeCharProperties } from '../../common/services/Services';
+import { UnicodeService } from '../../common/services/UnicodeService';
 import { C0 } from '../../common/data/EscapeSequences';
 
 interface IPosition {
   start: number;
   end: number;
+}
+
+/**
+ * A run of characters that occupies a single cell on the terminal's grid, together with how many
+ * columns that cell spans.
+ */
+interface ICompositionCell {
+  chars: string;
+  width: number;
 }
 
 /**
@@ -52,19 +62,33 @@ export class CompositionHelper {
    */
   private _textareaChangeTimer?: number;
 
+  /**
+   * The text of the composition currently shown in the composition view.
+   */
+  private _compositionText: string;
+
+  /**
+   * The cell width the composition view was last laid out with, used to detect when the grid the
+   * preedit is aligned to has changed.
+   */
+  private _renderedCellWidth: number;
+
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
     private readonly _compositionView: HTMLElement,
     @IBufferService private readonly _bufferService: IBufferService,
     @IOptionsService private readonly _optionsService: IOptionsService,
     @ICoreService private readonly _coreService: ICoreService,
-    @IRenderService private readonly _renderService: IRenderService
+    @IRenderService private readonly _renderService: IRenderService,
+    @IUnicodeService private readonly _unicodeService: IUnicodeService
   ) {
     this._isComposing = false;
     this._isSendingComposition = false;
     this._compositionPosition = { start: 0, end: 0 };
     this._compositionSuffix = '';
     this._dataAlreadySent = '';
+    this._compositionText = '';
+    this._renderedCellWidth = -1;
   }
 
   /**
@@ -79,6 +103,7 @@ export class CompositionHelper {
     this._compositionPosition.start = Math.min(start, end);
     this._compositionPosition.end = Math.max(start, end);
     this._compositionSuffix = this._textarea.value.substring(this._compositionPosition.end);
+    this._compositionText = '';
     this._compositionView.textContent = '';
     this._dataAlreadySent = '';
     this._compositionView.classList.add('active');
@@ -89,9 +114,8 @@ export class CompositionHelper {
    * @param ev The event.
    */
   public compositionupdate(ev: Pick<CompositionEvent, 'data'>): void {
-    // Mark text as LTR, direction=rtl is used in CSS so the end of the text is followed for long
-    // compositions
-    this._compositionView.textContent = `\u200E${ev.data}\u200E`;
+    this._compositionText = ev.data;
+    this._layoutCompositionText();
     this.updateCompositionElements();
     setTimeout(() => {
       const end = this._textarea.selectionEnd ?? this._textarea.value.length;
@@ -250,9 +274,16 @@ export class CompositionHelper {
     if (this._bufferService.buffer.isCursorInViewport) {
       const cursorX = Math.min(this._bufferService.buffer.x, this._bufferService.cols - 1);
 
+      const cellWidth = this._renderService.dimensions.css.cell.width;
       const cellHeight = this._renderService.dimensions.css.cell.height;
-      const cursorTop = this._bufferService.buffer.y * this._renderService.dimensions.css.cell.height;
-      const cursorLeft = cursorX * this._renderService.dimensions.css.cell.width;
+      const cursorTop = this._bufferService.buffer.y * cellHeight;
+      const cursorLeft = cursorX * cellWidth;
+
+      // Re-align the text to the grid if the renderer changed the cell width, eg. because the font
+      // size changed while composing.
+      if (cellWidth !== this._renderedCellWidth) {
+        this._layoutCompositionText();
+      }
 
       this._compositionView.style.left = cursorLeft + 'px';
       this._compositionView.style.top = cursorTop + 'px';
@@ -262,7 +293,7 @@ export class CompositionHelper {
       this._compositionView.style.fontSize = this._optionsService.rawOptions.fontSize + 'px';
       // Limit the composition view width to the space between the cursor and
       // the terminal's right edge, preventing it from overflowing the terminal.
-      const maxWidth = this._bufferService.cols * this._renderService.dimensions.css.cell.width - cursorLeft;
+      const maxWidth = this._bufferService.cols * cellWidth - cursorLeft;
       this._compositionView.style.maxWidth = maxWidth + 'px';
       this._compositionView.style.overflow = 'hidden';
       this._compositionView.style.direction = 'rtl';
@@ -280,5 +311,78 @@ export class CompositionHelper {
     if (!dontRecurse) {
       setTimeout(() => this.updateCompositionElements(true), 0);
     }
+  }
+
+  /**
+   * Lays the composition text out on the same cell grid the terminal is drawn on.
+   *
+   * The composition view is positioned and sized from the renderer's cell dimensions, but the text
+   * inside it used to be laid out by the DOM at the font's own advance widths. Renderers are free
+   * to round the cell width to something else (the webgl renderer floors it to whole device
+   * pixels), so the two disagree and the preedit drifts away from the grid by that difference for
+   * every cell. Giving each cell a box of exactly the renderer's cell width keeps the preedit on
+   * the grid whatever the renderer rounded to.
+   */
+  private _layoutCompositionText(): void {
+    const doc = this._compositionView.ownerDocument;
+    const cellWidth = this._renderService.dimensions.css.cell.width;
+
+    // The composition view uses direction=rtl so the end of the text stays visible for
+    // compositions that are longer than the rest of the row. Isolate the cells inside an ltr run
+    // so that only the overflow follows that direction, not the order of the cells themselves.
+    const textElement = doc.createElement('span');
+    textElement.style.direction = 'ltr';
+    textElement.style.unicodeBidi = 'isolate';
+
+    for (const cell of this._splitIntoCells(this._compositionText)) {
+      const cellElement = doc.createElement('span');
+      cellElement.textContent = cell.chars;
+      cellElement.style.display = 'inline-block';
+      cellElement.style.width = `${cell.width * cellWidth}px`;
+      textElement.appendChild(cellElement);
+    }
+
+    this._compositionView.replaceChildren(textElement);
+    this._renderedCellWidth = cellWidth;
+  }
+
+  /**
+   * Splits text into cells the same way the buffer does, so that each cell can be given the width
+   * the renderer draws it at. Zero width characters (eg. combining marks) are kept in the cell of
+   * the character they attach to, otherwise they would be laid out on their own and would no
+   * longer combine.
+   * @param text The text to split.
+   */
+  private _splitIntoCells(text: string): ICompositionCell[] {
+    const cells: ICompositionCell[] = [];
+    let precedingInfo: UnicodeCharProperties = 0;
+    for (let i = 0; i < text.length; i++) {
+      let code = text.charCodeAt(i);
+      let chars = text.charAt(i);
+      // Convert a valid surrogate pair into a single codepoint, otherwise treat the parts
+      // independently (UCS-2 behavior)
+      if (0xD800 <= code && code <= 0xDBFF && i + 1 < text.length) {
+        const second = text.charCodeAt(i + 1);
+        if (0xDC00 <= second && second <= 0xDFFF) {
+          code = (code - 0xD800) * 0x400 + second - 0xDC00 + 0x10000;
+          chars += text.charAt(++i);
+        }
+      }
+      const currentInfo = this._unicodeService.charProperties(code, precedingInfo);
+      const width = UnicodeService.extractWidth(currentInfo);
+      const shouldJoin = UnicodeService.extractShouldJoin(currentInfo);
+      if (cells.length > 0 && (shouldJoin || width === 0)) {
+        const previousCell = cells[cells.length - 1];
+        previousCell.chars += chars;
+        if (shouldJoin) {
+          // The width reported for a joining char is that of the whole cluster
+          previousCell.width = width;
+        }
+      } else {
+        cells.push({ chars, width });
+      }
+      precedingInfo = currentInfo;
+    }
+    return cells;
   }
 }
