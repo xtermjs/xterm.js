@@ -613,6 +613,10 @@ test.describe('SerializeAddon', () => {
       await testSerializeEquals('test\u001b[?6h', 'test\u001b[4D\u001b[?6h');
       await testSerializeEquals('\u001b[?6l', 'test\u001b[4D');
     });
+    test('originMode with scroll region', async () => {
+      // the cursor is placed again, relative to the region, after both have moved it home
+      await testSerializeEquals('test\u001b[2;5r\u001b[?6h\u001b[2;3H', 'test\u001b[2B\u001b[2D\u001b[?6h\u001b[2;5r\u001b[2;3H');
+    });
     test('reverseWraparoundMode', async () => {
       await testSerializeEquals('test\u001b[?45h', 'test\u001b[?45h');
       await testSerializeEquals('\u001b[?45l', 'test');
