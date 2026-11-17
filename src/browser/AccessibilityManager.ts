@@ -358,8 +358,10 @@ export class AccessibilityManager extends Disposable {
     }
 
     if (beginRowColumn.row > endRowColumn.row || (beginRowColumn.row === endRowColumn.row && beginRowColumn.column >= endRowColumn.column)) {
-      // This should not happen unless we have some bugs.
-      throw new Error('invalid range');
+      // The selection covers no cells, for example from the end of a full row to the start of the
+      // next one, so nothing in the terminal is selected.
+      this._terminal.clearSelection();
+      return;
     }
 
     this._terminal.select(
