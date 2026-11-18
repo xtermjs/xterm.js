@@ -466,4 +466,75 @@ describe('MouseService multi-window', () => {
     assert.deepEqual(childDocument.removed, ['mouseup', 'mousemove']);
     assert.deepEqual(openDocument.removed, []);
   });
+
+  it('should re-attach the document listeners when tracking is turned back on during a press', () => {
+    const mouseStateService = new MouseStateService();
+    const reports: string[] = [];
+    const mouseService = new MouseService(
+      new MockRenderService(),
+      {
+        getMouseReportCoords: () => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      mouseStateService,
+      {
+        triggerDataEvent: (data: string) => reports.push(data),
+        triggerBinaryEvent: (data: string) => reports.push(data),
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      bufferService,
+      new OptionsService({}),
+      new TestSelectionService(),
+      logService,
+      new MockCoreBrowserService()
+    );
+
+    const doc = createRecordingDocument();
+    const elementListeners: { [type: string]: EventListener[] } = {};
+    const element = {
+      classList: {
+        add: () => {},
+        remove: () => {},
+        contains: () => false
+      },
+      addEventListener: (type: string, listener: EventListener) => {
+        (elementListeners[type] ??= []).push(listener);
+      },
+      removeEventListener: () => {},
+      ownerDocument: doc.doc
+    } as any;
+
+    mouseService.bindMouse({
+      element,
+      screenElement: createTestMouseTargetElement(),
+      document: doc.doc
+    }, disposable => disposable, () => {});
+    mouseStateService.activeProtocol = 'DRAG';
+
+    const mouseEvent = (type: string, buttons: number): any => ({
+      type,
+      button: 0,
+      buttons,
+      altKey: false,
+      ctrlKey: false,
+      shiftKey: false,
+      preventDefault: () => {}
+    });
+    elementListeners['mousedown'][0](mouseEvent('mousedown', 1));
+    assert.deepEqual(doc.added, ['mouseup', 'mousemove']);
+
+    // The app turns tracking off and on again while the button is still held
+    mouseStateService.activeProtocol = 'NONE';
+    assert.deepEqual(doc.removed, ['mouseup', 'mousemove']);
+    mouseStateService.activeProtocol = 'DRAG';
+    assert.deepEqual(doc.added, ['mouseup', 'mousemove', 'mouseup', 'mousemove']);
+
+    const reportCount = reports.length;
+    doc.listeners['mouseup'][1](mouseEvent('mouseup', 0));
+    assert.equal(reports.length, reportCount + 1);
+
+    // Once the press has ended, turning tracking on again does not attach them
+    mouseStateService.activeProtocol = 'NONE';
+    mouseStateService.activeProtocol = 'DRAG';
+    assert.deepEqual(doc.added, ['mouseup', 'mousemove', 'mouseup', 'mousemove']);
+  });
 });
