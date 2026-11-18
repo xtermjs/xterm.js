@@ -522,19 +522,92 @@ describe('MouseService multi-window', () => {
     elementListeners['mousedown'][0](mouseEvent('mousedown', 1));
     assert.deepEqual(doc.added, ['mouseup', 'mousemove']);
 
-    // The app turns tracking off and on again while the button is still held
+    // The app turns tracking off and on again while the button is still held,
+    // a mouseup listener watches for the end of the press meanwhile
     mouseStateService.activeProtocol = 'NONE';
+    assert.deepEqual(doc.added, ['mouseup', 'mousemove', 'mouseup']);
     assert.deepEqual(doc.removed, ['mouseup', 'mousemove']);
     mouseStateService.activeProtocol = 'DRAG';
-    assert.deepEqual(doc.added, ['mouseup', 'mousemove', 'mouseup', 'mousemove']);
+    assert.deepEqual(doc.added, ['mouseup', 'mousemove', 'mouseup', 'mouseup', 'mousemove']);
+    assert.deepEqual(doc.removed, ['mouseup', 'mousemove', 'mouseup']);
 
     const reportCount = reports.length;
-    doc.listeners['mouseup'][1](mouseEvent('mouseup', 0));
+    doc.listeners['mouseup'][2](mouseEvent('mouseup', 0));
     assert.equal(reports.length, reportCount + 1);
 
     // Once the press has ended, turning tracking on again does not attach them
     mouseStateService.activeProtocol = 'NONE';
     mouseStateService.activeProtocol = 'DRAG';
-    assert.deepEqual(doc.added, ['mouseup', 'mousemove', 'mouseup', 'mousemove']);
+    assert.equal(doc.added.length, 5);
+  });
+
+  it('should not re-attach the document listeners when the press ended while tracking was off', () => {
+    const reports: string[] = [];
+    const mouseStateService = new MouseStateService();
+    const mouseService = new MouseService(
+      new MockRenderService(),
+      {
+        getMouseReportCoords: () => ({ col: 0, row: 0, x: 0, y: 0 })
+      } as any,
+      mouseStateService,
+      {
+        triggerDataEvent: (data: string) => reports.push(data),
+        triggerBinaryEvent: (data: string) => reports.push(data),
+        decPrivateModes: { applicationCursorKeys: false }
+      } as any,
+      bufferService,
+      new OptionsService({}),
+      new TestSelectionService(),
+      logService,
+      new MockCoreBrowserService()
+    );
+
+    // A real event target, so that registering the same listener twice is deduplicated like in a browser
+    const doc = new EventTarget();
+    const elementListeners: { [type: string]: EventListener[] } = {};
+    const element = {
+      classList: {
+        add: () => {},
+        remove: () => {},
+        contains: () => false
+      },
+      addEventListener: (type: string, listener: EventListener) => {
+        (elementListeners[type] ??= []).push(listener);
+      },
+      removeEventListener: () => {},
+      ownerDocument: doc
+    } as any;
+    mouseService.bindMouse({
+      element,
+      screenElement: createTestMouseTargetElement(),
+      document: doc as any
+    }, disposable => disposable, () => {});
+    mouseStateService.activeProtocol = 'DRAG';
+
+    const mouseEvent = (type: string, buttons: number): Event => Object.assign(new Event(type, { cancelable: true }), {
+      button: 0,
+      buttons,
+      altKey: false,
+      ctrlKey: false,
+      shiftKey: false
+    });
+
+    // Press, then the button is released while tracking is off
+    elementListeners['mousedown'][0](mouseEvent('mousedown', 1));
+    mouseStateService.activeProtocol = 'NONE';
+    doc.dispatchEvent(mouseEvent('mouseup', 0));
+    mouseStateService.activeProtocol = 'DRAG';
+
+    reports.length = 0;
+    doc.dispatchEvent(mouseEvent('mousemove', 1));
+    doc.dispatchEvent(mouseEvent('mouseup', 0));
+    assert.equal(reports.length, 0, 'nothing should be reported without a press');
+
+    // The next press is reported as usual
+    elementListeners['mousedown'][0](mouseEvent('mousedown', 1));
+    reports.length = 0;
+    doc.dispatchEvent(mouseEvent('mousemove', 1));
+    doc.dispatchEvent(mouseEvent('mouseup', 0));
+    assert.equal(reports.length, 2, 'drag and release should be reported');
   });
 });

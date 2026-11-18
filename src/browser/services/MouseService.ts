@@ -23,6 +23,8 @@ interface IMouseBindContext {
   readonly requestedEvents: RequestedMouseEvents;
   readonly mouseupListener: MutableDisposable<IDisposable>;
   readonly mousedragListener: MutableDisposable<IDisposable>;
+  /** Watches for the end of a press while its release is not reported. */
+  readonly pressEndListener: MutableDisposable<IDisposable>;
   /** Whether a reported button press is in progress. */
   buttonHeld: boolean;
 }
@@ -69,7 +71,9 @@ export class MouseService implements IMouseService {
     const mousedragListener = new MutableDisposable<IDisposable>();
     register(mouseupListener);
     register(mousedragListener);
-    const ctx: IMouseBindContext = { target, focus, requestedEvents, mouseupListener, mousedragListener, buttonHeld: false };
+    const pressEndListener = new MutableDisposable<IDisposable>();
+    register(pressEndListener);
+    const ctx: IMouseBindContext = { target, focus, requestedEvents, mouseupListener, mousedragListener, pressEndListener, buttonHeld: false };
     const eventListeners: Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener> = {
       mouseup: (ev: Event) => this._handleMouseUp(ctx, ev as MouseEvent),
       wheel: (ev: Event) => this._handleWheel(ctx, ev as WheelEvent),
@@ -438,11 +442,22 @@ export class MouseService implements IMouseService {
     if (!(events & CoreMouseEventType.UP)) {
       ctx.mouseupListener.clear();
       requestedEvents.mouseup = null;
+      // Still notice when the press ends, so a release that is not reported
+      // does not leave it marked as held.
+      if (ctx.buttonHeld && !ctx.pressEndListener.value) {
+        ctx.pressEndListener.value = addDisposableListener(this._getListenerDocument(ctx), 'mouseup', (ev: MouseEvent) => {
+          if (!ev.buttons) {
+            ctx.buttonHeld = false;
+            ctx.pressEndListener.clear();
+          }
+        });
+      }
     } else {
       requestedEvents.mouseup ??= eventListeners.mouseup;
       // The app may toggle tracking off and on while a button is held, keep
       // reporting the rest of that press.
       if (ctx.buttonHeld && !ctx.mouseupListener.value) {
+        ctx.pressEndListener.clear();
         ctx.mouseupListener.value = addDisposableListener(this._getListenerDocument(ctx), 'mouseup', requestedEvents.mouseup);
       }
     }
