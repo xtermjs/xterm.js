@@ -965,6 +965,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return;
     }
 
+    this._compositionHelper?.keyup(ev);
+
     if (!wasModifierKeyOnlyEvent(ev)) {
       this.focus();
     }
