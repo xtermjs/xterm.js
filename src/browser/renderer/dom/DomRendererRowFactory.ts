@@ -8,7 +8,7 @@ import { IBufferLine, ICellData } from '../../../common/buffer/Types';
 import { INVERTED_DEFAULT_COLOR } from '../shared/Constants';
 import { WHITESPACE_CELL_CHAR, Attributes } from '../../../common/buffer/Constants';
 import { CellData } from '../../../common/buffer/CellData';
-import { ICoreService, IDecorationService, IOptionsService } from '../../../common/services/Services';
+import { ICoreService, IDecorationService, IInternalDecoration, IOptionsService } from '../../../common/services/Services';
 import { channels, color } from '../../../common/Color';
 import { ICharacterJoinerService, ICoreBrowserService, IThemeService } from '../../services/Services';
 import { JoinedCellData } from '../../services/CharacterJoinerService';
@@ -90,6 +90,11 @@ export class DomRendererRowFactory {
 
     let charElement: HTMLSpanElement | undefined;
     let cellAmount = 0;
+    // The decoration covering the current cell and the one covering the open span: undefined where
+    // there is none, null where several overlap. Cells under the same single decoration render the
+    // same way, so they can share a span.
+    let cellDecoration: IInternalDecoration | null | undefined;
+    let spanDecoration: IInternalDecoration | null | undefined;
     let text = '';
     let i;
     let oldBg = 0;
@@ -168,9 +173,9 @@ export class DomRendererRowFactory {
         classes.push(RowCss.BLINK_HIDDEN_CLASS);
       }
 
-      let isDecorated = false;
+      cellDecoration = undefined;
       this._decorationService.forEachDecorationAtCell(x, row, undefined, d => {
-        isDecorated = true;
+        cellDecoration = cellDecoration === undefined ? d : null;
       });
 
       // get chars to render for this cell
@@ -194,6 +199,7 @@ export class DomRendererRowFactory {
          * - underline from hover state did not change
          * - cell content renders to same letter-spacing
          * - cell is not cursor
+         * - cell is under the same single decoration as the span, or under none
          */
         if (
           cellAmount
@@ -210,7 +216,8 @@ export class DomRendererRowFactory {
           && spacing === oldSpacing
           && !isCursorCell
           && !isJoined
-          && !isDecorated
+          && cellDecoration !== null
+          && cellDecoration === spanDecoration
           && isValidJoinRange
         ) {
           // no span alterations, thus only account chars skipping all code below
@@ -236,6 +243,7 @@ export class DomRendererRowFactory {
         }
       }
       // preserve conditions for next merger eval round
+      spanDecoration = cellDecoration;
       oldBg = cell.bg;
       oldFg = cell.fg;
       oldExt = cell.extended.ext;
@@ -469,7 +477,7 @@ export class DomRendererRowFactory {
       }
 
       // exclude conditions for cell merging - never merge these
-      if (!isCursorCell && !isJoined && !isDecorated && isValidJoinRange) {
+      if (!isCursorCell && !isJoined && cellDecoration !== null && isValidJoinRange) {
         cellAmount++;
       } else {
         charElement.textContent = text;
