@@ -603,6 +603,16 @@ describe('MouseService multi-window', () => {
     doc.dispatchEvent(mouseEvent('mouseup', 0));
     assert.equal(reports.length, 0, 'nothing should be reported without a press');
 
+    // A press in X10 mode (no release reports) followed by a switch to DRAG
+    mouseStateService.activeProtocol = 'X10';
+    elementListeners['mousedown'][0](mouseEvent('mousedown', 1));
+    doc.dispatchEvent(mouseEvent('mouseup', 0));
+    mouseStateService.activeProtocol = 'DRAG';
+    reports.length = 0;
+    doc.dispatchEvent(mouseEvent('mousemove', 1));
+    doc.dispatchEvent(mouseEvent('mouseup', 0));
+    assert.equal(reports.length, 0, 'nothing should be reported after an X10 press');
+
     // The next press is reported as usual
     elementListeners['mousedown'][0](mouseEvent('mousedown', 1));
     reports.length = 0;

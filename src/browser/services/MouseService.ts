@@ -240,7 +240,6 @@ export class MouseService implements IMouseService {
     }
 
     this._sendEvent(ctx, ev);
-    ctx.buttonHeld = true;
 
     // Register additional global handlers which should keep reporting outside
     // of the terminal element.
@@ -248,6 +247,8 @@ export class MouseService implements IMouseService {
     // is held, we currently limit 'mousedown' to the terminal only.
     const listenerDocument = this._getListenerDocument(ctx);
     if (ctx.requestedEvents.mouseup) {
+      // Only track the press when its release is watched (not in X10 mode).
+      ctx.buttonHeld = true;
       ctx.mouseupListener.value = addDisposableListener(listenerDocument, 'mouseup', ctx.requestedEvents.mouseup);
     }
     if (ctx.requestedEvents.mousedrag) {
