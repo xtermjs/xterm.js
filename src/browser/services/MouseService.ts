@@ -23,6 +23,10 @@ interface IMouseBindContext {
   readonly requestedEvents: RequestedMouseEvents;
   readonly mouseupListener: MutableDisposable<IDisposable>;
   readonly mousedragListener: MutableDisposable<IDisposable>;
+  /** Watches for the end of a press while its release is not reported. */
+  readonly pressEndListener: MutableDisposable<IDisposable>;
+  /** Whether a reported button press is in progress. */
+  buttonHeld: boolean;
 }
 
 export class MouseService implements IMouseService {
@@ -67,7 +71,9 @@ export class MouseService implements IMouseService {
     const mousedragListener = new MutableDisposable<IDisposable>();
     register(mouseupListener);
     register(mousedragListener);
-    const ctx: IMouseBindContext = { target, focus, requestedEvents, mouseupListener, mousedragListener };
+    const pressEndListener = new MutableDisposable<IDisposable>();
+    register(pressEndListener);
+    const ctx: IMouseBindContext = { target, focus, requestedEvents, mouseupListener, mousedragListener, pressEndListener, buttonHeld: false };
     const eventListeners: Record<'mouseup' | 'wheel' | 'mousedrag' | 'mousemove', EventListener> = {
       mouseup: (ev: Event) => this._handleMouseUp(ctx, ev as MouseEvent),
       wheel: (ev: Event) => this._handleWheel(ctx, ev as WheelEvent),
@@ -195,6 +201,7 @@ export class MouseService implements IMouseService {
     this._sendEvent(ctx, ev);
     if (!ev.buttons) {
       // if no other button is held remove global handlers
+      ctx.buttonHeld = false;
       ctx.mouseupListener.clear();
       ctx.mousedragListener.clear();
     }
@@ -238,15 +245,21 @@ export class MouseService implements IMouseService {
     // of the terminal element.
     // Note: Other emulators also do this for 'mousedown' while a button
     // is held, we currently limit 'mousedown' to the terminal only.
-    // Use the element's current document in case it moved to another window after open.
-    const { element, document: targetDocument } = ctx.target;
-    const listenerDocument = element.ownerDocument ?? targetDocument;
+    const listenerDocument = this._getListenerDocument(ctx);
     if (ctx.requestedEvents.mouseup) {
+      // Only track the press when its release is watched (not in X10 mode).
+      ctx.buttonHeld = true;
       ctx.mouseupListener.value = addDisposableListener(listenerDocument, 'mouseup', ctx.requestedEvents.mouseup);
     }
     if (ctx.requestedEvents.mousedrag) {
       ctx.mousedragListener.value = addDisposableListener(listenerDocument, 'mousemove', ctx.requestedEvents.mousedrag);
     }
+  }
+
+  private _getListenerDocument(ctx: IMouseBindContext): Document {
+    // Use the element's current document in case it moved to another window after open.
+    const { element, document: targetDocument } = ctx.target;
+    return element.ownerDocument ?? targetDocument;
   }
 
   private _handlePassiveWheel(ctx: IMouseBindContext, ev: WheelEvent): false | void {
@@ -430,8 +443,24 @@ export class MouseService implements IMouseService {
     if (!(events & CoreMouseEventType.UP)) {
       ctx.mouseupListener.clear();
       requestedEvents.mouseup = null;
+      // Still notice when the press ends, so a release that is not reported
+      // does not leave it marked as held.
+      if (ctx.buttonHeld && !ctx.pressEndListener.value) {
+        ctx.pressEndListener.value = addDisposableListener(this._getListenerDocument(ctx), 'mouseup', (ev: MouseEvent) => {
+          if (!ev.buttons) {
+            ctx.buttonHeld = false;
+            ctx.pressEndListener.clear();
+          }
+        });
+      }
     } else {
       requestedEvents.mouseup ??= eventListeners.mouseup;
+      // The app may toggle tracking off and on while a button is held, keep
+      // reporting the rest of that press.
+      if (ctx.buttonHeld && !ctx.mouseupListener.value) {
+        ctx.pressEndListener.clear();
+        ctx.mouseupListener.value = addDisposableListener(this._getListenerDocument(ctx), 'mouseup', requestedEvents.mouseup);
+      }
     }
 
     if (!(events & CoreMouseEventType.DRAG)) {
@@ -439,6 +468,9 @@ export class MouseService implements IMouseService {
       requestedEvents.mousedrag = null;
     } else {
       requestedEvents.mousedrag ??= eventListeners.mousedrag;
+      if (ctx.buttonHeld && !ctx.mousedragListener.value) {
+        ctx.mousedragListener.value = addDisposableListener(this._getListenerDocument(ctx), 'mousemove', requestedEvents.mousedrag);
+      }
     }
   }
 
