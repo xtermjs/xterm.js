@@ -656,14 +656,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
       return;
     }
 
-    // Calculate the device character width. Width is floored as it must be drawn to an integer grid
-    // in order for the char atlas glyphs to not be blurry.
-    this.dimensions.device.char.width = Math.floor(this._charSizeService.width * this._devicePixelRatio);
-
-    // Calculate the device character height. Height is ceiled in case devicePixelRatio is a
-    // floating point number in order to ensure there is enough space to draw the character to the
-    // cell.
-    this.dimensions.device.char.height = Math.ceil(this._charSizeService.height * this._devicePixelRatio);
+    // Round both measured character dimensions to the nearest device pixel to avoid width and
+    // height being biased in opposite directions.
+    this.dimensions.device.char.width = Math.round(this._charSizeService.width * this._devicePixelRatio);
+    this.dimensions.device.char.height = Math.round(this._charSizeService.height * this._devicePixelRatio);
 
     // Calculate the device cell height, if lineHeight is _not_ 1, the resulting value will be
     // floored since lineHeight can never be lower then 1, this guarentees the device cell height
