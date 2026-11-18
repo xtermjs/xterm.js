@@ -469,7 +469,8 @@ export class Buffer extends Disposable implements IBuffer {
           if (this.y < newRows - 1) {
             this.y++;
             this.lines.pop();
-          } else {
+          } else if (this.ybase < Math.min(this.lines.maxLength, this.lines.length + countToInsert) - newRows) {
+            // Ensure ybase does not exceed its maximum value
             this.ybase++;
             this.ydisp++;
           }
