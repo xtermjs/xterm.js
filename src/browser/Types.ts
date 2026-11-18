@@ -41,7 +41,7 @@ export interface ICompositionHelper {
   readonly isComposing: boolean;
   compositionstart(): void;
   compositionupdate(ev: CompositionEvent): void;
-  compositionend(): void;
+  compositionend(ev?: CompositionEvent): void;
   updateCompositionElements(dontRecurse?: boolean): void;
   keydown(ev: KeyboardEvent): boolean;
 }
