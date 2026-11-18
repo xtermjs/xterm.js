@@ -423,6 +423,39 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(3)!.translateToString(), '          ');
         assert.equal(buffer.lines.get(4)!.translateToString(), '          ');
       });
+      it('should not leave the buffer a line short when narrowing with no scrollback and the cursor on the bottom row', () => {
+        // Regression test for #6331: with scrollback 0 there is never room to
+        // scroll a line off the top during reflow, so ybase must stay put and
+        // the viewport must keep fitting exactly within the buffer, otherwise
+        // later writes wrap around to the top line, off screen.
+        buffer = new TestBuffer(true, new MockOptionsService({ scrollback: 0 }), bufferService, new MockLogService());
+        buffer.fillViewportRows();
+        buffer.resize(4, 10);
+        const contents = ['abcd', 'efgh', 'ijkl'];
+        for (let line = 0; line < contents.length; line++) {
+          for (let col = 0; col < contents[line].length; col++) {
+            const char = contents[line][col];
+            buffer.lines.get(line)!.set(col, [0, char, 1, char.charCodeAt(0)]);
+          }
+        }
+        // Narrowing to 2 columns reflows each line into two, pushing the
+        // cursor down onto the bottom row partway through the reflow.
+        buffer.y = 7;
+        buffer.resize(2, 10);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.ydisp, 0);
+        assert.equal(buffer.y, 9);
+        assert.equal(buffer.ybase + 10, buffer.lines.length);
+        assert.isBelow(buffer.ybase + buffer.y, buffer.lines.length);
+        // The line the cursor writes to must be the bottom row of the viewport.
+        assert.equal(buffer.lines.get(buffer.ybase + buffer.y), buffer.lines.get(buffer.ydisp + 9));
+        // The reflowed content must stay in order; with no room the topmost
+        // reflowed line ('ab') is trimmed, as in the ybase > 0 branch.
+        const expected = ['cd', 'ef', 'gh', 'ij', 'kl', '  ', '  ', '  ', '  ', '  '];
+        for (let i = 0; i < expected.length; i++) {
+          assert.equal(buffer.lines.get(i)!.translateToString(), expected[i]);
+        }
+      });
       it('should remove the correct amount of rows when reflowing larger', () => {
         // This is a regression test to ensure that successive wrapped lines that are getting
         // 3+ lines removed on a reflow actually remove the right lines
