@@ -10,7 +10,8 @@ import { DEFAULT_ATTR, FgFlags, BgFlags, Attributes, UnderlineStyle } from '../.
 import { BufferLine, DEFAULT_ATTR_DATA } from '../../../common/buffer/BufferLine';
 import { IBufferLine } from '../../../common/buffer/Types';
 import { CellData } from '../../../common/buffer/CellData';
-import { MockCoreService, MockDecorationService, MockOptionsService, createCellData, NULL_CELL_DATA } from '../../../common/TestUtils.test';
+import { MockBufferService, MockCoreService, MockDecorationService, MockLogService, MockOptionsService, createCellData, NULL_CELL_DATA } from '../../../common/TestUtils.test';
+import { DecorationService } from '../../../common/services/DecorationService';
 import { MockCharacterJoinerService, MockCoreBrowserService, MockThemeService } from '../../TestUtils.test';
 import { TestWidthCache } from './WidthCache.test';
 
@@ -506,6 +507,57 @@ describe('DomRendererRowFactory', () => {
       );
     });
 
+    describe('decorations', () => {
+      let bufferService: MockBufferService;
+      let decorationService: DecorationService;
+
+      beforeEach(() => {
+        bufferService = new MockBufferService(10, 5, new MockOptionsService());
+        decorationService = new DecorationService(new MockLogService(), bufferService);
+        rowFactory = new DomRendererRowFactory(
+          dom.window.document,
+          new MockCharacterJoinerService(),
+          new MockOptionsService({ drawBoldTextInBrightColors: true }),
+          new MockCoreBrowserService(),
+          new MockCoreService(),
+          decorationService,
+          new MockThemeService()
+        );
+        for (let i = 0; i < 7; i++) {
+          lineData.setCell(i, createCellData(DEFAULT_ATTR, 'abcdefg'[i], 1));
+        }
+      });
+
+      function decorate(x: number, width: number, foregroundColor: string): void {
+        decorationService.registerDecoration({ marker: bufferService.buffer.addMarker(0), x, width, foregroundColor });
+      }
+
+      it('should merge cells under the same decoration', () => {
+        decorate(2, 3, '#ff0000');
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, true, 5, widthCache, -1, -1);
+        assert.equal(extractHtml(spans),
+          '<span>ab</span><span style="color:#ff0000;">cde</span><span>fg</span>'
+        );
+      });
+
+      it('should not merge cells under different decorations', () => {
+        decorate(1, 2, '#ff0000');
+        decorate(3, 2, '#ff0000');
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, true, 5, widthCache, -1, -1);
+        assert.equal(extractHtml(spans),
+          '<span>a</span><span style="color:#ff0000;">bc</span><span style="color:#ff0000;">de</span><span>fg</span>'
+        );
+      });
+
+      it('should not merge cells where decorations overlap', () => {
+        decorate(1, 4, '#ff0000');
+        decorate(2, 2, '#00ff00');
+        const spans = rowFactory.createRow(lineData, 0, false, undefined, undefined, 0, false, true, 5, widthCache, -1, -1);
+        assert.equal(extractHtml(spans),
+          '<span>a</span><span style="color:#ff0000;">b</span><span style="color:#00ff00;">c</span><span style="color:#00ff00;">d</span><span style="color:#ff0000;">e</span><span>fg</span>'
+        );
+      });
+    });
   });
 
   function extractHtml(spans: HTMLSpanElement[]): string {
