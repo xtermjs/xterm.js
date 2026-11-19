@@ -115,6 +115,13 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
   private _keyPressHandled: boolean = false;
 
   /**
+   * Records whether the last keypress was dropped only because a modifier was held. Windows 11
+   * inserts dashes on Win+- with a synthetic keystroke while Win is still down (#6184), so the
+   * text only reaches the terminal through the input event that follows.
+   */
+  private _keyPressRejectedByModifier: boolean = false;
+
+  /**
    * Records whether there has been a keydown event for a dead key without a corresponding keydown
    * event for the composed/alternative character. If we cancel the keydown event for the dead key,
    * no events will be emitted for the final character.
@@ -845,6 +852,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
    */
   protected _keyDown(event: KeyboardEvent): boolean | undefined {
     this._keyDownHandled = false;
+    this._keyPressRejectedByModifier = false;
     // A modifier-only keydown never produces text, so it must neither arm nor disarm the
     // _keyDownSeen gate of _inputEvent. On macOS (WebKit/WKWebView as well as Safari), an IME's
     // direct-commit of a shifted character (e.g. full-width `？` from Shift+/ with Chinese Pinyin)
@@ -1009,9 +1017,12 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return false;
     }
 
-    if (!key || (
-      (ev.altKey || ev.ctrlKey || ev.metaKey) && !this._isThirdLevelShift(this.browser, ev)
-    )) {
+    if (!key) {
+      return false;
+    }
+
+    if ((ev.altKey || ev.ctrlKey || ev.metaKey) && !this._isThirdLevelShift(this.browser, ev)) {
+      this._keyPressRejectedByModifier = true;
       return false;
     }
 
@@ -1040,7 +1051,8 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // Only support emoji IMEs when screen reader mode is disabled as the event must bubble up to
     // support reading out character input which can doubling up input characters
     // Based on these event traces: https://github.com/xtermjs/xterm.js/issues/3679
-    if (ev.data && ev.inputType === 'insertText' && (!ev.composed || !this._keyDownSeen) && !this.optionsService.rawOptions.screenReaderMode) {
+    if (ev.data && ev.inputType === 'insertText' && (!ev.composed || !this._keyDownSeen || this._keyPressRejectedByModifier) && !this.optionsService.rawOptions.screenReaderMode) {
+      this._keyPressRejectedByModifier = false;
       if (this._keyPressHandled) {
         return false;
       }
