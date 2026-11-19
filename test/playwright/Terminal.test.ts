@@ -552,6 +552,21 @@ test.describe('API Integration Tests', () => {
       strictEqual(await ctx.proxy.buffer.active.length, 10);
     });
 
+    test('scrollbar follows viewportY after a resize reflows a scrolled-up buffer (#6172)', async () => {
+      await openTerminal(ctx, { rows: 30, cols: 60, scrollback: 5000 });
+      let text = '';
+      for (let i = 1; i <= 300; i++) {
+        text += `MARK${i} ${'-'.repeat(150)} END${i}\r\n`;
+      }
+      await ctx.proxy.write(text);
+      await ctx.proxy.scrollLines(-20);
+      await ctx.proxy.resize(120, 30);
+      await ctx.proxy.resize(60, 30);
+      // Where the scrollbar's position says the viewport is, in rows
+      const scrollbarRow = `Math.round(window.term._core._viewport._scrollableElement.getScrollPosition().scrollTop / window.term._core._renderService.dimensions.css.cell.height)`;
+      await pollFor(ctx.page, `${scrollbarRow} === window.term.buffer.active.viewportY`, true);
+    });
+
     test.describe('getLine', () => {
       test('invalid index', async () => {
         await openTerminal(ctx, { rows: 5 });
