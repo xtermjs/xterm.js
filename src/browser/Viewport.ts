@@ -97,7 +97,12 @@ export class Viewport extends Disposable {
       ].join('\n');
     }));
 
-    this._register(this._bufferService.onResize(() => this.queueSync()));
+    this._register(this._bufferService.onResize(() => {
+      // A resize can reflow the buffer and move ydisp without firing onScroll, so sync the
+      // scroll position to the buffer rather than to the last remembered ydisp (#6172)
+      this._latestYDisp = undefined;
+      this.queueSync();
+    }));
     this._register(this._bufferService.buffers.onBufferActivate(() => {
       // Reset _latestYDisp when switching buffers to prevent stale scroll position
       // from alt buffer contaminating normal buffer scroll position
