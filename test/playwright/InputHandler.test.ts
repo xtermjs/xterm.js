@@ -1765,6 +1765,33 @@ test.describe('InputHandler Integration Tests', () => {
       });
     });
     test.describe('OSC 10 & 11 + 110 | 111 | 112', () => {
+      test('queries, sets and restores configured theme and extended palette colors', async () => {
+        const theme = await ctx.proxy.getOption('theme');
+        try {
+          await ctx.proxy.setOption('theme', {
+            foreground: '#112233', background: '#445566', cursor: '#778899', red: '#123456', extendedAnsi: ['#abcdef']
+          });
+          const query = '\x1b]10;?;?;?\x07\x1b]4;1;?;16;?\x07';
+          await ctx.proxy.write(query);
+          const expected = [
+            '\x1b]10;rgb:1111/2222/3333\x1b\\', '\x1b]11;rgb:4444/5555/6666\x1b\\', '\x1b]12;rgb:7777/8888/9999\x1b\\',
+            '\x1b]4;1;rgb:1212/3434/5656\x1b\\', '\x1b]4;16;rgb:abab/cdcd/efef\x1b\\'
+          ];
+          deepStrictEqual(recordedData, expected);
+          recordedData.length = 0;
+          await ctx.proxy.write('\x1b]10;#ffffff;#000000;#ffffff\x07\x1b]4;1;#ffffff;16;#000000\x07' + query);
+          deepStrictEqual(recordedData, [
+            '\x1b]10;rgb:ffff/ffff/ffff\x1b\\', '\x1b]11;rgb:0000/0000/0000\x1b\\', '\x1b]12;rgb:ffff/ffff/ffff\x1b\\',
+            '\x1b]4;1;rgb:ffff/ffff/ffff\x1b\\', '\x1b]4;16;rgb:0000/0000/0000\x1b\\'
+          ]);
+          recordedData.length = 0;
+          await ctx.proxy.write('\x1b]110\x07\x1b]111\x07\x1b]112\x07\x1b]104;1;16\x07' + query);
+          deepStrictEqual(recordedData, expected);
+        } finally {
+          await ctx.proxy.setOption('theme', theme);
+        }
+      });
+
       test('query FG color', async () => {
         await ctx.proxy.write('\x1b]10;?\x07');
         deepStrictEqual(recordedData, ['\x1b]10;rgb:ffff/ffff/ffff\x1b\\']);

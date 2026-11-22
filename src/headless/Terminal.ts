@@ -26,6 +26,7 @@ import { IBuffer, IMarker } from '../common/buffer/Types';
 import { CoreTerminal } from '../common/CoreTerminal';
 import { ITerminalOptions } from '../common/Types';
 import { Emitter, EventUtils } from '../common/Event';
+import { ColorPalette } from '../common/ColorPalette';
 
 export class Terminal extends CoreTerminal {
   private readonly _onBell = this._register(new Emitter<void>());
@@ -45,6 +46,10 @@ export class Terminal extends CoreTerminal {
     super(options);
 
     this._setup();
+
+    const palette = new ColorPalette(this.options.theme);
+    this._register(this.optionsService.onSpecificOptionChange('theme', () => palette.setTheme(this.options.theme)));
+    this._register(this._inputHandler.onColor(event => this._handleColorEvent(event, palette)));
 
     // Setup InputHandler listeners
     this._register(this._inputHandler.onRequestBell(() => this.bell()));

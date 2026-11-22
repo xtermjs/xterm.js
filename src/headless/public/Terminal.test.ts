@@ -9,6 +9,130 @@ import { ITerminalOptions } from '@xterm/headless';
 
 let term: Terminal;
 
+describe('Headless color queries', () => {
+  let terminal: Terminal;
+  let replies: string[];
+  const osc = (id: number, data: string): string => `\x1b]${id};${data}\x1b\\`;
+
+  function create(options: ITerminalOptions = {}): void {
+    terminal = new Terminal({ theme: {}, ...options });
+    replies = [];
+    terminal.onData(data => replies.push(data));
+  }
+
+  async function write(data: string | Uint8Array): Promise<string[]> {
+    replies.length = 0;
+    await new Promise<void>(resolve => terminal.write(data, resolve));
+    return replies.slice();
+  }
+
+  afterEach(() => terminal.dispose());
+
+  it('reports default colors and palette entries without a renderer', async () => {
+    create();
+    deepStrictEqual(await write('\x1b[5n' + osc(10, '?;?;?') + osc(4, '0;?;1;?;16;?;255;?')), [
+      '\x1b[0n',
+      osc(10, 'rgb:ffff/ffff/ffff'), osc(11, 'rgb:0000/0000/0000'), osc(12, 'rgb:ffff/ffff/ffff'),
+      osc(4, '0;rgb:2e2e/3434/3636'), osc(4, '1;rgb:cccc/0000/0000'),
+      osc(4, '16;rgb:0000/0000/0000'), osc(4, '255;rgb:eeee/eeee/eeee')
+    ]);
+  });
+
+  it('reports constructor theme colors, named ANSI slots and extended ANSI slots', async () => {
+    create({ theme: {
+      foreground: '#eeeeee', background: '#222222', cursor: '#cccccc', red: '#ff0000',
+      brightWhite: '#abcdef', extendedAnsi: ['#123456']
+    } });
+    deepStrictEqual(await write(osc(10, '?;?;?') + osc(4, '1;?;15;?;16;?')), [
+      osc(10, 'rgb:eeee/eeee/eeee'), osc(11, 'rgb:2222/2222/2222'), osc(12, 'rgb:cccc/cccc/cccc'),
+      osc(4, '1;rgb:ffff/0000/0000'), osc(4, '15;rgb:abab/cdcd/efef'), osc(4, '16;rgb:1212/3434/5656')
+    ]);
+  });
+
+  it('sets and restores foreground, background and cursor to the configured theme', async () => {
+    create({ theme: { foreground: '#112233', background: '#445566', cursor: '#778899' } });
+    deepStrictEqual(await write(osc(10, '#aabbcc;rgb:1/2/3;#123456') + osc(10, '?;?;?')), [
+      osc(10, 'rgb:aaaa/bbbb/cccc'), osc(11, 'rgb:1111/2222/3333'), osc(12, 'rgb:1212/3434/5656')
+    ]);
+    deepStrictEqual(await write('\x1b]110\x07\x1b]111\x07\x1b]112\x07' + osc(10, '?;?;?')), [
+      osc(10, 'rgb:1111/2222/3333'), osc(11, 'rgb:4444/5555/6666'), osc(12, 'rgb:7777/8888/9999')
+    ]);
+  });
+
+  it('sets palette entries and restores individual slots or the whole palette', async () => {
+    create({ theme: { red: '#123456', extendedAnsi: ['#abcdef'] } });
+    deepStrictEqual(await write(osc(4, '1;#010203;16;rgb:aa/bb/cc;255;#ffffff') + osc(4, '1;?;16;?;255;?')), [
+      osc(4, '1;rgb:0101/0202/0303'), osc(4, '16;rgb:aaaa/bbbb/cccc'), osc(4, '255;rgb:ffff/ffff/ffff')
+    ]);
+    deepStrictEqual(await write('\x1b]104;1\x07' + osc(4, '1;?;255;?')), [
+      osc(4, '1;rgb:1212/3434/5656'), osc(4, '255;rgb:ffff/ffff/ffff')
+    ]);
+    deepStrictEqual(await write('\x1b]104\x07' + osc(4, '16;?;255;?')), [
+      osc(4, '16;rgb:abab/cdcd/efef'), osc(4, '255;rgb:eeee/eeee/eeee')
+    ]);
+  });
+
+  it('updates reset defaults when the theme option changes', async () => {
+    create();
+    await write(osc(10, '#123456') + osc(4, '1;#abcdef'));
+    terminal.options.theme = { foreground: '#654321', red: '#fedcba' };
+    deepStrictEqual(await write(osc(10, '?') + osc(4, '1;?')), [
+      osc(10, 'rgb:6565/4343/2121'), osc(4, '1;rgb:fefe/dcdc/baba')
+    ]);
+    await write(osc(10, '#000000') + osc(4, '1;#000000'));
+    deepStrictEqual(await write('\x1b]110\x07\x1b]104;1\x07' + osc(10, '?') + osc(4, '1;?')), [
+      osc(10, 'rgb:6565/4343/2121'), osc(4, '1;rgb:fefe/dcdc/baba')
+    ]);
+  });
+
+  it('processes interleaved palette queries and changes in order', async () => {
+    create({ theme: { red: '#123456' } });
+    deepStrictEqual(await write(osc(4, '1;?;1;#abcdef;1;?')), [
+      osc(4, '1;rgb:1212/3434/5656'), osc(4, '1;rgb:abab/cdcd/efef')
+    ]);
+  });
+
+  it('ignores invalid color specifications and palette indices', async () => {
+    create();
+    deepStrictEqual(await write(osc(4, '-1;?;256;?') + osc(10, 'invalid') + osc(4, '1;invalid') + osc(10, '?') + osc(4, '1;?')), [
+      osc(10, 'rgb:ffff/ffff/ffff'), osc(4, '1;rgb:cccc/0000/0000')
+    ]);
+  });
+
+  it('uses defaults for unsupported theme color specifications', async () => {
+    create({ theme: { foreground: 'invalid', cursor: 'invalid', red: 'invalid' } });
+    deepStrictEqual(await write(osc(10, '?') + osc(12, '?') + osc(4, '1;?')), [
+      osc(10, 'rgb:ffff/ffff/ffff'), osc(12, 'rgb:ffff/ffff/ffff'), osc(4, '1;rgb:cccc/0000/0000')
+    ]);
+  });
+
+  it('blends a transparent cursor against the background like the browser theme', async () => {
+    create({ theme: { background: '#000000', cursor: '#ff000080' } });
+    deepStrictEqual(await write(osc(12, '?')), [osc(12, 'rgb:8080/0000/0000')]);
+  });
+
+  it('keeps color changes local to each terminal', async () => {
+    create();
+    const other = new Terminal();
+    const otherReplies: string[] = [];
+    other.onData(data => otherReplies.push(data));
+    try {
+      await write(osc(4, '1;#ffffff'));
+      await new Promise<void>(resolve => other.write(osc(4, '1;?'), resolve));
+      deepStrictEqual(otherReplies, [osc(4, '1;rgb:cccc/0000/0000')]);
+      deepStrictEqual(await write(osc(4, '1;?')), [osc(4, '1;rgb:ffff/ffff/ffff')]);
+    } finally {
+      other.dispose();
+    }
+  });
+
+  it('handles split UTF-8 writes and BEL-terminated queries', async () => {
+    create();
+    deepStrictEqual(await write(new Uint8Array([27, 93, 49, 48, 59])), []);
+    deepStrictEqual(await write(new Uint8Array([63, 7])), [osc(10, 'rgb:ffff/ffff/ffff')]);
+  });
+});
+
 describe('Headless API Tests', function (): void {
   beforeEach(() => {
     // Create default terminal to be used by most tests
