@@ -423,6 +423,26 @@ describe('Buffer', () => {
         assert.equal(buffer.lines.get(3)!.translateToString(), '          ');
         assert.equal(buffer.lines.get(4)!.translateToString(), '          ');
       });
+      it('should not leave the buffer a line short when narrowing with scrollback 0 and the cursor on the bottom row', () => {
+        // Regression test for #6331: with scrollback 0, narrowing while the cursor ends up on
+        // the bottom row must not scroll ybase past the end of the buffer.
+        buffer = new TestBuffer(true, new MockOptionsService({ scrollback: 0 }), new MockBufferService(72, 40), new MockLogService());
+        buffer.fillViewportRows();
+        // 8 lines of 61 chars each, cursor on the row after them, as in the issue repro
+        for (let y = 0; y < 8; y++) {
+          const line = buffer.lines.get(y)!;
+          for (let i = 0; i < 61; i++) {
+            line.set(i, [0, 'x', 1, 'x'.charCodeAt(0)]);
+          }
+        }
+        buffer.y = 8;
+        buffer.resize(11, 40);
+        // The viewport must still cover exactly the whole buffer
+        assert.equal(buffer.lines.length, 40);
+        assert.equal(buffer.ybase, 0);
+        assert.equal(buffer.y, 39);
+        assert.equal(buffer.ybase + 40, buffer.lines.length);
+      });
       it('should remove the correct amount of rows when reflowing larger', () => {
         // This is a regression test to ensure that successive wrapped lines that are getting
         // 3+ lines removed on a reflow actually remove the right lines
