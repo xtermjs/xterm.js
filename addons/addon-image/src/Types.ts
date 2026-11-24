@@ -10,7 +10,6 @@ import { Attributes, BgFlags, Content, ExtFlags, UnderlineStyle } from 'common/b
 import type { AttributeData } from 'common/buffer/AttributeData';
 import type { IParams, IDcsHandler, IOscHandler, IApcHandler, IEscapeSequenceParser } from 'common/parser/Types';
 import type { IInputHandler } from 'common/Types';
-import type { IBufferLine, IExtendedAttrs } from 'common/buffer/Types';
 import type { ITerminal, ReadonlyColorSet } from 'browser/Types';
 import type { IRenderDimensions } from 'browser/renderer/shared/Types';
 import type { ICoreBrowserService, IRenderService, IThemeService } from 'browser/services/Services';
@@ -48,25 +47,13 @@ export interface IResetHandler {
   reset(): void;
 }
 
+/* eslint-disable */
 /**
  * Stub into private interfaces.
  * This should be kept in line with common libs.
  * Any change made here should be replayed in the accessors test case to
  * have a somewhat reliable testing against code changes in the core repo.
  */
-
-// overloaded IExtendedAttrs to hold image refs
-export interface IExtendedAttrsImage extends IExtendedAttrs {
-  imageId: number;
-  tileId: number;
-  clone(): IExtendedAttrsImage;
-}
-
-/* eslint-disable */
-export interface IBufferLineExt extends IBufferLine {
-  _extendedAttrs: {[index: number]: IExtendedAttrsImage | undefined};
-  _data: Uint32Array;
-}
 
 interface IInputHandlerExt extends IInputHandler {
   _parser: IEscapeSequenceParser;
@@ -78,6 +65,7 @@ interface IInputHandlerExt extends IInputHandler {
   };
   onRequestReset(handler: () => void): IDisposable;
 }
+/* eslint-enable */
 
 export interface ICoreTerminalExt extends ITerminal {
   _themeService: IThemeService | undefined;
@@ -89,8 +77,6 @@ export interface ICoreTerminalExt extends ITerminal {
 export interface ITerminalExt extends Terminal {
   _core: ICoreTerminalExt;
 }
-/* eslint-enable */
-
 
 /**
  * Some storage definitions.

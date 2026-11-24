@@ -166,6 +166,13 @@ export class WebglRenderer extends Disposable implements IRenderer {
       }
       this._canvas.parentElement?.removeChild(this._canvas);
       removeTerminalFromCache(this._terminal);
+      // Detaching the canvas does not free the underlying WebGL2 context; it
+      // lingers until it is garbage collected. Browsers cap the number of live
+      // WebGL contexts per document (Chromium ~16), so in apps that create and
+      // dispose many terminals these orphaned contexts accumulate and the
+      // browser force-evicts the oldest LIVE context, blanking an active
+      // terminal. Explicitly lose the context so it is released immediately.
+      this._gl.getExtension('WEBGL_lose_context')?.loseContext();
     }));
   }
 

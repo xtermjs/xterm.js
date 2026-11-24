@@ -20,6 +20,7 @@ export interface IExtendedAttrs {
   underlineColor: number;
   underlineVariantOffset: number;
   urlId: number;
+  payload: Object | undefined;
   clone(): IExtendedAttrs;
   isEmpty(): boolean;
 }
@@ -118,7 +119,7 @@ export interface ICellData extends IAttributeData {
  */
 export interface IBufferLine {
   length: number;
-  isWrapped: boolean;
+  readonly isWrapped: boolean;
   get(index: number): CharData;
   set(index: number, value: CharData): void;
   loadCell(index: number, cell: ICellData): ICellData;
@@ -146,6 +147,7 @@ export interface IBufferLine {
   getCodePoint(index: number): number;
   isCombined(index: number): number;
   getString(index: number): string;
+  getExtended(index: number): IExtendedAttrs;
 }
 
 export interface IMarker extends IDisposable {
@@ -185,6 +187,7 @@ export interface IBuffer {
   addMarker(y: number): IMarker;
   clearMarkers(y: number): void;
   clearAllMarkers(): void;
+  setWrapped(row: number, value: boolean): void;
 }
 
 export interface IBufferSet extends IDisposable {

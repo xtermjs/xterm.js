@@ -1291,6 +1291,65 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       await ctx.value.proxy.write('\x1b[1D');
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [128, 0, 0, 255]);
     });
+
+    // 1-based column inside select(2, 0, 10), away from the block cursor at column 1.
+    const sampleCol = 5;
+    const sampleRow = 1;
+    const selectedColor: [number, number, number, number] = [255, 0, 0, 255];
+    const normalColor: [number, number, number, number] = [0, 0, 0, 255];
+    async function selectSampleCells(): Promise<void> {
+      const theme: ITheme = {
+        background: '#000000',
+        selectionBackground: '#FF0000'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      await ctx.value.proxy.focus();
+      await ctx.value.proxy.select(2, 0, 10);
+      await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, selectedColor);
+      await pollForCellColorFresh(ctx.value, 20, sampleRow, normalColor);
+    }
+
+    test('#6245: clearSelection() should show the normal background immediately', async () => {
+      await selectSampleCells();
+      await ctx.value.proxy.clearSelection();
+      await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, normalColor);
+    });
+    test('#6245: clearSelection() should not leave a selection after column resizes', async () => {
+      await selectSampleCells();
+      await ctx.value.proxy.clearSelection();
+      await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, normalColor);
+      const rows = await ctx.value.proxy.rows;
+      for (const cols of [90, 80, 100, 85]) {
+        await ctx.value.proxy.resize(cols, rows);
+        await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, normalColor);
+      }
+    });
+    test('#6245: clearSelection() should not leave a selection after fontSize or lineHeight changes', async () => {
+      await selectSampleCells();
+      await ctx.value.proxy.clearSelection();
+      await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, normalColor);
+      await ctx.value.page.evaluate(`window.term.options.fontSize = 20;`);
+      await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, normalColor);
+      await ctx.value.page.evaluate(`window.term.options.lineHeight = 1.5;`);
+      await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, normalColor);
+    });
+    test('#6245: a live selection should stay highlighted across column resizes', async () => {
+      await selectSampleCells();
+      const rows = await ctx.value.proxy.rows;
+      for (const cols of [90, 80, 100, 85]) {
+        await ctx.value.proxy.resize(cols, rows);
+        await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, selectedColor);
+      }
+    });
+    test('#6245: user input should clear the selection highlight', async () => {
+      await selectSampleCells();
+      // TerminalProxy.input() does not forward its arguments into the page.
+      await ctx.value.page.evaluate(`window.term.input('x', true);`);
+      await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, normalColor);
+      const rows = await ctx.value.proxy.rows;
+      await ctx.value.proxy.resize(90, rows);
+      await pollForCellColorFresh(ctx.value, sampleCol, sampleRow, normalColor);
+    });
   });
 
   // TODO: These tests are a little too flaky atm

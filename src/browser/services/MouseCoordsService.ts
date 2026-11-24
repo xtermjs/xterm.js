@@ -32,6 +32,11 @@ export class MouseCoordsService implements IMouseCoordsService {
 
   public getMouseReportCoords(event: MouseEvent, element: HTMLElement): { col: number, row: number, x: number, y: number } | undefined {
     const coords = getCoordsRelativeToElement(getWindow(element), event, element);
+    // The coordinates can be NaN, for example when the element was removed from the DOM (the
+    // computed padding is empty) or when the event has no clientX/clientY
+    if (!Number.isFinite(coords[0]) || !Number.isFinite(coords[1])) {
+      return undefined;
+    }
     if (!this._charSizeService.hasValidSize) {
       return undefined;
     }
