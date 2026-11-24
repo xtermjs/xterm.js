@@ -44,7 +44,7 @@ export type CustomGlyphDefinitionPartRaw = (
   { type: CustomGlyphDefinitionType.SOLID_OCTANT_BLOCK_VECTOR, data: ICustomGlyphSolidOctantBlockVector[] } |
   { type: CustomGlyphDefinitionType.BLOCK_PATTERN, data: CustomGlyphPatternDefinition } |
   { type: CustomGlyphDefinitionType.PATH_FUNCTION, data: CustomGlyphPathDrawFunctionDefinition | string } |
-  { type: CustomGlyphDefinitionType.PATH, data: string } |
+  { type: CustomGlyphDefinitionType.PATH, data: CustomGlyphPathDrawFunctionDefinition | string } |
   { type: CustomGlyphDefinitionType.PATH_NEGATIVE, data: ICustomGlyphVectorShape } |
   { type: CustomGlyphDefinitionType.VECTOR_SHAPE, data: ICustomGlyphVectorShape} |
   { type: CustomGlyphDefinitionType.BRAILLE, data: number }
