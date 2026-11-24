@@ -54,12 +54,28 @@ namespace GitBranchSymbolsParts {
   export const CURVE_UP_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
 
   // Node parts
-  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' });
-  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 });
+  // The node is a circle of radius 0.35 cell widths. Its vertical radius is
+  // derived from the actual cell aspect ratio (yp / xp is
+  // deviceCellWidth / deviceCellHeight) so it stays circular when the cell is
+  // not 1:2, e.g. with fonts whose natural cell ratio differs or lineHeight > 1.
+  // The radius is capped at half the cell height so the node always fits.
+  const NODE_RADIUS = 0.35;
+  const NODE_KAPPA = 0.5522847498; // cubic Bezier approximation of a circle
+  function nodeRadiusY(xp: number, yp: number): number {
+    return Math.min(NODE_RADIUS * (yp / xp), 0.5);
+  }
+  function nodeCirclePath(xp: number, yp: number): string {
+    const ry = nodeRadiusY(xp, yp);
+    const kx = NODE_KAPPA * NODE_RADIUS;
+    const ky = NODE_KAPPA * ry;
+    return `M.85,.5 C.85,${.5 - ky},${.5 + kx},${.5 - ry},.5,${.5 - ry} C${.5 - kx},${.5 - ry},.15,${.5 - ky},.15,.5 C.15,${.5 + ky},${.5 - kx},${.5 + ry},.5,${.5 + ry} C${.5 + kx},${.5 + ry},.85,${.5 + ky},.85,.5`;
+  }
+  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: nodeCirclePath });
+  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: nodeCirclePath, strokeWidth: 1 });
   export const NODE_LINE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 });
   export const NODE_LINE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 });
-  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 });
-  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 });
+  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + nodeRadiusY(xp, yp)}`, strokeWidth: 1 });
+  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - nodeRadiusY(xp, yp)}`, strokeWidth: 1 });
 }
 
 export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {
