@@ -247,6 +247,7 @@ export interface ITerminalOptions {
   quirks?: ITerminalQuirks;
   scrollbar?: IScrollbarOptions;
   scrollOnEraseInDisplay?: boolean;
+  useVtCompatibleCursorSave?: boolean;
   vtExtensions?: IVtExtensions;
 
   [key: string]: any;

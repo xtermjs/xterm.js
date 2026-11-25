@@ -2825,7 +2825,8 @@ export class InputHandler extends Disposable implements IInputHandler {
 
     // reset DECSC data
     this._activeBuffer.savedX = 0;
-    this._activeBuffer.savedY = this._activeBuffer.ybase;
+    this._activeBuffer.savedYIsDisplayRelative = this._optionsService.rawOptions.useVtCompatibleCursorSave;
+    this._activeBuffer.savedY = this._activeBuffer.savedYIsDisplayRelative ? 0 : this._activeBuffer.ybase;
     this._activeBuffer.savedCurAttrData.fg = this._curAttrData.fg;
     this._activeBuffer.savedCurAttrData.bg = this._curAttrData.bg;
     this._activeBuffer.savedCharset = this._charsetService.charset;
@@ -2994,7 +2995,10 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public saveCursor(params?: IParams): boolean {
     this._activeBuffer.savedX = this._activeBuffer.x;
-    this._activeBuffer.savedY = this._activeBuffer.ybase + this._activeBuffer.y;
+    this._activeBuffer.savedYIsDisplayRelative = this._optionsService.rawOptions.useVtCompatibleCursorSave;
+    this._activeBuffer.savedY = this._activeBuffer.savedYIsDisplayRelative
+      ? this._activeBuffer.y
+      : this._activeBuffer.ybase + this._activeBuffer.y;
     this._activeBuffer.savedCurAttrData.fg = this._curAttrData.fg;
     this._activeBuffer.savedCurAttrData.bg = this._curAttrData.bg;
     this._activeBuffer.savedCharset = this._charsetService.charset;
@@ -3016,7 +3020,9 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public restoreCursor(params?: IParams): boolean {
     this._activeBuffer.x = this._activeBuffer.savedX || 0;
-    this._activeBuffer.y = Math.max(this._activeBuffer.savedY - this._activeBuffer.ybase, 0);
+    this._activeBuffer.y = this._activeBuffer.savedYIsDisplayRelative
+      ? this._activeBuffer.savedY
+      : Math.max(this._activeBuffer.savedY - this._activeBuffer.ybase, 0);
     this._curAttrData.fg = this._activeBuffer.savedCurAttrData.fg;
     this._curAttrData.bg = this._activeBuffer.savedCurAttrData.bg;
     for (let i = 0; i < this._activeBuffer.savedCharsets.length; i++) {

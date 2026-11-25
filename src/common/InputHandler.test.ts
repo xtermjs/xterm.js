@@ -223,6 +223,25 @@ describe('InputHandler', () => {
       assert.equal(coreService.decPrivateModes.wraparound, false);
     });
   });
+
+  describe('display-relative cursor save', () => {
+    beforeEach(() => {
+      bufferService.resize(5, 3);
+      optionsService.options.scrollback = 1;
+      bufferService.reset();
+    });
+
+    it('should restore the display row after scrolling with DECSC/DECRC', async () => {
+      optionsService.options.useVtCompatibleCursorSave = true;
+      await inputHandler.parseP('\x1b[2;1H\x1b7\x1b[3;1H\n\n\x1b8');
+      assert.deepEqual(getCursor(bufferService), [0, 1]);
+    });
+
+    it('should preserve document-relative SCOSC/SCORC behavior by default', async () => {
+      await inputHandler.parseP('\x1b[2;1H\x1b[s\x1b[3;1H\n\n\x1b[u');
+      assert.deepEqual(getCursor(bufferService), [0, 0]);
+    });
+  });
   describe('setCursorStyle', () => {
     it('should call Terminal.setOption with correct params', () => {
       inputHandler.setCursorStyle(Params.fromArray([0]));
