@@ -3,7 +3,8 @@
  * @license MIT
  */
 
-import { MockCompositionHelper, MockRenderer, MockViewport, TestTerminal } from './TestUtils.test';
+import { MockCompositionHelper, MockRenderer, MockRenderService, MockViewport, TestTerminal } from './TestUtils.test';
+import { CompositionHelper } from './input/CompositionHelper';
 import type { IBrowser } from './Types';
 import { assert } from 'chai';
 import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
@@ -166,6 +167,146 @@ describe('Terminal', () => {
         term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: modifier.keyCode, key: modifier.key } as KeyboardEvent);
         assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false, modifier.key);
       }
+    });
+  });
+
+  describe('Korean IME without composition events (WebKit)', () => {
+    // A step's value is the textarea's value once the input has landed.
+    type Step = { input: string, data?: string, value: string, isComposing?: boolean } | { keydown: number, key: string } | { keyup: number, key: string };
+
+    let textarea: { value: string, selectionStart: number, selectionEnd: number, style: {}, focus: () => void };
+    let compositionHelper: CompositionHelper;
+    let sent: string[];
+
+    // CompositionHelper defers the keyCode 229 textarea diff with window.setTimeout
+    before(() => (globalThis as any).window = globalThis);
+    after(() => delete (globalThis as any).window);
+
+    beforeEach(() => {
+      term.clearSelection = () => { };
+      textarea = { value: '', selectionStart: 0, selectionEnd: 0, style: {}, focus: () => { } };
+      (term as any).textarea = textarea;
+      const compositionView = {
+        classList: { add: () => { }, remove: () => { } },
+        getBoundingClientRect: () => ({ width: 0, height: 0 }),
+        style: {},
+        textContent: ''
+      } as any;
+      compositionHelper = new CompositionHelper(textarea as any, compositionView, (term as any)._bufferService, term.optionsService, term.coreService, new MockRenderService());
+      (term as any)._compositionHelper = compositionHelper;
+      sent = [];
+      term.onData(data => sent.push(data));
+    });
+
+    async function play(steps: Step[]): Promise<void> {
+      for (const step of steps) {
+        if ('input' in step) {
+          textarea.value = step.value;
+          textarea.selectionStart = textarea.selectionEnd = step.value.length;
+          term.inputEvent({ inputType: step.input, data: step.data ?? null, isComposing: step.isComposing ?? false, composed: true });
+        } else {
+          const keyCode = 'keydown' in step ? step.keydown : step.keyup;
+          const ev = { type: 'keydown' in step ? 'keydown' : 'keyup', keyCode, key: step.key, shiftKey: step.key === 'Shift', preventDefault: () => { }, stopPropagation: () => { } };
+          if ('keydown' in step) {
+            term.keyDown(ev);
+          } else {
+            (term as any)._keyUp(ev);
+          }
+        }
+        // Let the timers of each step run, as they do between keystrokes
+        await new Promise(r => setTimeout(r, 0));
+      }
+    }
+
+    /** One key the IME takes: its keydown arrives after its input. */
+    function imeKey(key: string, input: string, data: string, value: string): Step[] {
+      return [{ input, data, value }, { keydown: 229, key }, { keyup: 229, key }];
+    }
+
+    it('should send each syllable of the Safari trace once it is complete (#6284)', async () => {
+      // Typing 안녕하세요 and Enter in Safari 26.2 with the macOS Korean 2-Set IME, from #6284. The
+      // trace was captured without keyup listeners, a keyup follows each keydown here.
+      await play([
+        ...imeKey('ㅇ', 'insertText', 'ㅇ', 'ㅇ'),
+        ...imeKey('ㅏ', 'insertReplacementText', '아', '아'),
+        ...imeKey('ㄴ', 'insertReplacementText', '안', '안'),
+        { input: 'insertReplacementText', data: '안', value: '안' },
+        ...imeKey('ㄴ', 'insertText', 'ㄴ', '안ㄴ'),
+        ...imeKey('ㅕ', 'insertReplacementText', '녀', '안녀'),
+        ...imeKey('ㅇ', 'insertReplacementText', '녕', '안녕'),
+        { input: 'insertReplacementText', data: '녕', value: '안녕' },
+        ...imeKey('ㅎ', 'insertText', 'ㅎ', '안녕ㅎ'),
+        ...imeKey('ㅏ', 'insertReplacementText', '하', '안녕하'),
+        ...imeKey('ㅅ', 'insertReplacementText', '핫', '안녕핫'),
+        { input: 'insertReplacementText', data: '하', value: '안녕하' },
+        ...imeKey('ㅔ', 'insertText', '세', '안녕하세'),
+        ...imeKey('ㅇ', 'insertReplacementText', '셍', '안녕하셍'),
+        { input: 'insertReplacementText', data: '세', value: '안녕하세' },
+        ...imeKey('ㅛ', 'insertText', '요', '안녕하세요'),
+        { input: 'insertReplacementText', data: '요', value: '안녕하세요' },
+        { keydown: 13, key: 'Enter' }
+      ]);
+      assert.deepEqual(sent, ['안', '녕', '하', '세', '요', '\r']);
+    });
+
+    it('should keep the syllable composing across a Shift inside it', async () => {
+      await play([
+        ...imeKey('ㅎ', 'insertText', 'ㅎ', 'ㅎ'),
+        ...imeKey('ㅏ', 'insertReplacementText', '하', '하'),
+        { keydown: 16, key: 'Shift' },
+        { input: 'insertReplacementText', data: '했', value: '했' },
+        { keydown: 229, key: 'ㅆ' },
+        { keyup: 229, key: 'ㅆ' },
+        { keyup: 16, key: 'Shift' },
+        { keydown: 13, key: 'Enter' }
+      ]);
+      assert.deepEqual(sent, ['했', '\r']);
+    });
+
+    it('should not send a syllable the IME deletes', async () => {
+      await play([
+        ...imeKey('ㅇ', 'insertText', 'ㅇ', 'ㅇ'),
+        ...imeKey('Backspace', 'deleteContentBackward', '', ''),
+        { keydown: 13, key: 'Enter' }
+      ]);
+      assert.deepEqual(sent, ['\r']);
+      assert.equal(compositionHelper.isComposing, false);
+    });
+
+    it('should send the syllable before text that is not Hangul', async () => {
+      await play([
+        ...imeKey('ㅇ', 'insertText', 'ㅇ', 'ㅇ'),
+        ...imeKey('ㅏ', 'insertReplacementText', '아', '아'),
+        ...imeKey('.', 'insertText', '.', '아.')
+      ]);
+      assert.deepEqual(sent, ['아', '.']);
+    });
+
+    it('should send the syllable before the focus report on blur', async () => {
+      term.coreService.decPrivateModes.sendFocus = true;
+      await play([
+        ...imeKey('ㅅ', 'insertText', 'ㅅ', 'ㅅ'),
+        ...imeKey('ㅔ', 'insertReplacementText', '세', '세')
+      ]);
+      (term as any)._handleTextAreaBlur();
+      assert.deepEqual(sent, ['세', '\x1b[O']);
+    });
+
+    it('should send ASCII typed without an IME on keydown', () => {
+      term.keyDown({ type: 'keydown', keyCode: 65, key: 'a', preventDefault: () => { }, stopPropagation: () => { } });
+      assert.deepEqual(sent, ['a']);
+    });
+
+    it('should leave a Korean IME that fires composition events unchanged', async () => {
+      await play([{ keydown: 229, key: 'ㅇ' }]);
+      compositionHelper.compositionstart();
+      for (const data of ['ㅇ', '아', '안']) {
+        compositionHelper.compositionupdate({ data });
+        await play([{ input: 'insertCompositionText', data, value: data, isComposing: true }]);
+      }
+      compositionHelper.compositionend();
+      await new Promise(r => setTimeout(r, 0));
+      assert.deepEqual(sent, ['안']);
     });
   });
 
