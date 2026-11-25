@@ -23,7 +23,8 @@ export class DecorationService extends Disposable implements IDecorationService 
   /**
    * A list of all decorations, sorted by the marker's line value. This relies on the fact that
    * while marker line values do change, they should all change by the same amount so this should
-   * never become out of order.
+   * never become out of order. The one exception is a disposed marker, whose line becomes -1 while
+   * its decoration's deletion may still be pending in the list; SortedList.delete tolerates that.
    */
   private readonly _decorations: SortedList<IInternalDecoration>;
 

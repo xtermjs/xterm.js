@@ -6,6 +6,7 @@
 import { assert } from 'chai';
 import { DecorationLineCache, DecorationService } from './DecorationService';
 import { IMarker } from '../buffer/Types';
+import { IDecoration } from '@xterm/xterm';
 import { Disposable } from '../Lifecycle';
 import { Emitter } from '../Event';
 import { MockLogService, MockBufferService, MockOptionsService } from '../TestUtils.test';
@@ -129,6 +130,35 @@ describe('DecorationService', () => {
       assert.strictEqual([...service.getDecorationsAtCell(0, 6)].length, 1);
       assert.strictEqual([...service.getDecorationsAtCell(0, 7)].length, 1);
       assert.strictEqual([...service.getDecorationsAtCell(0, 8)].length, 0);
+    });
+  });
+
+  describe('dispose', () => {
+    it('should remove every decoration when each decoration disposes its own marker', () => {
+      // Mirrors the search addon: every decoration owns a marker that it disposes along with itself.
+      // Disposing the marker sets its line to -1 while the decoration's deletion is still deferred,
+      // which temporarily breaks the sort order of the decoration list.
+      const buffer = bufferService.buffer;
+      (buffer as Buffer).fillViewportRows();
+      const register = (line: number): IDecoration => {
+        const marker = buffer.addMarker(line);
+        const decoration = service.registerDecoration({ marker, x: 1, width: 2 })!;
+        decoration.onDispose(() => marker.dispose());
+        return decoration;
+      };
+      const highlight0 = register(0);
+      const active0 = register(0);
+      const highlight13a = register(13);
+      const highlight13b = register(13);
+
+      active0.dispose();
+      highlight0.dispose();
+      highlight13a.dispose();
+      highlight13b.dispose();
+
+      assert.strictEqual([...service.decorations].length, 0);
+      assert.strictEqual([...service.getDecorationsAtCell(1, 0)].length, 0);
+      assert.strictEqual([...service.getDecorationsAtCell(1, 13)].length, 0);
     });
   });
 
