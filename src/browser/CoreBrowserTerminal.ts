@@ -914,6 +914,15 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       }
     }
 
+    // A text producing key that is part of an active IME composition (eg. the space or digit used
+    // to pick a candidate) is consumed by the IME and must not be forwarded as a raw key. The
+    // browser suppresses the keypress event for these keys, which is what keeps the legacy path
+    // silent, but the kitty and Win32 encoders report every key from keydown and would otherwise
+    // leak the key in addition to the text committed by the composition (#6112).
+    if (event.isComposing && event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+      return true;
+    }
+
     if (this._unprocessedDeadKey) {
       this._unprocessedDeadKey = false;
       return true;
