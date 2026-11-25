@@ -1138,6 +1138,7 @@ class AtlasPage {
 
   public clear(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this._glyphs.length = 0;
     this.currentRow.x = 0;
     this.currentRow.y = 0;
     this.currentRow.height = 0;
