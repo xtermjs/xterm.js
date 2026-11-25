@@ -3,8 +3,6 @@
  * @license MIT
  */
 
-import { ReadonlyColorSet } from 'browser/Types';
-import { acquireTextureAtlas } from '../CharAtlasCache';
 import { IRenderDimensions } from 'browser/renderer/shared/Types';
 import { ICoreBrowserService, IThemeService } from 'browser/services/Services';
 import { Disposable, toDisposable } from 'common/Lifecycle';
@@ -14,7 +12,6 @@ import { Terminal } from '@xterm/xterm';
 import { IRenderLayer } from './Types';
 import { throwIfFalsy } from 'browser/renderer/shared/RendererUtils';
 import { TEXT_BASELINE } from '../Constants';
-import type { ITextureAtlas } from '../Types';
 
 export abstract class BaseRenderLayer extends Disposable implements IRenderLayer {
   private _canvas: HTMLCanvasElement;
@@ -25,8 +22,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
   private _deviceCellHeight: number = 0;
   private _deviceCharLeft: number = 0;
   private _deviceCharTop: number = 0;
-
-  protected _charAtlas: ITextureAtlas | undefined;
 
   constructor(
     terminal: Terminal,
@@ -44,8 +39,7 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._canvas.style.zIndex = zIndex.toString();
     this._initCanvas();
     this._container.appendChild(this._canvas);
-    this._register(this._themeService.onChangeColors(e => {
-      this._refreshCharAtlas(terminal, e);
+    this._register(this._themeService.onChangeColors(() => {
       this.reset(terminal);
     }));
     this._register(toDisposable(() => {
@@ -81,23 +75,8 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     this._initCanvas();
     this._container.replaceChild(this._canvas, oldCanvas);
 
-    // Regenerate char atlas and force a full redraw
-    this._refreshCharAtlas(terminal, this._themeService.colors);
+    // Force a full redraw
     this.handleGridChanged(terminal, 0, terminal.rows - 1);
-  }
-
-  /**
-   * Refreshes the char atlas, aquiring a new one if necessary.
-   * @param terminal The terminal.
-   * @param colorSet The color set to use for the char atlas.
-   */
-  private _refreshCharAtlas(terminal: Terminal, colorSet: ReadonlyColorSet): void {
-    if (this._deviceCharWidth <= 0 && this._deviceCharHeight <= 0) {
-      return;
-    }
-
-    this._charAtlas = acquireTextureAtlas(terminal, this._optionsService.rawOptions, colorSet, this._deviceCellWidth, this._deviceCellHeight, this._deviceCharWidth, this._deviceCharHeight, this._coreBrowserService.dpr, 2048);
-    this._charAtlas.warmUp();
   }
 
   public resize(terminal: Terminal, dim: IRenderDimensions): void {
@@ -116,8 +95,6 @@ export abstract class BaseRenderLayer extends Disposable implements IRenderLayer
     if (!this._alpha) {
       this._clearAll();
     }
-
-    this._refreshCharAtlas(terminal, this._themeService.colors);
   }
 
   public abstract reset(terminal: Terminal): void;
