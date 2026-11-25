@@ -139,7 +139,7 @@ export class TextureAtlas implements ITextureAtlas {
   public get pageLayoutVersion(): number { return this._pageLayoutVersion; }
 
   public clearTexture(): void {
-    if (this._pages[0].currentRow.x === 0 && this._pages[0].currentRow.y === 0) {
+    if (this._pages.every(page => page.glyphs.length === 0)) {
       return;
     }
     for (const page of this._pages) {
