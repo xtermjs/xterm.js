@@ -348,4 +348,12 @@ test.describe('Parser Integration Tests', () => {
       ]);
     });
   });
+  test.describe('isInSequence', () => {
+    test('should tell whether a sequence is unfinished', async () => {
+      await ctx.proxy.write('ab\x1b[3');
+      strictEqual(await ctx.proxy.evaluate(([term]) => term.parser.isInSequence), true);
+      await ctx.proxy.write('1m');
+      strictEqual(await ctx.proxy.evaluate(([term]) => term.parser.isInSequence), false);
+    });
+  });
 });

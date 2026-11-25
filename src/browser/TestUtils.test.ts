@@ -112,6 +112,9 @@ export class MockTerminal implements ITerminal {
   public registerApcHandler(id: IFunctionIdentifier, callback: (data: string) => boolean | Promise<boolean>): IDisposable {
     throw new Error('Method not implemented.');
   }
+  public get isParserInSequence(): boolean {
+    throw new Error('Method not implemented.');
+  }
   public registerLinkProvider(linkProvider: ILinkProvider): IDisposable {
     throw new Error('Method not implemented.');
   }

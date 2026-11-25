@@ -154,6 +154,11 @@ export interface IEscapeSequenceParser extends IDisposable {
   precedingJoinState: number; // More specifically: UnicodeJoinProperties
 
   /**
+   * The state the parser is in after the data parsed so far.
+   */
+  readonly currentState: ParserState;
+
+  /**
    * Reset the parser to its initial state (handlers are kept).
    */
   reset(): void;
