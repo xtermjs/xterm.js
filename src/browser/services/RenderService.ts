@@ -194,6 +194,13 @@ export class RenderService extends Disposable implements IRenderService {
       return;
     }
 
+    // A refresh requested before the terminal was paused can still arrive on its animation frame.
+    // Hold it for the full refresh when the terminal is visible again, as refreshRows does.
+    if (this._isPaused) {
+      this._needsFullRefresh = true;
+      return;
+    }
+
     // Skip rendering if synchronized output mode is enabled. This check must happen here
     // (in addition to refreshRows) to handle renders that were queued before the mode was enabled.
     if (this._coreService.decPrivateModes.synchronizedOutput) {
@@ -210,10 +217,11 @@ export class RenderService extends Disposable implements IRenderService {
     // Render
     this._renderer.value.renderRows(start, end);
 
-    // Update selection if needed
+    // Update selection if needed. The flag is cleared first as the renderer may request a redraw
+    // while handling the change.
     if (this._needsSelectionRefresh) {
-      this._renderer.value.handleSelectionChanged(this._selectionState.start, this._selectionState.end, this._selectionState.columnSelectMode);
       this._needsSelectionRefresh = false;
+      this._renderer.value.handleSelectionChanged(this._selectionState.start, this._selectionState.end, this._selectionState.columnSelectMode);
     }
 
     // Fire render event only if it was not a redraw

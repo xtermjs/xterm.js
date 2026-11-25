@@ -4,7 +4,7 @@
  */
 import { test } from '@playwright/test';
 import { deepStrictEqual, ok, strictEqual } from 'assert';
-import { createTestContext, ITestContext, openTerminal } from './TestUtils';
+import { createTestContext, ITestContext, openTerminal, pollFor } from './TestUtils';
 import { IRenderDimensions } from '../../src/browser/renderer/shared/Types';
 
 let ctx: ITestContext;
@@ -79,5 +79,63 @@ test.describe('RenderService dimensions after dispose', () => {
 
     // leave the page in a clean state for any tests that might run after this file
     await openTerminal(ctx);
+  });
+});
+
+test.describe('RenderService while the terminal is not visible', () => {
+  test.afterEach(async () => {
+    await ctx.page.evaluate(`document.querySelector('#terminal-container').style.transform = ''`);
+    await openTerminal(ctx);
+  });
+
+  test('does not redraw rows for output, a held selection, blur or focus until visible again', async () => {
+    await openTerminal(ctx, { cursorBlink: false, cols: 40, rows: 10, theme: { selectionForeground: '#ff0000' } });
+    for (let i = 0; i < 12; i++) {
+      await ctx.proxy.writeln(`before ${i}`);
+    }
+    await ctx.page.evaluate(`window.term.selectAll()`);
+    // Let the selection and the output render while visible.
+    await ctx.page.evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r)))`);
+
+    // Out of the viewport, keeping its size, so the IntersectionObserver pauses rendering.
+    await ctx.page.evaluate(`document.querySelector('#terminal-container').style.transform = 'translateX(-100000px)'`);
+    await pollFor(ctx.page, `window.term._core._renderService._isPaused`, true);
+    await ctx.page.evaluate(`
+      window.rowChanges = 0;
+      window.rowObserver = new MutationObserver(records => window.rowChanges += records.length);
+      window.rowObserver.observe(document.querySelector('.xterm-rows'), { childList: true, subtree: true, characterData: true });
+    `);
+    const baseYBefore: number = await ctx.page.evaluate(`window.term.buffer.active.baseY`);
+
+    // Output that scrolls, with the selection still held, then focus changes ending blurred.
+    for (let i = 0; i < 30; i++) {
+      await ctx.proxy.writeln(`while hidden ${i}`);
+    }
+    for (let i = 0; i < 5; i++) {
+      await ctx.page.evaluate(`window.term.focus()`);
+      await ctx.page.evaluate(`window.term.blur()`);
+    }
+    await ctx.page.evaluate(`new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => requestAnimationFrame(r))))`);
+
+    strictEqual(await ctx.page.evaluate(`window.term.hasSelection()`), true);
+    const baseYAfter: number = await ctx.page.evaluate(`window.term.buffer.active.baseY`);
+    ok(baseYAfter > baseYBefore, 'the buffer took the output');
+    strictEqual(await ctx.page.evaluate(`window.rowChanges`), 0, 'no row was redrawn while not visible');
+    await ctx.page.evaluate(`window.rowObserver.disconnect()`);
+
+    // Visible again: the latest output is drawn, in the selection's colour, with a blurred cursor.
+    await ctx.page.evaluate(`document.querySelector('#terminal-container').style.transform = ''`);
+    await pollFor(ctx.page, `window.term._core._renderService._isPaused`, false);
+    await pollFor(ctx.page, `document.querySelector('.xterm-rows').textContent.includes('while hidden 29')`, true);
+    const selectionParts: number = await ctx.page.evaluate(`document.querySelectorAll('.xterm-selection div').length`);
+    ok(selectionParts > 0, 'the selection is drawn');
+    strictEqual(await ctx.page.evaluate(`document.querySelector('.xterm-rows').classList.contains('xterm-focus')`), false);
+    const latestColour: string = await ctx.page.evaluate(`(() => {
+      const row = [...document.querySelectorAll('.xterm-rows > div')].find(r => r.textContent.includes('while hidden 29'));
+      return row ? getComputedStyle(row.querySelector('span')).color : 'no row';
+    })()`);
+    strictEqual(latestColour, 'rgb(255, 0, 0)', 'the latest output is drawn as selected');
+    const cursorClasses: string = await ctx.page.evaluate(`document.querySelector('.xterm-rows .xterm-cursor')?.className ?? 'no cursor'`);
+    ok(cursorClasses.includes('xterm-cursor-outline'), `the cursor is drawn inactive: ${cursorClasses}`);
   });
 });
