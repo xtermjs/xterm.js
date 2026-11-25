@@ -70,7 +70,18 @@ export const enum Content {
    *                      `content |= width << Content.WIDTH_SHIFT;`
    */
   WIDTH_MASK = 0xC00000,   // 3 << 22
-  WIDTH_SHIFT = 22
+  WIDTH_SHIFT = 22,
+
+  /**
+   * bit 25       flag indicating the cell is a filler cell that was added when a wide character
+   *              did not fit into the last column and got wrapped early onto the next line.
+   *              Such cells are not part of the line content and have to be ignored when the
+   *              line gets reflowed, otherwise the content shifts by the number of filler cells.
+   *              read:   `isWrapExcess = content & Content.IS_WRAP_EXCESS_MASK;`
+   *              set:    `content |= Content.IS_WRAP_EXCESS_MASK;`
+   *              clear:  `content &= ~Content.IS_WRAP_EXCESS_MASK;`
+   */
+  IS_WRAP_EXCESS_MASK = 0x1000000  // 1 << 24
 }
 
 export const enum Attributes {

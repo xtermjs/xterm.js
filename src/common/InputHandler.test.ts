@@ -2681,4 +2681,35 @@ describe('InputHandler', () => {
       assert.deepEqual(getLines(bufferService, 2), ['hello world!', 'second line']);
     });
   });
+
+  describe('reflow with wide characters', () => {
+    it('should keep skipped cells that are content when lines get reflowed (issue #3097)', async () => {
+      bufferService.resize(8, 4);
+      // write a wide char, skip 2 cells, then another wide char - the skipped cells are content.
+      // The trailing line feed keeps the cursor away from the reflowed line.
+      await inputHandler.parseP('\u6c49\x1b[2C\u8bed\r\n');
+      assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), '\u6c49  \u8bed  ');
+      // narrow the terminal, the trailing wide char does not fit anymore and gets wrapped onto
+      // the next line, which leaves the first line filled up to its last column
+      bufferService.resize(4, 4);
+      assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), '\u6c49  ');
+      assert.ok(bufferService.buffer.lines.get(1)!.isWrapped);
+      assert.equal(bufferService.buffer.lines.get(1)!.translateToString(true), '\u8bed');
+      // widen the terminal again - the skipped cells must survive the reflow
+      bufferService.resize(8, 4);
+      assert.equal(bufferService.buffer.lines.get(0)!.translateToString(true), '\u6c49  \u8bed');
+    });
+    it('should not count filler cells of early wrapped wide chars as content', async () => {
+      bufferService.resize(5, 4);
+      // the wide char does not fit into the last column, thus it gets wrapped early and leaves
+      // a filler cell behind
+      await inputHandler.parseP('\u6c49\u8bed\u6c49\r\n');
+      assert.equal(bufferService.buffer.lines.get(0)!.translateToString(false), '\u6c49\u8bed ');
+      assert.ok(bufferService.buffer.lines.get(1)!.isWrapped);
+      assert.equal(bufferService.buffer.lines.get(1)!.translateToString(true), '\u6c49');
+      // widen the terminal again - the filler cell must not show up as content
+      bufferService.resize(8, 4);
+      assert.equal(bufferService.buffer.lines.get(0)!.translateToString(true), '\u6c49\u8bed\u6c49');
+    });
+  });
 });
