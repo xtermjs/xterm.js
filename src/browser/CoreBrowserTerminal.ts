@@ -905,11 +905,21 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       return true;
     }
 
-    // HACK: Process A-Z in the keypress event to fix an issue with macOS IMEs where lower case
-    // letters cannot be input while caps lock is on. Skip this hack when using kitty protocol
-    // or Win32 input mode as they need to send proper sequences for all key events.
+    // HACK: Defer A-Z for macOS IME caps lock, plus macOS ASCII punctuation/digits so
+    // keypress.charCode supplies the IME text (#4486). Keep lowercase/space and screen reader
+    // input unchanged; Kitty/Win32 must encode their own key events.
     if (!this._keyboardService.useKitty && !this._keyboardService.useWin32InputMode && event.key && !event.ctrlKey && !event.altKey && !event.metaKey && event.key.length === 1) {
-      if (event.key.charCodeAt(0) >= 65 && event.key.charCodeAt(0) <= 90) {
+      const charCode = event.key.charCodeAt(0);
+      const isMacPunctuationOrDigit = this.browser.isMac && !this.optionsService.rawOptions.screenReaderMode && !event.isComposing && (
+        (charCode >= 33 && charCode <= 64) || // ! through @ (including digits)
+        (charCode >= 91 && charCode <= 96) || // [ through `
+        (charCode >= 123 && charCode <= 126)  // { through ~
+      );
+      if ((charCode >= 65 && charCode <= 90) || isMacPunctuationOrDigit) {
+        if (isMacPunctuationOrDigit) {
+          // Block host shortcuts while allowing the default action to generate IME text.
+          event.stopPropagation();
+        }
         return true;
       }
     }
