@@ -5,7 +5,7 @@
 
 import { ITerminal } from 'browser/Types';
 import { CellColorResolver } from './CellColorResolver';
-import { acquireTextureAtlas, removeTerminalFromCache } from './CharAtlasCache';
+import { acquireTextureAtlas, removeTerminalFromCache, retireTerminalAtlas } from './CharAtlasCache';
 import { CursorBlinkStateManager } from './CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from './DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
@@ -140,7 +140,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._contextRestorationTimeout = undefined;
       // The texture atlas and glyph renderer must be fully reinitialized
       // because their contents have been lost.
-      removeTerminalFromCache(this._terminal);
+      // Retire the atlas rather than only releasing this terminal: other terminals may share
+      // it, and the GPU process restart that lost the context also wipes the atlas page
+      // canvases, so acquiring would hand every sharing terminal the same wiped atlas.
+      retireTerminalAtlas(this._terminal);
       this._initializeWebGLState();
       this._requestRedrawViewport();
     }));
