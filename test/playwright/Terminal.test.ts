@@ -14,6 +14,25 @@ test.beforeAll(async ({ browser }) => {
 });
 test.afterAll(async () => await ctx.page.close());
 
+/**
+ * Scrolls the viewport into the scrollback with the mouse wheel and returns the resulting
+ * viewport/base positions. Unlike the scrollLines API, the wheel path is how users actually end
+ * up scrolled up, and it is the only setup that reliably stays scrolled up in headless (the API
+ * path goes through the viewport's smooth scroll animation which can snap back).
+ */
+async function scrollUpWithWheel(ctx: ITestContext): Promise<{ viewportY: number, baseY: number }> {
+  const box = await ctx.page.locator('.xterm').boundingBox();
+  await ctx.page.mouse.move(box!.x + 20, box!.y + 20);
+  await ctx.page.mouse.wheel(0, -120);
+  const res = await ctx.page.evaluate(`
+    ({
+      viewportY: window.term.buffer.active.viewportY,
+      baseY: window.term.buffer.active.baseY
+    })
+  `) as { viewportY: number, baseY: number };
+  notStrictEqual(res.viewportY, res.baseY, 'wheel setup failed to scroll into the scrollback');
+  return res;
+}
 
 test.describe('API Integration Tests', () => {
   test('Default options', async () => {
@@ -255,6 +274,50 @@ test.describe('API Integration Tests', () => {
     strictEqual(await ctx.page.evaluate(`document.activeElement.className`), 'xterm-helper-textarea');
     await ctx.page.evaluate(`window.term.blur()`);
     strictEqual(await ctx.page.evaluate(`document.activeElement.className`), '');
+  });
+
+  test.describe('IME composition', () => {
+    test('compositionstart should scroll to bottom when scrolled into the scrollback', async () => {
+      await openTerminal(ctx, { rows: 5 });
+      await ctx.proxy.write('\n'.repeat(15));
+      const scrolledUp = await scrollUpWithWheel(ctx);
+      // Dispatch and snapshot in a single task so the viewport's smooth scroll animation can't
+      // interfere between the two.
+      const result = await ctx.page.evaluate(`
+        (() => {
+          window.term.textarea.dispatchEvent(new CompositionEvent('compositionstart'));
+          return window.term.buffer.active.viewportY;
+        })()
+      `);
+      strictEqual(result, scrolledUp.baseY);
+    });
+
+    test('compositionupdate should scroll to bottom when scrolled into the scrollback mid-composition', async () => {
+      await openTerminal(ctx, { rows: 5 });
+      await ctx.proxy.write('\n'.repeat(15));
+      await ctx.page.evaluate(`window.term.textarea.dispatchEvent(new CompositionEvent('compositionstart'))`);
+      const scrolledUp = await scrollUpWithWheel(ctx);
+      const result = await ctx.page.evaluate(`
+        (() => {
+          window.term.textarea.dispatchEvent(new CompositionEvent('compositionupdate', { data: 'n' }));
+          return window.term.buffer.active.viewportY;
+        })()
+      `);
+      strictEqual(result, scrolledUp.baseY);
+    });
+
+    test('compositionstart should not scroll when scrollOnUserInput is disabled', async () => {
+      await openTerminal(ctx, { rows: 5, scrollOnUserInput: false });
+      await ctx.proxy.write('\n'.repeat(15));
+      const scrolledUp = await scrollUpWithWheel(ctx);
+      const result = await ctx.page.evaluate(`
+        (() => {
+          window.term.textarea.dispatchEvent(new CompositionEvent('compositionstart'));
+          return window.term.buffer.active.viewportY;
+        })()
+      `);
+      strictEqual(result, scrolledUp.viewportY);
+    });
   });
 
   test.describe('loadAddon', () => {
