@@ -41,8 +41,8 @@ It's pretty common for maintainers of large open source projects to suffer from 
 
 - Support questions live in [GH discussions](https://github.com/xtermjs/xterm.js/discussions), issues may be transferred there without further comment and core maintainers may or may not participate in discussions.
 - Issues are strictly for well defined features or bugs that are _actionable_.
-- Sometimes features are out of scope. A common example of this is a niche feature that the pricipal implementation ([VS Code](https://code.visualstudio.com/)) won't leverage and therefore would be difficult to maintain and likely suffer from bitrot. The reporter may not agree with this, but you could always create an addon if that works or maintain your own fork if it comes to that.
-- If a feature does not have a clear way forward or needs more discussion it may be closed ro moved to a discussion.
+- Sometimes features are out of scope. A common example of this is a niche feature that the principal implementation ([VS Code](https://code.visualstudio.com/)) won't leverage and therefore would be difficult to maintain and likely suffer from bitrot. The reporter may not agree with this, but you could always create an addon if that works or maintain your own fork if it comes to that.
+- If a feature does not have a clear way forward or needs more discussion it may be closed or moved to a discussion.
 - If a bug is not easily reproducible it may be closed or moved to a discussion. Generally issues that are labeled are something we want to do or has actionable steps to look into further.
 
 ## Answering discussion questions
