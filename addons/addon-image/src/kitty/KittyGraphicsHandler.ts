@@ -660,6 +660,18 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
         }
       }
 
+      // Scale the composed placement up to device pixels so it keeps its CSS
+      // footprint on HiDPI displays, where the image layer renders in device
+      // pixels (see ImageRenderer.cellSize). All placement math above is in CSS
+      // units; this final resample is the only device-resolution step.
+      const dpr = this._renderer.dpr;
+      if (dpr !== 1) {
+        const scaled = await createImageBitmap(bitmap,
+          { resizeWidth: Math.ceil(bitmap.width * dpr), resizeHeight: Math.ceil(bitmap.height * dpr) });
+        bitmap.close();
+        bitmap = scaled;
+      }
+
       const zIndex = cmd.zIndex ?? 0;
       this._kittyStorage.addImage(image.id, bitmap, true, layer, zIndex);
       bitmap = undefined;  // ownership transferred to storage
