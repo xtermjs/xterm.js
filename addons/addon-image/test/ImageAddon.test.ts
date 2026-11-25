@@ -26,6 +26,8 @@ export interface IImageAddonOptions {
   iipSizeLimit: number;
   kittySupport: boolean;
   kittySizeLimit: number;
+  animationSupport: boolean;
+  animationPixelLimit: number;
 }
 
 // eslint-disable-next-line
@@ -138,7 +140,9 @@ test.describe('ImageAddon', () => {
         iipSupport: true,
         iipSizeLimit: 33554432,
         kittySupport: true,
-        kittySizeLimit: 33554432
+        kittySizeLimit: 33554432,
+        animationSupport: true,
+        animationPixelLimit: 4194304
       };
       deepStrictEqual(await ctx.page.evaluate(`window.imageAddon._opts`), DEFAULT_OPTIONS);
     });
@@ -155,7 +159,9 @@ test.describe('ImageAddon', () => {
         iipSupport: false,
         iipSizeLimit: 1000,
         kittySupport: false,
-        kittySizeLimit: 1000
+        kittySizeLimit: 1000,
+        animationSupport: false,
+        animationPixelLimit: 1000
       };
       await ctx.page.evaluate(opts => {
         (window as any).imageAddonCustom = new ImageAddon(opts.opts);
