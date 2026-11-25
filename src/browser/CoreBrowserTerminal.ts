@@ -425,7 +425,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._compositionHelper!.updateCompositionElements();
     }));
     this._register(addDisposableListener(this.textarea!, 'compositionupdate', (e: CompositionEvent) => this._compositionHelper!.compositionupdate(e)));
-    this._register(addDisposableListener(this.textarea!, 'compositionend', () => this._compositionHelper!.compositionend()));
+    this._register(addDisposableListener(this.textarea!, 'compositionend', (e: CompositionEvent) => this._compositionHelper!.compositionend(e)));
     this._register(addDisposableListener(this.textarea!, 'input', (ev: InputEvent) => this._inputEvent(ev), true));
     this._register(this.onRender(() => this._compositionHelper!.updateCompositionElements()));
   }
