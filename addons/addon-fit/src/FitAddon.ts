@@ -74,8 +74,24 @@ export class FitAddon implements ITerminalAddon, IFitApi {
       : (this._terminal.options.scrollbar?.width ?? ViewportConstants.DEFAULT_SCROLL_BAR_WIDTH));
 
     const parentElementStyle = _getComputedStyle(this._terminal.element.parentElement);
-    const parentElementHeight = Math.max(0, parseInt(parentElementStyle.getPropertyValue('height'), 10) || 0);
-    const parentElementWidth = Math.max(0, parseInt(parentElementStyle.getPropertyValue('width'), 10) || 0);
+    // Use getBoundingClientRect() to get the parent's border-box size (works for both
+    // content-box and border-box). Subtract the parent's own border and padding to get
+    // the available content space for the terminal.
+    const parentRect = this._terminal.element.parentElement.getBoundingClientRect();
+    const parentElementHeight = parentRect.height;
+    const parentElementWidth = parentRect.width;
+    const parentPadding = {
+      top: parseInt(parentElementStyle.getPropertyValue('padding-top'), 10) || 0,
+      bottom: parseInt(parentElementStyle.getPropertyValue('padding-bottom'), 10) || 0,
+      left: parseInt(parentElementStyle.getPropertyValue('padding-left'), 10) || 0,
+      right: parseInt(parentElementStyle.getPropertyValue('padding-right'), 10) || 0
+    };
+    const parentBorder = {
+      top: parseInt(parentElementStyle.getPropertyValue('border-top-width'), 10) || 0,
+      bottom: parseInt(parentElementStyle.getPropertyValue('border-bottom-width'), 10) || 0,
+      left: parseInt(parentElementStyle.getPropertyValue('border-left-width'), 10) || 0,
+      right: parseInt(parentElementStyle.getPropertyValue('border-right-width'), 10) || 0
+    };
     const elementStyle = _getComputedStyle(this._terminal.element);
     const elementPadding = {
       top: parseInt(elementStyle.getPropertyValue('padding-top'), 10) || 0,
@@ -85,8 +101,8 @@ export class FitAddon implements ITerminalAddon, IFitApi {
     };
     const elementPaddingVer = elementPadding.top + elementPadding.bottom;
     const elementPaddingHor = elementPadding.right + elementPadding.left;
-    const availableHeight = parentElementHeight - elementPaddingVer;
-    const availableWidth = parentElementWidth - elementPaddingHor - scrollbarWidth;
+    const availableHeight = parentElementHeight - parentPadding.top - parentPadding.bottom - parentBorder.top - parentBorder.bottom - elementPaddingVer;
+    const availableWidth = parentElementWidth - parentPadding.left - parentPadding.right - parentBorder.left - parentBorder.right - elementPaddingHor - scrollbarWidth;
     const geometry = {
       cols: Math.max(Constants.MINIMUM_COLS, Math.floor(availableWidth / dims.css.cell.width)),
       rows: Math.max(Constants.MINIMUM_ROWS, Math.floor(availableHeight / dims.css.cell.height))
