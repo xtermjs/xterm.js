@@ -171,7 +171,7 @@ Xterm.js is used in many world-class applications to provide great terminal expe
 - [**Script Runner**](https://github.com/ioquatix/script-runner): Run scripts (or a shell) in Atom.
 - [**Whack Whack Terminal**](https://github.com/Microsoft/WhackWhackTerminal): Terminal emulator for Visual Studio 2017.
 - [**VTerm**](https://github.com/vterm/vterm): Extensible terminal emulator based on Electron and React.
-- [**electerm**](http://electerm.html5beta.com): electerm is a terminal/ssh/sftp client(mac, win, linux) based on electron/node-pty/xterm.
+- [**electerm**](https://electerm.org): Terminal/ssh/sftp/ftp/telnet/serialport/RDP/VNC/Spice client(Linux, windows, MacOS, iOS, Android, HarmonyOS)
 - [**Kubebox**](https://github.com/astefanutti/kubebox): Terminal console for Kubernetes clusters.
 - [**Azure Cloud Shell**](https://shell.azure.com): Azure Cloud Shell is a Microsoft-managed admin machine built on Azure, for Azure.
 - [**atom-xterm**](https://atom.io/packages/atom-xterm): Atom plugin for providing terminals inside your Atom workspace.
