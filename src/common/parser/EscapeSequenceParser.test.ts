@@ -1045,6 +1045,16 @@ describe('EscapeSequenceParser', () => {
       parser.reset();
       testTerminal.clear();
     });
+    it('state DCS_PASSTHROUGH ignores DEL inside payload', () => {
+      parser.reset();
+      testTerminal.clear();
+      parser.currentState = ParserState.DCS_PASSTHROUGH;
+      parse(parser, 'abc\x7fdef');
+      assert.equal(parser.currentState, ParserState.DCS_PASSTHROUGH);
+      testTerminal.compare([['dcs put', 'abc'], ['dcs put', 'def']]);
+      parser.reset();
+      testTerminal.clear();
+    });
     it('state APC_ENTRY', () => {
       parser.reset();
       // C0
@@ -1152,6 +1162,16 @@ describe('EscapeSequenceParser', () => {
         parser.reset();
         testTerminal.clear();
       }
+    });
+    it('state APC_PASSTHROUGH ignores non-payload bytes inside payload', () => {
+      parser.reset();
+      testTerminal.clear();
+      parser.currentState = ParserState.APC_PASSTHROUGH;
+      parse(parser, 'abc\x19def\x7fghi');
+      assert.equal(parser.currentState, ParserState.APC_PASSTHROUGH);
+      testTerminal.compare([['apc put', 'abc'], ['apc put', 'def'], ['apc put', 'ghi']]);
+      parser.reset();
+      testTerminal.clear();
     });
     it('trans APC_PASSTHROUGH --> GROUND|ESCAPE with end action', () => {
       parser.reset();
