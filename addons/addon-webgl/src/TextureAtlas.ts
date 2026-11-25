@@ -164,7 +164,7 @@ export class TextureAtlas implements ITextureAtlas {
       // Find the set of the largest 4 images, below the maximum size, with the highest
       // percentages used
       const pagesBySize = this._pages.filter(e => {
-        return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
+        return e.glyphs.length > 0 && e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
       }).sort((a, b) => {
         if (b.canvas.width !== a.canvas.width) {
           return b.canvas.width - a.canvas.width;
