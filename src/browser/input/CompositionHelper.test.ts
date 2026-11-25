@@ -45,6 +45,36 @@ describe('CompositionHelper', () => {
     compositionHelper = new CompositionHelper(textarea, compositionView, bufferService, new MockOptionsService(), coreService, new MockRenderService());
   });
 
+  describe('229 keydown', () => {
+    // _handleAnyTextareaChanges defers through window.setTimeout
+    let ownWindow = false;
+    before(() => {
+      if (!('window' in globalThis)) {
+        (globalThis as any).window = globalThis;
+        ownWindow = true;
+      }
+    });
+    after(() => {
+      if (ownWindow) {
+        delete (globalThis as any).window;
+      }
+    });
+
+    it('Should send an IME commit that replaces the terminal selection', (done) => {
+      // On Linux the terminal selection is put in the textarea, selected (onLinuxMouseSelection)
+      textarea.value = 'some selected output';
+      (textarea as any).selectionStart = 0;
+      (textarea as any).selectionEnd = textarea.value.length;
+      compositionHelper.keydown({ keyCode: 229 } as KeyboardEvent);
+      // The IME commit replaces the selection
+      textarea.value = 'ack';
+      setTimeout(() => { // wait for any textarea updates
+        assert.equal(handledText, 'ack');
+        done();
+      }, 0);
+    });
+  });
+
   describe('Input', () => {
     it('Should insert simple characters', (done) => {
       // First character 'ㅇ'
