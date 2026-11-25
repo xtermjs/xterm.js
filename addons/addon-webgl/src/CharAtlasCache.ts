@@ -16,6 +16,11 @@ interface ITextureAtlasCacheEntry {
   // N.B. This implementation potentially holds onto copies of the terminal forever, so
   // this may cause memory leaks.
   ownedBy: Terminal[];
+  /**
+   * A retired atlas is never handed out again. Its owners keep it until they acquire another
+   * atlas or are removed, and it is disposed when the last one leaves.
+   */
+  retired?: boolean;
 }
 
 const charAtlasCache: ITextureAtlasCacheEntry[] = [];
@@ -43,10 +48,10 @@ export function acquireTextureAtlas(
     const entry = charAtlasCache[i];
     const ownedByIndex = entry.ownedBy.indexOf(terminal);
     if (ownedByIndex >= 0) {
-      if (configEquals(entry.config, newConfig)) {
+      if (!entry.retired && configEquals(entry.config, newConfig)) {
         return entry.atlas;
       }
-      // The configs differ, release the terminal from the entry
+      // The configs differ or the atlas was retired, release the terminal from the entry
       if (entry.ownedBy.length === 1) {
         entry.atlas.dispose();
         charAtlasCache.splice(i, 1);
@@ -60,7 +65,7 @@ export function acquireTextureAtlas(
   // Try match a char atlas from the cache
   for (let i = 0; i < charAtlasCache.length; i++) {
     const entry = charAtlasCache[i];
-    if (configEquals(entry.config, newConfig)) {
+    if (!entry.retired && configEquals(entry.config, newConfig)) {
       // Add the terminal to the cache entry and return
       entry.ownedBy.push(terminal);
       return entry.atlas;
@@ -95,6 +100,22 @@ export function removeTerminalFromCache(terminal: Terminal): void {
         charAtlasCache[i].ownedBy.splice(index, 1);
       }
       break;
+    }
+  }
+}
+
+/**
+ * Retires the atlas a terminal uses so that it is never handed out again: every terminal that
+ * shares it gets a new atlas the next time it acquires one. Use this when the atlas's page
+ * canvases may have lost their contents, since acquiring would otherwise return the same wiped
+ * atlas to every terminal that shares it.
+ * @param terminal A terminal that uses the atlas to retire.
+ */
+export function retireTerminalAtlas(terminal: Terminal): void {
+  for (const entry of charAtlasCache) {
+    if (entry.ownedBy.includes(terminal)) {
+      entry.retired = true;
+      return;
     }
   }
 }
