@@ -125,10 +125,5 @@ declare module '@xterm/addon-image' {
      * Get original image canvas at buffer position.
      */
     public getImageAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined;
-
-    /**
-     * Extract single tile canvas at buffer position.
-     */
-    public extractTileAtBufferCell(x: number, y: number): HTMLCanvasElement | undefined;
   }
 }
