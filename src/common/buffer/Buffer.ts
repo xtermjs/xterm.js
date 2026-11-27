@@ -465,22 +465,15 @@ export class Buffer extends Disposable implements IBuffer {
       // Adjust viewport as needed
       let viewportAdjustments = linesToAdd - trimmedLines;
       while (viewportAdjustments-- > 0) {
-        if (this.ybase === 0) {
-          if (this.y < newRows - 1) {
-            this.y++;
-            this.lines.pop();
-          } else {
-            this.ybase++;
+        if (this.ybase === 0 && this.y < newRows - 1) {
+          this.y++;
+          this.lines.pop();
+        } else if (this.ybase < Math.min(this.lines.maxLength, this.lines.length + countToInsert) - newRows) {
+          // Only scroll the viewport if the buffer can still hold it after inserting the lines.
+          if (this.ybase === this.ydisp) {
             this.ydisp++;
           }
-        } else {
-          // Ensure ybase does not exceed its maximum value
-          if (this.ybase < Math.min(this.lines.maxLength, this.lines.length + countToInsert) - newRows) {
-            if (this.ybase === this.ydisp) {
-              this.ydisp++;
-            }
-            this.ybase++;
-          }
+          this.ybase++;
         }
       }
       this.savedY = Math.min(this.savedY + linesToAdd, this.ybase + newRows - 1);
