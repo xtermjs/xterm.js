@@ -8,8 +8,9 @@ import { assert } from 'chai';
 import { SerializeAddon } from './SerializeAddon';
 import { Terminal } from 'browser/public/Terminal';
 import { SelectionModel } from 'browser/selection/SelectionModel';
-import { IBufferService } from 'common/services/Services';
+import { IBufferService, IOscLinkService } from 'common/services/Services';
 import { ThemeService } from 'browser/services/ThemeService';
+import { ICellData } from 'common/buffer/Types';
 
 function sgr(...seq: string[]): string {
   return `\x1b[${seq.join(';')}m`;
@@ -78,6 +79,81 @@ describe('SerializeAddon', () => {
   });
 
   describe('text', () => {
+    describe('OSC 8 hyperlinks', () => {
+      let replayTerminal: Terminal;
+      const link = (text: string, uri = 'https://example.com', id?: string): string =>
+        `\x1b]8;${id === undefined ? '' : `id=${id}`};${uri}\x1b\\${text}\x1b]8;;\x1b\\`;
+
+      function inspectLinks(term: Terminal): unknown[] {
+        const service: IOscLinkService = (term as any)._core._oscLinkService;
+        return Array.from({ length: term.buffer.active.length }, (_, y) => {
+          const line = term.buffer.active.getLine(y)!;
+          return Array.from({ length: term.cols }, (_, x) => {
+            const cell = line.getCell(x)! as unknown as ICellData;
+            return [cell.getChars(), service.getLinkData(cell.extended.urlId)];
+          });
+        });
+      }
+
+      beforeEach(() => {
+        replayTerminal = new Terminal({ cols: 10, rows: 2, allowProposedApi: true });
+      });
+
+      afterEach(() => {
+        replayTerminal.dispose();
+      });
+
+      for (const [name, input] of [
+        ['plain label', 'A' + link('LINK') + 'B'],
+        ['explicit id and semicolons in the URI', link('LINK', 'https://example.com/a;b?c=d', 'example')],
+        ['adjacent links with different ids', link('A', 'https://example.com', 'one') + link('B', 'https://example.com', 'two')],
+        ['SGR changes within a link', link('A\x1b[31mB\x1b[0mC')],
+        ['wrapped link', link('1234567890LINK')],
+        ['wide and combined characters', link('123456789界e\u0301')],
+        ['empty cells between links', link('A') + '\x1b[3C' + link('B', 'https://example.org')],
+        ['forced wrap after a linked cell', link('1234567890') + 'X\x1b[1;6H\x1b[K'],
+        ['scrollback', link('first\r\nsecond\r\nthird')],
+        ['alternate buffer', '\x1b[?1049h' + link('ALT')],
+        ['open hyperlink in the alternate buffer', link('NORMAL') + '\x1b[?1049hplain\x1b]8;id=open;https://example.org\x1b\\LINK'],
+        ['open hyperlink without text', '\x1b]8;id=open;https://example.org\x1b\\']
+      ]) {
+        it(`should restore ${name}`, async () => {
+          await writeP(terminal, input);
+          await writeP(replayTerminal, serializeAddon.serialize());
+          assert.deepEqual(inspectLinks(replayTerminal), inspectLinks(terminal));
+          await writeP(terminal, '!');
+          await writeP(replayTerminal, '!');
+          assert.deepEqual(inspectLinks(replayTerminal), inspectLinks(terminal));
+        });
+      }
+
+      it('should restore an open hyperlink for subsequent output', async () => {
+        await writeP(terminal, '\x1b]8;id=open;https://example.com\x1b\\LINK');
+        await writeP(replayTerminal, serializeAddon.serialize());
+        await writeP(terminal, '!');
+        await writeP(replayTerminal, '!');
+        assert.deepEqual(inspectLinks(replayTerminal), inspectLinks(terminal));
+      });
+
+      it('should close hyperlinks at the end of a range', async () => {
+        await writeP(terminal, '\x1b]8;;https://example.com\x1b\\1234567890LINK');
+        await writeP(replayTerminal, serializeAddon.serialize({ range: { start: 0, end: 0 } }));
+        await writeP(replayTerminal, '!');
+        const cell = replayTerminal.buffer.active.getLine(1)!.getCell(0)! as unknown as ICellData;
+        assert.equal(cell.getChars(), '!');
+        assert.equal(cell.extended.urlId, 0);
+      });
+
+      it('should restore a range starting inside a hyperlink', async () => {
+        await writeP(terminal, link('1234567890LINK'));
+        await writeP(replayTerminal, serializeAddon.serialize({ range: { start: 1, end: 1 } }));
+        const cell = replayTerminal.buffer.active.getLine(0)!.getCell(0)! as unknown as ICellData;
+        const service: IOscLinkService = (replayTerminal as any)._core._oscLinkService;
+        assert.equal(cell.getChars(), 'L');
+        assert.equal(service.getLinkData(cell.extended.urlId)?.uri, 'https://example.com');
+      });
+    });
+
     it('restoring cursor styles', async () => {
       await writeP(terminal, sgr('32') + '> ' + sgr('0'));
       assert.equal(serializeAddon.serialize(), '\u001b[32m> \u001b[0m');

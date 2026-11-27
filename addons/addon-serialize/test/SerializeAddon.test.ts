@@ -97,6 +97,22 @@ test.describe('SerializeAddon', () => {
     strictEqual(await ctx.page.evaluate(`window.serialize.serialize();`), '');
   });
 
+  test('restores wrapped OSC 8 links through the link provider', async () => {
+    await writeRawSync(ctx.page, '\x1b]8;id=example;https://example.com\x1b\\1234567890LINK\x1b]8;;\x1b\\!');
+    const snapshot = await ctx.page.evaluate<string>('window.serialize.serialize()');
+    await ctx.proxy.reset();
+    await writeRawSync(ctx.page, snapshot);
+    const links = await ctx.page.evaluate(`new Promise(resolve => {
+      term._core._linkProviderService.linkProviders[0].provideLinks(2, links => {
+        resolve(links.map(link => ({ text: link.text, range: link.range })));
+      });
+    })`);
+    deepStrictEqual(links, [{
+      text: 'https://example.com',
+      range: { start: { x: 1, y: 1 }, end: { x: 4, y: 2 } }
+    }]);
+  });
+
   test('unwrap wrapped line', async function(): Promise<any> {
     const lines = ['123456789123456789'];
     await ctx.proxy.write(lines.join('\r\n'));

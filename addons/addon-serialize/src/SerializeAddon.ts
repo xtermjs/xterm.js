@@ -7,7 +7,7 @@
 
 import type { IBuffer, IBufferCell, IBufferRange, ITerminalAddon, Terminal } from '@xterm/xterm';
 import type { IHTMLSerializeOptions, SerializeAddon as ISerializeApi, ISerializeOptions, ISerializeRange } from '@xterm/addon-serialize';
-import { IColor } from 'common/Types';
+import { IColor, IOscLinkData } from 'common/Types';
 import { IAttributeData } from 'common/buffer/Types';
 import { DEFAULT_ANSI_COLORS } from 'browser/Types';
 import { UnderlineStyle } from 'common/buffer/Constants';
@@ -136,6 +136,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _allRowSeparators: string[] = new Array<string>();
   private _currentRow: string = '';
   private _nullCellCount: number = 0;
+  private _activeUrlId: number = 0;
 
   // we can see a full colored cell and a null cell that only have background the same style
   // but the information isn't preserved by null cell itself
@@ -239,6 +240,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
         }
 
         if (!isValid) {
+          // The temporary wrap filler must not become part of a hyperlink.
+          this._currentRow += this._diffHyperlink(0);
           // force the wrap with magic
           // insert enough character to force the wrap
           rowSeparator = '-'.repeat(this._nullCellCount + 1);
@@ -349,6 +352,20 @@ class StringSerializeHandler extends BaseSerializeHandler {
     return sgrSeq;
   }
 
+  private _diffHyperlink(urlId: number): string {
+    if (urlId === this._activeUrlId) {
+      return '';
+    }
+    // Hyperlink metadata is not exposed by the public buffer API.
+    const data: IOscLinkData | undefined = (this._terminal as any)._core._oscLinkService.getLinkData(urlId);
+    let content = this._activeUrlId ? '\x1b]8;;\x1b\\' : '';
+    this._activeUrlId = data ? urlId : 0;
+    if (data) {
+      content += `\x1b]8;${data.id === undefined ? '' : `id=${data.id}`};${data.uri}\x1b\\`;
+    }
+    return content;
+  }
+
   protected _nextCell(cell: IBufferCell, oldCell: IBufferCell, row: number, col: number): void {
     // a width 0 cell don't need to be count because it is just a placeholder after a CJK character;
     const isPlaceHolderCell = cell.getWidth() === 0;
@@ -414,6 +431,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
         this._nullCellCount = 0;
       }
 
+      this._currentRow += this._diffHyperlink((cell as unknown as IAttributeData).extended.urlId);
       this._currentRow += cell.getChars();
 
       // update cursor
@@ -478,6 +496,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
     if (sgrSeq.length > 0) {
       content += `\u001b[${sgrSeq.join(';')}m`;
     }
+    const restoreHyperlink = !excludeFinalCursorPosition && this._buffer.type === this._terminal.buffer.active.type;
+    content += this._diffHyperlink(restoreHyperlink ? curAttrData.extended.urlId : 0);
 
     return content;
   }
