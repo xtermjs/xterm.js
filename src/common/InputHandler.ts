@@ -3530,7 +3530,11 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (data === 'r') return f(`P1$r${b.scrollTop + 1};${b.scrollBottom + 1}r`);
     // FIXME: report real SGR settings instead of 0m
     if (data === 'm') return f(`P1$r0m`);
-    if (data === ' q') return f(`P1$r${STYLES[opts.cursorStyle] - (opts.cursorBlink ? 1 : 0)} q`);
+    if (data === ' q') {
+      const cursorStyle = this._coreService.decPrivateModes.cursorStyle ?? opts.cursorStyle;
+      const cursorBlink = this._coreService.decPrivateModes.cursorBlink ?? opts.cursorBlink;
+      return f(`P1$r${STYLES[cursorStyle] - (cursorBlink ? 1 : 0)} q`);
+    }
     return f(`P0$r`);
   }
 
