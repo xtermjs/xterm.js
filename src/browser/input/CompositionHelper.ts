@@ -13,6 +13,30 @@ interface IPosition {
 }
 
 /**
+ * Whether a keydown carries no key identity and must therefore not finalize an active
+ * composition.
+ *
+ * Some IMEs emit such events while the composition is still being updated, for example
+ * TSF-based voice input on Windows sends "Unidentified" (keyCode 0) when the raw transcript
+ * is ready but the ITN / AI polish has not arrived yet. Finalizing there sends the
+ * unfinished text, which is then sent a second time when the composition ends.
+ *
+ * A bare keyCode 0 is only a sentinel when the event has no `key` value. Keys such as
+ * UIKeyInputLeftArrow also report keyCode 0 but do have a key, so they must keep reaching
+ * the terminal.
+ */
+function isImeSentinelKeydown(ev: KeyboardEvent): boolean {
+  switch (ev.key) {
+    case 'Unidentified':
+    case 'Process':
+    case 'Dead':
+    case 'Compose':
+      return true;
+  }
+  return ev.keyCode === 0 && !ev.key;
+}
+
+/**
  * Encapsulates the logic for handling compositionstart, compositionupdate and compositionend
  * events, displaying the in-progress composition to the UI and forwarding the final composition
  * to the handler.
@@ -121,6 +145,11 @@ export class CompositionHelper {
       }
       if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
         // Continue composing if the keyCode is a modifier key
+        return false;
+      }
+      if (isImeSentinelKeydown(ev)) {
+        // Continue composing if the keydown has no key identity. Some IMEs emit these while
+        // the composition is still being updated (see isImeSentinelKeydown above).
         return false;
       }
       // Finish composition immediately. This is mainly here for the case where enter is

@@ -45,6 +45,55 @@ describe('CompositionHelper', () => {
     compositionHelper = new CompositionHelper(textarea, compositionView, bufferService, new MockOptionsService(), coreService, new MockRenderService());
   });
 
+  describe('keydown', () => {
+    it('Should not finalize the composition when an IME sentinel keydown arrives', (done) => {
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: '你好' });
+      textarea.value = '你好';
+      setTimeout(() => { // wait for any textarea updates
+        // Voice input IMEs emit keydowns with no key identity while the raw transcript is
+        // still being polished. They must not commit the composition.
+        for (const key of ['Unidentified', 'Process', 'Dead', 'Compose']) {
+          assert.isFalse(compositionHelper.keydown({ key, keyCode: 0 } as any));
+        }
+        assert.isFalse(compositionHelper.keydown({ key: '', keyCode: 0 } as any));
+        assert.isTrue(compositionHelper.isComposing);
+        assert.equal(handledText, '');
+        textarea.value = '你好！';
+        compositionHelper.compositionend();
+        setTimeout(() => { // wait for any textarea updates
+          assert.equal(handledText, '你好！');
+          done();
+        }, 0);
+      }, 0);
+    });
+
+    it('Should finalize when a keyCode 0 keydown has a key name', (done) => {
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'abc' });
+      textarea.value = 'abc';
+      setTimeout(() => { // wait for any textarea updates
+        // UIKeyInputLeftArrow reports keyCode 0 but is a real key, not an IME sentinel.
+        assert.isTrue(compositionHelper.keydown({ key: 'UIKeyInputLeftArrow', keyCode: 0 } as any));
+        assert.isFalse(compositionHelper.isComposing);
+        assert.equal(handledText, 'abc');
+        done();
+      }, 0);
+    });
+
+    it('Should still finalize on Enter', (done) => {
+      compositionHelper.compositionstart();
+      compositionHelper.compositionupdate({ data: 'abc' });
+      textarea.value = 'abc';
+      setTimeout(() => { // wait for any textarea updates
+        assert.isTrue(compositionHelper.keydown({ key: 'Enter', keyCode: 13 } as any));
+        assert.isFalse(compositionHelper.isComposing);
+        assert.equal(handledText, 'abc');
+        done();
+      }, 0);
+    });
+  });
+
   describe('Input', () => {
     it('Should insert simple characters', (done) => {
       // First character 'ㅇ'
