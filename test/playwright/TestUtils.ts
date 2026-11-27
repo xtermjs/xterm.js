@@ -3,7 +3,7 @@
  * @license MIT
  */
 
-import { Browser, JSHandle, Page } from '@playwright/test';
+import { Browser, BrowserContextOptions, JSHandle, Page } from '@playwright/test';
 import { deepStrictEqual, strictEqual } from 'assert';
 import type { IRenderDimensions as IRenderDimensionsInternal } from '../../src/browser/renderer/shared/Types';
 import type { IRenderService } from '../../src/browser/services/Services';
@@ -22,8 +22,8 @@ export interface ITestContext {
   proxy: TerminalProxy;
 }
 
-export async function createTestContext(browser: Browser): Promise<ITestContext> {
-  const page = await browser.newPage();
+export async function createTestContext(browser: Browser, options?: BrowserContextOptions): Promise<ITestContext> {
+  const page = await browser.newPage(options);
   page.on('console', e => console.log(`[${browser.browserType().name()}:${e.type()}]`, e));
   page.on('pageerror', e => console.error(`[${browser.browserType().name()}]`, e));
   await page.goto('/test');

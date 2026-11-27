@@ -54,12 +54,18 @@ namespace GitBranchSymbolsParts {
   export const CURVE_UP_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH_FUNCTION, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - (yp / .15 * .5)} C.5,${.5 - (yp / .15 * .5)},.5,.5,0,.5`, strokeWidth: 1 });
 
   // Node parts
-  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5' });
-  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.85,.5 A.35,.175,0,1,1,.15,.5 A.35,.175,0,1,1,.85,.5', strokeWidth: 1 });
-  export const NODE_LINE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M1,.5 L.85,.5', strokeWidth: 1 });
-  export const NODE_LINE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M0,.5 L.15,.5', strokeWidth: 1 });
-  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,1 L.5,.7', strokeWidth: 1 });
-  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: 'M.5,0 L.5,.3', strokeWidth: 1 });
+  function nodePath(xp: number, yp: number): string {
+    // Fit the circle to the shorter cell dimension, including wide letter spacing.
+    const rx = .35 * Math.min(1, xp / yp);
+    const ry = .35 * Math.min(1, yp / xp);
+    return `M${.5 + rx},.5 A${rx},${ry},0,1,1,${.5 - rx},.5 A${rx},${ry},0,1,1,${.5 + rx},.5`;
+  }
+  export const NODE_FILL: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: nodePath });
+  export const NODE_STROKE: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: nodePath, strokeWidth: 1 });
+  export const NODE_LINE_RIGHT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: (xp: number, yp: number) => `M1,.5 L${.5 + .35 * Math.min(1, xp / yp)},.5`, strokeWidth: 1 });
+  export const NODE_LINE_LEFT: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: (xp: number, yp: number) => `M0,.5 L${.5 - .35 * Math.min(1, xp / yp)},.5`, strokeWidth: 1 });
+  export const NODE_LINE_DOWN: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: (xp: number, yp: number) => `M.5,1 L.5,${.5 + .35 * Math.min(1, yp / xp)}`, strokeWidth: 1 });
+  export const NODE_LINE_UP: CustomGlyphDefinitionPart = Object.freeze({ type: CustomGlyphDefinitionType.PATH, data: (xp: number, yp: number) => `M.5,0 L.5,${.5 - .35 * Math.min(1, yp / xp)}`, strokeWidth: 1 });
 }
 
 export const customGlyphDefinitions: { [index: string]: CustomGlyphCharacterDefinition | undefined } = {

@@ -203,7 +203,7 @@ function drawPathDefinitionCharacter(
   devicePixelRatio: number,
   strokeWidth?: number
 ): void {
-  const instructions = typeof charDefinition === 'string' ? charDefinition : charDefinition(0, 0);
+  const instructions = typeof charDefinition === 'string' ? charDefinition : charDefinition(.15, .15 / deviceCellHeight * deviceCellWidth);
   ctx.beginPath();
   let currentX = 0;
   let currentY = 0;
