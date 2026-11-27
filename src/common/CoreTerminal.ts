@@ -26,7 +26,7 @@ import { InstantiationService } from './services/InstantiationService';
 import { LogService } from './services/LogService';
 import { BufferService, BufferServiceConstants } from './services/BufferService';
 import { OptionsService } from './services/OptionsService';
-import { IDisposable, IScrollEvent, ITerminalOptions, IParams } from './Types';
+import { IDisposable, IScrollEvent, ITerminalOptions, IParams, IColorEvent, ColorRequestType, SpecialColorIndex } from './Types';
 import { IAttributeData, IBufferSet } from './buffer/Types';
 import { CoreService } from './services/CoreService';
 import { MouseStateService } from './services/MouseStateService';
@@ -40,6 +40,10 @@ import { WriteBuffer } from './input/WriteBuffer';
 import { OscLinkService } from './services/OscLinkService';
 import { Emitter, EventUtils, type IEvent } from './Event';
 import { Disposable, MutableDisposable, toDisposable } from './Lifecycle';
+import { IColorPaletteService } from './ColorPalette';
+import { channels, color } from './Color';
+import { C0, C1ESCAPED } from './data/EscapeSequences';
+import { toRgbString } from './input/XParseColor';
 
 // Only trigger this warning a single time per session
 let hasWriteSyncWarnHappened = false;
@@ -157,6 +161,56 @@ export abstract class CoreTerminal extends Disposable implements ICoreTerminal {
     // Setup WriteBuffer
     this._writeBuffer = this._register(new WriteBuffer((data, promiseResult) => this._inputHandler.parse(data, promiseResult)));
     this._register(EventUtils.forward(this._writeBuffer.onWriteParsed, this._onWriteParsed));
+  }
+
+  /**
+   * Handle color event from inputhandler for OSC 4|104 | 10|110 | 11|111 | 12|112.
+   * An event from OSC 4|104 may contain multiple set or report requests, and multiple
+   * or none restore requests (resetting all),
+   * while an event from OSC 10|110 | 11|111 | 12|112 always contains a single request.
+   */
+  protected _handleColorEvent(event: IColorEvent, palette: IColorPaletteService): void {
+    for (const req of event) {
+      let acc: 'foreground' | 'background' | 'cursor' | 'ansi';
+      let ident: string;
+      switch (req.index) {
+        case SpecialColorIndex.FOREGROUND: // OSC 10 | 110
+          acc = 'foreground';
+          ident = '10';
+          break;
+        case SpecialColorIndex.BACKGROUND: // OSC 11 | 111
+          acc = 'background';
+          ident = '11';
+          break;
+        case SpecialColorIndex.CURSOR: // OSC 12 | 112
+          acc = 'cursor';
+          ident = '12';
+          break;
+        default: // OSC 4 | 104
+          // we can skip the [0..255] range check here (already done in inputhandler)
+          acc = 'ansi';
+          ident = '4;' + req.index;
+      }
+      switch (req.type) {
+        case ColorRequestType.REPORT:
+          const colorRgb = color.toColorRGB(acc === 'ansi'
+            ? palette.colors.ansi[req.index]
+            : palette.colors[acc]);
+          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(colorRgb)}${C1ESCAPED.ST}`);
+          break;
+        case ColorRequestType.SET:
+          if (acc === 'ansi') {
+            palette.modifyColors(colors => colors.ansi[req.index] = channels.toColor(...req.color));
+          } else {
+            const narrowedAcc = acc;
+            palette.modifyColors(colors => colors[narrowedAcc] = channels.toColor(...req.color));
+          }
+          break;
+        case ColorRequestType.RESTORE:
+          palette.restoreColor(req.index);
+          break;
+      }
+    }
   }
 
   public write(data: string | Uint8Array, callback?: () => void): void {

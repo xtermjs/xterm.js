@@ -7,7 +7,7 @@ import { IColor, ITerminalOptions } from '../common/Types';
 import { CharData, IBuffer } from '../common/buffer/Types';
 import { ICoreTerminal } from '../common/CoreTerminal';
 import { IDisposable, IRenderDimensions as IRenderDimensionsApi, Terminal as ITerminalApi } from '@xterm/xterm';
-import { channels, css } from '../common/Color';
+import { IColorPalette } from '../common/ColorPalette';
 import type { IEvent } from '../common/Event';
 
 /**
@@ -57,10 +57,7 @@ export interface IBrowser {
   isWindows: boolean;
 }
 
-export interface IColorSet {
-  foreground: IColor;
-  background: IColor;
-  cursor: IColor;
+export interface IColorSet extends IColorPalette {
   cursorAccent: IColor;
   selectionForeground: IColor | undefined;
   selectionBackgroundTransparent: IColor;
@@ -72,7 +69,6 @@ export interface IColorSet {
   scrollbarSliderHoverBackground: IColor;
   scrollbarSliderActiveBackground: IColor;
   overviewRulerBorder: IColor;
-  ansi: IColor[];
   /** Maps original colors to colors that respect minimum contrast ratio. */
   contrastCache: IColorContrastCache;
   /** Maps original colors to colors that respect _half_ of the minimum contrast ratio. */
@@ -179,50 +175,4 @@ export interface IBufferElementProvider {
   provideBufferElements(): DocumentFragment | HTMLElement;
 }
 
-// An IIFE to generate DEFAULT_ANSI_COLORS.
-export const DEFAULT_ANSI_COLORS = Object.freeze((() => {
-  const colors = [
-    // dark:
-    css.toColor('#2e3436'),
-    css.toColor('#cc0000'),
-    css.toColor('#4e9a06'),
-    css.toColor('#c4a000'),
-    css.toColor('#3465a4'),
-    css.toColor('#75507b'),
-    css.toColor('#06989a'),
-    css.toColor('#d3d7cf'),
-    // bright:
-    css.toColor('#555753'),
-    css.toColor('#ef2929'),
-    css.toColor('#8ae234'),
-    css.toColor('#fce94f'),
-    css.toColor('#729fcf'),
-    css.toColor('#ad7fa8'),
-    css.toColor('#34e2e2'),
-    css.toColor('#eeeeec')
-  ];
-
-  // Fill in the remaining 240 ANSI colors.
-  // Generate colors (16-231)
-  const v = [0x00, 0x5f, 0x87, 0xaf, 0xd7, 0xff];
-  for (let i = 0; i < 216; i++) {
-    const r = v[(i / 36) % 6 | 0];
-    const g = v[(i / 6) % 6 | 0];
-    const b = v[i % 6];
-    colors.push({
-      css: channels.toCss(r, g, b),
-      rgba: channels.toRgba(r, g, b)
-    });
-  }
-
-  // Generate greys (232-255)
-  for (let i = 0; i < 24; i++) {
-    const c = 8 + i * 10;
-    colors.push({
-      css: channels.toCss(c, c, c),
-      rgba: channels.toRgba(c, c, c)
-    });
-  }
-
-  return colors;
-})());
+export { DEFAULT_ANSI_COLORS } from '../common/ColorPalette';

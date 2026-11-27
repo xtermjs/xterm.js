@@ -43,14 +43,13 @@ import { SelectionService } from './services/SelectionService';
 import { ICharSizeService, ICharacterJoinerService, ICoreBrowserService, IKeyboardService, ILinkProviderService, IMouseCoordsService, IMouseService, IRenderService, ISelectionService, IThemeService } from './services/Services';
 import { ThemeService } from './services/ThemeService';
 import { KeyboardService } from './services/KeyboardService';
-import { channels, color, rgb } from '../common/Color';
+import { rgb } from '../common/Color';
 import { CoreTerminal } from '../common/CoreTerminal';
 import * as Browser from '../common/Platform';
-import { ColorRequestType, IColorEvent, ITerminalOptions, KeyboardResultType, SpecialColorIndex } from '../common/Types';
+import { ITerminalOptions, KeyboardResultType } from '../common/Types';
 import { DEFAULT_ATTR_DATA } from '../common/buffer/BufferLine';
 import { IBuffer } from '../common/buffer/Types';
-import { C0, C1ESCAPED } from '../common/data/EscapeSequences';
-import { toRgbString } from '../common/input/XParseColor';
+import { C0 } from '../common/data/EscapeSequences';
 import { DecorationService } from '../common/services/DecorationService';
 import { IDecorationService } from '../common/services/Services';
 import { WindowsOptionsReportType } from '../common/InputHandler';
@@ -187,7 +186,11 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     this._register(this._inputHandler.onRequestSendFocus(() => this._reportFocus()));
     this._register(this._inputHandler.onRequestReset(() => this.reset()));
     this._register(this._inputHandler.onRequestWindowsOptionsReport(type => this._reportWindowsOptions(type)));
-    this._register(this._inputHandler.onColor((event) => this._handleColorEvent(event)));
+    this._register(this._inputHandler.onColor(event => {
+      if (this._themeService) {
+        this._handleColorEvent(event, this._themeService);
+      }
+    }));
     this._register(EventUtils.forward(this._inputHandler.onCursorMove, this._onCursorMove));
     this._register(EventUtils.forward(this._inputHandler.onTitleChange, this._onTitleChange));
     this._register(EventUtils.forward(this._inputHandler.onA11yChar, this._onA11yCharEmitter));
@@ -200,57 +203,6 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
       this._customKeyEventHandler = undefined;
       this.element?.parentNode?.removeChild(this.element);
     }));
-  }
-
-  /**
-   * Handle color event from inputhandler for OSC 4|104 | 10|110 | 11|111 | 12|112.
-   * An event from OSC 4|104 may contain multiple set or report requests, and multiple
-   * or none restore requests (resetting all),
-   * while an event from OSC 10|110 | 11|111 | 12|112 always contains a single request.
-   */
-  private _handleColorEvent(event: IColorEvent): void {
-    if (!this._themeService) return;
-    for (const req of event) {
-      let acc: 'foreground' | 'background' | 'cursor' | 'ansi';
-      let ident: string;
-      switch (req.index) {
-        case SpecialColorIndex.FOREGROUND: // OSC 10 | 110
-          acc = 'foreground';
-          ident = '10';
-          break;
-        case SpecialColorIndex.BACKGROUND: // OSC 11 | 111
-          acc = 'background';
-          ident = '11';
-          break;
-        case SpecialColorIndex.CURSOR: // OSC 12 | 112
-          acc = 'cursor';
-          ident = '12';
-          break;
-        default: // OSC 4 | 104
-          // we can skip the [0..255] range check here (already done in inputhandler)
-          acc = 'ansi';
-          ident = '4;' + req.index;
-      }
-      switch (req.type) {
-        case ColorRequestType.REPORT:
-          const colorRgb = color.toColorRGB(acc === 'ansi'
-            ? this._themeService.colors.ansi[req.index]
-            : this._themeService.colors[acc]);
-          this.coreService.triggerDataEvent(`${C0.ESC}]${ident};${toRgbString(colorRgb)}${C1ESCAPED.ST}`);
-          break;
-        case ColorRequestType.SET:
-          if (acc === 'ansi') {
-            this._themeService.modifyColors(colors => colors.ansi[req.index] = channels.toColor(...req.color));
-          } else {
-            const narrowedAcc = acc;
-            this._themeService.modifyColors(colors => colors[narrowedAcc] = channels.toColor(...req.color));
-          }
-          break;
-        case ColorRequestType.RESTORE:
-          this._themeService.restoreColor(req.index);
-          break;
-      }
-    }
   }
 
   /**
