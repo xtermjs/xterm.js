@@ -159,6 +159,68 @@ describe('KittyKeyboard', () => {
         assert.strictEqual(result.key, '\x1b[2~');
       });
 
+      it('Insert with Alt still → CSI 2;3 ~', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Insert', altKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[2;3~');
+        assert.strictEqual(result.cancel, true);
+      });
+
+      it('Insert with Meta still → CSI 2;9 ~', () => {
+        const result = kitty.evaluate(createEvent({ key: 'Insert', metaKey: true }), flags);
+        assert.strictEqual(result.key, '\x1b[2;9~');
+        assert.strictEqual(result.cancel, true);
+      });
+
+      describe('Shift/Ctrl+Insert (browser paste/copy shortcuts)', () => {
+        // Like the legacy encoder, leave these to the browser: no key is sent and the event is not
+        // cancelled, so the native paste/copy still happens (#6322).
+        it('Shift+Insert is not encoded or cancelled', () => {
+          const result = kitty.evaluate(createEvent({ key: 'Insert', keyCode: 45, shiftKey: true }), flags);
+          assert.strictEqual(result.key, undefined);
+          assert.strictEqual(result.cancel, false);
+        });
+
+        it('Ctrl+Insert is not encoded or cancelled', () => {
+          const result = kitty.evaluate(createEvent({ key: 'Insert', keyCode: 45, ctrlKey: true }), flags);
+          assert.strictEqual(result.key, undefined);
+          assert.strictEqual(result.cancel, false);
+        });
+
+        it('Ctrl+Shift+Insert is not encoded or cancelled', () => {
+          const result = kitty.evaluate(createEvent({ key: 'Insert', keyCode: 45, ctrlKey: true, shiftKey: true }), flags);
+          assert.strictEqual(result.key, undefined);
+          assert.strictEqual(result.cancel, false);
+        });
+
+        it('Alt+Shift+Insert is not encoded or cancelled', () => {
+          const result = kitty.evaluate(createEvent({ key: 'Insert', keyCode: 45, altKey: true, shiftKey: true }), flags);
+          assert.strictEqual(result.key, undefined);
+          assert.strictEqual(result.cancel, false);
+        });
+
+        it('is not encoded or cancelled with all flags set', () => {
+          const allFlags = 0b11111;
+          for (const mods of [{ shiftKey: true }, { ctrlKey: true }]) {
+            for (const eventType of [KittyKeyboardEventType.PRESS, KittyKeyboardEventType.REPEAT, KittyKeyboardEventType.RELEASE]) {
+              const result = kitty.evaluate(createEvent({ key: 'Insert', keyCode: 45, ...mods }), allFlags, eventType);
+              assert.strictEqual(result.key, undefined);
+              assert.strictEqual(result.cancel, false);
+            }
+          }
+        });
+
+        it('is not encoded or cancelled with only REPORT_ALL_KEYS_AS_ESCAPE_CODES', () => {
+          const result = kitty.evaluate(createEvent({ key: 'Insert', keyCode: 45, shiftKey: true }), KittyKeyboardFlags.REPORT_ALL_KEYS_AS_ESCAPE_CODES);
+          assert.strictEqual(result.key, undefined);
+          assert.strictEqual(result.cancel, false);
+        });
+
+        it('does not affect other Shift/Ctrl navigation keys', () => {
+          assert.strictEqual(kitty.evaluate(createEvent({ key: 'Delete', shiftKey: true }), flags).key, '\x1b[3;2~');
+          assert.strictEqual(kitty.evaluate(createEvent({ key: 'Delete', ctrlKey: true }), flags).key, '\x1b[3;5~');
+        });
+      });
+
       it('Delete → CSI 3 ~', () => {
         const result = kitty.evaluate(createEvent({ key: 'Delete' }), flags);
         assert.strictEqual(result.key, '\x1b[3~');
