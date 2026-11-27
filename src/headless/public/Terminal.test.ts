@@ -94,6 +94,59 @@ describe('Headless API Tests', function (): void {
     lineEquals(2, '> ');
   });
 
+  for (const reset of ['RIS', 'API']) {
+    it(`restores cursor visibility after a full reset (${reset})`, async () => {
+      const replies: string[] = [];
+      term.onData(data => replies.push(data));
+      await writeSync('\x1b[?25l');
+      if (reset === 'RIS') {
+        await writeSync('\x1bc');
+      } else {
+        term.reset();
+      }
+      await writeSync('\x1b[?25$p');
+      deepStrictEqual(replies, ['\x1b[?25;1$y']);
+    });
+  }
+
+  for (const convertEol of [false, true]) {
+    for (const reset of ['RIS', 'API']) {
+      it(`resets LNM to the application option convertEol=${convertEol} (${reset})`, async () => {
+        term = new Terminal({ convertEol });
+        const replies: string[] = [];
+        term.onData(data => replies.push(data));
+        await writeSync(`\x1b[20${convertEol ? 'l' : 'h'}\x1b[20$p`);
+        deepStrictEqual(replies, [`\x1b[20;${convertEol ? 2 : 1}$y`]);
+        strictEqual(term.options.convertEol, convertEol);
+        replies.length = 0;
+        if (reset === 'RIS') {
+          await writeSync('\x1bc');
+        } else {
+          term.reset();
+        }
+        await writeSync('\x1b[20$pA\nB');
+        deepStrictEqual(replies, [`\x1b[20;${convertEol ? 1 : 2}$y`]);
+        lineEquals(0, 'A');
+        lineEquals(1, convertEol ? 'B' : ' B');
+      });
+    }
+  }
+
+  it('preserves LNM on soft reset and restores the current application option on full reset', async () => {
+    term = new Terminal({ convertEol: false });
+    const replies: string[] = [];
+    term.onData(data => replies.push(data));
+    await writeSync('\x1b[20h\x1b[!p\x1b[20$p');
+    deepStrictEqual(replies, ['\x1b[20;1$y']);
+    term.options.convertEol = true;
+    await writeSync('\x1b[20l');
+    term.reset();
+    replies.length = 0;
+    await writeSync('\x1b[20$pA\nB');
+    deepStrictEqual(replies, ['\x1b[20;1$y']);
+    lineEquals(1, 'B');
+  });
+
   it('writeln', async () => {
     await writelnSync('foo');
     await writelnSync('bar');

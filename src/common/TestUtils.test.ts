@@ -112,7 +112,8 @@ export class MockCoreService implements ICoreService {
   public isCursorHidden: boolean = false;
   public isFocused: boolean = false;
   public modes: IModes = {
-    insertMode: false
+    insertMode: false,
+    newLineMode: undefined
   };
   public decPrivateModes: IDecPrivateModes = {
     applicationCursorKeys: false,

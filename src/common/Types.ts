@@ -104,6 +104,7 @@ export interface IOscLinkData {
 
 export interface IModes {
   insertMode: boolean;
+  newLineMode: boolean | undefined;
 }
 
 export interface IDecPrivateModes {
