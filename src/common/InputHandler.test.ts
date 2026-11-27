@@ -1577,6 +1577,42 @@ describe('InputHandler', () => {
       await inputHandler.parseP('\x1b[3H\x1b[2Mn');
       assert.deepEqual(getLines(bufferService), ['0', '1', 'n', 'm', '', '', '6', '7', '8', '9']);
     });
+    async function parseWithLineOperationLimit(data: string, maxLines: number): Promise<void> {
+      const lines = bufferService.buffer.lines;
+      const splice = lines.splice;
+      const maxOperations = maxLines * 2;
+      let operations = 0;
+      lines.splice = (...args: Parameters<typeof splice>) => {
+        operations++;
+        assert.isAtMost(operations, maxOperations, `expected at most ${maxOperations} line operations, got ${operations}`);
+        splice.apply(lines, args);
+      };
+      try {
+        await inputHandler.parseP(data);
+      } finally {
+        lines.splice = splice;
+      }
+    }
+    it('scrollUp - large parameter clamped to scroll region', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r');
+      await parseWithLineOperationLimit('\x1b[2147483647Sm', 3);
+      assert.deepEqual(getLines(bufferService), ['m', '', '', '', '4', '5', '6', '7', '8', '9']);
+    });
+    it('scrollDown - large parameter clamped to scroll region', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[2;4r');
+      await parseWithLineOperationLimit('\x1b[2147483647Tm', 3);
+      assert.deepEqual(getLines(bufferService), ['m', '', '', '', '4', '5', '6', '7', '8', '9']);
+    });
+    it('insertLines - large parameter clamped to scroll region', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r\x1b[4H');
+      await parseWithLineOperationLimit('\x1b[2147483647Lm', 3);
+      assert.deepEqual(getLines(bufferService), ['0', '1', '2', 'm', '', '', '6', '7', '8', '9']);
+    });
+    it('deleteLines - large parameter clamped to scroll region', async () => {
+      await inputHandler.parseP('0\r\n1\r\n2\r\n3\r\n4\r\n5\r\n6\r\n7\r\n8\r\n9\x1b[3;6r\x1b[4H');
+      await parseWithLineOperationLimit('\x1b[2147483647Mm', 3);
+      assert.deepEqual(getLines(bufferService), ['0', '1', '2', 'm', '', '', '6', '7', '8', '9']);
+    });
   });
   it('should parse big chunks in smaller subchunks', async () => {
     // max single chunk size is hardcoded as 131072

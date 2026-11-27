@@ -1352,6 +1352,8 @@ export class InputHandler extends Disposable implements IInputHandler {
       return true;
     }
 
+    param = Math.min(param, this._activeBuffer.scrollBottom - this._activeBuffer.y + 1);
+
     const row: number = this._activeBuffer.ybase + this._activeBuffer.y;
 
     const scrollBottomRowsOffset = this._bufferService.rows - 1 - this._activeBuffer.scrollBottom;
@@ -1384,6 +1386,8 @@ export class InputHandler extends Disposable implements IInputHandler {
     if (this._activeBuffer.y > this._activeBuffer.scrollBottom || this._activeBuffer.y < this._activeBuffer.scrollTop) {
       return true;
     }
+
+    param = Math.min(param, this._activeBuffer.scrollBottom - this._activeBuffer.y + 1);
 
     const row: number = this._activeBuffer.ybase + this._activeBuffer.y;
 
@@ -1464,6 +1468,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public scrollUp(params: IParams): boolean {
     let param = params.params[0] || 1;
+    param = Math.min(param, this._activeBuffer.scrollBottom - this._activeBuffer.scrollTop + 1);
 
     while (param--) {
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollTop, 1);
@@ -1480,6 +1485,7 @@ export class InputHandler extends Disposable implements IInputHandler {
    */
   public scrollDown(params: IParams): boolean {
     let param = params.params[0] || 1;
+    param = Math.min(param, this._activeBuffer.scrollBottom - this._activeBuffer.scrollTop + 1);
 
     while (param--) {
       this._activeBuffer.lines.splice(this._activeBuffer.ybase + this._activeBuffer.scrollBottom, 1);
