@@ -94,6 +94,22 @@ describe('Headless API Tests', function (): void {
     lineEquals(2, '> ');
   });
 
+  it('keeps the cursor and writes in the viewport when narrowing without scrollback', async () => {
+    term = new Terminal({ cols: 8, rows: 4, scrollback: 0, allowProposedApi: true });
+    await writeSync('abcdef\r\nuvwxyz\r\n');
+    term.resize(3, 4);
+
+    const buffer = term.buffer.active;
+    strictEqual(buffer.baseY, 0);
+    strictEqual(buffer.viewportY, 0);
+    strictEqual(buffer.length, term.rows);
+    strictEqual(buffer.cursorY, 3);
+
+    await writeSync('one\r\ntwo');
+    lineEquals(2, 'one');
+    lineEquals(3, 'two');
+  });
+
   it('writeln', async () => {
     await writelnSync('foo');
     await writelnSync('bar');
