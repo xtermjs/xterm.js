@@ -167,6 +167,14 @@ describe('Terminal', () => {
         assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false, modifier.key);
       }
     });
+    it('should deliver insertText when its keypress was rejected for a held modifier (#6184)', () => {
+      // Windows 11 inserts an en dash on Win+- with a synthetic keystroke while Win is still held,
+      // so keydown and keypress carry metaKey and the text only arrives through the input event.
+      const ev = { preventDefault: () => { }, stopPropagation: () => { }, keyCode: 231, key: '–', charCode: 0x2013, metaKey: true };
+      term.keyDown({ ...ev, type: 'keydown' } as any);
+      assert.equal(term.keyPress({ ...ev, type: 'keypress' } as any), false);
+      assert.equal(term.inputEvent({ data: '–', inputType: 'insertText', composed: true } as InputEvent), true);
+    });
   });
 
   describe('attachCustomKeyEventHandler', () => {
