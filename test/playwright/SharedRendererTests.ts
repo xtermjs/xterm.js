@@ -1058,6 +1058,35 @@ export function injectSharedRendererTests(ctx: ISharedRendererTestContext): void
       // Inverse background should be opaque
       await pollFor(ctx.value.page, () => getCellColor(ctx.value, 1, 1), [255, 0, 0, 255]);
     });
+
+    test('transparent background italic and dim', async () => {
+      const theme: ITheme = {
+        background: '#00000000'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      const data = `\x1b[3m \x1b[0m\x1b[2m \x1b[0m`;
+      await ctx.value.proxy.write( data);
+      // Italic and dim cells have no background color, so the page should show through
+      await pollForCellColorRepainted(ctx.value, 1, 1, [255, 255, 255, 255]);
+      await pollForCellColorRepainted(ctx.value, 2, 1, [255, 255, 255, 255]);
+    });
+
+    test('semi-transparent background italic and dim', async () => {
+      const theme: ITheme = {
+        background: '#2850a080'
+      };
+      await ctx.value.page.evaluate(`window.term.options.theme = ${JSON.stringify(theme)};`);
+      const data = ` \x1b[3m \x1b[0m\x1b[2m \x1b[0m`;
+      await ctx.value.proxy.write( data);
+      // Italic and dim cells should blend with the page exactly like a plain cell
+      await pollFor(ctx.value.page, async () => [
+        await getCellColor(ctx.value, 1, 1),
+        await getCellColor(ctx.value, 2, 1),
+        await getCellColor(ctx.value, 3, 1)
+      ], [], () => repaint(ctx.value), {
+        equalityFn: ([plain, italic, dim]) => plain.join() === italic.join() && plain.join() === dim.join() && plain.join() !== '255,255,255,255'
+      });
+    });
   });
 
   test.describe('selectionForeground', () => {
@@ -1440,6 +1469,19 @@ async function waitForRenderAfter(ctx: ITestContext, action: () => Promise<void>
   await action();
   await renderPromise;
   frameDetails = undefined;
+}
+
+/**
+ * Repaints the whole viewport, so that pixels left over from a previous test cannot show through a
+ * transparent background, and clears the cached screenshot.
+ */
+async function repaint(ctx: ITestContext): Promise<void> {
+  const rows = await ctx.proxy.rows;
+  await waitForRenderAfter(ctx, () => ctx.proxy.refresh(0, rows - 1));
+}
+
+async function pollForCellColorRepainted(ctx: ITestContext, col: number, row: number, expected: [number, number, number, number]): Promise<void> {
+  await pollFor(ctx.page, () => getCellColor(ctx, col, row), expected, () => repaint(ctx));
 }
 
 async function pollForCellColorFresh(ctx: ITestContext, col: number, row: number, expected: [number, number, number, number], position: CellColorPosition = CellColorPosition.CENTER): Promise<void> {

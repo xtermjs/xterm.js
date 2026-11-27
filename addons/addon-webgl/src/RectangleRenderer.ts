@@ -226,7 +226,7 @@ export class RectangleRenderer extends Disposable {
         inverse = !!(fg & FgFlags.INVERSE);
         if (bg !== currentBg || (fg !== currentFg && (currentInverse || inverse))) {
           // A rectangle needs to be drawn if going from non-default to another color
-          if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
+          if ((currentBg & Attributes.CM_MASK) !== Attributes.CM_DEFAULT || (currentInverse && currentFg !== 0)) {
             offset = rectangleCount++ * INDICES_PER_RECTANGLE;
             this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, x, y);
           }
@@ -237,7 +237,7 @@ export class RectangleRenderer extends Disposable {
         }
       }
       // Finish rectangle if it's still going
-      if (currentBg !== 0 || (currentInverse && currentFg !== 0)) {
+      if ((currentBg & Attributes.CM_MASK) !== Attributes.CM_DEFAULT || (currentInverse && currentFg !== 0)) {
         offset = rectangleCount++ * INDICES_PER_RECTANGLE;
         this._updateRectangle(vertices, offset, currentFg, currentBg, currentStartX, terminal.cols, y);
       }
@@ -318,7 +318,7 @@ export class RectangleRenderer extends Disposable {
           $rgba = this._themeService.colors.ansi[fg & Attributes.PCOLOR_MASK].rgba;
           break;
         case Attributes.CM_RGB:
-          $rgba = (fg & Attributes.RGB_MASK) << 8;
+          $rgba = ((fg & Attributes.RGB_MASK) << 8) | 0xFF;
           break;
         case Attributes.CM_DEFAULT:
         default:
@@ -331,7 +331,7 @@ export class RectangleRenderer extends Disposable {
           $rgba = this._themeService.colors.ansi[bg & Attributes.PCOLOR_MASK].rgba;
           break;
         case Attributes.CM_RGB:
-          $rgba = (bg & Attributes.RGB_MASK) << 8;
+          $rgba = ((bg & Attributes.RGB_MASK) << 8) | 0xFF;
           break;
         case Attributes.CM_DEFAULT:
         default:
@@ -348,7 +348,7 @@ export class RectangleRenderer extends Disposable {
     $r = (($rgba >> 24) & 0xFF) / 255;
     $g = (($rgba >> 16) & 0xFF) / 255;
     $b = (($rgba >> 8 ) & 0xFF) / 255;
-    $a = 1;
+    $a = ($rgba & 0xFF) / 255;
 
     this._addRectangle(vertices.attributes, offset, $x1, $y1, (endX - startX) * this._dimensions.device.cell.width, this._dimensions.device.cell.height, $r, $g, $b, $a);
   }
