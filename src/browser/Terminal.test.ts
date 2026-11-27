@@ -136,6 +136,39 @@ describe('Terminal', () => {
     });
   });
 
+  describe('_keyDownSeen gate (IME insertText ordering)', () => {
+    const modifiers = [
+      { keyCode: 16, key: 'Shift' },
+      { keyCode: 17, key: 'Control' },
+      { keyCode: 18, key: 'Alt' },
+      { keyCode: 91, key: 'Meta' }
+    ];
+
+    beforeEach(() => {
+      term.clearSelection = () => { };
+      (term as any).textarea = { value: '' };
+    });
+    it('should not arm the gate on a modifier-only keydown, keeping the first IME insertText deliverable', () => {
+      // macOS IMEs deliver insertText before the character keydown while a modifier is held (#5887,
+      // #6144): if the modifier's keydown arms the gate, the first press is dropped.
+      for (const modifier of modifiers) {
+        term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: modifier.keyCode, key: modifier.key } as KeyboardEvent);
+        assert.equal(term.inputEvent({ data: '？', inputType: 'insertText', composed: true } as InputEvent), true, modifier.key);
+      }
+    });
+    it('should still arm the gate on a character keydown so regular insertText stays deduped', () => {
+      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 65, key: 'a' } as KeyboardEvent);
+      assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false);
+    });
+    it('should keep the gate armed when a modifier keydown follows a character keydown', () => {
+      for (const modifier of modifiers) {
+        term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 65, key: 'a' } as KeyboardEvent);
+        term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: modifier.keyCode, key: modifier.key } as KeyboardEvent);
+        assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false, modifier.key);
+      }
+    });
+  });
+
   describe('attachCustomKeyEventHandler', () => {
     const evKeyDown = {
       preventDefault: () => { },
@@ -1144,6 +1177,22 @@ describe('Terminal', () => {
     assert.equal(termConverting.buffer.lines.get(1)!.translateToString(false), 'World          ');
     assert.equal(termConverting.buffer.lines.get(0)!.translateToString(true), 'Hello');
     assert.equal(termConverting.buffer.lines.get(1)!.translateToString(true), 'World');
+  });
+
+  describe('resize', () => {
+    it('keeps parsing later writes when it happens during an async parser handler', async () => {
+      let resolveHandler!: (value: boolean) => void;
+      term.registerOscHandler(1337, () => new Promise<boolean>(resolve => { resolveHandler = resolve; }));
+      const callbacks: string[] = [];
+      term.write('\x1b]1337;File=inline=1:AAAA\x07', () => { callbacks.push('osc'); });
+      term.write('second', () => { callbacks.push('second'); });
+      term.resize(39, 10);
+      term.write('third', () => { callbacks.push('third'); });
+      resolveHandler(true);
+      await term.writeP('');
+      assert.equal(term.buffer.lines.get(0)!.translateToString(true), 'secondthird');
+      assert.deepEqual(callbacks, ['osc', 'second', 'third']);
+    });
   });
 
   // FIXME: move to common/CoreTerminal.test once the trimming is moved over

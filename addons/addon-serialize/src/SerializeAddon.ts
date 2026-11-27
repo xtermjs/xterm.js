@@ -27,7 +27,8 @@ function escapeHTMLChar(c: string): string {
 // TODO: Refine this template class later
 abstract class BaseSerializeHandler {
   constructor(
-    protected readonly _buffer: IBuffer
+    protected readonly _buffer: IBuffer,
+    protected readonly _terminal: Terminal
   ) {
   }
 
@@ -48,7 +49,8 @@ abstract class BaseSerializeHandler {
       const line = this._buffer.getLine(row);
       if (line) {
         const startLineColumn = row === range.start.y ? startColumn : 0;
-        const endLineColumn = row === range.end.y ? endColumn: line.length;
+        // A line can be longer than cols, so stop at the edge of the grid
+        const endLineColumn = row === range.end.y ? endColumn : Math.min(line.length, this._terminal.cols);
         for (let col = startLineColumn; col < endLineColumn; col++) {
           const c = line.getCell(col, oldCell === cell1 ? cell2 : cell1);
           if (!c) {
@@ -155,13 +157,6 @@ class StringSerializeHandler extends BaseSerializeHandler {
   private _lastContentCursorRow: number = 0;
   private _lastContentCursorCol: number = 0;
 
-  constructor(
-    buffer: IBuffer,
-    private readonly _terminal: Terminal
-  ) {
-    super(buffer);
-  }
-
   protected _beforeSerialize(rows: number, start: number, end: number): void {
     this._allRows = new Array<string>(rows);
     this._lastContentCursorRow = start;
@@ -191,6 +186,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
       // Fetch current line
       const currentLine = this._buffer.getLine(row)!;
+      // A line can be longer than cols, so its last cell on screen is at cols - 1
+      const currentLineLength = Math.min(currentLine.length, this._terminal.cols);
       // Fetch next line
       const nextLine = this._buffer.getLine(row + 1)!;
 
@@ -202,8 +199,8 @@ class StringSerializeHandler extends BaseSerializeHandler {
         this._lastCursorCol = 0;
       } else {
         rowSeparator = '';
-        const thisRowLastChar = currentLine.getCell(currentLine.length - 1, this._thisRowLastChar)!;
-        const thisRowLastSecondChar = currentLine.getCell(currentLine.length - 2, this._thisRowLastSecondChar)!;
+        const thisRowLastChar = currentLine.getCell(currentLineLength - 1, this._thisRowLastChar)!;
+        const thisRowLastSecondChar = currentLine.getCell(currentLineLength - 2, this._thisRowLastSecondChar)!;
         const nextRowFirstChar = nextLine.getCell(0, this._nextRowFirstChar)!;
         const isNextRowFirstCharDoubleWidth = nextRowFirstChar.getWidth() > 1;
 
@@ -214,7 +211,7 @@ class StringSerializeHandler extends BaseSerializeHandler {
         if (
           // you must output character to cause overflow, control sequence can't do this
           nextRowFirstChar.getChars() &&
-            isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0
+          (isNextRowFirstCharDoubleWidth ? this._nullCellCount <= 1 : this._nullCellCount <= 0)
         ) {
           if (
             // the last character can't be null,
@@ -250,10 +247,16 @@ class StringSerializeHandler extends BaseSerializeHandler {
 
           if (this._nullCellCount > 0) {
             // do these because we filled the last several null slot, which we shouldn't
+            // a move of 0 means a move of 1, so skip the moves when the row has no content
+            const contentLength = currentLineLength - this._nullCellCount;
             rowSeparator += '\u001b[A';
-            rowSeparator += `\u001b[${currentLine.length - this._nullCellCount}C`;
+            if (contentLength > 0) {
+              rowSeparator += `\u001b[${contentLength}C`;
+            }
             rowSeparator += `\u001b[${this._nullCellCount}X`;
-            rowSeparator += `\u001b[${currentLine.length - this._nullCellCount}D`;
+            if (contentLength > 0) {
+              rowSeparator += `\u001b[${contentLength}D`;
+            }
             rowSeparator += '\u001b[B';
           }
 
@@ -639,14 +642,14 @@ export class HTMLSerializeHandler extends BaseSerializeHandler {
 
   constructor(
     buffer: IBuffer,
-    private readonly _terminal: Terminal,
+    terminal: Terminal,
     private readonly _options: Partial<IHTMLSerializeOptions>
   ) {
-    super(buffer);
+    super(buffer, terminal);
 
     // For xterm headless: fallback to ansi colors
-    if ((_terminal as any)._core._themeService) {
-      this._ansiColors = (_terminal as any)._core._themeService.colors.ansi;
+    if ((terminal as any)._core._themeService) {
+      this._ansiColors = (terminal as any)._core._themeService.colors.ansi;
     }
     else {
       this._ansiColors = DEFAULT_ANSI_COLORS;

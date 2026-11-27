@@ -143,31 +143,43 @@ export class Linkifier extends Disposable implements ILinkifier2 {
           // If all providers have responded, remove lower priority links that intersect ranges of
           // higher priority links
           if (this._activeProviderReplies?.size === this._linkProviderService.linkProviders.length) {
-            this._removeIntersectingLinks(position.y, this._activeProviderReplies);
+            this._removeIntersectingLinks(this._activeProviderReplies);
           }
         });
       }
     }
   }
 
-  private _removeIntersectingLinks(y: number, replies: Map<Number, ILinkWithState[] | undefined>): void {
-    const occupiedCells = new Set<number>();
+  private _removeIntersectingLinks(replies: Map<Number, ILinkWithState[] | undefined>): void {
+    // Kept links are inclusive [start, end] offsets (y * cols + x). A wrapped link is one
+    // range, and a lower priority link is dropped when a.start <= b.end && b.start <= a.end.
+    const keptRanges: { start: number, end: number }[] = [];
+    const cols = this._bufferService.cols;
     for (let i = 0; i < replies.size; i++) {
       const providerReply = replies.get(i);
       if (!providerReply) {
         continue;
       }
-      for (let i = 0; i < providerReply.length; i++) {
-        const linkWithState = providerReply[i];
-        const startX = linkWithState.link.range.start.y < y ? 0 : linkWithState.link.range.start.x;
-        const endX = linkWithState.link.range.end.y > y ? this._bufferService.cols : linkWithState.link.range.end.x;
-        for (let x = startX; x <= endX; x++) {
-          if (occupiedCells.has(x)) {
-            providerReply.splice(i--, 1);
+      for (let j = 0; j < providerReply.length; j++) {
+        const range = providerReply[j].link.range;
+        const start = range.start.y * cols + range.start.x;
+        const end = range.end.y * cols + range.end.x;
+        if (start > end) {
+          continue;
+        }
+        let overlaps = false;
+        for (let k = 0; k < keptRanges.length; k++) {
+          const kept = keptRanges[k];
+          if (start <= kept.end && kept.start <= end) {
+            overlaps = true;
             break;
           }
-          occupiedCells.add(x);
         }
+        if (overlaps) {
+          providerReply.splice(j--, 1);
+          continue;
+        }
+        keptRanges.push({ start, end });
       }
     }
   }

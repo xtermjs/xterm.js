@@ -33,6 +33,7 @@ import { VtWindow } from './components/window/vtWindow';
 import { ClipboardAddon } from '@xterm/addon-clipboard';
 import { FitAddon } from '@xterm/addon-fit';
 import { LigaturesAddon } from '@xterm/addon-ligatures';
+import { ProgramStatusAddon } from '@xterm/addon-program-status';
 import { ProgressAddon } from '@xterm/addon-progress';
 import { SearchAddon, ISearchOptions } from '@xterm/addon-search';
 import { SerializeAddon } from '@xterm/addon-serialize';
@@ -50,6 +51,7 @@ export interface IWindowWithTerminal extends Window {
   ClipboardAddon?: typeof ClipboardAddon;
   FitAddon?: typeof FitAddon;
   ImageAddon?: typeof ImageAddon;
+  ProgramStatusAddon?: typeof ProgramStatusAddon;
   ProgressAddon?: typeof ProgressAddon;
   SearchAddon?: typeof SearchAddon;
   SerializeAddon?: typeof SerializeAddon;
@@ -77,6 +79,7 @@ const addons: AddonCollection = {
   clipboard: { name: 'clipboard', ctor: ClipboardAddon, canChange: true },
   fit: { name: 'fit', ctor: FitAddon, canChange: false },
   image: { name: 'image', ctor: ImageAddon!, canChange: true },
+  programStatus: { name: 'programStatus', ctor: ProgramStatusAddon, canChange: true },
   progress: { name: 'progress', ctor: ProgressAddon, canChange: true },
   search: { name: 'search', ctor: SearchAddon, canChange: true },
   serialize: { name: 'serialize', ctor: SerializeAddon, canChange: true },
@@ -199,6 +202,7 @@ if (document.location.pathname === '/test') {
   window.ClipboardAddon = ClipboardAddon;
   window.FitAddon = FitAddon;
   window.ImageAddon = ImageAddon;
+  window.ProgramStatusAddon = ProgramStatusAddon;
   window.ProgressAddon = ProgressAddon;
   window.SearchAddon = SearchAddon;
   window.SerializeAddon = SerializeAddon;

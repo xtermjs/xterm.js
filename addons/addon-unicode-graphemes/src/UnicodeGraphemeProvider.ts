@@ -49,7 +49,7 @@ export class UnicodeGraphemeProvider implements IUnicodeVersionProvider {
       if (shouldJoin) {
         if (oldWidth > w) {
           w = oldWidth;
-        } else if (charInfo === 32) { // UC.GRAPHEME_BREAK_SAW_Regional_Pair)
+        } else if (charInfo === UC.GRAPHEME_BREAK_SAW_Regional_Pair) {
           w = 2;
         }
       }

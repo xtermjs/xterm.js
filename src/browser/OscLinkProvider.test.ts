@@ -62,7 +62,7 @@ describe('OscLinkProvider', () => {
     setUrl(line1, 2, 'bbb', 1);
     setUrl(line2, 0, 'cccc', 1);
     setText(line2, 4, 'x');
-    line2!.isWrapped = true;
+    bufferService.buffer.setWrapped(1, true);
 
     const links = await getLinks(provider, 2);
     assert.lengthOf(links, 1);
@@ -78,7 +78,7 @@ describe('OscLinkProvider', () => {
     setUrl(line1, 0, 'aaaaa', 1);
     setUrl(line2, 0, 'bb', 1);
     setText(line2, 2, 'ccc');
-    line2!.isWrapped = true;
+    bufferService.buffer.setWrapped(1, true);
 
     const links = await getLinks(provider, 1);
     assert.lengthOf(links, 1);
@@ -94,7 +94,7 @@ describe('OscLinkProvider', () => {
     setUrl(line1, 0, 'aaaaa', 1);
     setUrl(line2, 0, 'bbb', 2);
     setText(line2, 3, 'cc');
-    line2!.isWrapped = true;
+    bufferService.buffer.setWrapped(1, true);
 
     const links = await getLinks(provider, 1);
     assert.lengthOf(links, 1);

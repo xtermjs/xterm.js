@@ -19,6 +19,19 @@ interface ITestTextureAtlasConstructor {
 
 interface ITestTextureAtlas {
   constructor: ITestTextureAtlasConstructor;
+  readonly pageLayoutVersion: number;
+  readonly _pages?: ReadonlyArray<{
+    readonly canvas: {
+      readonly width: number;
+    };
+    readonly glyphs: ReadonlyArray<unknown>;
+    readonly currentRow: {
+      readonly x: number;
+      readonly y: number;
+    };
+    readonly percentageUsed: number;
+  }>;
+  clearTexture?(): void;
 }
 
 interface ITestRenderer {
@@ -104,6 +117,55 @@ async function writeAndWaitForRender(ctx: ITestContext, data: string): Promise<v
   });
   await ctx.proxy.write(data);
   await renderPromise;
+}
+
+async function refreshBAndWaitForRender(ctx: ITestContext): Promise<void> {
+  await ctx.page.evaluate(() => {
+    const termB = window.termB;
+    if (!termB) {
+      throw new Error('Terminal B must exist before refreshing it');
+    }
+    return new Promise<void>(resolve => {
+      const disposable = termB.onRender(() => {
+        disposable.dispose();
+        resolve();
+      });
+      termB.refresh(0, termB.rows - 1);
+    });
+  });
+}
+
+/**
+ * Like writeAndWaitForRender, but also returns when the page throws, since a frame that throws never
+ * fires onRender.
+ */
+async function writeAndWaitForRenderOrPageError(ctx: ITestContext, data: string): Promise<void> {
+  let onPageError = (): void => {};
+  const pageError = new Promise<void>(resolve => {
+    onPageError = () => resolve();
+  });
+  ctx.page.on('pageerror', onPageError);
+  try {
+    await Promise.race([writeAndWaitForRender(ctx, data), pageError]);
+  } finally {
+    ctx.page.off('pageerror', onPageError);
+  }
+}
+
+async function getMergedPageState(ctx: ITestContext): Promise<{ layoutVersion: number, filled: number, empty: number }> {
+  return ctx.page.evaluate(() => {
+    const atlas = window.addon?._renderer?._charAtlas;
+    if (!atlas?._pages) {
+      throw new Error('Terminal A must have a texture atlas');
+    }
+    // New pages are always 512px wide, so 1024px pages come from merging four of them.
+    const mergedPages = atlas._pages.filter(page => page.canvas.width === 1024);
+    return {
+      layoutVersion: atlas.pageLayoutVersion,
+      filled: mergedPages.filter(page => page.glyphs.length > 0).length,
+      empty: mergedPages.filter(page => page.glyphs.length === 0).length
+    };
+  });
 }
 
 async function setMaxAtlasPages(ctx: ITestContext, maxAtlasPages: number): Promise<void> {
@@ -276,6 +338,131 @@ test.describe('shared-atlas garble across terminals (#6038)', () => {
         expectSignatureMatches(after[i], reference[i], `terminal B header col ${HEADER_COLS[i]} garbled by terminal A's atlas clear`);
       }
     } finally {
+      await ctx.page.close();
+    }
+  });
+
+  test('clears merged atlas pages without changing a second terminal\'s glyphs', async ({ browser }) => {
+    const ctx = await createTestContext(browser);
+    try {
+      await openTerminal(ctx, { cols: 80, rows: 24 });
+      await loadWebglStrict(ctx);
+      await createTerminalB(ctx);
+      await setMaxAtlasPages(ctx, 4);
+      await writeToBAndWaitForRender(ctx, HEADER);
+
+      let mergedFirstPage = false;
+      for (let chunk = 0; chunk < 16; chunk++) {
+        await writeAndWaitForRender(ctx, '\x1b[2J\x1b[H' + generateColoredAsciiFlood(23 * 78, chunk * 23 * 78));
+        mergedFirstPage = await ctx.page.evaluate(() => {
+          const firstPage = window.addon?._renderer?._charAtlas?._pages?.[0];
+          return !!firstPage?.glyphs.length && firstPage.currentRow.x === 0 && firstPage.currentRow.y === 0;
+        });
+        if (mergedFirstPage) {
+          break;
+        }
+      }
+      expect(mergedFirstPage, 'the first atlas page should contain merged glyphs with an unused current row').toBe(true);
+
+      await refreshBAndWaitForRender(ctx);
+      const reference = await captureRowSignatures(ctx, 1, HEADER_COLS);
+      const cleared = await ctx.page.evaluate(() => {
+        const atlas = window.addon?._renderer?._charAtlas;
+        if (!atlas?._pages || !atlas.clearTexture) {
+          throw new Error('Terminal A must have a clearable shared texture atlas');
+        }
+        const versionBefore = atlas.pageLayoutVersion;
+        atlas.clearTexture();
+        const versionAfter = atlas.pageLayoutVersion;
+        atlas.clearTexture();
+        return {
+          versionBefore,
+          versionAfter,
+          versionAfterSecondClear: atlas.pageLayoutVersion,
+          firstPageGlyphs: atlas._pages[0].glyphs.length,
+          firstPageUsage: atlas._pages[0].percentageUsed
+        };
+      });
+      expect(cleared, 'clearing a merged atlas page must invalidate it and discard its glyphs').toEqual({
+        versionBefore: cleared.versionBefore,
+        versionAfter: cleared.versionBefore + 1,
+        versionAfterSecondClear: cleared.versionBefore + 1,
+        firstPageGlyphs: 0,
+        firstPageUsage: 0
+      });
+
+      await ctx.proxy.clearTextureAtlas();
+      await refreshBAndWaitForRender(ctx);
+
+      const restored = await captureRowSignatures(ctx, 1, HEADER_COLS);
+      for (let i = 0; i < HEADER_COLS.length; i++) {
+        expectSignatureMatches(restored[i], reference[i], `terminal B header col ${HEADER_COLS[i]} changed after clearing merged atlas pages`);
+      }
+
+      for (let chunk = 0; chunk < 3; chunk++) {
+        await writeAndWaitForRender(ctx, '\x1b[2J\x1b[H' + generateColoredAsciiFlood(23 * 78, (chunk + 16) * 23 * 78));
+      }
+      await refreshBAndWaitForRender(ctx);
+      const afterMoreOutput = await captureRowSignatures(ctx, 1, HEADER_COLS);
+      for (let i = 0; i < HEADER_COLS.length; i++) {
+        expectSignatureMatches(afterMoreOutput[i], reference[i], `terminal B header col ${HEADER_COLS[i]} changed after more atlas writes`);
+      }
+    } finally {
+      await resetMaxAtlasPages(ctx).catch(() => {});
+      await ctx.page.close();
+    }
+  });
+
+  test('merges atlas pages again after a clear empties the merged pages', async ({ browser }) => {
+    const ctx = await createTestContext(browser);
+    const errors: string[] = [];
+    const onError = (error: Error): void => { errors.push(error.message); };
+    ctx.page.on('pageerror', onError);
+    try {
+      await openTerminal(ctx, { cols: 80, rows: 24 });
+      await loadWebglStrict(ctx);
+      await createTerminalB(ctx);
+      await setMaxAtlasPages(ctx, 8);
+      await writeToBAndWaitForRender(ctx, HEADER);
+      const reference = await captureRowSignatures(ctx, 1, HEADER_COLS);
+
+      // With 8 pages, each merge turns four 512px pages into one 1024px page, until four 1024px
+      // pages exist and are merged in turn. Clear while those four are still separate, so the next
+      // merge finds them empty: merged pages are never written to again after a clear.
+      const cellsPerChunk = 6 * 78;
+      let chunk = 0;
+      let merged = await getMergedPageState(ctx);
+      for (; chunk < 150 && merged.filled < 4; chunk++) {
+        await writeAndWaitForRenderOrPageError(ctx, '\x1b[2J\x1b[H' + generateColoredAsciiFlood(cellsPerChunk, chunk * cellsPerChunk));
+        expect(errors, `filling the atlas must not throw: ${errors[0] ?? ''}`).toEqual([]);
+        merged = await getMergedPageState(ctx);
+      }
+      expect(merged.filled, 'four 1024px merged pages must exist before the clear').toBeGreaterThanOrEqual(4);
+
+      await ctx.proxy.clearTextureAtlas();
+      const cleared = await getMergedPageState(ctx);
+      expect(cleared.empty, 'the clear must leave the 1024px merged pages empty').toBeGreaterThanOrEqual(4);
+
+      // Keep writing until the atlas merges or evicts pages again. That merge must skip the empty
+      // pages, which have no glyph to read a page index from.
+      let layoutChanged = false;
+      for (let i = 0; i < 150 && !layoutChanged; i++, chunk++) {
+        await writeAndWaitForRenderOrPageError(ctx, '\x1b[2J\x1b[H' + generateColoredAsciiFlood(cellsPerChunk, chunk * cellsPerChunk));
+        expect(errors, `merging pages after a clear must not throw: ${errors[0] ?? ''}`).toEqual([]);
+        layoutChanged = (await getMergedPageState(ctx)).layoutVersion !== cleared.layoutVersion;
+      }
+      expect(layoutChanged, 'writing after the clear must merge or evict atlas pages').toBe(true);
+
+      await refreshBAndWaitForRender(ctx);
+      const termBHeader = await ctx.page.evaluate(() => window.termB?.buffer.active.getLine(0)?.translateToString(true));
+      expect(termBHeader, 'terminal B buffer must still contain the header').toBe(HEADER);
+      const after = await captureRowSignatures(ctx, 1, HEADER_COLS);
+      for (let i = 0; i < HEADER_COLS.length; i++) {
+        expectSignatureMatches(after[i], reference[i], `terminal B header col ${HEADER_COLS[i]} changed after merging pages following a clear`);
+      }
+    } finally {
+      ctx.page.off('pageerror', onError);
+      await resetMaxAtlasPages(ctx).catch(() => {});
       await ctx.page.close();
     }
   });

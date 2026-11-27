@@ -41,7 +41,7 @@ test.describe('UnicodeGraphemesAddon', () => {
       'baby with emoji modifier fitzpatrick type-6; baby');
     strictEqual(await evalWidth('\u{1F469}\u200d\u{1f469}\u200d\u{1f466}'), 2,
       'woman+zwj+woman+zwj+boy');
-    strictEqual(await evalWidth('=\u{1F3CB}\u{FE0F}=\u{F3CB}\u{1F3FE}\u200D\u2640='), 7,
+    strictEqual(await evalWidth('=\u{1F3CB}\u{FE0F}=\u{1F3CB}\u{1F3FE}\u200D\u2640='), 7,
       'person lifting weights (plain, emoji); woman lighting weights, medium dark');
     strictEqual(await evalWidth('\u{1F469}\u{1F469}\u{200D}\u{1F393}\u{1F468}\u{1F3FF}\u{200D}\u{1F393}'), 6,
       'woman; woman student; man student dark');

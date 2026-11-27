@@ -495,9 +495,13 @@ export class MouseService implements IMouseService {
    * to fulfill protocol and encoding restrictions.
    */
   private _triggerMouseEvent(e: ICoreMouseEvent): boolean {
-    // range check for col/row
-    if (e.col < 0 || e.col >= this._bufferService.cols
-      || e.row < 0 || e.row >= this._bufferService.rows) {
+    // range check for col/row, written so that NaN fails the check
+    if (!(e.col >= 0 && e.col < this._bufferService.cols
+      && e.row >= 0 && e.row < this._bufferService.rows)) {
+      return false;
+    }
+    // pixel coords are not range checked, but must be finite (SGR_PIXELS)
+    if (!Number.isFinite(e.x) || !Number.isFinite(e.y)) {
       return false;
     }
 

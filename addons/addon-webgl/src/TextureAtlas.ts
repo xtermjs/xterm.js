@@ -56,6 +56,7 @@ let $glyph = undefined;
 
 export class TextureAtlas implements ITextureAtlas {
   private _didWarmUp: boolean = false;
+  private _warmUpQueue: InstanceType<typeof IdleTaskQueue> | undefined;
 
   private _cacheMap: FourKeyMap<number, number, number, number, IRasterizedGlyph> = new FourKeyMap();
   private _cacheMapCombined: FourKeyMap<string, number, number, number, IRasterizedGlyph> = new FourKeyMap();
@@ -104,6 +105,7 @@ export class TextureAtlas implements ITextureAtlas {
   }
 
   public dispose(): void {
+    this._warmUpQueue?.clear();
     this._tmpCanvas.remove();
     for (const page of this.pages) {
       page.canvas.remove();
@@ -121,7 +123,8 @@ export class TextureAtlas implements ITextureAtlas {
 
   private _doWarmUp(): void {
     // Pre-fill with ASCII 33-126, this is not urgent and done in idle callbacks
-    const queue = new IdleTaskQueue(this._logService);
+    this._warmUpQueue?.clear();
+    const queue = this._warmUpQueue = new IdleTaskQueue(this._logService);
     for (let i = 33; i < 126; i++) {
       queue.enqueue(() => {
         if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
@@ -136,7 +139,7 @@ export class TextureAtlas implements ITextureAtlas {
   public get pageLayoutVersion(): number { return this._pageLayoutVersion; }
 
   public clearTexture(): void {
-    if (this._pages[0].currentRow.x === 0 && this._pages[0].currentRow.y === 0) {
+    if (this._pages.every(page => page.glyphs.length === 0)) {
       return;
     }
     for (const page of this._pages) {
@@ -161,7 +164,7 @@ export class TextureAtlas implements ITextureAtlas {
       // Find the set of the largest 4 images, below the maximum size, with the highest
       // percentages used
       const pagesBySize = this._pages.filter(e => {
-        return e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
+        return e.glyphs.length > 0 && e.canvas.width * 2 <= (TextureAtlas.maxTextureSize || Constants.FORCED_MAX_TEXTURE_SIZE);
       }).sort((a, b) => {
         if (b.canvas.width !== a.canvas.width) {
           return b.canvas.width - a.canvas.width;
@@ -1135,6 +1138,8 @@ class AtlasPage {
 
   public clear(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    this._glyphs.length = 0;
+    this._usedPixels = 0;
     this.currentRow.x = 0;
     this.currentRow.y = 0;
     this.currentRow.height = 0;

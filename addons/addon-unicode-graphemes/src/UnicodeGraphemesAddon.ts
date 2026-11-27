@@ -2,7 +2,8 @@
  * Copyright (c) 2023 The xterm.js authors. All rights reserved.
  * @license MIT
  *
- * UnicodeVersionProvider for V15 with grapheme cluster handling.
+ * UnicodeVersionProvider for Unicode 18 with grapheme cluster handling.
+ * (The provider is still registered as versions '15' and '15-graphemes'.)
  */
 
 import type { Terminal, ITerminalAddon, IUnicodeHandling } from '@xterm/xterm';
