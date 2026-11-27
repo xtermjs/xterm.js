@@ -864,7 +864,13 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
     // Ignore composing with Alt key on Mac when macOptionIsMeta is enabled
     const shouldIgnoreComposition = this.browser.isMac && this.options.macOptionIsMeta && event.altKey;
 
+    const wasComposingOrSending = this._compositionHelper!.isComposing || this._compositionHelper!.isSendingComposition;
     if (!shouldIgnoreComposition && !this._compositionHelper!.keydown(event)) {
+      if (!wasComposingOrSending && event.keyCode === 229) {
+        // Non-composing keyCode 229 falls back to a deferred textarea diff in CompositionHelper;
+        // clear _keyDownSeen so an insertText arriving after the diff timer is not dropped (#6259).
+        this._keyDownSeen = false;
+      }
       if (this.options.scrollOnUserInput && this.buffer.ybase !== this.buffer.ydisp) {
         this.scrollToBottom(true);
       }
@@ -1051,6 +1057,7 @@ export class CoreBrowserTerminal extends CoreTerminal implements ITerminal {
 
       const text = ev.data;
       this.coreService.triggerDataEvent(text, true);
+      this._compositionHelper?.syncTextareaValue();
       return true;
     }
 

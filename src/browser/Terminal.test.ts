@@ -167,6 +167,19 @@ describe('Terminal', () => {
         assert.equal(term.inputEvent({ data: 'a', inputType: 'insertText', composed: true } as InputEvent), false, modifier.key);
       }
     });
+    it('should clear the gate when CompositionHelper handles a non-composing 229 keydown (#6259)', () => {
+      const sent: string[] = [];
+      term.onData(d => sent.push(d));
+      (term as any)._compositionHelper = {
+        isComposing: false,
+        isSendingComposition: false,
+        keydown: (ev: KeyboardEvent) => ev.keyCode !== 229,
+        syncTextareaValue: () => { }
+      };
+      term.keyDown({ preventDefault: () => { }, stopPropagation: () => { }, type: 'keydown', keyCode: 229, key: 'Unidentified' } as KeyboardEvent);
+      assert.equal(term.inputEvent({ data: 'echo', inputType: 'insertText', composed: true } as InputEvent), true);
+      assert.deepEqual(sent, ['echo']);
+    });
   });
 
   describe('attachCustomKeyEventHandler', () => {
