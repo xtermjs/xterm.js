@@ -7,8 +7,11 @@ import { assert } from 'chai';
 import { IBufferService } from '../common/services/Services';
 import { Linkifier } from './Linkifier';
 import { MockBufferService } from '../common/TestUtils.test';
-import { ILink } from './Types';
+import { ILink, ILinkWithState } from './Types';
 import { LinkProviderService } from './services/LinkProviderService';
+import { IMouseCoordsService, IRenderService } from './services/Services';
+import { Emitter } from '../common/Event';
+import { CellData } from '../common/buffer/CellData';
 import jsdom = require('jsdom');
 
 class TestLinkifier2 extends Linkifier {
@@ -198,5 +201,94 @@ describe('Linkifier2', () => {
     const beside = linkRange(6, 1000, 10, 1000);
     const overlap = linkRange(3, 1000, 8, 1000);
     assert.deepEqual(keptLinks(1, [[longLink], [beside, overlap]]), [[longLink], [beside]]);
+  });
+
+  describe('hovered link during unrelated row updates', () => {
+    let dom: jsdom.JSDOM;
+    let element: HTMLElement;
+    let onRenderedViewportChange: Emitter<{ start: number, end: number }>;
+    let hoverLinkifier: TestLinkifier2;
+    let hovers: number;
+    let leaves: number;
+    // Buffer rows are 0-based, link ranges and mouse positions 1-based
+    const linkRow = 2;
+
+    function writeRow(row: number, text: string): void {
+      const line = bufferService.buffer.lines.get(row)!;
+      line.fill(new CellData());
+      for (let x = 0; x < text.length; x++) {
+        line.setCell(x, CellData.fromCharData([0, text[x], 1, text.charCodeAt(x)]));
+      }
+    }
+
+    function currentLink(): ILinkWithState | undefined {
+      return (hoverLinkifier as any)._currentLink;
+    }
+
+    function render(start: number, end: number): void {
+      onRenderedViewportChange.fire({ start, end });
+    }
+
+    beforeEach(() => {
+      dom = new jsdom.JSDOM();
+      element = dom.window.document.createElement('div');
+      onRenderedViewportChange = new Emitter();
+      const renderService = { onRenderedViewportChange: onRenderedViewportChange.event } as unknown as IRenderService;
+      // The pointer rests on the link, which spans columns 1-19 of row 2
+      const mouseCoordsService = { getCoords: () => [5, linkRow] } as unknown as IMouseCoordsService;
+      const linkProviderService = new LinkProviderService();
+      hovers = 0;
+      leaves = 0;
+      linkProviderService.registerLinkProvider({
+        provideLinks: (y, callback) => {
+          const text = bufferService.buffer.lines.get(y - 1)!.translateToString(true);
+          const match = /https?:\/\/\S+/.exec(text);
+          if (!match) {
+            callback(undefined);
+            return;
+          }
+          callback([{
+            text: match[0],
+            range: { start: { x: match.index + 1, y }, end: { x: match.index + match[0].length, y } },
+            activate: () => { },
+            hover: () => hovers++,
+            leave: () => leaves++
+          }]);
+        }
+      });
+      writeRow(linkRow - 1, 'https://example.com');
+      hoverLinkifier = new TestLinkifier2(element, mouseCoordsService, renderService, bufferService, linkProviderService);
+      element.dispatchEvent(new dom.window.MouseEvent('mousemove'));
+      assert.isDefined(currentLink());
+      assert.equal(hovers, 1);
+    });
+
+    it('should keep the link when a render range covers it but only other rows changed', () => {
+      for (let i = 0; i < 5; i++) {
+        // Rows 1 and 9 change; their render is coalesced into one range over the link's row
+        writeRow(0, `frame ${i}`);
+        writeRow(8, `frame ${i}`);
+        render(0, 8);
+      }
+      assert.equal(leaves, 0);
+      assert.equal(hovers, 1);
+      assert.isDefined(currentLink());
+    });
+
+    it('should re-evaluate the link when its own row changes', () => {
+      writeRow(linkRow - 1, 'https://example.org');
+      render(0, 8);
+      assert.equal(leaves, 1);
+      assert.equal(hovers, 2);
+      assert.equal(currentLink()!.link.text, 'https://example.org');
+    });
+
+    it('should clear the link when its row no longer holds a link', () => {
+      writeRow(linkRow - 1, 'no link here anymore');
+      render(linkRow - 1, linkRow - 1);
+      assert.equal(leaves, 1);
+      assert.equal(hovers, 1);
+      assert.isUndefined(currentLink());
+    });
   });
 });

@@ -7,6 +7,7 @@ import { IBufferCellPosition, ILink, ILinkDecorations, ILinkWithState, ILinkifie
 import { Disposable, dispose, toDisposable } from '../common/Lifecycle';
 import { IDisposable } from '../common/Types';
 import { IBufferService } from '../common/services/Services';
+import { IBuffer, IBufferLine } from '../common/buffer/Types';
 import { ILinkProviderService, IMouseCoordsService, IRenderService } from './services/Services';
 import { Emitter } from '../common/Event';
 import { addDisposableListener } from './Dom';
@@ -22,6 +23,11 @@ export class Linkifier extends Disposable implements ILinkifier2 {
   private _wasResized: boolean = false;
   private _activeProviderReplies: Map<Number, ILinkWithState[] | undefined> | undefined;
   private _activeLine: number = -1;
+  /**
+   * A copy of the buffer lines the current link sits on (its whole wrapped line), used to tell
+   * whether a render that covers the link actually changed those lines.
+   */
+  private _currentLinkLines: { buffer: IBuffer, ydisp: number, startY: number, lines: IBufferLine[] } | undefined;
 
   private readonly _onShowLinkUnderline = this._register(new Emitter<ILinkifierEvent>());
   public readonly onShowLinkUnderline = this._onShowLinkUnderline.event;
@@ -253,6 +259,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
     if (!startRow || !endRow || (this._currentLink.link.range.start.y >= startRow && this._currentLink.link.range.end.y <= endRow)) {
       this._linkLeave(this._element, this._currentLink.link, this._lastMouseEvent);
       this._currentLink = undefined;
+      this._currentLinkLines = undefined;
       dispose(this._linkCacheDisposables);
       this._linkCacheDisposables.length = 0;
     }
@@ -280,6 +287,7 @@ export class Linkifier extends Disposable implements ILinkifier2 {
         isHovered: true
       };
       this._linkHover(this._element, linkWithState.link, this._lastMouseEvent);
+      this._currentLinkLines = this._snapshotLinkLines(linkWithState.link);
 
       // Add listener for tracking decorations changes
       linkWithState.link.decorations = {} as ILinkDecorations;
@@ -319,8 +327,10 @@ export class Linkifier extends Disposable implements ILinkifier2 {
         // cleared.
         const start = e.start === 0 ? 0 : e.start + 1 + this._bufferService.buffer.ydisp;
         const end = this._bufferService.buffer.ydisp + 1 + e.end;
-        // Only clear the link if the viewport change happened on this line
-        if (this._currentLink.link.range.start.y >= start && this._currentLink.link.range.end.y <= end) {
+        // Only clear the link if the viewport change happened on this line. Renders of several
+        // rows are coalesced into one range, so a range covering the link does not mean the
+        // link's own lines changed; keep the link when they did not (#6213).
+        if (this._currentLink.link.range.start.y >= start && this._currentLink.link.range.end.y <= end && this._haveCurrentLinkLinesChanged()) {
           this._clearCurrentLink(start, end);
           if (this._lastMouseEvent) {
             // re-eval previously active link after changes
@@ -332,6 +342,56 @@ export class Linkifier extends Disposable implements ILinkifier2 {
         }
       }));
     }
+  }
+
+  /**
+   * Copies the buffer lines of the wrapped line that contains the link, since a link provider may
+   * look at the whole wrapped line.
+   */
+  private _snapshotLinkLines(link: ILink): { buffer: IBuffer, ydisp: number, startY: number, lines: IBufferLine[] } | undefined {
+    const buffer = this._bufferService.buffer;
+    // Link ranges are 1-based
+    let startY = link.range.start.y - 1;
+    let endY = link.range.end.y - 1;
+    if (startY < 0 || endY >= buffer.lines.length || startY > endY) {
+      return undefined;
+    }
+    while (startY > 0 && buffer.lines.get(startY)?.isWrapped) {
+      startY--;
+    }
+    while (endY + 1 < buffer.lines.length && buffer.lines.get(endY + 1)?.isWrapped) {
+      endY++;
+    }
+    const lines: IBufferLine[] = [];
+    for (let y = startY; y <= endY; y++) {
+      const line = buffer.lines.get(y);
+      if (!line) {
+        return undefined;
+      }
+      lines.push(line.clone());
+    }
+    return { buffer, ydisp: buffer.ydisp, startY, lines };
+  }
+
+  /**
+   * Whether the lines of the current link changed since the link was hovered. When unsure (no
+   * copy, scrolled, other buffer active) this returns true so the link is re-evaluated.
+   */
+  private _haveCurrentLinkLinesChanged(): boolean {
+    const snapshot = this._currentLinkLines;
+    const buffer = this._bufferService.buffer;
+    if (!snapshot || snapshot.buffer !== buffer || snapshot.ydisp !== buffer.ydisp) {
+      return true;
+    }
+    for (let i = 0; i < snapshot.lines.length; i++) {
+      const line = buffer.lines.get(snapshot.startY + i);
+      if (!line || !bufferLineEquals(snapshot.lines[i], line)) {
+        return true;
+      }
+    }
+    // The wrapped line must not have grown into the following line either
+    const next = buffer.lines.get(snapshot.startY + snapshot.lines.length);
+    return !!next?.isWrapped;
   }
 
   protected _linkHover(element: HTMLElement, link: ILink, event: MouseEvent): void {
@@ -412,4 +472,22 @@ function linkEquals(a: ILink, b: ILink): boolean {
     a.range.end.x === b.range.end.x &&
     a.range.end.y === b.range.end.y
   );
+}
+
+function bufferLineEquals(a: IBufferLine, b: IBufferLine): boolean {
+  if (a.length !== b.length || a.isWrapped !== b.isWrapped) {
+    return false;
+  }
+  for (let x = 0; x < a.length; x++) {
+    if (
+      a.getString(x) !== b.getString(x) ||
+      a.getWidth(x) !== b.getWidth(x) ||
+      a.getFg(x) !== b.getFg(x) ||
+      a.getBg(x) !== b.getBg(x) ||
+      a.getExtended(x).urlId !== b.getExtended(x).urlId
+    ) {
+      return false;
+    }
+  }
+  return true;
 }
