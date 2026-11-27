@@ -259,5 +259,49 @@ describe('CompositionHelper', () => {
         }, 0);
       }, 0);
     });
+
+    it('Should avoid duplicate dispatch when syncTextareaValue advances the 229 diff baseline (#6259)', (done) => {
+      const hadWindow = 'window' in globalThis;
+      const origWindow = (globalThis as any).window;
+      if (!hadWindow) {
+        (globalThis as any).window = globalThis;
+      }
+      const restore = (): void => {
+        if (!hadWindow) {
+          delete (globalThis as any).window;
+        } else {
+          (globalThis as any).window = origWindow;
+        }
+      };
+      try {
+        assert.equal(compositionHelper.keydown({ keyCode: 229 } as KeyboardEvent), false);
+        textarea.value = 'echo';
+        compositionHelper.syncTextareaValue();
+        setTimeout(() => {
+          try {
+            assert.equal(handledText, '');
+            // Subsequent un-synced keyCode 229 insertion should still be dispatched once
+            assert.equal(compositionHelper.keydown({ keyCode: 229 } as KeyboardEvent), false);
+            textarea.value = 'echo!';
+            setTimeout(() => {
+              try {
+                assert.equal(handledText, '!');
+                restore();
+                done();
+              } catch (e) {
+                restore();
+                done(e);
+              }
+            }, 0);
+          } catch (e) {
+            restore();
+            done(e);
+          }
+        }, 0);
+      } catch (e) {
+        restore();
+        done(e);
+      }
+    });
   });
 });

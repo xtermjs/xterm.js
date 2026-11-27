@@ -40,3 +40,33 @@ describe('evaluatePastedTextProcessing', () => {
     assert.equal(bracketedText, `\x1b[200~${ESC_SYMBOL}[201~foo${ESC_SYMBOL}[200~bar\x1b[201~`);
   });
 });
+
+describe('handlePasteEvent', () => {
+  it('should prevent default browser insertion into the textarea and dispatch clipboard text', () => {
+    let defaultPrevented = false;
+    let propagationStopped = false;
+    let triggeredData: string | undefined;
+    const textarea = { value: 'stale' } as HTMLTextAreaElement;
+    const ev = {
+      clipboardData: {
+        getData: (type: string) => type === 'text/plain' ? 'hello' : ''
+      },
+      preventDefault: () => { defaultPrevented = true; },
+      stopPropagation: () => { propagationStopped = true; }
+    } as unknown as ClipboardEvent;
+    const coreService = {
+      decPrivateModes: { bracketedPasteMode: false },
+      triggerDataEvent: (data: string) => { triggeredData = data; }
+    } as any;
+    const optionsService = {
+      rawOptions: { ignoreBracketedPasteMode: false }
+    } as any;
+
+    Clipboard.handlePasteEvent(ev, textarea, coreService, optionsService);
+
+    assert.isTrue(propagationStopped);
+    assert.isTrue(defaultPrevented);
+    assert.equal(triggeredData, 'hello');
+    assert.equal(textarea.value, '');
+  });
+});

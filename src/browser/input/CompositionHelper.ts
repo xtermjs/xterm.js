@@ -41,6 +41,7 @@ export class CompositionHelper {
    * in-progress composition.
    */
   private _isSendingComposition: boolean;
+  public get isSendingComposition(): boolean { return this._isSendingComposition; }
 
   /**
    * Data already sent due to keydown event.
@@ -51,6 +52,11 @@ export class CompositionHelper {
    * The pending textarea change timer, if any.
    */
   private _textareaChangeTimer?: number;
+
+  /**
+   * Snapshot of the textarea value used as the baseline by {@link _handleAnyTextareaChanges}.
+   */
+  private _textareaChangeBaseline?: string;
 
   constructor(
     private readonly _textarea: HTMLTextAreaElement,
@@ -204,6 +210,17 @@ export class CompositionHelper {
   }
 
   /**
+   * Advances the pending textarea diff baseline to the current textarea value so text already
+   * dispatched by `_inputEvent` is not sent a second time if `_handleAnyTextareaChanges` fires
+   * afterwards.
+   */
+  public syncTextareaValue(): void {
+    if (this._textareaChangeTimer !== undefined) {
+      this._textareaChangeBaseline = this._textarea.value;
+    }
+  }
+
+  /**
    * Apply any changes made to the textarea after the current event chain is allowed to complete.
    * This should be called when not currently composing but a keydown event with the "composition
    * character" (229) is triggered, in order to allow non-composition text to be entered when an
@@ -213,9 +230,11 @@ export class CompositionHelper {
     if (this._textareaChangeTimer) {
       return;
     }
-    const oldValue = this._textarea.value;
+    this._textareaChangeBaseline = this._textarea.value;
     this._textareaChangeTimer = window.setTimeout(() => {
       this._textareaChangeTimer = undefined;
+      const oldValue = this._textareaChangeBaseline ?? '';
+      this._textareaChangeBaseline = undefined;
       // Ignore if a composition has started since the timeout
       if (!this._isComposing) {
         const newValue = this._textarea.value;

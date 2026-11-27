@@ -39,11 +39,13 @@ export type LineData = CharData[];
 
 export interface ICompositionHelper {
   readonly isComposing: boolean;
+  readonly isSendingComposition: boolean;
   compositionstart(): void;
   compositionupdate(ev: CompositionEvent): void;
   compositionend(): void;
   updateCompositionElements(dontRecurse?: boolean): void;
   keydown(ev: KeyboardEvent): boolean;
+  syncTextareaValue(): void;
 }
 
 export interface IBrowser {
