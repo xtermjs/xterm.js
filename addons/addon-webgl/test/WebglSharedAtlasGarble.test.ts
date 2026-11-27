@@ -20,6 +20,9 @@ interface ITestTextureAtlasConstructor {
 interface ITestTextureAtlas {
   constructor: ITestTextureAtlasConstructor;
   readonly pageLayoutVersion: number;
+  readonly pages?: ReadonlyArray<{
+    readonly canvas: HTMLCanvasElement;
+  }>;
   readonly _pages?: ReadonlyArray<{
     readonly canvas: {
       readonly width: number;
@@ -62,6 +65,8 @@ declare global {
     termB?: ITestTerminal;
     addon?: ITestWebglAddon;
     addonB?: ITestWebglAddon;
+    atlasBeforeRestore?: ITestTextureAtlas;
+    lostWebglContexts?: { canvas: HTMLCanvasElement, extension: WEBGL_lose_context }[];
   }
 }
 
@@ -165,6 +170,54 @@ async function getMergedPageState(ctx: ITestContext): Promise<{ layoutVersion: n
       filled: mergedPages.filter(page => page.glyphs.length > 0).length,
       empty: mergedPages.filter(page => page.glyphs.length === 0).length
     };
+  });
+}
+
+/**
+ * Loses the WebGL contexts of terminals A and B, then wipes the atlas page canvases the way a GPU
+ * process restart does. `WEBGL_lose_context` alone leaves them intact.
+ */
+async function loseWebglContextsAndWipeAtlas(ctx: ITestContext): Promise<void> {
+  await ctx.page.evaluate(async () => {
+    const lostContexts = [window.term, window.termB].map(term => {
+      const canvas = term?.element?.querySelector<HTMLCanvasElement>('.xterm-screen canvas:not([class])');
+      // Get the extension before losing the context, since a lost context hands out no extensions.
+      const extension = canvas?.getContext('webgl2')?.getExtension('WEBGL_lose_context');
+      if (!canvas || !extension) {
+        throw new Error('Terminals A and B must both use the WebGL renderer');
+      }
+      return { canvas, extension };
+    });
+    window.lostWebglContexts = lostContexts;
+
+    // The renderer only allows a restore once its webglcontextlost handler has run.
+    const lost = Promise.all(lostContexts.map(({ canvas }) => new Promise<void>(resolve => {
+      canvas.addEventListener('webglcontextlost', () => resolve(), { once: true });
+    })));
+    lostContexts.forEach(({ extension }) => extension.loseContext());
+    await lost;
+    // Let the last lost event finish dispatching: the browser records that a restore is allowed
+    // only after the dispatch returns, and restoreContext() is ignored until then.
+    await new Promise<void>(resolve => setTimeout(resolve, 0));
+
+    for (const page of window.addon?._renderer?._charAtlas?.pages ?? []) {
+      page.canvas.getContext('2d')?.clearRect(0, 0, page.canvas.width, page.canvas.height);
+    }
+  });
+}
+
+/**
+ * Restores the contexts lost by loseWebglContextsAndWipeAtlas, except those of terminals disposed in
+ * the meantime.
+ */
+async function restoreLostWebglContexts(ctx: ITestContext): Promise<void> {
+  await ctx.page.evaluate(async () => {
+    const lostContexts = (window.lostWebglContexts ?? []).filter(({ canvas }) => canvas.isConnected);
+    const restored = Promise.all(lostContexts.map(({ canvas }) => new Promise<void>(resolve => {
+      canvas.addEventListener('webglcontextrestored', () => resolve(), { once: true });
+    })));
+    lostContexts.forEach(({ extension }) => extension.restoreContext());
+    await restored;
   });
 }
 
@@ -463,6 +516,76 @@ test.describe('shared-atlas garble across terminals (#6038)', () => {
     } finally {
       ctx.page.off('pageerror', onError);
       await resetMaxAtlasPages(ctx).catch(() => {});
+      await ctx.page.close();
+    }
+  });
+
+  test('redraws terminals that share an atlas after their WebGL contexts are restored', async ({ browser }) => {
+    const ctx = await createTestContext(browser);
+    try {
+      await openTerminal(ctx, { cols: 80, rows: 24 });
+      await loadWebglStrict(ctx);
+      await createTerminalB(ctx);
+      await writeToBAndWaitForRender(ctx, HEADER);
+      const reference = await captureRowSignatures(ctx, 1, HEADER_COLS);
+
+      await ctx.page.evaluate(() => {
+        window.atlasBeforeRestore = window.addon?._renderer?._charAtlas;
+      });
+      await loseWebglContextsAndWipeAtlas(ctx);
+      await restoreLostWebglContexts(ctx);
+      await refreshBAndWaitForRender(ctx);
+
+      const restored = await captureRowSignatures(ctx, 1, HEADER_COLS);
+      for (let i = 0; i < HEADER_COLS.length; i++) {
+        expectSignatureMatches(restored[i], reference[i], `terminal B header col ${HEADER_COLS[i]} blank after the WebGL contexts were restored`);
+      }
+      const atlases = await ctx.page.evaluate(() => {
+        const atlasA = window.term._core?._renderService?._renderer?.value?._charAtlas;
+        const atlasB = window.termB?._core?._renderService?._renderer?.value?._charAtlas;
+        return { shared: !!atlasA && atlasA === atlasB, replaced: !!atlasA && atlasA !== window.atlasBeforeRestore };
+      });
+      expect(atlases, 'both terminals must share a new atlas after the restore').toEqual({ shared: true, replaced: true });
+
+      // A terminal opened after the restore must not get the wiped atlas either.
+      await createTerminalB(ctx);
+      await writeToBAndWaitForRender(ctx, HEADER);
+      const reopened = await captureRowSignatures(ctx, 1, HEADER_COLS);
+      for (let i = 0; i < HEADER_COLS.length; i++) {
+        expectSignatureMatches(reopened[i], reference[i], `new terminal header col ${HEADER_COLS[i]} blank after the WebGL contexts were restored`);
+      }
+    } finally {
+      await ctx.page.close();
+    }
+  });
+
+  test('redraws a terminal opened while the shared atlas\'s WebGL contexts are lost', async ({ browser }) => {
+    const ctx = await createTestContext(browser);
+    try {
+      await openTerminal(ctx, { cols: 80, rows: 24 });
+      await loadWebglStrict(ctx);
+      await createTerminalB(ctx);
+      await writeToBAndWaitForRender(ctx, HEADER);
+      const reference = await captureRowSignatures(ctx, 1, HEADER_COLS);
+
+      // Replace terminal B before the lost contexts are restored. The new terminal gets no restore
+      // event, so it must not acquire the wiped atlas in the first place.
+      await loseWebglContextsAndWipeAtlas(ctx);
+      await createTerminalB(ctx);
+      await writeToBAndWaitForRender(ctx, HEADER);
+      await restoreLostWebglContexts(ctx);
+      await refreshBAndWaitForRender(ctx);
+
+      const after = await captureRowSignatures(ctx, 1, HEADER_COLS);
+      for (let i = 0; i < HEADER_COLS.length; i++) {
+        expectSignatureMatches(after[i], reference[i], `header col ${HEADER_COLS[i]} of the terminal opened during the context loss is blank`);
+      }
+      const shared = await ctx.page.evaluate(() => {
+        const atlasA = window.term._core?._renderService?._renderer?.value?._charAtlas;
+        return !!atlasA && atlasA === window.termB?._core?._renderService?._renderer?.value?._charAtlas;
+      });
+      expect(shared, 'the restored terminal must share the new atlas with the terminal opened during the loss').toBe(true);
+    } finally {
       await ctx.page.close();
     }
   });

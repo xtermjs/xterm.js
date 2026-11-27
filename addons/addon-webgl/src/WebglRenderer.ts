@@ -5,7 +5,7 @@
 
 import { ITerminal } from 'browser/Types';
 import { CellColorResolver } from './CellColorResolver';
-import { acquireTextureAtlas, removeTerminalFromCache } from './CharAtlasCache';
+import { acquireTextureAtlas, removeTerminalFromCache, retireTerminalAtlas } from './CharAtlasCache';
 import { CursorBlinkStateManager } from './CursorBlinkStateManager';
 import { observeDevicePixelDimensions } from './DevicePixelObserver';
 import { IRenderDimensions, IRenderer, IRequestRedrawEvent } from 'browser/renderer/shared/Types';
@@ -126,6 +126,10 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._logService.debug('webglcontextlost event received');
       // Prevent the default behavior in order to enable WebGL context restoration.
       e.preventDefault();
+      // The GPU process restart that lost the context also wipes the atlas page canvases, and
+      // other terminals may share the atlas. Retire it now so no terminal acquires the wiped
+      // atlas from here on, including one opened before the context is restored.
+      retireTerminalAtlas(this._terminal);
       // Wait a few seconds to see if the 'webglcontextrestored' event is fired.
       // If not, dispatch the onContextLoss notification to observers.
       this._contextRestorationTimeout = setTimeout(() => {
@@ -140,7 +144,7 @@ export class WebglRenderer extends Disposable implements IRenderer {
       this._contextRestorationTimeout = undefined;
       // The texture atlas and glyph renderer must be fully reinitialized
       // because their contents have been lost.
-      removeTerminalFromCache(this._terminal);
+      // The atlas was retired when the context was lost, so this acquires a fresh one.
       this._initializeWebGLState();
       this._requestRedrawViewport();
     }));
