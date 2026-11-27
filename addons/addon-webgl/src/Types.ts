@@ -64,8 +64,10 @@ export interface ITextureAtlas extends IDisposable {
 
   /**
    * Warm up the texture atlas, adding common glyphs to avoid slowing early frame.
+   * @param domContainer The element to attach the glyph canvas to, so glyphs inherit its
+   * font-feature-settings.
    */
-  warmUp(): void;
+  warmUp(domContainer: HTMLElement | undefined): void;
 
   /**
    * Incremented whenever cached glyph texture page mappings may be stale, such as after atlas page

@@ -114,21 +114,23 @@ export class TextureAtlas implements ITextureAtlas {
     this._onRemoveTextureAtlasCanvas.dispose();
   }
 
-  public warmUp(): void {
+  public warmUp(domContainer: HTMLElement | undefined): void {
     if (!this._didWarmUp) {
-      this._doWarmUp();
+      this._doWarmUp(domContainer);
       this._didWarmUp = true;
     }
   }
 
-  private _doWarmUp(): void {
+  private _doWarmUp(domContainer: HTMLElement | undefined): void {
     // Pre-fill with ASCII 33-126, this is not urgent and done in idle callbacks
     this._warmUpQueue?.clear();
     const queue = this._warmUpQueue = new IdleTaskQueue(this._logService);
     for (let i = 33; i < 126; i++) {
       queue.enqueue(() => {
         if (!this._cacheMap.get(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT)) {
-          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, false, undefined);
+          // Don't take the canvas from another owner of a shared atlas into an element that was
+          // removed since warm-up started, that would keep the element alive and lose the styles
+          const rasterizedGlyph = this._drawToCache(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, false, domContainer?.isConnected ? domContainer : undefined);
           this._cacheMap.set(i, DEFAULT_COLOR, DEFAULT_COLOR, DEFAULT_EXT, rasterizedGlyph);
         }
       });
