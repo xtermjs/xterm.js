@@ -22,6 +22,13 @@ export function moveToCellSequence(targetX: number, targetY: number, bufferServi
   const startX = bufferService.buffer.x;
   const startY = bufferService.buffer.y;
 
+  // A click on the trailing cell of a wide character targets the character
+  // itself, the same as clicking on its leading cell
+  const targetLine = bufferService.buffer.lines.get(bufferService.buffer.ybase + targetY);
+  if (targetX > 0 && targetX < bufferService.cols && targetLine?.getWidth(targetX) === 0) {
+    targetX--;
+  }
+
   // The alt buffer should try to navigate between rows
   if (!bufferService.buffer.hasScrollback) {
     return resetStartingRow(startX, startY, targetX, targetY, bufferService, applicationCursor) +
@@ -29,32 +36,15 @@ export function moveToCellSequence(targetX: number, targetY: number, bufferServi
       moveToRequestedCol(startX, startY, targetX, targetY, bufferService, applicationCursor);
   }
 
-  // Only move horizontally for the normal buffer
+  // Only move horizontally for the normal buffer, wrapping around entire rows
+  // when the row differs
   let direction;
   if (startY === targetY) {
     direction = startX > targetX ? Direction.LEFT : Direction.RIGHT;
-    return repeat(Math.abs(startX - targetX), sequence(direction, applicationCursor));
+  } else {
+    direction = startY > targetY ? Direction.LEFT : Direction.RIGHT;
   }
-  direction = startY > targetY ? Direction.LEFT : Direction.RIGHT;
-  const rowDifference = Math.abs(startY - targetY);
-  const cellsToMove = colsFromRowEnd(startY > targetY ? targetX : startX, bufferService) +
-    (rowDifference - 1) * bufferService.cols + 1 /* wrap around 1 row */ +
-    colsFromRowBeginning(startY > targetY ? startX : targetX, bufferService);
-  return repeat(cellsToMove, sequence(direction, applicationCursor));
-}
-
-/**
- * Find the number of cols from a row beginning to a col.
- */
-function colsFromRowBeginning(currX: number, bufferService: IBufferService): number {
-  return currX - 1;
-}
-
-/**
- * Find the number of cols from a col to row end.
- */
-function colsFromRowEnd(currX: number, bufferService: IBufferService): number {
-  return bufferService.cols - currX;
+  return repeat(charsBetween(startX, startY, targetX, targetY, bufferService), sequence(direction, applicationCursor));
 }
 
 /**
@@ -66,10 +56,10 @@ function resetStartingRow(startX: number, startY: number, targetX: number, targe
   if (moveToRequestedRow(startY, targetY, bufferService, applicationCursor).length === 0) {
     return '';
   }
-  return repeat(bufferLine(
+  return repeat(charsBetween(
     startX, startY, startX,
-    startY - wrappedRowsForRow(startY, bufferService), false, bufferService
-  ).length, sequence(Direction.LEFT, applicationCursor));
+    startY - wrappedRowsForRow(startY, bufferService), bufferService
+  ), sequence(Direction.LEFT, applicationCursor));
 }
 
 /**
@@ -99,10 +89,9 @@ function moveToRequestedCol(startX: number, startY: number, targetX: number, tar
   const endRow = targetY;
   const direction = horizontalDirection(startX, startY, targetX, targetY, bufferService, applicationCursor);
 
-  return repeat(bufferLine(
-    startX, startRow, targetX, endRow,
-    direction === Direction.RIGHT, bufferService
-  ).length, sequence(direction, applicationCursor));
+  return repeat(charsBetween(
+    startX, startRow, targetX, endRow, bufferService
+  ), sequence(direction, applicationCursor));
 }
 
 /**
@@ -179,51 +168,51 @@ function verticalDirection(startY: number, targetY: number): Direction {
 }
 
 /**
- * Constructs the string of chars in the buffer from a starting row and col
- * to an ending row and col
+ * Counts the characters between a starting row and col and an ending row and
+ * col, walking the buffer cells in between in either direction. This is the
+ * number of arrow key presses a line editor needs to move between the two
+ * positions: a wide character occupies 2 cells but is moved over with a single
+ * key press, so its width 0 trailing cell is not counted, and neither is the
+ * unused last cell of a row that a wide character did not fit in before
+ * wrapping to the next row.
  * @param startCol The starting column position
  * @param startRow The starting row position
  * @param endCol The ending column position
  * @param endRow The ending row position
- * @param forward Direction to move
  */
-function bufferLine(
+function charsBetween(
   startCol: number,
   startRow: number,
   endCol: number,
   endRow: number,
-  forward: boolean,
   bufferService: IBufferService
-): string {
-  let currentCol = startCol;
-  let currentRow = startRow;
-  let bufferStr = '';
+): number {
+  const cols = bufferService.cols;
+  const start = Math.min(startRow * cols + startCol, endRow * cols + endCol);
+  const end = Math.max(startRow * cols + startCol, endRow * cols + endCol);
+  let count = 0;
 
-  while ((currentCol !== endCol || currentRow !== endRow) &&
-         currentRow >= 0 &&
-         currentRow < bufferService.buffer.lines.length) {
-    currentCol += forward ? 1 : -1;
-
-    if (forward && currentCol > bufferService.cols - 1) {
-      bufferStr += bufferService.buffer.translateBufferLineToString(
-        currentRow, false, startCol, currentCol
-      );
-      currentCol = 0;
-      startCol = 0;
-      currentRow++;
-    } else if (!forward && currentCol < 0) {
-      bufferStr += bufferService.buffer.translateBufferLineToString(
-        currentRow, false, 0, startCol + 1
-      );
-      currentCol = bufferService.cols - 1;
-      startCol = currentCol;
-      currentRow--;
+  for (let i = start; i < end; i++) {
+    const col = i % cols;
+    const row = bufferService.buffer.ybase + Math.floor(i / cols);
+    const line = bufferService.buffer.lines.get(row);
+    if (!line) {
+      count++;
+      continue;
     }
+    if (line.getWidth(col) === 0) {
+      continue;
+    }
+    if (col === cols - 1 && !line.hasContent(col)) {
+      const nextLine = bufferService.buffer.lines.get(row + 1);
+      if (nextLine?.isWrapped && nextLine.getWidth(0) === 2) {
+        continue;
+      }
+    }
+    count++;
   }
 
-  return bufferStr + bufferService.buffer.translateBufferLineToString(
-    currentRow, false, startCol, currentCol
-  );
+  return count;
 }
 
 /**
