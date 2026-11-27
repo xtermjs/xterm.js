@@ -2088,6 +2088,14 @@ declare module '@xterm/xterm' {
      */
     readonly insertMode: boolean;
     /**
+     * Mouse Event Encoding, this can be one of the following:
+     * - default: This is the default value and can be reset with DECRST,
+     *   it uses the single-byte encoding with coordinates limited to 223
+     * - sgr: SGR Mouse Mode `CSI ? 1 0 0 6 h`
+     * - sgr-pixels: SGR-Pixels Mouse Mode `CSI ? 1 0 1 6 h`
+     */
+    readonly mouseEncodingMode: 'default' | 'sgr' | 'sgr-pixels';
+    /**
      * Mouse Tracking, this can be one of the following:
      * - none: This is the default value and can be reset with DECRST
      * - x10: Send Mouse X & Y on button press `CSI ? 9 h`
