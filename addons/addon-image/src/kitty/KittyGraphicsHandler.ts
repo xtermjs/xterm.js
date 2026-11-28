@@ -500,14 +500,17 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
     // Per spec: default delete selector is 'a' (delete all visible placements)
     const selector = cmd.deleteSelector ?? 'a';
 
-    // TODO: Distinguish lowercase (delete placements only) from uppercase
-    // (delete placements + free stored image data). Currently both variants
-    // free everything since we don't separate stored data from placements.
+    // Per spec: lowercase selectors delete placements only and keep the stored
+    // image data, uppercase selectors also free the image data.
     switch (selector) {
       case 'a':
       case 'A':
         this._cleanupAllPending();
-        this._kittyStorage.deleteAll();
+        if (selector === 'a') {
+          this._kittyStorage.deleteAllPlacements();
+        } else {
+          this._kittyStorage.deleteAll();
+        }
         break;
       case 'i':
       case 'I':
@@ -521,7 +524,11 @@ export class KittyGraphicsHandler implements IApcHandler, IResetHandler, IDispos
             pending.decoder.release();
           }
           this._removePendingEntry(cmd.id);
-          this._kittyStorage.deleteById(cmd.id);
+          if (selector === 'i') {
+            this._kittyStorage.deletePlacementsById(cmd.id);
+          } else {
+            this._kittyStorage.deleteById(cmd.id);
+          }
         }
         break;
       default:

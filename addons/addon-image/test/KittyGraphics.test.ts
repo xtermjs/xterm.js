@@ -344,17 +344,23 @@ test.describe('Kitty Graphics Protocol', () => {
   });
 
   test.describe('Delete commands', () => {
-    test('delete command (a=d,d=i) removes specific image by id', async () => {
-      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=10;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
-      await timeout(50);
-      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
+    test('delete command (a=d,d=i) keeps the image data, so it can be placed again', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=10,q=1;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
 
       await ctx.proxy.write(`\x1b_Ga=d,d=i,i=10\x1b\\`);
       await timeout(50);
-      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 0);
+      strictEqual(await getImageStorageLength(), 0);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(10)`), true);
+
+      await ctx.proxy.write(`\x1b[H\x1b_Ga=p,i=10\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
+      deepStrictEqual(await getPixel(0, 0, 0, 0), [0, 0, 0, 255]);
     });
 
-    test('delete command (a=d) removes all images when no id specified', async () => {
+    test('delete command (a=d) keeps the image data when no id specified', async () => {
       await ctx.proxy.write(`\x1b_Ga=t,f=100,i=1;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await ctx.proxy.write(`\x1b_Ga=t,f=100,i=2;${KITTY_RGB_3X1_BASE64}\x1b\\`);
       await timeout(50);
@@ -362,7 +368,7 @@ test.describe('Kitty Graphics Protocol', () => {
 
       await ctx.proxy.write(`\x1b_Ga=d\x1b\\`);
       await timeout(50);
-      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 0);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 2);
     });
 
     test('delete by id aborts in-flight chunked upload', async () => {
@@ -407,16 +413,16 @@ test.describe('Kitty Graphics Protocol', () => {
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').pendingTransmissions.size`), 0);
     });
 
-    test('d=i selector deletes specific image by id', async () => {
-      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=80;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
-      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=81;${KITTY_RGB_3X1_BASE64}\x1b\\`);
-      await timeout(50);
-      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 2);
+    test('d=i selector deletes only the placement of the given image', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=80;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=81;${KITTY_RGB_3X1_BASE64}\x1b\\`);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 2);
 
       await ctx.proxy.write(`\x1b_Ga=d,d=i,i=80\x1b\\`);
       await timeout(50);
-      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 1);
-      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(81)`), true);
+      strictEqual(await getImageStorageLength(), 1);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 2);
     });
 
     test('d=I selector deletes specific image by id (uppercase)', async () => {
@@ -431,15 +437,16 @@ test.describe('Kitty Graphics Protocol', () => {
       strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(83)`), true);
     });
 
-    test('d=a selector deletes all images', async () => {
-      await ctx.proxy.write(`\x1b_Ga=t,f=100,i=84;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
+    test('d=a selector deletes all placements and keeps the image data', async () => {
+      await ctx.proxy.write(`\x1b_Ga=T,f=100,i=84;${KITTY_BLACK_1X1_BASE64}\x1b\\`);
       await ctx.proxy.write(`\x1b_Ga=t,f=100,i=85;${KITTY_RGB_3X1_BASE64}\x1b\\`);
-      await timeout(50);
-      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 2);
+      await timeout(100);
+      strictEqual(await getImageStorageLength(), 1);
 
       await ctx.proxy.write(`\x1b_Ga=d,d=a\x1b\\`);
       await timeout(50);
-      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 0);
+      strictEqual(await getImageStorageLength(), 0);
+      strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.size`), 2);
     });
 
     test('d=A selector deletes all images (uppercase)', async () => {
@@ -1824,7 +1831,7 @@ test.describe('Kitty Graphics Protocol', () => {
         await timeout(200);
         strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(700)`), true);
 
-        await ctx.proxy.write(`\x1b_Ga=d,d=i,i=700\x1b\\`);
+        await ctx.proxy.write(`\x1b_Ga=d,d=I,i=700\x1b\\`);
         await timeout(50);
         strictEqual(await ctx.page.evaluate(`window.imageAddon._handlers.get('kitty').images.has(700)`), false);
       });
