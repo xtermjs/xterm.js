@@ -434,6 +434,63 @@ describe('SearchEngine', () => {
     });
   });
 
+  describe('one very long wrapped line', () => {
+    const cols = 80;
+
+    it('should rewind to the line start without overflowing the stack', async () => {
+      // 12 000 rows for one logical line; the rewind used to recurse once per row.
+      store.dispose();
+      store = new DisposableStore();
+      terminal = store.add(new Terminal({ cols, rows: 24, scrollback: 50000 }));
+      lineCache = store.add(new SearchLineCache(terminal));
+      searchEngine = new SearchEngine(terminal, lineCache);
+      await writeP(terminal, 'x'.repeat(cols * 11999 - 8) + ' needle ' + 'x'.repeat(cols - 1));
+
+      // Start deep inside the line: the rewind has to walk 11 000 rows back to the line start.
+      assert.deepStrictEqual(searchEngine.find('needle', 11000, 0), { term: 'needle', col: 73, row: 11998, size: 6 });
+      assert.strictEqual(searchEngine.find('needle', 11999, 0), undefined);
+    });
+
+    it('should scan a long line once, not once per wrapped row', async () => {
+      store.dispose();
+      store = new DisposableStore();
+      terminal = store.add(new Terminal({ cols, rows: 24, scrollback: 5000 }));
+      lineCache = store.add(new SearchLineCache(terminal));
+      searchEngine = new SearchEngine(terminal, lineCache);
+      await writeP(terminal, 'x'.repeat(cols * 5000));
+
+      const start = Date.now();
+      assert.strictEqual(searchEngine.find('needle', 0, 0), undefined);
+      assert.isBelow(Date.now() - start, 2000, 'no-match scan took too long');
+    });
+
+    it('should find a match in a line longer than the whole scrollback', async () => {
+      // Every surviving row is wrapped, so there is no line start left to rewind to.
+      store.dispose();
+      store = new DisposableStore();
+      terminal = store.add(new Terminal({ cols, rows: 24, scrollback: 100 }));
+      lineCache = store.add(new SearchLineCache(terminal));
+      searchEngine = new SearchEngine(terminal, lineCache);
+      await writeP(terminal, 'x'.repeat(cols * 200) + 'needle');
+      assert.isTrue(terminal.buffer.active.getLine(0)!.isWrapped);
+
+      assert.isDefined(searchEngine.findNextWithSelection('needle'));
+      assert.isDefined(searchEngine.findPreviousWithSelection('needle'));
+    });
+
+    it('should keep scanning a line past a hit that whole word rejects', async () => {
+      await writeP(terminal, 'aneedlea needle done');
+
+      assert.deepStrictEqual(searchEngine.find('needle', 0, 0, { wholeWord: true }), { term: 'needle', col: 9, row: 0, size: 6 });
+    });
+
+    it('should anchor a regex to the logical line, not to every wrapped row', async () => {
+      await writeP(terminal, 'x'.repeat(cols) + 'needle' + 'x'.repeat(cols - 6));
+
+      assert.strictEqual(searchEngine.find('^needle', 0, 0, { regex: true }), undefined);
+    });
+  });
+
   describe('edge cases and error handling', () => {
     describe('unicode and special characters', () => {
       it('should handle unicode characters correctly', async () => {

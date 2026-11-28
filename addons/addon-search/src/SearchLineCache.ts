@@ -109,9 +109,13 @@ export class SearchLineCache extends Disposable {
   public translateBufferLineToStringWithWrap(lineIndex: number, trimRight: boolean): LineCacheEntry {
     const strings = [];
     const lineOffsets = [0];
+    // A single line longer than the whole scrollback leaves every buffer row wrapped, and the
+    // buffer's ring answers an out-of-range row by cycling back to the start, so an unbounded walk
+    // never reaches an unwrapped line.
+    const bufferLength = this._terminal.buffer.active.length;
     let line = this._terminal.buffer.active.getLine(lineIndex);
     while (line) {
-      const nextLine = this._terminal.buffer.active.getLine(lineIndex + 1);
+      const nextLine = lineIndex + 1 < bufferLength ? this._terminal.buffer.active.getLine(lineIndex + 1) : undefined;
       const lineWrapsToNext = nextLine ? nextLine.isWrapped : false;
       let string = line.translateToString(!lineWrapsToNext && trimRight);
       if (lineWrapsToNext && nextLine) {
