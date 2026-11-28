@@ -130,6 +130,29 @@ export class KittyImageStorage implements IDisposable {
     this._storageIdToKittyId.clear();
   }
 
+  /**
+   * Remove the displayed placement of an image, keeping the image data so that
+   * it can be placed again (lowercase delete selectors).
+   */
+  public deletePlacementsById(kittyId: number): void {
+    const storageId = this._kittyIdToStorageId.get(kittyId);
+    if (storageId !== undefined) {
+      // Unmap first, so that the deleted-image hook does not free the image data.
+      this._kittyIdToStorageId.delete(kittyId);
+      this._storageIdToKittyId.delete(storageId);
+      this._storage.deleteImage(storageId);
+    }
+  }
+
+  public deleteAllPlacements(): void {
+    const storageIds = [...this._kittyIdToStorageId.values()];
+    this._kittyIdToStorageId.clear();
+    this._storageIdToKittyId.clear();
+    for (const storageId of storageIds) {
+      this._storage.deleteImage(storageId);
+    }
+  }
+
   public get images(): ReadonlyMap<number, IKittyImageData> {
     return this._images;
   }
