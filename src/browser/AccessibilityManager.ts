@@ -13,7 +13,8 @@ import { IInstantiationService } from '../common/services/Services';
 import { addDisposableListener } from './Dom';
 
 const enum Constants {
-  MAX_ROWS_TO_READ = 20
+  MAX_ROWS_TO_READ = 20,
+  LIVE_REGION_CLEAR_DELAY_MS = 300
 }
 
 const enum BoundaryPosition {
@@ -36,6 +37,7 @@ export class AccessibilityManager extends Disposable {
   private _liveRegion: HTMLElement;
   private _liveRegionLineCount: number = 0;
   private _liveRegionDebouncer: IRenderDebouncer;
+  private _liveRegionClearTimeout: number | undefined;
 
   private _topBoundaryFocusListener: (e: FocusEvent) => void;
   private _bottomBoundaryFocusListener: (e: FocusEvent) => void;
@@ -123,6 +125,7 @@ export class AccessibilityManager extends Disposable {
     this._refreshRowsDimensions();
     this._refreshRows();
     this._register(toDisposable(() => {
+      this._cancelClearLiveRegion();
       if (DEBUG) {
         this._debugRootContainer!.remove();
       } else {
@@ -154,12 +157,29 @@ export class AccessibilityManager extends Disposable {
         this._liveRegionLineCount++;
         if (this._liveRegionLineCount === Constants.MAX_ROWS_TO_READ + 1) {
           this._liveRegion.textContent = Strings.tooMuchOutput.get();
+          this._scheduleClearLiveRegion();
         }
       }
     }
   }
 
+  private _scheduleClearLiveRegion(): void {
+    this._cancelClearLiveRegion();
+    this._liveRegionClearTimeout = this._coreBrowserService.window.setTimeout(() => {
+      this._liveRegionClearTimeout = undefined;
+      this._clearLiveRegion();
+    }, Constants.LIVE_REGION_CLEAR_DELAY_MS);
+  }
+
+  private _cancelClearLiveRegion(): void {
+    if (this._liveRegionClearTimeout !== undefined) {
+      this._coreBrowserService.window.clearTimeout(this._liveRegionClearTimeout);
+      this._liveRegionClearTimeout = undefined;
+    }
+  }
+
   private _clearLiveRegion(): void {
+    this._cancelClearLiveRegion();
     this._liveRegion.textContent = '';
     this._liveRegionLineCount = 0;
   }
@@ -210,6 +230,7 @@ export class AccessibilityManager extends Disposable {
     }
     this._liveRegion.textContent += this._charsToAnnounce;
     this._charsToAnnounce = '';
+    this._scheduleClearLiveRegion();
   }
 
   private _handleBoundaryFocus(e: FocusEvent, position: BoundaryPosition): void {
