@@ -119,6 +119,12 @@ export class CompositionHelper {
         // Continue composing if the keyCode is the "composition character"
         return false;
       }
+      if (ev.isComposing) {
+        // Continue composing if the browser reports the key as part of the composition. Firefox
+        // reports the real keyCode (eg. 65 for 'a' completing the ` dead key into 'à') instead of
+        // 229, finalizing here would send the partial composition '`' before the final 'à'.
+        return false;
+      }
       if (ev.keyCode === 16 || ev.keyCode === 17 || ev.keyCode === 18) {
         // Continue composing if the keyCode is a modifier key
         return false;
