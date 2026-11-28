@@ -124,6 +124,12 @@ terminal.loadAddon(imageAddon);
 
   Note that the kitty graphics support is still WIP.
 
+  Unicode placeholders (virtual placements, `U=1`) are supported: the image is drawn
+  wherever the client writes `U+10EEEE` cells, with the row/column diacritics selecting the tile
+  and the foreground color (24-bit or 256-color, plus the optional third diacritic) carrying the
+  image id. The placement id is read from the underline color, which the buffer only keeps on
+  underlined cells; without it the cells show the most recent placement of the image.
+
 
 ### Storage and Drawing Settings
 

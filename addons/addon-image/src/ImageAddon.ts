@@ -157,6 +157,9 @@ export class ImageAddon implements ITerminalAddon, IImageApi {
       // render hook
       terminal.onRender(range => this._storage?.render(range)),
 
+      // hide kitty placeholder glyphs before they get rendered
+      terminal.onWriteParsed(() => this._storage?.hidePlaceholderGlyphs()),
+
       /**
        * reset handlers covered:
        * - DECSTR
